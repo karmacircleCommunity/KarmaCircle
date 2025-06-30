@@ -7,6 +7,10 @@
   position: sticky;
   z-index: 99;
 
+  @media screen and (max-width: 900px) {
+    padding: 0.8rem 3rem;
+  }
+
   @media screen and (max-width: 430px) {
     padding: 0.8rem 1.5rem;
   }
@@ -104,7 +108,7 @@
     cursor: pointer;
     display: none;
 
-    @media screen and (max-width: 430px) {
+    @media screen and (max-width: 900px) {
       display: block;
     }
   }
@@ -116,7 +120,7 @@
     display: none;
     border-radius: 50%;
 
-    @media screen and (max-width: 430px) {
+    @media screen and (max-width: 900px) {
       display: block;
     }
   }

@@ -124,7 +124,7 @@ const Navbar = () => {
           </div>
         )}
 
-        {!isNavbarOpen &&
+        {windowWidth <= 900 && !isNavbarOpen &&
           (Cookies.get("Token") ? (
             <img
               src={user?.profileImage || profileImage}
