@@ -9,6 +9,11 @@
 
   @media screen and (max-width: 430px) {
     padding: 0.8rem 1.5rem;
+   
+  }
+  @media screen and (max-width: 900px) {
+    display: flex;
+    flex-direction: column;
   }
 
   .navbar_brand > img {

@@ -86,7 +86,7 @@ const Navbar = () => {
           <img src={navbarbrand} alt="Milan-logo" className="nav_brand_img" />
         </Link>
 
-        {windowWidth > 900 && (
+        {windowWidth > 430 && (
           <div className="navbar_links_parent">
             <div className="navbar_links">
               {Links.map((item, index) => {
