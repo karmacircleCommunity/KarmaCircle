@@ -51,7 +51,7 @@
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
-    "react-calendar": "^4.8.0",
+    "react-calendar": "^6.0.0",
     "react-dom": "^18.2.0",
     "react-fast-marquee": "^1.6.4",
     "react-helmet-async": "^2.0.4",
