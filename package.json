@@ -63,7 +63,7 @@
     "react-select": "^5.7.5",
     "react-spinners": "^0.13.7",
     "react-time-picker": "^6.6.0",
-    "react-toastify": "^9.1.1",
+    "react-toastify": "^11.0.5",
     "redux-persist": "^6.0.0",
     "styled-components": "^6.1.8",
     "swiper": "^10.3.0",
