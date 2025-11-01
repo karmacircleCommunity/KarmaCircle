@@ -103,7 +103,7 @@
     "husky": "^8.0.0",
     "lint-staged": "^13.2.1",
     "prettier": "^3.1.1",
-    "sass": "^1.70.0",
+    "sass": "^1.93.3",
     "vite": "^4.4.2",
     "vite-plugin-pwa": "^0.16.5"
   },
