@@ -80,8 +80,20 @@ export default defineConfig({
     host: true,
     strictPort: true,
     port: 3000,
+    watch: {
+      usePolling: true,
+    },
   },
-  watch: {
-    usePolling: true,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          mui: ["@mui/material", "@mui/icons-material"],
+          redux: ["@reduxjs/toolkit", "react-redux", "redux-persist"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
 });
