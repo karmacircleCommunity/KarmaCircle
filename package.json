@@ -97,7 +97,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
-    "eslint": "^8.42.0",
+    "eslint": "^9.26.0",
     "eslint-plugin-cypress": "^2.13.3",
     "eslint-plugin-react": "^7.32.2",
     "husky": "^8.0.0",
