@@ -42,7 +42,7 @@
     "@vercel/analytics": "^1.2.2",
     "@vercel/speed-insights": "^1.0.10",
     "aos": "^2.3.4",
-    "axios": "^1.7.7",
+    "axios": "^1.13.5",
     "clsx": "^2.1.1",
     "cypress": "^13.2.0",
     "dayjs": "^1.11.10",
