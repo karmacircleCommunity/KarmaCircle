@@ -24,7 +24,7 @@ Please go through the documentation at least once before you start contributing 
 
 ## Commits 👮
 
-Try and make small commits, it will be easier for us to review and merge them and also it will be easier for you to fix any errors if there are any.
+Try and make small commits. It will be easier for us to review and merge them, and also it will be easier for you to fix any errors if there are any.
 
 #### Commit Message Format 🔐
 

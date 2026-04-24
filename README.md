@@ -20,7 +20,7 @@ NgoWorld is a hub to **connect** NGOs, Charities, and the world to **collaborate
 
 </div>
 
-<br>
+<br/>
 
 # Tech Stack (Frontend) 💻
 
@@ -44,7 +44,7 @@ NgoWorld is a hub to **connect** NGOs, Charities, and the world to **collaborate
 
 </p>
 
-</br>
+<br/>
 
 # Contributing to NgoWorld 🔐
 
