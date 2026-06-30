@@ -1,5 +1,6 @@
 # NGOWorld (Milan) — Architecture Diagrams
 
+
 ---
 
 ## 1. High-Level Architecture
