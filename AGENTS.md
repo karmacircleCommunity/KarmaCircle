@@ -3,7 +3,7 @@
 - Read [docs/specs/README.md](./docs/specs/README.md) first — it's the master map of this codebase: architecture, state management, the API layer, and one file per feature.
 - Read [docs/specs/known-issues.md](./docs/specs/known-issues.md) before touching any area it flags — duplicated implementations, dead code, unrouted pages, and validation that doesn't actually block submission are all cataloged there so you don't rediscover them the hard way or accidentally build on top of the broken half of a duplicate pair.
 - There is no `PRODUCT_SPEC.md`, task-spec template, or Definition-of-Done doc in this repo yet — `docs/specs/` is the closest thing to a source of truth today. If this repo grows one later, this file should point to it.
-- There is no graphify knowledge graph set up for this repo yet. Say if you want one.
+- There is a graphify knowledge graph at [graphify-out/](./graphify-out/) (code AST + `docs/specs/` + top-level docs). Read `graphify-out/GRAPH_REPORT.md` before answering architecture questions — see the "graphify" section at the top of `CLAUDE.md` for how to query and keep it updated.
 - This repo has no automated unit-test runner (no `test` script) — `cypress:run`/`cypress:open` (Cypress e2e, one minimal spec today) is the only test tooling. Don't claim something is "tested" without running it through that or manually verifying.
 
 ## git / branching
