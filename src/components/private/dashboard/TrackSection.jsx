@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { TbExternalLink } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import "../../../../src/styles/TrackSection.scss";

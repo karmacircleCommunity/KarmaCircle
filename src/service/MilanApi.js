@@ -57,6 +57,7 @@ export const ReportProblem = async (credentials) => {
       return false;
     }
   } catch (error) {
+    console.error("Report problem request failed:", error);
     alert("INTERNAL ERROR, PLEASE TRY AGAIN LATER");
   }
 };
@@ -103,6 +104,7 @@ export const GoogleAuth = async () => {
     });
     return response.data.url;
   } catch (error) {
+    console.error("Google auth request failed:", error);
     alert("INTERNAL ERROR, PLEASE TRY AGAIN LATER");
   }
 };

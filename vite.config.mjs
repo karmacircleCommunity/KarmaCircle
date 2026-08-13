@@ -66,14 +66,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@components": path.resolve(__dirname, "./src/components"),
-      "@hooks": path.resolve(__dirname, "./src/hooks"),
-      "@pages": path.resolve(__dirname, "./src/pages"),
-      "@redux": path.resolve(__dirname, "./src/redux"),
-      "@service": path.resolve(__dirname, "./src/service"),
-      "@utils": path.resolve(__dirname, "./src/utils"),
-      "@styles": path.resolve(__dirname, "./src/styles"),
-      "@": path.resolve(__dirname, "./src"),
+      "@components": path.resolve(import.meta.dirname, "./src/components"),
+      "@hooks": path.resolve(import.meta.dirname, "./src/hooks"),
+      "@pages": path.resolve(import.meta.dirname, "./src/pages"),
+      "@redux": path.resolve(import.meta.dirname, "./src/redux"),
+      "@service": path.resolve(import.meta.dirname, "./src/service"),
+      "@utils": path.resolve(import.meta.dirname, "./src/utils"),
+      "@styles": path.resolve(import.meta.dirname, "./src/styles"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   server: {

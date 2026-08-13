@@ -1,12 +1,12 @@
 # Use an official Node.js image as the base image
-FROM node:16-alpine
+FROM node:22-alpine
 
 # Set the working directory in the container
 WORKDIR /app
 
 # Copy package.json and package-lock.json to the container
 COPY package*.json ./
-COPY vite.config.js .
+COPY vite.config.mjs .
 
 # Install project dependencies
 RUN npm install

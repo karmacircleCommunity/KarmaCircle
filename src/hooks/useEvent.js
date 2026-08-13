@@ -1,4 +1,3 @@
-import { useDispatch } from "react-redux";
 import { useSWRConfig } from "swr";
 import { eventEndpoints } from "../integrations/ApiEndpoints";
 import { CreateEvent } from "../service/MilanApi";
@@ -7,7 +6,6 @@ import { showErrorToast, showSuccessToast } from "../utils/Toasts";
 export function useEvent(event) {
   const { uid, ...data } = event;
   const errors = {};
-  const dispatch = useDispatch();
   const { mutate } = useSWRConfig();
 
   const validateEvent = () => {

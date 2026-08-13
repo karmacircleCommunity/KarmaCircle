@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { CiCalendar, CiLocationOn } from "react-icons/ci";
 import getFormattedDate from "../../../../utils/getFormattedDate";
 import "./EventsMarqueeCards.scss";

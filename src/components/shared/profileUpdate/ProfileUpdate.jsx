@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { STATUSCODE } from "@/static/Constants";
 import { updateUserProfile } from "@service/MilanApi";
 import { showSuccessToast } from "@utils/Toasts";
