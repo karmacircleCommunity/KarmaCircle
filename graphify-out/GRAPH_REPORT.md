@@ -1,129 +1,128 @@
-# Graph Report - .  (2026-08-13)
+# Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-08-13)
 
 ## Corpus Check
-- 0 files · ~389,318 words
+- 83 files · ~425,000 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 445 nodes · 435 edges · 114 communities detected
+- 444 nodes · 435 edges · 113 communities detected
 - Extraction: 89% EXTRACTED · 10% INFERRED · 1% AMBIGUOUS · INFERRED: 44 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Vite Config|Vite Config]]
-- [[_COMMUNITY_Cypress Config|Cypress Config]]
-- [[_COMMUNITY_Commitlint Config|Commitlint Config]]
-- [[_COMMUNITY_ESLint Config|ESLint Config]]
-- [[_COMMUNITY_Cypress Commands|Cypress Commands]]
-- [[_COMMUNITY_Cypress E2E Support|Cypress E2E Support]]
-- [[_COMMUNITY_Cypress Smoke Test|Cypress Smoke Test]]
-- [[_COMMUNITY_App Root Component|App Root Component]]
-- [[_COMMUNITY_App Entry (index.jsx)|App Entry (index.jsx)]]
-- [[_COMMUNITY_Index Barrel File|Index Barrel File]]
-- [[_COMMUNITY_ProfileElements Metadata|ProfileElements Metadata]]
-- [[_COMMUNITY_Toasts & Connectivity Utils|Toasts & Connectivity Utils]]
-- [[_COMMUNITY_Events Marquee & Date Format|Events Marquee & Date Format]]
-- [[_COMMUNITY_getProfileFields Utility|getProfileFields Utility]]
-- [[_COMMUNITY_checkMissingFields Util|checkMissingFields Util]]
-- [[_COMMUNITY_ComponentHelmet SEO Wrapper|ComponentHelmet SEO Wrapper]]
-- [[_COMMUNITY_Routes Config|Routes Config]]
-- [[_COMMUNITY_Footer Links Config|Footer Links Config]]
-- [[_COMMUNITY_Base64 Converter Util|Base64 Converter Util]]
-- [[_COMMUNITY_Fetcher SWR Function|Fetcher SWR Function]]
-- [[_COMMUNITY_ClickAwayListener Component|ClickAwayListener Component]]
-- [[_COMMUNITY_PatchFetcher Dead Code|PatchFetcher Dead Code]]
-- [[_COMMUNITY_renderErrorMessage Component|renderErrorMessage Component]]
-- [[_COMMUNITY_DonotRenderWhenLoggedIn Guard|DonotRenderWhenLoggedIn Guard]]
-- [[_COMMUNITY_Integrations Layer & Donate Page|Integrations Layer & Donate Page]]
-- [[_COMMUNITY_API Endpoints Registry|API Endpoints Registry]]
-- [[_COMMUNITY_Index Barrel File|Index Barrel File]]
-- [[_COMMUNITY_Navbar Component|Navbar Component]]
-- [[_COMMUNITY_Footer Component|Footer Component]]
-- [[_COMMUNITY_BackToTop Button|BackToTop Button]]
-- [[_COMMUNITY_AuthButton Component|AuthButton Component]]
-- [[_COMMUNITY_Shared Button Component|Shared Button Component]]
-- [[_COMMUNITY_Loading Component|Loading Component]]
-- [[_COMMUNITY_ProfileUpdate Modal|ProfileUpdate Modal]]
-- [[_COMMUNITY_ClubCard Component|ClubCard Component]]
-- [[_COMMUNITY_EventCard Component|EventCard Component]]
-- [[_COMMUNITY_EventSlider Component|EventSlider Component]]
-- [[_COMMUNITY_FeaturedEventImage Component|FeaturedEventImage Component]]
-- [[_COMMUNITY_FeaturedEventCard Component|FeaturedEventCard Component]]
-- [[_COMMUNITY_Dashboard Profile Completion|Dashboard Profile Completion]]
-- [[_COMMUNITY_Shared CreateEvent Modal|Shared CreateEvent Modal]]
-- [[_COMMUNITY_ComingSoon Component|ComingSoon Component]]
-- [[_COMMUNITY_Modal Shell Component|Modal Shell Component]]
-- [[_COMMUNITY_Header Component|Header Component]]
-- [[_COMMUNITY_HeaderData Config|HeaderData Config]]
-- [[_COMMUNITY_Index Barrel File|Index Barrel File]]
-- [[_COMMUNITY_Landing Hero Component|Landing Hero Component]]
-- [[_COMMUNITY_ProfileSection Stub|ProfileSection Stub]]
-- [[_COMMUNITY_TrackSection Placeholder|TrackSection Placeholder]]
-- [[_COMMUNITY_Milaninfobanner Component|Milaninfobanner Component]]
-- [[_COMMUNITY_HostedEvents Stub|HostedEvents Stub]]
-- [[_COMMUNITY_CreateEvents & useEvent Hook|CreateEvents & useEvent Hook]]
-- [[_COMMUNITY_Constants Module|Constants Module]]
-- [[_COMMUNITY_OnlinePlatform Data|OnlinePlatform Data]]
-- [[_COMMUNITY_CountryList Data|CountryList Data]]
-- [[_COMMUNITY_useFormLogic Hook|useFormLogic Hook]]
-- [[_COMMUNITY_useAuth Sign-InSign-Up|useAuth Sign-In/Sign-Up]]
-- [[_COMMUNITY_useValidation & Test Page|useValidation & Test Page]]
-- [[_COMMUNITY_Razorpay Payment Gateway|Razorpay Payment Gateway]]
-- [[_COMMUNITY_MilanApi.js Endpoint Functions|MilanApi.js Endpoint Functions]]
-- [[_COMMUNITY_Page Route Table|Page Route Table]]
-- [[_COMMUNITY_Trending Page|Trending Page]]
-- [[_COMMUNITY_Home Page|Home Page]]
-- [[_COMMUNITY_Clubs Page|Clubs Page]]
-- [[_COMMUNITY_Donate Page|Donate Page]]
-- [[_COMMUNITY_Shop Page|Shop Page]]
-- [[_COMMUNITY_UserProfile Page|UserProfile Page]]
-- [[_COMMUNITY_Profile Page|Profile Page]]
-- [[_COMMUNITY_DetailedEvent Page|DetailedEvent Page]]
-- [[_COMMUNITY_Events Page|Events Page]]
-- [[_COMMUNITY_Error404 Page|Error404 Page]]
-- [[_COMMUNITY_Redux Store Config|Redux Store Config]]
-- [[_COMMUNITY_userSlice Redux Selectors|userSlice Redux Selectors]]
-- [[_COMMUNITY_useAuth Hook Module|useAuth Hook Module]]
-- [[_COMMUNITY_Code of Conduct Policies|Code of Conduct Policies]]
-- [[_COMMUNITY_PWA App Shell & SEO Files|PWA App Shell & SEO Files]]
-- [[_COMMUNITY_Changelog History|Changelog History]]
-- [[_COMMUNITY_Contributing & Repo Setup|Contributing & Repo Setup]]
-- [[_COMMUNITY_Lint & Commit Standards|Lint & Commit Standards]]
-- [[_COMMUNITY_AGENTS.md Agentic Guardrails|AGENTS.md Agentic Guardrails]]
-- [[_COMMUNITY_Git Branching Rules|Git Branching Rules]]
-- [[_COMMUNITY_Repo Coding Conventions|Repo Coding Conventions]]
-- [[_COMMUNITY_Security Vulnerability Reporting|Security Vulnerability Reporting]]
-- [[_COMMUNITY_Frontend .env Setup Docs|Frontend .env Setup Docs]]
-- [[_COMMUNITY_Cloning & Docker Setup|Cloning & Docker Setup]]
-- [[_COMMUNITY_Docker Env & Razorpay Docs|Docker Env & Razorpay Docs]]
-- [[_COMMUNITY_Architecture & Feature Specs Overview|Architecture & Feature Specs Overview]]
-- [[_COMMUNITY_Clubs & Events Card Components|Clubs & Events Card Components]]
-- [[_COMMUNITY_SWR Fetching & Duplication Issues|SWR Fetching & Duplication Issues]]
-- [[_COMMUNITY_App Shell & Providers|App Shell & Providers]]
-- [[_COMMUNITY_Donate.jsx Broken Imports|Donate.jsx Broken Imports]]
-- [[_COMMUNITY_DetailedEvent Unrouted Stub|DetailedEvent Unrouted Stub]]
-- [[_COMMUNITY_APIRazorpay Env Vars|API/Razorpay Env Vars]]
-- [[_COMMUNITY_Stale .env.example Var|Stale .env.example Var]]
-- [[_COMMUNITY_Lint & Format Tooling|Lint & Format Tooling]]
-- [[_COMMUNITY_Conventional Commits Config|Conventional Commits Config]]
-- [[_COMMUNITY_Backend API Layers & Auth State|Backend API Layers & Auth State]]
-- [[_COMMUNITY_Status Message Strings|Status Message Strings]]
-- [[_COMMUNITY_Offline Toast Suppression|Offline Toast Suppression]]
-- [[_COMMUNITY_Footer Links & Dead Routes|Footer Links & Dead Routes]]
-- [[_COMMUNITY_Empty HostedEvents.jsx Issue|Empty HostedEvents.jsx Issue]]
-- [[_COMMUNITY_Unused PasswordToggle Util|Unused PasswordToggle Util]]
-- [[_COMMUNITY_Cypress Smoke Spec|Cypress Smoke Spec]]
-- [[_COMMUNITY_Clubs API Endpoint|Clubs API Endpoint]]
-- [[_COMMUNITY_Dashboard & Profile Bugs|Dashboard & Profile Bugs]]
-- [[_COMMUNITY_Unused Profile-Fields Metadata|Unused Profile-Fields Metadata]]
-- [[_COMMUNITY_Four Coexisting Styling Approaches|Four Coexisting Styling Approaches]]
-- [[_COMMUNITY_ShopTrending ComingSoon Placeholders|Shop/Trending ComingSoon Placeholders]]
-- [[_COMMUNITY_Brand & Solidarity Icons|Brand & Solidarity Icons]]
-- [[_COMMUNITY_Nav Brand & Empty-State Art|Nav Brand & Empty-State Art]]
-- [[_COMMUNITY_README & Navbar Art|README & Navbar Art]]
-- [[_COMMUNITY_Auth Page Background Patterns|Auth Page Background Patterns]]
-- [[_COMMUNITY_Landing Banner Illustrations|Landing Banner Illustrations]]
-- [[_COMMUNITY_Landing Feature Illustrations|Landing Feature Illustrations]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 47|Community 47]]
+- [[_COMMUNITY_Community 48|Community 48]]
+- [[_COMMUNITY_Community 49|Community 49]]
+- [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 51|Community 51]]
+- [[_COMMUNITY_Community 52|Community 52]]
+- [[_COMMUNITY_Community 53|Community 53]]
+- [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
+- [[_COMMUNITY_Community 56|Community 56]]
+- [[_COMMUNITY_Community 57|Community 57]]
+- [[_COMMUNITY_Community 58|Community 58]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 60|Community 60]]
+- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 63|Community 63]]
+- [[_COMMUNITY_Community 64|Community 64]]
+- [[_COMMUNITY_Community 65|Community 65]]
+- [[_COMMUNITY_Community 66|Community 66]]
+- [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
+- [[_COMMUNITY_Community 69|Community 69]]
+- [[_COMMUNITY_Community 70|Community 70]]
+- [[_COMMUNITY_Community 71|Community 71]]
+- [[_COMMUNITY_Community 72|Community 72]]
+- [[_COMMUNITY_Community 73|Community 73]]
+- [[_COMMUNITY_Community 74|Community 74]]
+- [[_COMMUNITY_Community 75|Community 75]]
+- [[_COMMUNITY_Community 76|Community 76]]
+- [[_COMMUNITY_Community 77|Community 77]]
+- [[_COMMUNITY_Community 78|Community 78]]
+- [[_COMMUNITY_Community 79|Community 79]]
+- [[_COMMUNITY_Community 80|Community 80]]
+- [[_COMMUNITY_Community 81|Community 81]]
+- [[_COMMUNITY_Community 82|Community 82]]
+- [[_COMMUNITY_Community 83|Community 83]]
+- [[_COMMUNITY_Community 84|Community 84]]
+- [[_COMMUNITY_Community 85|Community 85]]
+- [[_COMMUNITY_Community 86|Community 86]]
+- [[_COMMUNITY_Community 87|Community 87]]
+- [[_COMMUNITY_Community 88|Community 88]]
+- [[_COMMUNITY_Community 89|Community 89]]
+- [[_COMMUNITY_Community 90|Community 90]]
+- [[_COMMUNITY_Community 91|Community 91]]
+- [[_COMMUNITY_Community 92|Community 92]]
+- [[_COMMUNITY_Community 93|Community 93]]
+- [[_COMMUNITY_Community 94|Community 94]]
+- [[_COMMUNITY_Community 95|Community 95]]
+- [[_COMMUNITY_Community 96|Community 96]]
+- [[_COMMUNITY_Community 97|Community 97]]
+- [[_COMMUNITY_Community 98|Community 98]]
+- [[_COMMUNITY_Community 99|Community 99]]
+- [[_COMMUNITY_Community 100|Community 100]]
+- [[_COMMUNITY_Community 101|Community 101]]
+- [[_COMMUNITY_Community 102|Community 102]]
+- [[_COMMUNITY_Community 103|Community 103]]
+- [[_COMMUNITY_Community 104|Community 104]]
+- [[_COMMUNITY_Community 105|Community 105]]
+- [[_COMMUNITY_Community 106|Community 106]]
+- [[_COMMUNITY_Community 107|Community 107]]
+- [[_COMMUNITY_Community 108|Community 108]]
+- [[_COMMUNITY_Community 109|Community 109]]
+- [[_COMMUNITY_Community 110|Community 110]]
+- [[_COMMUNITY_Community 111|Community 111]]
+- [[_COMMUNITY_Community 112|Community 112]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `Known Issues & Inconsistencies` - 18 edges
@@ -139,15 +138,15 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `getClubs()` --semantically_similar_to--> `GetAllClubs() (MilanApi.js, GET /clubs)`  [INFERRED] [semantically similar]
-  src/integrations/Clubs.js → docs/specs/donate-shop-trending.md
+  /Users/tamalcodes/Gh/KarmaCircle/src/features/clubs/services/Clubs.js → docs/specs/donate-shop-trending.md
 - `milanhub.org (production URL)` --semantically_similar_to--> `Production Release (milanhub.vercel.app)`  [INFERRED] [semantically similar]
   index.html → README.md
 - `manifest.json (PWA manifest)` --semantically_similar_to--> `Service Workers (dev vs prod)`  [INFERRED] [semantically similar]
   index.html → docs/FrontendSetup.md
 - `Frontend Tech Stack` --semantically_similar_to--> `Frontend Techstack Overview`  [INFERRED] [semantically similar]
   README.md → docs/FrontendSetup.md
-- `milanhub.org (production URL)` --conceptually_related_to--> `robots.txt (crawl policy)`  [INFERRED]
-  index.html → public/robots.txt
+- `checkInternetConnection()` --calls--> `showSuccessToast()`  [INFERRED]
+  src/utils/CheckInternetConnection.js → /Users/tamalcodes/Gh/KarmaCircle/src/utils/Toasts.js
 
 ## Hyperedges (group relationships)
 - **End-to-end local onboarding flow: fork/clone the repo, set up the frontend, optionally run via Docker, and pair with the separate backend repo** —  [INFERRED 0.75]
@@ -162,461 +161,457 @@
 
 ## Communities
 
-### Community 81 - "Vite Config"
-Cohesion: 1.0
-Nodes (0): 
+### Community 0 - "Community 0"
+Cohesion: 0.07
+Nodes (38): src/integrations/ApiConnector.js (axios wrapper), src/integrations/ApiEndpoints.js (endpoint URL registry), ApiConnector dead/unreachable status-600 check, getClubs() in src/integrations/Clubs.js, getEvents() in src/integrations/Events.js, Layer A: src/service/MilanApi.js (plain axios, most calls), Layer B: src/integrations/*.js (via ApiConnector, only getClubs/getEvents), src/utils/fetchers/PatchFetcher.js (dead file, unused PATCH fetcher) (+30 more)
 
-### Community 31 - "Cypress Config"
-Cohesion: 1.0
-Nodes (0): 
+### Community 1 - "Community 1"
+Cohesion: 0.1
+Nodes (32): API Integration Layer spec, STATUSCODE map (src/static/Constants.js), userEndpoints.update vs userEndpoints.updateProfile (duplicate endpoint constants), src/ directory layout, Architecture spec, Two backend-call layers coexist (MilanApi.js vs integrations/*), vite.config.mjs (aliases, dev server, vite-plugin-pwa), Authentication spec (+24 more)
 
-### Community 82 - "Commitlint Config"
-Cohesion: 1.0
-Nodes (0): 
+### Community 2 - "Community 2"
+Cohesion: 0.11
+Nodes (24): Dashboard.jsx (/dashboard), fetchDashboard() (MilanApi.js, GET /clubs/dashboard, unused), ProfileSection.jsx (empty one-line stub, unused), Stray console.log(profileData?.user) in Edit Profile handler, TrackSection component (analytics placeholder), updateUserData Redux action (dispatched on profile fetch success), CreateEvent address inputs bound to wrong credentials.address keys, CreateEvent (shared, non-functional create-event modal) (+16 more)
 
-### Community 83 - "ESLint Config"
-Cohesion: 1.0
-Nodes (0): 
+### Community 3 - "Community 3"
+Cohesion: 0.13
+Nodes (22): Dashboard.jsx SWR call (userEndpoints.profile), src/utils/Fetcher.js (SWR GET fetcher), Profile.jsx SWR call (clubEndpoints.details(userName)), UserProfile.jsx SWR call (userEndpoints.details(slug)), Logout flow: Logout() called from Navbar.jsx, Profile.jsx, UserProfile.jsx with differing cleanup, components/shared/createEvent/CreateEvent.jsx (calls user-profile update endpoint by mistake), components/private/events/create/CreateEvents.jsx (the other create-event component), Duplication: two 'create event' components with different fields/validation/endpoint (+14 more)
 
-### Community 84 - "Cypress Commands"
-Cohesion: 1.0
-Nodes (0): 
+### Community 4 - "Community 4"
+Cohesion: 0.12
+Nodes (18): Beta Development Branch, Forking Guide, Why: uncheck 'Copy the main branch only' when forking, Clone Setup Next Steps, Issues Guidelines, Reviewing a Pull Request (DOs/DON'Ts), Pull Request Title Format, Pull Requests (+10 more)
 
-### Community 85 - "Cypress E2E Support"
-Cohesion: 1.0
-Nodes (0): 
+### Community 5 - "Community 5"
+Cohesion: 0.13
+Nodes (16): src/App.jsx (route/provider shell), <HelmetProvider> (react-helmet-async), src/index.jsx (app entry point), MUI <LocalizationProvider> (date/time pickers), redux-persist <PersistGate>, <QueryClientProvider> (@tanstack/react-query, unused), Redux <Provider> wrapper, src/pages/route.js (page barrel file) (+8 more)
 
-### Community 86 - "Cypress Smoke Test"
-Cohesion: 1.0
-Nodes (0): 
+### Community 6 - "Community 6"
+Cohesion: 0.15
+Nodes (16): ClubCard component, Clubs.jsx (clubs directory page, /clubs), Hardcoded 20-item fake club list in Clubs.jsx, Dead Loading fallback in Clubs.jsx (can never trigger), Lowercase createEvent import path (case-sensitive filesystem risk), ComponentHelmet type='Clubs' copy-paste bug in Events.jsx, DetailedEvent.jsx (one-line placeholder, unrouted), EventCard (ignores its event prop, fully hardcoded) (+8 more)
 
-### Community 32 - "App Root Component"
-Cohesion: 1.0
-Nodes (0): 
+### Community 7 - "Community 7"
+Cohesion: 0.13
+Nodes (15): src/integrations/ApiEndpoints.js, Backend Boundary, NGOWorld-Backend repo (frontend/backend split), API Calls Convention, src/integrations/* + ApiConnector (dead-end layer), Shared Button Component Convention, Coding Conventions for This Repo, Why: match majority pattern instead of a third pattern (+7 more)
 
-### Community 87 - "App Entry (index.jsx)"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 88 - "Index Barrel File"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 89 - "ProfileElements Metadata"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 16 - "Toasts & Connectivity Utils"
-Cohesion: 0.5
-Nodes (3): checkInternetConnection(), showSuccessToast(), showErrorToast()
-
-### Community 18 - "Events Marquee & Date Format"
-Cohesion: 0.5
-Nodes (2): getFormattedDate(), EventsMarqueeCards()
-
-### Community 17 - "getProfileFields Utility"
-Cohesion: 0.83
-Nodes (3): getMissingElements(), getEditableFields(), getProfileFields()
-
-### Community 33 - "checkMissingFields Util"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 34 - "ComponentHelmet SEO Wrapper"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 90 - "Routes Config"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 91 - "Footer Links Config"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 27 - "Base64 Converter Util"
-Cohesion: 1.0
-Nodes (2): converter(), convertToBase64()
-
-### Community 35 - "Fetcher SWR Function"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 36 - "ClickAwayListener Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 37 - "PatchFetcher Dead Code"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 38 - "renderErrorMessage Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 39 - "DonotRenderWhenLoggedIn Guard"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 10 - "Integrations Layer & Donate Page"
+### Community 8 - "Community 8"
 Cohesion: 0.18
-Nodes (8): getEvents(), apiConnector(), getClubs(), Donate.jsx (unroutable, broken imports, near-full rewrite needed), PaymentGateway.js / displayRazorpay() (POST /payment/razorpay), GetAllClubs() (MilanApi.js, GET /clubs), Cookies.get('isLoggedIn') gate that can never pass (unused cookie), Hardcoded prefill (app author's own name/email/phone) in Razorpay checkout
+Nodes (14): Agentic Workflow (AGENTS.md), Duplicate 'is user logged in' checks, clubEndpoints.details() dual-purpose usage, Duplicate create-event forms, Why CreateEvent.jsx uses the wrong endpoint, Cypress e2e test tooling, docs/specs/README.md, docs/specs/known-issues.md (+6 more)
 
-### Community 92 - "API Endpoints Registry"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 93 - "Index Barrel File"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 40 - "Navbar Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 41 - "Footer Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 42 - "BackToTop Button"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 43 - "AuthButton Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 44 - "Shared Button Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 45 - "Loading Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 46 - "ProfileUpdate Modal"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 47 - "ClubCard Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 48 - "EventCard Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 49 - "EventSlider Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 50 - "FeaturedEventImage Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 51 - "FeaturedEventCard Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 13 - "Dashboard Profile Completion"
-Cohesion: 0.33
-Nodes (3): ProfileCompletion(), useProfileCompletion(), Dashboard()
-
-### Community 52 - "Shared CreateEvent Modal"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 53 - "ComingSoon Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 54 - "Modal Shell Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 55 - "Header Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 94 - "HeaderData Config"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 95 - "Index Barrel File"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 56 - "Landing Hero Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 57 - "ProfileSection Stub"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 58 - "TrackSection Placeholder"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 59 - "Milaninfobanner Component"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 96 - "HostedEvents Stub"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 19 - "CreateEvents & useEvent Hook"
-Cohesion: 0.5
-Nodes (2): CreateEvents(), useEvent()
-
-### Community 97 - "Constants Module"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 98 - "OnlinePlatform Data"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 99 - "CountryList Data"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 60 - "useFormLogic Hook"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 14 - "useAuth Sign-In/Sign-Up"
-Cohesion: 0.33
-Nodes (3): useAuth(), SignUp(), SignIn()
-
-### Community 20 - "useValidation & Test Page"
-Cohesion: 0.5
-Nodes (2): useValidation(), Test()
-
-### Community 61 - "Razorpay Payment Gateway"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 9 - "MilanApi.js Endpoint Functions"
+### Community 9 - "Community 9"
 Cohesion: 0.17
 Nodes (0): 
 
-### Community 100 - "Page Route Table"
-Cohesion: 1.0
-Nodes (0): 
+### Community 10 - "Community 10"
+Cohesion: 0.18
+Nodes (8): apiConnector(), getClubs(), Donate.jsx (unroutable, broken imports, near-full rewrite needed), GetAllClubs() (MilanApi.js, GET /clubs), Cookies.get('isLoggedIn') gate that can never pass (unused cookie), PaymentGateway.js / displayRazorpay() (POST /payment/razorpay), Hardcoded prefill (app author's own name/email/phone) in Razorpay checkout, getEvents()
 
-### Community 62 - "Trending Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 63 - "Home Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 64 - "Clubs Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 65 - "Donate Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 66 - "Shop Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 67 - "UserProfile Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 68 - "Profile Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 69 - "DetailedEvent Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 70 - "Events Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 71 - "Error404 Page"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 101 - "Redux Store Config"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 28 - "userSlice Redux Selectors"
-Cohesion: 0.67
-Nodes (0): 
-
-### Community 102 - "useAuth Hook Module"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 11 - "Code of Conduct Policies"
+### Community 11 - "Community 11"
 Cohesion: 0.22
-Nodes (10): Citizen Code of Conduct, JWOC (community), Stumptown Syndicate, Django Code of Conduct, Geek Feminism Anti-Harassment Policy, Weapons Policy, Reporting Guidelines, GDSC JGEC / Google Developer Students Club (+2 more)
+Nodes (10): Citizen Code of Conduct, Django Code of Conduct, Expected Behavior, GDSC JGEC / Google Developer Students Club, Geek Feminism Anti-Harassment Policy, JWOC (community), Reporting Guidelines, Stumptown Syndicate (+2 more)
 
-### Community 12 - "PWA App Shell & SEO Files"
+### Community 12 - "Community 12"
 Cohesion: 0.22
-Nodes (9): NgoWorld App Shell (index.html), milanhub.org (production URL), Bootstrap 5.2.3 CDN, Google Fonts (Montserrat, Ubuntu, Open Sans, Poppins, Outfit), manifest.json (PWA manifest), src/index.jsx (app entry module), Service Workers (dev vs prod), robots.txt (crawl policy) (+1 more)
+Nodes (9): Service Workers (dev vs prod), Bootstrap 5.2.3 CDN, Google Fonts (Montserrat, Ubuntu, Open Sans, Poppins, Outfit), manifest.json (PWA manifest), milanhub.org (production URL), NgoWorld App Shell (index.html), src/index.jsx (app entry module), robots.txt (crawl policy) (+1 more)
 
-### Community 15 - "Changelog History"
+### Community 13 - "Community 13"
+Cohesion: 0.33
+Nodes (3): Dashboard(), ProfileCompletion(), useProfileCompletion()
+
+### Community 14 - "Community 14"
+Cohesion: 0.33
+Nodes (3): SignIn(), SignUp(), useAuth()
+
+### Community 15 - "Community 15"
 Cohesion: 0.6
-Nodes (6): Changelog v0.3.7, Changelog v0.3.6, Changelog v0.3.5, Changelog v0.3.4, Changelog v0.3.3, IAmTamal/Milan GitHub repo
+Nodes (6): IAmTamal/Milan GitHub repo, Changelog v0.3.3, Changelog v0.3.4, Changelog v0.3.5, Changelog v0.3.6, Changelog v0.3.7
 
-### Community 4 - "Contributing & Repo Setup"
-Cohesion: 0.12
-Nodes (18): NgoWorld Project Overview, Frontend Tech Stack, Production Release (milanhub.vercel.app), NGOWorld-Backend repo, MIT License, Issues Guidelines, Pull Requests, Pull Request Title Format (+10 more)
+### Community 16 - "Community 16"
+Cohesion: 0.5
+Nodes (3): checkInternetConnection(), showErrorToast(), showSuccessToast()
 
-### Community 21 - "Lint & Commit Standards"
+### Community 17 - "Community 17"
+Cohesion: 0.5
+Nodes (2): Test(), useValidation()
+
+### Community 18 - "Community 18"
+Cohesion: 0.83
+Nodes (3): getEditableFields(), getMissingElements(), getProfileFields()
+
+### Community 19 - "Community 19"
+Cohesion: 0.5
+Nodes (2): EventsMarqueeCards(), getFormattedDate()
+
+### Community 20 - "Community 20"
+Cohesion: 0.5
+Nodes (2): CreateEvents(), useEvent()
+
+### Community 21 - "Community 21"
 Cohesion: 0.67
 Nodes (4): Commit Message Format, ESLint & Prettier, Pre-commit Hooks (husky/lint-staged), Frontend Coding Standards
 
-### Community 8 - "AGENTS.md Agentic Guardrails"
-Cohesion: 0.18
-Nodes (14): Agentic Workflow (AGENTS.md), Repo-Specific Guardrails, When You're Not Sure Which Duplicate, docs/specs/README.md, docs/specs/known-issues.md, Duplicate 'is user logged in' checks, Duplicate logout cleanup paths, Duplicate create-event forms (+6 more)
-
-### Community 103 - "Git Branching Rules"
-Cohesion: 1.0
-Nodes (1): Git / Branching Rules
-
-### Community 7 - "Repo Coding Conventions"
-Cohesion: 0.13
-Nodes (15): Backend Boundary, NGOWorld-Backend repo (frontend/backend split), src/integrations/ApiEndpoints.js, Coding Conventions for This Repo, Import Aliases Convention, API Calls Convention, src/service/MilanApi.js, src/integrations/* + ApiConnector (dead-end layer) (+7 more)
-
-### Community 72 - "Security Vulnerability Reporting"
-Cohesion: 1.0
-Nodes (2): Reporting a Vulnerability, Tamal Das (security contact)
-
-### Community 104 - "Frontend .env Setup Docs"
-Cohesion: 1.0
-Nodes (1): Frontend .env Setup
-
-### Community 74 - "Cloning & Docker Setup"
-Cohesion: 1.0
-Nodes (2): Docker Setup: Clone Repository, Cloning Guide
-
-### Community 73 - "Docker Env & Razorpay Docs"
-Cohesion: 1.0
-Nodes (2): Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*), Razorpay API Docs
-
-### Community 1 - "Architecture & Feature Specs Overview"
-Cohesion: 0.1
-Nodes (32): NgoWorld (Milan) Frontend Feature Specs (README), Architecture spec, API Integration Layer spec, State Management spec, Known Issues & Inconsistencies, Authentication spec, Error Handling & Misc Pages spec, Dashboard spec (referenced, not in chunk) (+24 more)
-
-### Community 6 - "Clubs & Events Card Components"
-Cohesion: 0.15
-Nodes (16): Layout & Navigation spec, Clubs.jsx (clubs directory page, /clubs), ClubCard component, Hardcoded 20-item fake club list in Clubs.jsx, Dead Loading fallback in Clubs.jsx (can never trigger), Card components section (ClubCard, EventCard, EventSlider, FeaturedEventCard, FeaturedEventImage, EventsMarqueeCards), Events.jsx (/events), EventCard (ignores its event prop, fully hardcoded) (+8 more)
-
-### Community 3 - "SWR Fetching & Duplication Issues"
-Cohesion: 0.13
-Nodes (22): Onboarding/Profile spec (referenced, not in chunk), src/utils/Fetcher.js (SWR GET fetcher), Dashboard.jsx SWR call (userEndpoints.profile), Profile.jsx SWR call (clubEndpoints.details(userName)), UserProfile.jsx SWR call (userEndpoints.details(slug)), Three different logout cleanup sequences, src/pages/dashboard/Dashboard.jsx (re-dispatches updateUserData on SWR onSuccess), Issue: src/pages/user/UserProfile.jsx has no route (+14 more)
-
-### Community 5 - "App Shell & Providers"
-Cohesion: 0.13
-Nodes (16): src/index.jsx (app entry point), src/App.jsx (route/provider shell), Redux <Provider> wrapper, <HelmetProvider> (react-helmet-async), redux-persist <PersistGate>, <QueryClientProvider> (@tanstack/react-query, unused), MUI <LocalizationProvider> (date/time pickers), Global <ToastContainer /> (react-toastify) (+8 more)
-
-### Community 29 - "Donate.jsx Broken Imports"
-Cohesion: 0.67
-Nodes (3): src/pages/donate/Donate.jsx (unrouted, broken imports), Issue: /donate has no route despite Donate.jsx existing, Issue: Donate.jsx imports nonexistent SingleClubEvent and Loading paths
-
-### Community 76 - "DetailedEvent Unrouted Stub"
-Cohesion: 1.0
-Nodes (2): src/pages/events/detailed/DetailedEvent.jsx (unrouted stub), Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub
-
-### Community 105 - "API/Razorpay Env Vars"
-Cohesion: 1.0
-Nodes (1): VITE_API_URL / VITE_RAZORPAY_KEY_ID env vars
-
-### Community 75 - "Stale .env.example Var"
-Cohesion: 1.0
-Nodes (2): .env.example (documents stale VITE_MILANAPI), Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL
-
-### Community 106 - "Lint & Format Tooling"
-Cohesion: 1.0
-Nodes (1): eslint.config.js / .prettierrc / husky + lint-staged
-
-### Community 107 - "Conventional Commits Config"
-Cohesion: 1.0
-Nodes (1): commitlint.config.js (Conventional Commits)
-
-### Community 0 - "Backend API Layers & Auth State"
-Cohesion: 0.07
-Nodes (38): Layer A: src/service/MilanApi.js (plain axios, most calls), Layer B: src/integrations/*.js (via ApiConnector, only getClubs/getEvents), src/integrations/ApiConnector.js (axios wrapper), src/integrations/ApiEndpoints.js (endpoint URL registry), getClubs() in src/integrations/Clubs.js, getEvents() in src/integrations/Events.js, src/utils/fetchers/PatchFetcher.js (dead file, unused PATCH fetcher), useEvent.js submitCallback (mutate eventEndpoints.all) (+30 more)
-
-### Community 108 - "Status Message Strings"
-Cohesion: 1.0
-Nodes (1): STATUSMESSAGE strings (src/static/Constants.js)
-
-### Community 22 - "Offline Toast Suppression"
+### Community 22 - "Community 22"
 Cohesion: 0.5
-Nodes (4): showSuccessToast / showErrorToast (src/utils/Toasts.js), No React error boundary anywhere in the app, src/utils/CheckInternetConnection.js (suppresses toasts when offline), Rationale: suppress toasts offline on assumption an offline banner would be more useful (none exists)
+Nodes (4): showSuccessToast / showErrorToast (src/utils/Toasts.js), src/utils/CheckInternetConnection.js (suppresses toasts when offline), No React error boundary anywhere in the app, Rationale: suppress toasts offline on assumption an offline banner would be more useful (none exists)
 
-### Community 30 - "Footer Links & Dead Routes"
+### Community 23 - "Community 23"
+Cohesion: 0.67
+Nodes (4): ComingSoon shared component, Rationale: Shop/Trending deliberately left as ComingSoon placeholders, no feature built yet, Shop.jsx (/shop, ComingSoon placeholder), Trending.jsx (/trending, ComingSoon placeholder)
+
+### Community 24 - "Community 24"
+Cohesion: 0.5
+Nodes (4): Bell notification icon (SVG, 'Bell_On' group): a ringing/active bell glyph rendered via currentColor stroke+fill for a UI notifications button, App icon (512x512): two open hands cradling a red heart, line-art style with beige/cream hand fill and coral heart, on transparent background — depicts care, giving, and solidarity as the KarmaCircle app/PWA icon, Default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image, Solidarity illustration: two open hands cradling a red heart, same line-art style as the app icon, used to convey community support/karma/charity concept in the app UI
+
+### Community 25 - "Community 25"
+Cohesion: 0.67
+Nodes (4): comingsoon.svg - Coming Soon illustration, error404.svg - 404 Not Found illustration, MilanNavBrand.svg - Milan/KarmaCircle navbar brand logo, profilePlaceholderImage.png - default avatar placeholder
+
+### Community 26 - "Community 26"
+Cohesion: 0.5
+Nodes (4): clubbanner.jpg - real photograph of a volunteer woman sitting outdoors with a large group of smiling children in red-checked school uniforms under blue tarp shelters, MilanConnect.svg - flat-illustration graphic of two people holding cardboard 'DONATION' boxes and two people video-calling/handshaking through phone screens with a heart icon, in an orange/pink/coral palette, MilanSEO.svg - bold comic-style Open Graph/social-share banner reading 'CONNECTING CHARITIES, N[GOs], HELP & YO[U]' with speech-bubble bursts in teal, coral and pink, Vector.png - decorative dark graph-paper/grid pattern background asset (black background with thin white and orange gridlines)
+
+### Community 27 - "Community 27"
+Cohesion: 0.67
+Nodes (0): 
+
+### Community 28 - "Community 28"
+Cohesion: 1.0
+Nodes (2): converter(), convertToBase64()
+
+### Community 29 - "Community 29"
+Cohesion: 0.67
+Nodes (3): src/pages/donate/Donate.jsx (unrouted, broken imports), Issue: Donate.jsx imports nonexistent SingleClubEvent and Loading paths, Issue: /donate has no route despite Donate.jsx existing
+
+### Community 30 - "Community 30"
 Cohesion: 0.67
 Nodes (3): Issue: Footer links to /terms, /privacy, /cookies which don't exist, src/components/shared/footer/Footer.jsx, src/utils/footerLinksConfig.js (data-driven footer links)
 
-### Community 109 - "Empty HostedEvents.jsx Issue"
+### Community 31 - "Community 31"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 32 - "Community 32"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 33 - "Community 33"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 34 - "Community 34"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 35 - "Community 35"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 36 - "Community 36"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 37 - "Community 37"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 38 - "Community 38"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 39 - "Community 39"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 40 - "Community 40"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 41 - "Community 41"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 42 - "Community 42"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 43 - "Community 43"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 44 - "Community 44"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 45 - "Community 45"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 46 - "Community 46"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 47 - "Community 47"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 48 - "Community 48"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 49 - "Community 49"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 50 - "Community 50"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 51 - "Community 51"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 52 - "Community 52"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 53 - "Community 53"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 54 - "Community 54"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 55 - "Community 55"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 56 - "Community 56"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 57 - "Community 57"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 58 - "Community 58"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 59 - "Community 59"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 60 - "Community 60"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 61 - "Community 61"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 62 - "Community 62"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 63 - "Community 63"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 64 - "Community 64"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 65 - "Community 65"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 66 - "Community 66"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 67 - "Community 67"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 68 - "Community 68"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 69 - "Community 69"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 70 - "Community 70"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 71 - "Community 71"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 72 - "Community 72"
+Cohesion: 1.0
+Nodes (2): Tamal Das (security contact), Reporting a Vulnerability
+
+### Community 73 - "Community 73"
+Cohesion: 1.0
+Nodes (2): Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*), Razorpay API Docs
+
+### Community 74 - "Community 74"
+Cohesion: 1.0
+Nodes (2): Cloning Guide, Docker Setup: Clone Repository
+
+### Community 75 - "Community 75"
+Cohesion: 1.0
+Nodes (2): .env.example (documents stale VITE_MILANAPI), Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL
+
+### Community 76 - "Community 76"
+Cohesion: 1.0
+Nodes (2): src/pages/events/detailed/DetailedEvent.jsx (unrouted stub), Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub
+
+### Community 77 - "Community 77"
+Cohesion: 1.0
+Nodes (2): getProfileFields.js (unused getMissingElements/getEditableFields), ProfileElements.js (unused declarative field metadata)
+
+### Community 78 - "Community 78"
+Cohesion: 1.0
+Nodes (2): Milan app README hero banner (laptop + phone landing page mockup), Kawaii hugging-Earth illustration (NGO/navbar icon)
+
+### Community 79 - "Community 79"
+Cohesion: 1.0
+Nodes (2): Coral topographic contour-line pattern (auth page banner background), Abstract coral wavy-stripe pattern (auth page banner background)
+
+### Community 80 - "Community 80"
+Cohesion: 1.0
+Nodes (2): MilanBuild.svg - 3D illustration of a smartphone styled as a market storefront (candy-striped awning) with a shopping-cart icon on screen being tapped by a hand, flanked by cardboard delivery boxes and a small pink heart doodle accent, MilanCollaborate.svg - hand-drawn pink heart doodle/scribble illustration (multiple overlapping sketchy heart strokes with small sparkle marks), minimalist line-art style symbolizing care and community
+
+### Community 81 - "Community 81"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 82 - "Community 82"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 83 - "Community 83"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 84 - "Community 84"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 85 - "Community 85"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 86 - "Community 86"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 87 - "Community 87"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 88 - "Community 88"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 89 - "Community 89"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 90 - "Community 90"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 91 - "Community 91"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 92 - "Community 92"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 93 - "Community 93"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 94 - "Community 94"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 95 - "Community 95"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 96 - "Community 96"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 97 - "Community 97"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 98 - "Community 98"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 99 - "Community 99"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 100 - "Community 100"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 101 - "Community 101"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 102 - "Community 102"
+Cohesion: 1.0
+Nodes (1): Git / Branching Rules
+
+### Community 103 - "Community 103"
+Cohesion: 1.0
+Nodes (1): Frontend .env Setup
+
+### Community 104 - "Community 104"
+Cohesion: 1.0
+Nodes (1): VITE_API_URL / VITE_RAZORPAY_KEY_ID env vars
+
+### Community 105 - "Community 105"
+Cohesion: 1.0
+Nodes (1): eslint.config.js / .prettierrc / husky + lint-staged
+
+### Community 106 - "Community 106"
+Cohesion: 1.0
+Nodes (1): commitlint.config.js (Conventional Commits)
+
+### Community 107 - "Community 107"
+Cohesion: 1.0
+Nodes (1): STATUSMESSAGE strings (src/static/Constants.js)
+
+### Community 108 - "Community 108"
 Cohesion: 1.0
 Nodes (1): Issue: HostedEvents.jsx is a completely empty file (0 bytes)
 
-### Community 110 - "Unused PasswordToggle Util"
+### Community 109 - "Community 109"
 Cohesion: 1.0
 Nodes (1): src/utils/Auth/PasswordToggle.js (unused password show/hide togglers)
 
-### Community 111 - "Cypress Smoke Spec"
+### Community 110 - "Community 110"
 Cohesion: 1.0
 Nodes (1): cypress/e2e/milanTest.spec.js (only Cypress spec, minimal smoke test)
 
-### Community 112 - "Clubs API Endpoint"
+### Community 111 - "Community 111"
 Cohesion: 1.0
 Nodes (1): clubEndpoints.all (GET /clubs)
 
-### Community 2 - "Dashboard & Profile Bugs"
-Cohesion: 0.11
-Nodes (24): Dashboard.jsx (/dashboard), TrackSection component (analytics placeholder), fetchDashboard() (MilanApi.js, GET /clubs/dashboard, unused), ProfileSection.jsx (empty one-line stub, unused), updateUserData Redux action (dispatched on profile fetch success), Stray console.log(profileData?.user) in Edit Profile handler, checkMissingFields.js, Profile.jsx (/user/:userName, /club/:userName) (+16 more)
-
-### Community 77 - "Unused Profile-Fields Metadata"
-Cohesion: 1.0
-Nodes (2): ProfileElements.js (unused declarative field metadata), getProfileFields.js (unused getMissingElements/getEditableFields)
-
-### Community 113 - "Four Coexisting Styling Approaches"
+### Community 112 - "Community 112"
 Cohesion: 1.0
 Nodes (1): Four coexisting styling approaches (plain .scss, plain .css, CSS Modules, global BEM-ish classes)
-
-### Community 23 - "Shop/Trending ComingSoon Placeholders"
-Cohesion: 0.67
-Nodes (4): Shop.jsx (/shop, ComingSoon placeholder), Trending.jsx (/trending, ComingSoon placeholder), ComingSoon shared component, Rationale: Shop/Trending deliberately left as ComingSoon placeholders, no feature built yet
-
-### Community 24 - "Brand & Solidarity Icons"
-Cohesion: 0.5
-Nodes (4): App icon (512x512): two open hands cradling a red heart, line-art style with beige/cream hand fill and coral heart, on transparent background — depicts care, giving, and solidarity as the KarmaCircle app/PWA icon, Bell notification icon (SVG, 'Bell_On' group): a ringing/active bell glyph rendered via currentColor stroke+fill for a UI notifications button, Default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image, Solidarity illustration: two open hands cradling a red heart, same line-art style as the app icon, used to convey community support/karma/charity concept in the app UI
-
-### Community 25 - "Nav Brand & Empty-State Art"
-Cohesion: 0.67
-Nodes (4): comingsoon.svg - Coming Soon illustration, error404.svg - 404 Not Found illustration, profilePlaceholderImage.png - default avatar placeholder, MilanNavBrand.svg - Milan/KarmaCircle navbar brand logo
-
-### Community 78 - "README & Navbar Art"
-Cohesion: 1.0
-Nodes (2): Kawaii hugging-Earth illustration (NGO/navbar icon), Milan app README hero banner (laptop + phone landing page mockup)
-
-### Community 79 - "Auth Page Background Patterns"
-Cohesion: 1.0
-Nodes (2): Abstract coral wavy-stripe pattern (auth page banner background), Coral topographic contour-line pattern (auth page banner background)
-
-### Community 26 - "Landing Banner Illustrations"
-Cohesion: 0.5
-Nodes (4): MilanConnect.svg - flat-illustration graphic of two people holding cardboard 'DONATION' boxes and two people video-calling/handshaking through phone screens with a heart icon, in an orange/pink/coral palette, Vector.png - decorative dark graph-paper/grid pattern background asset (black background with thin white and orange gridlines), MilanSEO.svg - bold comic-style Open Graph/social-share banner reading 'CONNECTING CHARITIES, N[GOs], HELP & YO[U]' with speech-bubble bursts in teal, coral and pink, clubbanner.jpg - real photograph of a volunteer woman sitting outdoors with a large group of smiling children in red-checked school uniforms under blue tarp shelters
-
-### Community 80 - "Landing Feature Illustrations"
-Cohesion: 1.0
-Nodes (2): MilanBuild.svg - 3D illustration of a smartphone styled as a market storefront (candy-striped awning) with a shopping-cart icon on screen being tapped by a hand, flanked by cardboard delivery boxes and a small pink heart doodle accent, MilanCollaborate.svg - hand-drawn pink heart doodle/scribble illustration (multiple overlapping sketchy heart strokes with small sparkle marks), minimalist line-art style symbolizing care and community
 
 ## Ambiguous Edges - Review These
 - `JWOC (community)` → `GDSC JGEC / Google Developer Students Club`  [AMBIGUOUS]
@@ -631,171 +626,169 @@ Nodes (2): MilanBuild.svg - 3D illustration of a smartphone styled as a market s
 ## Knowledge Gaps
 - **118 isolated node(s):** `Stumptown Syndicate`, `Django Code of Conduct`, `Geek Feminism Anti-Harassment Policy`, `Weapons Policy`, `Expected Behavior` (+113 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Vite Config`** (1 nodes): `vite.config.mjs`
+- **Thin community `Community 31`** (2 nodes): `cypress.config.js`, `setupNodeEvents()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Cypress Config`** (2 nodes): `cypress.config.js`, `setupNodeEvents()`
+- **Thin community `Community 32`** (2 nodes): `App()`, `App.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Commitlint Config`** (1 nodes): `commitlint.config.js`
+- **Thin community `Community 33`** (2 nodes): `Error404()`, `Error404.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ESLint Config`** (1 nodes): `eslint.config.js`
+- **Thin community `Community 34`** (2 nodes): `ClubCard()`, `ClubCard.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Cypress Commands`** (1 nodes): `commands.js`
+- **Thin community `Community 35`** (2 nodes): `Clubs()`, `Clubs.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Cypress E2E Support`** (1 nodes): `e2e.js`
+- **Thin community `Community 36`** (2 nodes): `checkMissingFields()`, `checkMissingFields.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Cypress Smoke Test`** (1 nodes): `milanTest.spec.js`
+- **Thin community `Community 37`** (2 nodes): `ProfileUpdate()`, `ProfileUpdate.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `App Root Component`** (2 nodes): `App.jsx`, `App()`
+- **Thin community `Community 38`** (2 nodes): `Profile()`, `Profile.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `App Entry (index.jsx)`** (1 nodes): `index.jsx`
+- **Thin community `Community 39`** (2 nodes): `UserProfile()`, `UserProfile.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Index Barrel File`** (1 nodes): `index.js`
+- **Thin community `Community 40`** (2 nodes): `Trending()`, `Trending.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ProfileElements Metadata`** (1 nodes): `ProfileElements.js`
+- **Thin community `Community 41`** (2 nodes): `Donate()`, `Donate.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `checkMissingFields Util`** (2 nodes): `checkMissingFields.js`, `checkMissingFields()`
+- **Thin community `Community 42`** (2 nodes): `Shop()`, `Shop.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ComponentHelmet SEO Wrapper`** (2 nodes): `ComponentHelmet.jsx`, `ComponentHelmet()`
+- **Thin community `Community 43`** (2 nodes): `displayRazorpay()`, `PaymentGateway.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Routes Config`** (1 nodes): `routesConfig.jsx`
+- **Thin community `Community 44`** (2 nodes): `ProfileSection()`, `ProfileSection.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Footer Links Config`** (1 nodes): `footerLinksConfig.js`
+- **Thin community `Community 45`** (2 nodes): `TrackSection()`, `TrackSection.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Fetcher SWR Function`** (2 nodes): `Fetcher.js`, `fetcher()`
+- **Thin community `Community 46`** (2 nodes): `Landing()`, `Landing.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ClickAwayListener Component`** (2 nodes): `ClickAwayListener.jsx`, `ClickAwayListener()`
+- **Thin community `Community 47`** (2 nodes): `Milaninfobanner()`, `Milaninfobanner.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `PatchFetcher Dead Code`** (2 nodes): `PatchFetcher.js`, `PatchFetcher()`
+- **Thin community `Community 48`** (2 nodes): `Home()`, `Home.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `renderErrorMessage Component`** (2 nodes): `RenderErrorMessage.jsx`, `renderErrorMessage()`
+- **Thin community `Community 49`** (2 nodes): `EventCard()`, `EventCard.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `DonotRenderWhenLoggedIn Guard`** (2 nodes): `DonotRenderWhenLoggedIn.jsx`, `DonotRenderWhenLoggedIn()`
+- **Thin community `Community 50`** (2 nodes): `EventSlider()`, `EventSlider.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `API Endpoints Registry`** (1 nodes): `ApiEndpoints.js`
+- **Thin community `Community 51`** (2 nodes): `CreateEvent()`, `CreateEvent.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Index Barrel File`** (1 nodes): `index.js`
+- **Thin community `Community 52`** (2 nodes): `FeaturedEventImage()`, `FeaturedEventImage.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Navbar Component`** (2 nodes): `Navbar.jsx`, `Navbar()`
+- **Thin community `Community 53`** (2 nodes): `FeaturedEventCard()`, `FeaturedEventCard.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Footer Component`** (2 nodes): `Footer.jsx`, `Footer()`
+- **Thin community `Community 54`** (2 nodes): `DetailedEvent()`, `DetailedEvent.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `BackToTop Button`** (2 nodes): `BacktoTop.jsx`, `BackToTop()`
+- **Thin community `Community 55`** (2 nodes): `Events()`, `Events.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `AuthButton Component`** (2 nodes): `AuthButton.jsx`, `AuthButton()`
+- **Thin community `Community 56`** (2 nodes): `renderErrorMessage()`, `RenderErrorMessage.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Shared Button Component`** (2 nodes): `Button.jsx`, `Button()`
+- **Thin community `Community 57`** (2 nodes): `DonotRenderWhenLoggedIn()`, `DonotRenderWhenLoggedIn.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Loading Component`** (2 nodes): `Loading.jsx`, `Loading()`
+- **Thin community `Community 58`** (2 nodes): `AuthButton()`, `AuthButton.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ProfileUpdate Modal`** (2 nodes): `ProfileUpdate.jsx`, `ProfileUpdate()`
+- **Thin community `Community 59`** (2 nodes): `useFormLogic()`, `useFormLogic.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ClubCard Component`** (2 nodes): `ClubCard.jsx`, `ClubCard()`
+- **Thin community `Community 60`** (2 nodes): `fetcher()`, `Fetcher.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `EventCard Component`** (2 nodes): `EventCard.jsx`, `EventCard()`
+- **Thin community `Community 61`** (2 nodes): `PatchFetcher()`, `PatchFetcher.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `EventSlider Component`** (2 nodes): `EventSlider.jsx`, `EventSlider()`
+- **Thin community `Community 62`** (2 nodes): `ClickAwayListener()`, `ClickAwayListener.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `FeaturedEventImage Component`** (2 nodes): `FeaturedEventImage.jsx`, `FeaturedEventImage()`
+- **Thin community `Community 63`** (2 nodes): `Navbar()`, `Navbar.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `FeaturedEventCard Component`** (2 nodes): `FeaturedEventCard.jsx`, `FeaturedEventCard()`
+- **Thin community `Community 64`** (2 nodes): `Footer()`, `Footer.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Shared CreateEvent Modal`** (2 nodes): `CreateEvent.jsx`, `CreateEvent()`
+- **Thin community `Community 65`** (2 nodes): `BackToTop()`, `BacktoTop.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ComingSoon Component`** (2 nodes): `ComingSoon.jsx`, `ComingSoon()`
+- **Thin community `Community 66`** (2 nodes): `Button()`, `Button.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Modal Shell Component`** (2 nodes): `Modal.jsx`, `Modal()`
+- **Thin community `Community 67`** (2 nodes): `Loading()`, `Loading.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Header Component`** (2 nodes): `Header.jsx`, `Header()`
+- **Thin community `Community 68`** (2 nodes): `ComingSoon()`, `ComingSoon.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `HeaderData Config`** (1 nodes): `HeaderData.js`
+- **Thin community `Community 69`** (2 nodes): `Modal()`, `Modal.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Index Barrel File`** (1 nodes): `index.js`
+- **Thin community `Community 70`** (2 nodes): `ComponentHelmet()`, `ComponentHelmet.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Landing Hero Component`** (2 nodes): `Landing.jsx`, `Landing()`
+- **Thin community `Community 71`** (2 nodes): `Header()`, `Header.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `ProfileSection Stub`** (2 nodes): `ProfileSection.jsx`, `ProfileSection()`
+- **Thin community `Community 72`** (2 nodes): `Tamal Das (security contact)`, `Reporting a Vulnerability`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `TrackSection Placeholder`** (2 nodes): `TrackSection.jsx`, `TrackSection()`
+- **Thin community `Community 73`** (2 nodes): `Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*)`, `Razorpay API Docs`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Milaninfobanner Component`** (2 nodes): `Milaninfobanner.jsx`, `Milaninfobanner()`
+- **Thin community `Community 74`** (2 nodes): `Cloning Guide`, `Docker Setup: Clone Repository`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `HostedEvents Stub`** (1 nodes): `HostedEvents.jsx`
+- **Thin community `Community 75`** (2 nodes): `.env.example (documents stale VITE_MILANAPI)`, `Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Constants Module`** (1 nodes): `Constants.js`
+- **Thin community `Community 76`** (2 nodes): `src/pages/events/detailed/DetailedEvent.jsx (unrouted stub)`, `Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `OnlinePlatform Data`** (1 nodes): `OnlinePlatform.js`
+- **Thin community `Community 77`** (2 nodes): `getProfileFields.js (unused getMissingElements/getEditableFields)`, `ProfileElements.js (unused declarative field metadata)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `CountryList Data`** (1 nodes): `CountryList.js`
+- **Thin community `Community 78`** (2 nodes): `Milan app README hero banner (laptop + phone landing page mockup)`, `Kawaii hugging-Earth illustration (NGO/navbar icon)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `useFormLogic Hook`** (2 nodes): `useFormLogic.js`, `useFormLogic()`
+- **Thin community `Community 79`** (2 nodes): `Coral topographic contour-line pattern (auth page banner background)`, `Abstract coral wavy-stripe pattern (auth page banner background)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Razorpay Payment Gateway`** (2 nodes): `PaymentGateway.js`, `displayRazorpay()`
+- **Thin community `Community 80`** (2 nodes): `MilanBuild.svg - 3D illustration of a smartphone styled as a market storefront (candy-striped awning) with a shopping-cart icon on screen being tapped by a hand, flanked by cardboard delivery boxes and a small pink heart doodle accent`, `MilanCollaborate.svg - hand-drawn pink heart doodle/scribble illustration (multiple overlapping sketchy heart strokes with small sparkle marks), minimalist line-art style symbolizing care and community`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Page Route Table`** (1 nodes): `route.js`
+- **Thin community `Community 81`** (1 nodes): `vite.config.mjs`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Trending Page`** (2 nodes): `Trending.jsx`, `Trending()`
+- **Thin community `Community 82`** (1 nodes): `commitlint.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Home Page`** (2 nodes): `Home.jsx`, `Home()`
+- **Thin community `Community 83`** (1 nodes): `eslint.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Clubs Page`** (2 nodes): `Clubs.jsx`, `Clubs()`
+- **Thin community `Community 84`** (1 nodes): `commands.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Donate Page`** (2 nodes): `Donate.jsx`, `Donate()`
+- **Thin community `Community 85`** (1 nodes): `e2e.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Shop Page`** (2 nodes): `Shop.jsx`, `Shop()`
+- **Thin community `Community 86`** (1 nodes): `milanTest.spec.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `UserProfile Page`** (2 nodes): `UserProfile.jsx`, `UserProfile()`
+- **Thin community `Community 87`** (1 nodes): `Constants.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Profile Page`** (2 nodes): `Profile.jsx`, `Profile()`
+- **Thin community `Community 88`** (1 nodes): `OnlinePlatform.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `DetailedEvent Page`** (2 nodes): `DetailedEvent.jsx`, `DetailedEvent()`
+- **Thin community `Community 89`** (1 nodes): `CountryList.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Events Page`** (2 nodes): `Events.jsx`, `Events()`
+- **Thin community `Community 90`** (1 nodes): `index.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Error404 Page`** (2 nodes): `Error404.jsx`, `Error404()`
+- **Thin community `Community 91`** (1 nodes): `route.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Redux Store Config`** (1 nodes): `store.js`
+- **Thin community `Community 92`** (1 nodes): `routesConfig.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `useAuth Hook Module`** (1 nodes): `useAuth.js`
+- **Thin community `Community 93`** (1 nodes): `useAuth.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Git Branching Rules`** (1 nodes): `Git / Branching Rules`
+- **Thin community `Community 94`** (1 nodes): `store.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Security Vulnerability Reporting`** (2 nodes): `Reporting a Vulnerability`, `Tamal Das (security contact)`
+- **Thin community `Community 95`** (1 nodes): `index.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Frontend .env Setup Docs`** (1 nodes): `Frontend .env Setup`
+- **Thin community `Community 96`** (1 nodes): `ProfileElements.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Cloning & Docker Setup`** (2 nodes): `Docker Setup: Clone Repository`, `Cloning Guide`
+- **Thin community `Community 97`** (1 nodes): `HostedEvents.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Docker Env & Razorpay Docs`** (2 nodes): `Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*)`, `Razorpay API Docs`
+- **Thin community `Community 98`** (1 nodes): `index.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `DetailedEvent Unrouted Stub`** (2 nodes): `src/pages/events/detailed/DetailedEvent.jsx (unrouted stub)`, `Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub`
+- **Thin community `Community 99`** (1 nodes): `footerLinksConfig.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `API/Razorpay Env Vars`** (1 nodes): `VITE_API_URL / VITE_RAZORPAY_KEY_ID env vars`
+- **Thin community `Community 100`** (1 nodes): `HeaderData.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Stale .env.example Var`** (2 nodes): `.env.example (documents stale VITE_MILANAPI)`, `Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL`
+- **Thin community `Community 101`** (1 nodes): `ApiEndpoints.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Lint & Format Tooling`** (1 nodes): `eslint.config.js / .prettierrc / husky + lint-staged`
+- **Thin community `Community 102`** (1 nodes): `Git / Branching Rules`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Conventional Commits Config`** (1 nodes): `commitlint.config.js (Conventional Commits)`
+- **Thin community `Community 103`** (1 nodes): `Frontend .env Setup`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Status Message Strings`** (1 nodes): `STATUSMESSAGE strings (src/static/Constants.js)`
+- **Thin community `Community 104`** (1 nodes): `VITE_API_URL / VITE_RAZORPAY_KEY_ID env vars`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Empty HostedEvents.jsx Issue`** (1 nodes): `Issue: HostedEvents.jsx is a completely empty file (0 bytes)`
+- **Thin community `Community 105`** (1 nodes): `eslint.config.js / .prettierrc / husky + lint-staged`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Unused PasswordToggle Util`** (1 nodes): `src/utils/Auth/PasswordToggle.js (unused password show/hide togglers)`
+- **Thin community `Community 106`** (1 nodes): `commitlint.config.js (Conventional Commits)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Cypress Smoke Spec`** (1 nodes): `cypress/e2e/milanTest.spec.js (only Cypress spec, minimal smoke test)`
+- **Thin community `Community 107`** (1 nodes): `STATUSMESSAGE strings (src/static/Constants.js)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Clubs API Endpoint`** (1 nodes): `clubEndpoints.all (GET /clubs)`
+- **Thin community `Community 108`** (1 nodes): `Issue: HostedEvents.jsx is a completely empty file (0 bytes)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Unused Profile-Fields Metadata`** (2 nodes): `ProfileElements.js (unused declarative field metadata)`, `getProfileFields.js (unused getMissingElements/getEditableFields)`
+- **Thin community `Community 109`** (1 nodes): `src/utils/Auth/PasswordToggle.js (unused password show/hide togglers)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Four Coexisting Styling Approaches`** (1 nodes): `Four coexisting styling approaches (plain .scss, plain .css, CSS Modules, global BEM-ish classes)`
+- **Thin community `Community 110`** (1 nodes): `cypress/e2e/milanTest.spec.js (only Cypress spec, minimal smoke test)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `README & Navbar Art`** (2 nodes): `Kawaii hugging-Earth illustration (NGO/navbar icon)`, `Milan app README hero banner (laptop + phone landing page mockup)`
+- **Thin community `Community 111`** (1 nodes): `clubEndpoints.all (GET /clubs)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Auth Page Background Patterns`** (2 nodes): `Abstract coral wavy-stripe pattern (auth page banner background)`, `Coral topographic contour-line pattern (auth page banner background)`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Landing Feature Illustrations`** (2 nodes): `MilanBuild.svg - 3D illustration of a smartphone styled as a market storefront (candy-striped awning) with a shopping-cart icon on screen being tapped by a hand, flanked by cardboard delivery boxes and a small pink heart doodle accent`, `MilanCollaborate.svg - hand-drawn pink heart doodle/scribble illustration (multiple overlapping sketchy heart strokes with small sparkle marks), minimalist line-art style symbolizing care and community`
+- **Thin community `Community 112`** (1 nodes): `Four coexisting styling approaches (plain .scss, plain .css, CSS Modules, global BEM-ish classes)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
@@ -809,9 +802,9 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `Bell notification icon (SVG, 'Bell_On' group): a ringing/active bell glyph rendered via currentColor stroke+fill for a UI notifications button` and `Default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Known Issues & Inconsistencies` connect `Architecture & Feature Specs Overview` to `Backend API Layers & Auth State`, `Dashboard & Profile Bugs`, `SWR Fetching & Duplication Issues`, `Clubs & Events Card Components`?**
+- **Why does `Known Issues & Inconsistencies` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 6`?**
   _High betweenness centrality (0.075) - this node is a cross-community bridge._
-- **Why does `NgoWorld (Milan) Frontend Feature Specs (README)` connect `Architecture & Feature Specs Overview` to `Contributing & Repo Setup`?**
+- **Why does `NgoWorld (Milan) Frontend Feature Specs (README)` connect `Community 1` to `Community 4`?**
   _High betweenness centrality (0.047) - this node is a cross-community bridge._
-- **Why does `Frontend Tech Stack` connect `Contributing & Repo Setup` to `Architecture & Feature Specs Overview`?**
+- **Why does `Frontend Tech Stack` connect `Community 4` to `Community 1`?**
   _High betweenness centrality (0.042) - this node is a cross-community bridge._
