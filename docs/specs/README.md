@@ -69,8 +69,15 @@ Both styles coexist; prefer the alias style in new code.
 | [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.jsx` |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs, dead code, and inconsistencies found while writing these specs — read this before touching adjacent code |
 
+## Deeper, colocated specs
+
+Every folder under `src/features/<name>/` also has its own `SPEC.md` (e.g. [`src/features/authentication/SPEC.md`](../../src/features/authentication/SPEC.md)), living next to the code it describes.
+The files in *this* directory are the short, cross-feature summaries — good for orienting or for understanding how two features interact.
+The colocated `SPEC.md` in a feature folder is the deep reference — file-by-file, function-by-function, with exact state shapes, prop mismatches, and reproducible bugs — meant to be read immediately before editing code in that folder.
+Start with the summary here, then open the feature's own `SPEC.md` once you know which one you're touching.
+
 ## How to use this with an AI agent
 
-Point the agent at the spec for the feature it is changing, plus [architecture.md](./architecture.md) and [state-management.md](./state-management.md) for shared context.
+Point the agent at the spec for the feature it is changing (both the summary here **and** that feature's colocated `SPEC.md`), plus [architecture.md](./architecture.md) and [state-management.md](./state-management.md) for shared context.
 The specs name the real backend endpoints each feature calls (see [api-integration.md](./api-integration.md)) — the backend repo is the source of truth for request/response shapes, not this repo.
-Where a spec calls out a bug or a stub component, treat that as authoritative unless you've just fixed it — then update the spec.
+Where a spec calls out a bug or a stub component, treat that as authoritative unless you've just fixed it — then update **both** the summary here and the feature's own `SPEC.md` in the same change.
