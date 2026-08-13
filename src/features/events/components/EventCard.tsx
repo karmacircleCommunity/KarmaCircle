@@ -1,17 +1,26 @@
 import { FiLink } from "react-icons/fi";
+import { IoMdArrowUp } from "react-icons/io";
 import { RiTwitterXLine } from "react-icons/ri";
-import "./FeaturedEventCard.scss";
+import "./EventCard.scss";
 
-const FeaturedEventCard = () => {
+/**
+ * Declares no parameters at all — `Events.tsx`'s `event={event}` prop
+ * is not destructured, let alone used. Every visible field is
+ * hardcoded, byte-for-byte identical across every rendered card. Kept
+ * exactly as-is (see SPEC.md); the call site suppresses the resulting
+ * excess-prop type error rather than this component being given a fake
+ * `event` prop it doesn't actually read.
+ */
+const EventCard = () => {
   return (
-    <div className="featured_eventcard_parent">
-      <div className="featured_eventcard_top">
-        <div className="featured_eventcard_name">
+    <div className="eventcard_parent">
+      <div className="eventcard_top">
+        <div className="eventcard_name">
           <h1>Food Marathon, 2025</h1>
           <span>GodLike Club</span>
         </div>
 
-        <div className="featured_eventcard_links">
+        <div className="eventcard_links">
           <RiTwitterXLine />
           <FiLink />
         </div>
@@ -25,7 +34,7 @@ const FeaturedEventCard = () => {
         creating a hunger-free future.
       </p>
 
-      <div className="featured_eventcard_ctadiv">
+      <div className="eventcard_ctadiv">
         <div className="cta_membersdiv">
           <div className="cta_members">
             <img
@@ -44,10 +53,12 @@ const FeaturedEventCard = () => {
           <p>+300 Participated</p>
         </div>
 
-        <button className="featured_eventcard_cta">Register Now</button>
+        <button className="eventcard_cta">
+          <IoMdArrowUp />
+        </button>
       </div>
     </div>
   );
 };
 
-export default FeaturedEventCard;
+export default EventCard;

@@ -1,4 +1,14 @@
-const converter = (file) => {
+import type { ChangeEvent } from "react";
+
+/**
+ * `converter(file)` wraps `FileReader.readAsDataURL` in a promise.
+ * Latent bug, kept as-is (see SPEC.md): if `file` is falsy, it
+ * `alert()`s but never calls `resolve()`/`reject()` — the promise
+ * would hang forever. Not reachable today because the only call site
+ * (`convertToBase64`, below) already guards against an empty
+ * `FileList` before calling this.
+ */
+const converter = (file: File): Promise<string | ArrayBuffer | null> => {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
     if (!file) {
@@ -15,7 +25,9 @@ const converter = (file) => {
   });
 };
 
-const convertToBase64 = async (e) => {
+const convertToBase64 = async (
+  e: ChangeEvent<HTMLInputElement>,
+): Promise<string | ArrayBuffer | null | undefined> => {
   if (!e.target.files || e.target.files.length === 0) return;
 
   const file = e.target.files[0];

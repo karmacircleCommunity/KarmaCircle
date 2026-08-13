@@ -1,11 +1,13 @@
 import { Button, Footer, Loading, Navbar } from "@components";
-import EventCard from "@features/events/components/EventCard.jsx";
-import EventSlider from "@features/events/components/EventSlider.jsx";
-import CreateEvent from "@features/events/components/CreateEvent.jsx";
+import EventCard from "@features/events/components/EventCard";
+import EventSlider from "@features/events/components/EventSlider";
+import CreateEvent from "@features/events/components/CreateEvent";
 import ComponentHelmet from "@components/seo/ComponentHelmet.jsx";
 import { useState } from "react";
 import { CiFilter } from "react-icons/ci";
 import { FaPlus } from "react-icons/fa6";
+import type { Club } from "@features/clubs/types";
+import { UserType } from "@/types/user";
 import "swiper/css";
 import "swiper/css/autoplay";
 import "swiper/css/navigation";
@@ -15,9 +17,13 @@ import "./Events.scss";
 const Events = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const events = Array.from({ length: 20 }, () => ({
+  // Hardcoded and, per SPEC.md, shaped like a club/user record rather
+  // than an event — typed as `Club` (not a real `EventRecord`) to make
+  // that mismatch explicit rather than inventing event-shaped fixture
+  // data that doesn't match what's actually here.
+  const events: Club[] = Array.from({ length: 20 }, () => ({
     _id: "673ac2814c6e89e58af8ca11",
-    userType: "club",
+    userType: UserType.Club,
     userName: "tamalcodes",
     name: "God Father Org",
     email: "tamalcodes@gmail.com",
@@ -62,7 +68,13 @@ const Events = () => {
         {!events || events?.length === 0 ? (
           <Loading />
         ) : (
-          events?.map((event, id) => <EventCard event={event} key={id} />)
+          events?.map((event, id) => (
+            // @ts-expect-error — EventCard declares no parameters at all and
+            // ignores this prop entirely; see EventCard.tsx and SPEC.md.
+            // Preserved as-is rather than adding a prop EventCard doesn't
+            // actually read.
+            <EventCard event={event} key={id} />
+          ))
         )}
       </div>
 

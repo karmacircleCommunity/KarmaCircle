@@ -1,15 +1,30 @@
-/* eslint-disable no-unused-vars */
 import { STATUSCODE } from "@statics/Constants.js";
 import { updateUserProfile } from "@services/MilanApi.js";
 import { showSuccessToast } from "@utils/Toasts.js";
 import clsx from "clsx";
 import { useState } from "react";
+import type { ChangeEvent } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { Button } from "@components";
+import type { CreateEventCredentials } from "../types";
 import "./CreateEvent.scss";
 
-const CreateEvent = ({ setShowCreateModal }) => {
-  const [credentials, setCredentials] = useState({
+interface CreateEventProps {
+  setShowCreateModal: (open: boolean) => void;
+}
+
+/**
+ * Reachable from `/events`, but cannot ever be submitted — see
+ * SPEC.md's "eight inputs share two state slots" finding: `city`,
+ * `state`, `country`, `pincode` are never written by any input, so
+ * the Save button's `disabled` gate can never clear. Also hits the
+ * profile-update endpoint, not an event-creation one. Kept
+ * behavior-identical during this types-only conversion; if asked to
+ * fix event creation, build from `CreateEvents.tsx` instead (per
+ * SPEC.md).
+ */
+const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
+  const [credentials, setCredentials] = useState<CreateEventCredentials>({
     description: "",
     name: "",
     coverImage: "",
@@ -23,25 +38,39 @@ const CreateEvent = ({ setShowCreateModal }) => {
       pincode: "",
     },
   });
-  const [errors, setErrors] = useState({});
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [uploadedProfilePicture, setUploadedProfilePicture] = useState(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // Set by handleFileChange's non-"cover" branch but never read anywhere —
+  // this form only has a cover-image dropzone in its JSX (contrast with
+  // ProfileUpdate.tsx, which has both). Kept for parity with the original.
+  const [uploadedProfilePicture, setUploadedProfilePicture] = useState<
+    string | null
+  >(null);
+  void uploadedProfilePicture;
 
-  const handleChange = (field) => (event) => {
-    const updatedCredentials = { ...credentials };
+  const handleChange =
+    (field: string) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const updatedCredentials = { ...credentials };
 
-    if (field === "description" || field === "name") {
-      updatedCredentials[field] = event.target.value;
-    } else {
-      // For address fields, update the address object inside the credentials
-      updatedCredentials.address[field] = event.target.value;
-    }
+      if (field === "description" || field === "name") {
+        (updatedCredentials as unknown as Record<string, string>)[field] =
+          event.target.value;
+      } else {
+        // For address fields, update the address object inside the credentials
+        (
+          updatedCredentials.address as unknown as Record<string, string>
+        )[field] = event.target.value;
+      }
 
-    setCredentials(updatedCredentials);
-  };
+      setCredentials(updatedCredentials);
+    };
 
-  const handleFileChange = (event, type) => {
-    const file = event.target.files[0];
+  const handleFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    type: string,
+  ) => {
+    const file = event.target.files?.[0];
     if (file) {
       const imageURL = URL.createObjectURL(file);
       if (type === "cover") {
@@ -55,7 +84,9 @@ const CreateEvent = ({ setShowCreateModal }) => {
   const handleResetFields = () => {
     setCredentials({
       description: "",
+      name: "",
       coverImage: "",
+      eventMode: "online",
       address: {
         line1: "",
         line2: "",
@@ -68,10 +99,10 @@ const CreateEvent = ({ setShowCreateModal }) => {
   };
 
   const validateForm = async () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
 
     // Check required fields for top-level fields
-    const requiredFields = ["description", "name"];
+    const requiredFields = ["description", "name"] as const;
     requiredFields.forEach((field) => {
       if (!credentials[field] || credentials[field].trim() === "") {
         newErrors[field] = `${field} is required.`;
@@ -86,7 +117,7 @@ const CreateEvent = ({ setShowCreateModal }) => {
       "state",
       "country",
       "pincode",
-    ];
+    ] as const;
     addressFields.forEach((field) => {
       if (
         !credentials.address[field] ||
@@ -106,7 +137,7 @@ const CreateEvent = ({ setShowCreateModal }) => {
     }
 
     // Pincode validation
-    if (credentials.address.pincode && isNaN(credentials.address.pincode)) {
+    if (credentials.address.pincode && isNaN(Number(credentials.address.pincode))) {
       newErrors["address.pincode"] = "Pincode must be a valid number.";
     }
 
@@ -279,6 +310,9 @@ const CreateEvent = ({ setShowCreateModal }) => {
 
               <div
                 className="plan basic-plan"
+                // @ts-expect-error — `htmlFor` is not a valid attribute on a
+                // <div> (only <label>/<output>); harmless pre-existing
+                // markup mistake, kept as-is rather than fixed here.
                 htmlFor="basic"
                 onClick={() => {
                   setCredentials({ ...credentials, eventMode: "online" });
@@ -303,6 +337,7 @@ const CreateEvent = ({ setShowCreateModal }) => {
 
               <div
                 className="plan complete-plan"
+                // @ts-expect-error — see comment on the "basic-plan" div above.
                 htmlFor="complete"
                 onClick={() => {
                   setCredentials({ ...credentials, eventMode: "offline" });

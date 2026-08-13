@@ -1,12 +1,16 @@
-const getFormattedDate = (dateString) => {
-  const date = new Date(dateString);
+/**
+ * Pure function, `getFormattedDate(dateString) → "1st January"`-style
+ * string. No timezone handling — relies on `new Date(dateString)`'s
+ * local-timezone interpretation. Only consumer is `EventsMarqueeCards.tsx`
+ * (itself unused) — see SPEC.md.
+ */
+const getFormattedDate = (dateString?: string): string => {
+  const date = new Date(dateString ?? "");
   const day = date.getDate();
   const monthIndex = date.getMonth();
 
-  // Define an array with month names
-
   // Function to get the ordinal suffix for the day
-  const getOrdinalSuffix = (day) => {
+  const getOrdinalSuffix = (day: number): string => {
     if (day >= 11 && day <= 13) {
       return "th";
     }
@@ -21,8 +25,6 @@ const getFormattedDate = (dateString) => {
         return "th";
     }
   };
-
-  // Example usage
 
   const monthNames = [
     "January",

@@ -10,21 +10,34 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
+import type { ChangeEvent } from "react";
 import { IoMdCloseCircleOutline } from "react-icons/io";
 import { IoCloudUploadOutline } from "react-icons/io5";
 import { useSelector } from "react-redux";
-import { useEvent } from "@features/events/hooks/useEvent.js";
+import { useEvent } from "@features/events/hooks/useEvent";
 import countries from "@statics/CountryList.js";
 import platforms from "@statics/OnlinePlatform.js";
-import convertToBase64 from "@features/events/utils/convertToBase64.js";
+import convertToBase64 from "@features/events/utils/convertToBase64";
 import { Button } from "@components";
+import type { EventFormState } from "../types";
 import "./CreateEvents.scss";
 
-const CreateEvents = ({ setshowCreateModal }) => {
-  const user = useSelector((state) => state.user);
-  const [errors, seterrors] = useState({});
+interface CreateEventsProps {
+  setshowCreateModal: (open: boolean) => void;
+}
 
-  const [event, setevent] = useState({
+/**
+ * The correct, MUI-based "create event" implementation — not rendered
+ * from any page today (see SPEC.md). Pairs with `useEvent.ts`; the
+ * closure-identity mechanic documented there is why `handleSubmit`
+ * calls `validateEvent()`/`submitCallback()` synchronously in that
+ * exact order.
+ */
+const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
+  const user = useSelector((state: { user?: { name?: string } }) => state.user);
+  const [errors, seterrors] = useState<Record<string, string>>({});
+
+  const [event, setevent] = useState<EventFormState>({
     name: "",
     startDate: dayjs(),
     endDate: dayjs(),
@@ -46,13 +59,21 @@ const CreateEvents = ({ setshowCreateModal }) => {
 
   const { validateEvent, submitCallback } = useEvent(event);
 
-  const handleCreateBase64 = useCallback(async (e) => {
-    const base64 = await convertToBase64(e);
-    setevent((prevEvent) => ({ ...prevEvent, coverImage: base64 }));
-    e.target.value = "";
-  }, []);
+  const handleCreateBase64 = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const base64 = await convertToBase64(e);
+      setevent((prevEvent) => ({
+        ...prevEvent,
+        coverImage: (base64 as string) ?? prevEvent.coverImage,
+      }));
+      e.target.value = "";
+    },
+    [],
+  );
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setevent({ ...event, [e.target.name]: e.target.value });
   };
 
@@ -173,7 +194,7 @@ const CreateEvents = ({ setshowCreateModal }) => {
                 label="Event Mode"
                 className="select"
                 onChange={(e) => {
-                  handleChange(e);
+                  setevent({ ...event, mode: e.target.value as EventFormState["mode"] });
                 }}
               >
                 <MenuItem value={"Online"}>Online</MenuItem>
@@ -193,7 +214,6 @@ const CreateEvents = ({ setshowCreateModal }) => {
             {errors.uid && <span className="error_message">{errors.uid}</span>}
 
             <textarea
-              type="text"
               placeholder="Event Description"
               name="description"
               value={event.description}
@@ -274,7 +294,7 @@ const CreateEvents = ({ setshowCreateModal }) => {
                     label="Event Mode"
                     className="select"
                     onChange={(e) => {
-                      handleChange(e);
+                      setevent({ ...event, country: e.target.value });
                     }}
                   >
                     {countries.map((country, index) => {
@@ -325,7 +345,7 @@ const CreateEvents = ({ setshowCreateModal }) => {
                     label="Event Mode"
                     className="select"
                     onChange={(e) => {
-                      handleChange(e);
+                      setevent({ ...event, platform: e.target.value });
                     }}
                   >
                     {platforms.map((platform, index) => {

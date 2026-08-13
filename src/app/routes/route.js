@@ -10,7 +10,7 @@ export { default as UserProfile } from "@features/onboarding-profile/pages/UserP
 // Club Routes
 export { default as Clubs } from "@features/clubs/pages/Clubs.tsx";
 export { default as Dashboard } from "@features/dashboard/pages/Dashboard.tsx";
-export { default as Events } from "@features/events/pages/Events.jsx";
+export { default as Events } from "@features/events/pages/Events.tsx";
 
 // Shop Routes
 export { default as Shop } from "@features/donate-shop-trending/pages/Shop.tsx";
@@ -18,4 +18,4 @@ export { default as Shop } from "@features/donate-shop-trending/pages/Shop.tsx";
 export { default as Profile } from "@features/onboarding-profile/pages/Profile.jsx";
 
 // Not found page
-export { default as Error404 } from "@features/error-handling/pages/Error404.jsx";
+export { default as Error404 } from "@features/error-handling/pages/Error404.tsx";

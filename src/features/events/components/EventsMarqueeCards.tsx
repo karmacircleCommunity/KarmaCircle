@@ -1,9 +1,18 @@
 import { CiCalendar, CiLocationOn } from "react-icons/ci";
-import getFormattedDate from "@features/events/utils/getFormattedDate.js";
+import getFormattedDate from "@features/events/utils/getFormattedDate";
+import type { EventRecord } from "../types";
 import "./EventsMarqueeCards.scss";
 
-const EventsMarqueeCards = ({ event }) => {
-  const eventStartTime = new Date(event?.startTime);
+interface EventsMarqueeCardsProps {
+  event?: EventRecord;
+}
+
+/**
+ * Not rendered anywhere today — see SPEC.md. The one component in this
+ * feature that actually reads and correctly uses an `event` prop.
+ */
+const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
+  const eventStartTime = new Date(event?.startTime ?? "");
   const formattedStartTime = eventStartTime.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -42,7 +51,7 @@ const EventsMarqueeCards = ({ event }) => {
                     top: "1px",
                   }}
                 />
-                {event.platform}
+                {event?.platform}
               </span>
             )}
 

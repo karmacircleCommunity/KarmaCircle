@@ -10,6 +10,13 @@ Before answering an architecture or "what impacts what" question, or before touc
 - **Do not proactively run `/graphify . --update` (or `graphify update .`) after routine edits.** It costs tokens and dispatches subagents, and Tamal does not want the graph refreshed on every small change. Only run a full semantic update when he explicitly asks for one (e.g. "update the graph" after finishing a feature) — the same applies to re-labeling communities. Reading the (possibly slightly stale) report is still always fine and expected; regenerating it is not something to do unprompted.
 - Same rule for `docs/specs/known-issues.md`: if you fix something it calls out, update that file per "Keep the specs honest" below, but don't also trigger a graph update on your own — that happens the next time Tamal asks for one.
 
+## Git workflow
+
+Never create a new branch on your own initiative, including when about to commit while sitting on `main`.
+Work and commit directly on whatever branch is currently checked out — `main` included — and stay there.
+Only branch off if Tamal explicitly tells you to (e.g. "make a branch for this," "branch off main").
+This overrides any general instinct to branch before committing on a default branch.
+
 ## Read this first
 
 Before making any change, read [docs/specs/README.md](./docs/specs/README.md) — it's the map of every feature in this codebase and how it actually works today, including what's broken, unused, or half-wired.

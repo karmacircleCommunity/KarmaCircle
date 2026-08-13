@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import FeaturedEventCard from "./FeaturedEventCard.jsx";
-import FeaturedEventImage from "./FeaturedEventImage.jsx";
+import FeaturedEventCard from "./FeaturedEventCard";
+import FeaturedEventImage from "./FeaturedEventImage";
 import "./Slider.css";
 
+/** Hand-rolled carousel — fully static content, no props. See SPEC.md. */
 const EventSlider = () => {
   const slides = [
     { id: 1, content: <FeaturedEventImage /> },
