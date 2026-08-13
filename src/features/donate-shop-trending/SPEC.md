@@ -1,7 +1,7 @@
 # Donate, Shop & Trending — Feature Spec
 
 Colocated, implementation-level companion to [docs/specs/donate-shop-trending.md](../../../docs/specs/donate-shop-trending.md).
-Three unrelated low-priority areas sharing one folder because none of them is a finished feature; treat `Donate.jsx` and `PaymentGateway.js` as needing real rework if touched, and `Shop.jsx`/`Trending.jsx` as intentionally, harmlessly unfinished.
+Three unrelated low-priority areas sharing one folder because none of them is a finished feature; treat `Donate.tsx` and `PaymentGateway.ts` as needing real rework if touched, and `Shop.tsx`/`Trending.tsx` as intentionally, harmlessly unfinished.
 
 ## What this feature is responsible for
 
@@ -9,19 +9,19 @@ A donation flow (broken, unroutable), the Razorpay checkout integration that don
 
 ## Why it's shaped this way
 
-`Shop.jsx`/`Trending.jsx` are genuinely, deliberately incomplete — no feature was ever built, and that's fine, they're not broken code, just not-yet-written product surface. `Donate.jsx` is different: it's *stale* code from before a component reorganization (it imports paths that no longer exist), left in the tree without a route pointing to it, so it currently causes no runtime harm but would break the build the moment anyone wires it into `routesConfig.jsx` without first fixing it.
+`Shop.tsx`/`Trending.tsx` are genuinely, deliberately incomplete — no feature was ever built, and that's fine, they're not broken code, just not-yet-written product surface. `Donate.tsx` is different: it's *stale* code from before a component reorganization (it imports paths that no longer exist), left in the tree without a route pointing to it, so it currently causes no runtime harm but would break the build the moment anyone wires it into `routesConfig.jsx` without first fixing it.
 
 ## File manifest
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Donate.jsx` | Donation page — pick a club, pay via Razorpay | ❌ not routed, **and would fail to build if it were** (broken imports) |
+| `pages/Donate.tsx` | Donation page — pick a club, pay via Razorpay | ❌ not routed, **and would fail to build if it were** (broken imports) |
 | `pages/Donate.css` | Styles for the above | ✅ imports fine on its own, just unused in practice |
-| `pages/Shop.jsx` | `/shop` — "coming soon" placeholder | ✅ routed, intentionally unfinished |
-| `pages/Trending.jsx` | `/trending` — "coming soon" placeholder | ✅ routed, intentionally unfinished |
-| `services/PaymentGateway.js` | `displayRazorpay(money)` — Razorpay checkout | ❌ not imported by any component (only reachable from the broken `Donate.jsx`), **and has its own undocumented bug even if wired up** |
+| `pages/Shop.tsx` | `/shop` — "coming soon" placeholder | ✅ routed, intentionally unfinished |
+| `pages/Trending.tsx` | `/trending` — "coming soon" placeholder | ✅ routed, intentionally unfinished |
+| `services/PaymentGateway.ts` | `displayRazorpay(money)` — Razorpay checkout | ❌ not imported by any component (only reachable from the broken `Donate.tsx`), **and has its own undocumented bug even if wired up** |
 
-## `pages/Donate.jsx` — broken imports, not routed, would fail to build if reached
+## `pages/Donate.tsx` — broken imports, not routed, would fail to build if reached
 
 **No entry in `routesConfig.jsx`** — confirmed, `/donate` does not exist as a route.
 This alone means the file's other problems are currently harmless — nothing imports this module at build time via the route table, so bundlers that only walk reachable import graphs from entry points won't necessarily choke on it (verify this holds for this repo's specific Vite/Rollup config before relying on it for anything more than "it hasn't broken CI yet").
@@ -44,9 +44,9 @@ Neither `components/Cards/SingleClubEvent/` nor a bare `components/Loading` (the
 
 **If asked to "fix the donate page,"** treat this as a near-full rewrite — fix the two broken imports, add a route, fix the `useEffect` dependency array, remove the imperative `document.title`, align the login gate with the rest of the app's `Token`-cookie + Redux pattern (and point it at `/auth/signin`), switch to `showErrorToast`, and add a response-status check before setting `clubData` — not a small patch. Confirm scope before starting, per the existing guidance in `docs/specs/donate-shop-trending.md`; this spec adds several more items to that scope than were previously catalogued.
 
-## `services/PaymentGateway.js` — `displayRazorpay(money)`
+## `services/PaymentGateway.ts` — `displayRazorpay(money)`
 
-The one part of the donate flow that's structurally self-contained — it doesn't depend on `Donate.jsx`'s broken imports at all, and could be tested/fixed independently.
+The one part of the donate flow that's structurally self-contained — it doesn't depend on `Donate.tsx`'s broken imports at all, and could be tested/fixed independently.
 
 **Previously-undocumented bug: the response-data access is inconsistent, and would break the Razorpay checkout even with everything else fixed.**
 ```js
@@ -61,27 +61,27 @@ const options = {
 };
 ```
 `data` is the raw Axios response (`{ data, status, headers, ... }`), not the backend's JSON payload directly — `amount: data.data.amount` gets this right, but `currency: data.currency` and `order_id: data.id` read directly off the Axios envelope instead of `data.data`, so **both would evaluate to `undefined`** regardless of what the backend actually returns.
-Razorpay's checkout widget requires a valid `order_id` to open a real payment session — an `undefined` `order_id` would very likely cause Razorpay's own client-side SDK to reject or misbehave when `paymentObject.open()` is called, independent of anything else being fixed in `Donate.jsx`.
+Razorpay's checkout widget requires a valid `order_id` to open a real payment session — an `undefined` `order_id` would very likely cause Razorpay's own client-side SDK to reject or misbehave when `paymentObject.open()` is called, independent of anything else being fixed in `Donate.tsx`.
 **This is a real, currently-untested bug** (untested because nothing reachable in the live app calls `displayRazorpay` at all) — fix `data.currency` → `data.data.currency` and `data.id` → `data.data.id` as part of any work that wires this function back in.
 
 **Hardcoded `prefill` block** (already documented in `docs/specs/donate-shop-trending.md`): `name: "Tamal Das"`, `email: "tamalcodes@gmail.com"`, `contact: "8240415709"` — the app author's own real contact details, not the logged-in user's. Replace with real user data (from Redux — see [state-management.md](../../../docs/specs/state-management.md)) before this ships to real donors; leaving this as-is would prefill every donor's checkout with someone else's contact info.
 
 **Success handler** only shows a thank-you toast (`toast("🌈 Thankyou for the help.", {...})`, again raw `react-toastify`, not the app's wrapper) — it doesn't confirm the payment with the backend or update any client-side order/donation record. Presumably the backend confirms payment via Razorpay webhooks server-side, but there's nothing in this repo to verify that assumption; don't assume the donation is recorded just because this handler fired.
 
-**Not imported by any component today** — the Razorpay checkout script itself is loaded separately, by `Donate.jsx`'s own broken `loadScript` call, not by this file; if `Donate.jsx` is rewritten, decide whether script-loading responsibility should move into this file instead (arguably a better home for it, since it's specifically needed for what this file does).
+**Not imported by any component today** — the Razorpay checkout script itself is loaded separately, by `Donate.tsx`'s own broken `loadScript` call, not by this file; if `Donate.tsx` is rewritten, decide whether script-loading responsibility should move into this file instead (arguably a better home for it, since it's specifically needed for what this file does).
 
-## `pages/Shop.jsx` and `pages/Trending.jsx` — intentional, working placeholders
+## `pages/Shop.tsx` and `pages/Trending.tsx` — intentional, working placeholders
 
 Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/comingSoon/ComingSoon.jsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
-`Shop.jsx` passes `` `shop's page.` `` (note the trailing period, which `ComingSoon`'s own copy presumably incorporates into a sentence), `Trending.jsx` passes `"Trending section"` (no trailing period — a minor inconsistency between the two call sites' string formatting, cosmetic only).
+`Shop.tsx` passes `` `shop's page.` `` (note the trailing period, which `ComingSoon`'s own copy presumably incorporates into a sentence), `Trending.tsx` passes `"Trending section"` (no trailing period — a minor inconsistency between the two call sites' string formatting, cosmetic only).
 Both are correctly routed (`/shop`, `/trending`) in `routesConfig.jsx`.
-**Unlike `Donate.jsx`, there is nothing broken here** — these two files are exactly as finished as they're meant to be today.
+**Unlike `Donate.tsx`, there is nothing broken here** — these two files are exactly as finished as they're meant to be today.
 If asked to "build the shop" or "build trending," this is genuinely new feature work with no existing scaffolding to build from in this folder (contrast with `clubs`/`events`, where a real fetcher already exists and just needs wiring) — don't go looking for a half-built shop/trending implementation elsewhere in the repo; there isn't one.
 
 ## Data flow summary — Donate, if it were fixed and wired up
 
 ```
-Donate.jsx mount
+Donate.tsx mount
    ▼
 GetAllClubs()   [MilanApi.js, GET /clubs]  →  clubData
    ▼
@@ -89,7 +89,7 @@ clubData.map(club => <SingleClubEvent club={club} />)   ⚠ SingleClubEvent no l
    │
    └─ "Donate" click on a club (hypothetical — not present in current file at all; there's no per-club donate button/amount-input visible in the current JSX)
           ▼
-      displayRazorpay(money)   [PaymentGateway.js]
+      displayRazorpay(money)   [PaymentGateway.ts]
           ▼
       POST /payment/razorpay { amount }   →  ⚠ order_id/currency bug above must be fixed first
           ▼
@@ -97,7 +97,13 @@ clubData.map(club => <SingleClubEvent club={club} />)   ⚠ SingleClubEvent no l
           ▼
       success → toast only, no backend confirmation from the frontend
 ```
-Note the fetch-clubs-then-donate flow doesn't even have a visible "choose an amount and pay" UI element in the current `Donate.jsx` JSX — the file fetches clubs and would render `SingleClubEvent` per club, but there's no code in this file that calls `displayRazorpay` at all; that call must live inside the (currently missing) `SingleClubEvent` component. Rebuilding `SingleClubEvent` is therefore not optional set-dressing — it's where the actual "donate to this club" interaction and the `displayRazorpay` call are expected to live.
+Note the fetch-clubs-then-donate flow doesn't even have a visible "choose an amount and pay" UI element in the current `Donate.tsx` JSX — the file fetches clubs and would render `SingleClubEvent` per club, but there's no code in this file that calls `displayRazorpay` at all; that call must live inside the (currently missing) `SingleClubEvent` component. Rebuilding `SingleClubEvent` is therefore not optional set-dressing — it's where the actual "donate to this club" interaction and the `displayRazorpay` call are expected to live.
+
+## Types
+
+This folder is TypeScript (`.ts`/`.tsx`) as of the dashboard/donate-shop-trending conversion pass — see [authentication/SPEC.md](../authentication/SPEC.md#types) for the general pattern.
+`types/index.ts` holds `RazorpayCheckoutOptions` plus a `declare global` augmentation of `Window` for `window.Razorpay` (Razorpay ships no npm types — its SDK is loaded at runtime via `<script>`, not installed as a package).
+`Donate.tsx`'s two broken imports (`SingleClubEvent`, `Loading`) are still broken — they're suppressed with documented `@ts-expect-error` comments rather than fixed, matching this file's existing "near-full rewrite, confirm scope first" status; `clubData` is typed `any[]` rather than a guessed `Club[]`, since `GetAllClubs()`'s real response shape has never been exercised by this dead code path. `PaymentGateway.ts`'s `currency`/`order_id` bug (reading `data.x` instead of `data.data.x`) is likewise still present, suppressed the same way — see "Known issues" below for both.
 
 ## Known issues specific to this feature (superset of known-issues.md's entries, plus new findings)
 
@@ -105,15 +111,15 @@ Note the fetch-clubs-then-donate flow doesn't even have a visible "choose an amo
 - **`loadScript`'s `useEffect` has no dependency array — re-injects the Razorpay script on every render.** New finding.
 - **Conflicting title-setting** (imperative `document.title` + a differently-worded `<Helmet>` title). New finding.
 - **Login-gate redirects to `/user/login`, a route that doesn't exist** (should be `/auth/signin`). New finding.
-- **Uses raw `toast.error`/`toast(...)` instead of the app's `showErrorToast`/`showSuccessToast` wrappers**, in both `Donate.jsx` and `PaymentGateway.js`. New finding.
+- **Uses raw `toast.error`/`toast(...)` instead of the app's `showErrorToast`/`showSuccessToast` wrappers**, in both `Donate.tsx` and `PaymentGateway.ts`. New finding.
 - **`GetAllClubs()`'s response is used without a status check**, so a failed fetch would crash `clubData.map(...)` rather than showing an error state. New finding.
-- **`PaymentGateway.js`'s `currency`/`order_id` read off the wrong object level (`data.x` instead of `data.data.x`)** — would break the actual Razorpay checkout even after every other bug is fixed. New finding, likely the single most important bug in this feature if donations are ever prioritized.
+- **`PaymentGateway.ts`'s `currency`/`order_id` read off the wrong object level (`data.x` instead of `data.data.x`)** — would break the actual Razorpay checkout even after every other bug is fixed. New finding, likely the single most important bug in this feature if donations are ever prioritized.
 - Hardcoded `prefill` contact details (the app author's own) — already in `known-issues.md`.
 - No client-side payment confirmation after a successful Razorpay handler fires — already in `known-issues.md`.
 - `SingleClubEvent`, the component that would actually trigger `displayRazorpay`, doesn't exist anywhere in the current tree and would need to be built, not just relocated. New finding/clarification.
 
 ## If you're asked to...
 
-- **"Fix the donate page"** → full rework, not a patch; see the itemized list under `pages/Donate.jsx` above. Confirm scope first — this touches routing, a missing component (`SingleClubEvent`), login-state consistency, and the payment integration's own bug.
-- **"Fix the Razorpay integration" specifically** → start with `data.currency`/`data.id` → `data.data.currency`/`data.data.id` in `PaymentGateway.js`; this is the highest-value, most self-contained fix in this feature and is currently untested because nothing calls this function.
+- **"Fix the donate page"** → full rework, not a patch; see the itemized list under `pages/Donate.tsx` above. Confirm scope first — this touches routing, a missing component (`SingleClubEvent`), login-state consistency, and the payment integration's own bug.
+- **"Fix the Razorpay integration" specifically** → start with `data.currency`/`data.id` → `data.data.currency`/`data.data.id` in `PaymentGateway.ts`; this is the highest-value, most self-contained fix in this feature and is currently untested because nothing calls this function.
 - **"Build the shop/trending page"** → genuinely new work, no existing scaffolding beyond the current `ComingSoon` placeholder; `ComingSoon`'s implementation lives in `src/components/comingSoon/ComingSoon.jsx`, outside this feature.

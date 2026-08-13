@@ -1,5 +1,5 @@
 import { userEndpoints } from "@services/ApiEndpoints.js";
-import TrackSection from "@features/dashboard/components/TrackSection.jsx";
+import TrackSection from "@features/dashboard/components/TrackSection";
 import ProfileUpdate from "@features/onboarding-profile/components/ProfileUpdate.jsx";
 import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion.js";
 import { updateUserData } from "@app/store/slices/userSlice.js";
@@ -10,24 +10,22 @@ import { useDispatch } from "react-redux";
 import useSWR from "swr";
 import { Navbar } from "@components";
 import ProfileCompletion from "@features/onboarding-profile/components/ProfileCompletion.jsx";
+import type { DashboardProfileResponse } from "../types";
 import "./Dashboard.scss";
 
 const Dashboard = () => {
   const [openModal, setOpenModal] = useState(false);
   const dispatch = useDispatch();
 
-  const { data: profileData, mutate: refreshProfileData } = useSWR(
-    userEndpoints.profile,
-    fetcher,
-    {
+  const { data: profileData, mutate: refreshProfileData } =
+    useSWR<DashboardProfileResponse>(userEndpoints.profile, fetcher, {
       onSuccess: (data) => {
         dispatch(updateUserData(data?.user));
       },
       onError: (error) => {
         showErrorToast(error?.response?.data?.message);
       },
-    },
-  );
+    });
 
   const { handleSetDefaultValues } = useProfileCompletion();
 
@@ -87,7 +85,14 @@ const Dashboard = () => {
       </div>
 
       {profileData?.user?.config?.hasCompletedProfile === false && (
+        // Pre-existing prop-name mismatch, not introduced by this
+        // conversion: ProfileCompletion.jsx destructures
+        // `{ setShowEditModal, refreshProfileData }`, not `edit`/`setOpenModal`.
+        // See docs/specs/dashboard.md and dashboard/SPEC.md's "Critical
+        // prop-name mismatch" section — fixing it is a behavior change
+        // out of scope for a types-only pass.
         <ProfileCompletion
+          // @ts-expect-error — see comment above.
           edit={openModal}
           setOpenModal={setOpenModal}
           refreshProfileData={refreshProfileData}

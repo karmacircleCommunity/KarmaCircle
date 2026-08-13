@@ -2,6 +2,11 @@ import { TbExternalLink } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import "./TrackSection.scss";
 
+/**
+ * Purely presentational analytics widget — no props, no data fetching.
+ * Intentional visual placeholder (see `SPEC.md`), not wired to
+ * `fetchDashboard()` despite that function existing.
+ */
 const TrackSection = () => {
   return (
     <div className="trackSection_parent">

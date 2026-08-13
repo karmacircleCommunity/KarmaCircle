@@ -7,7 +7,7 @@ import {
   Profile,
   Shop,
 } from "./route.js";
-import Trending from "@features/donate-shop-trending/pages/Trending.jsx";
+import Trending from "@features/donate-shop-trending/pages/Trending.tsx";
 import { lazy } from "react";
 import { default as DonotRenderWhenLoggedIn } from "@features/authentication/components/DonotRenderWhenLoggedIn.tsx";
 

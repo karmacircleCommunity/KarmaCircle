@@ -1,12 +1,22 @@
 // This is the donate page where we come and select clubs to donate an amount !
 
 import Cookies from "js-cookie";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+// @ts-expect-error — pre-existing broken import, not introduced by this
+// conversion: this path doesn't exist in the current tree (there is no
+// components/Cards/SingleClubEvent anywhere in the repo). Per SPEC.md,
+// this file is not routed and would fail to build the moment it's
+// actually reached; kept behavior-identical here rather than fixed,
+// since fixing it is a near-full rewrite out of scope for a types-only
+// pass. See docs/specs/donate-shop-trending.md.
 import SingleClubEvent from "../../components/Cards/SingleClubEvent/SingleClubEvent";
+// @ts-expect-error — same as above: the real Loading component now
+// lives at src/components/loading/Loading.jsx (exported from the
+// shared @components barrel), not this path.
 import Loading from "../../components/Loading";
 import { GetAllClubs } from "@services/MilanApi.js";
 import "./Donate.css";
@@ -14,9 +24,13 @@ import "./Donate.css";
 const Donate = () => {
   document.title = "Milan | Donate the needy";
 
-  const [clubData, setClubData] = useState([]);
+  // `GetAllClubs()`'s real, unverified-from-this-repo response shape
+  // (see SPEC.md) — left as `any[]` rather than invented as a typed
+  // `Club[]`, since this fetch path has never actually run.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [clubData, setClubData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  var navigate = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClubData = async () => {
@@ -28,7 +42,7 @@ const Donate = () => {
     fetchClubData();
   }, []);
 
-  const loadScript = (src) => {
+  const loadScript = (src: string): Promise<boolean> => {
     return new Promise((resolve) => {
       const script = document.createElement("script");
       script.src = src;

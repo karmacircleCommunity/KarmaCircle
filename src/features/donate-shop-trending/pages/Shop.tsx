@@ -1,4 +1,3 @@
-import React from "react";
 import { ComingSoon, Navbar } from "@components";
 
 const Shop = () => {
