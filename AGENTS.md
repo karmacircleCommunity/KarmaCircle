@@ -15,7 +15,7 @@
 ## backend boundary
 
 This repo is frontend-only (`milan-frontend`). The backend is a separate repo, [NGOWorld-Backend](https://github.com/ngoworldcommunity/NGOWorld-Backend), not checked out locally.
-Don't guess at request/response shapes beyond what `src/integrations/ApiEndpoints.js` and the existing call sites already show — if a change needs a new/changed backend contract, say so explicitly rather than inventing fields.
+Don't guess at request/response shapes beyond what `src/services/ApiEndpoints.js` and the existing call sites already show — if a change needs a new/changed backend contract, say so explicitly rather than inventing fields.
 
 ## repo-specific guardrails
 
@@ -23,7 +23,7 @@ Concrete "don't reintroduce this" rules, accumulated as issues get found and fix
 
 - Don't add a third "is the user logged in" check. The existing ones are: `useSelector(selectIsLoggedIn)` (Redux only), `Cookies.get("Token") && isLoggedIn` (cookie + Redux, used by the route guard and Navbar — prefer this for new auth-gated UI), and a legacy `Cookies.get("isLoggedIn")` cookie used only by the orphaned Donate page (do not extend this one). See `docs/specs/state-management.md`.
 - Don't add a fourth logout cleanup path. `Navbar.jsx`, `Profile.jsx`, and `UserProfile.jsx` each dispatch `resetUserData()` plus a slightly different extra cleanup step (`localStorage.clear()`, `Cookies.remove("skipProfileCompletion")`, or nothing). If you touch logout, prefer consolidating into one shared helper over adding a fourth variant.
-- Don't wire new event-creation UI to `updateUserProfile`/`PATCH /user/update`. `src/components/shared/createEvent/CreateEvent.jsx` does this today by mistake (it was cloned from the profile-edit form and the endpoint was never swapped). The correct pattern — MUI date/time pickers, `useEvent` hook, real `POST /events/create` call — is `src/components/private/events/create/CreateEvents.jsx`; build from that one.
+- Don't wire new event-creation UI to `updateUserProfile`/`PATCH /user/update`. `src/features/events/components/CreateEvent.jsx` does this today by mistake (it was cloned from the profile-edit form and the endpoint was never swapped). The correct pattern — MUI date/time pickers, `useEvent` hook, real `POST /events/create` call — is `src/features/events/components/CreateEvents.jsx`; build from that one.
 - Don't assume `clubEndpoints.details(userName)` is club-only. It's queried for both individual and club profiles today (`Profile.jsx` uses it for `/user/:userName` and `/club/:userName` alike), despite the name.
 
 ## when you're not sure which duplicate a request means

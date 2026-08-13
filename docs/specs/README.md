@@ -13,7 +13,7 @@ There is no server-side code in this repo — it is a Vite + React SPA.
 
 ## Tech stack
 
-- **React 19** with `react-router-dom` v7 for routing (`BrowserRouter`, all routes rendered in [App.jsx](../../src/App.jsx)).
+- **React 19** with `react-router-dom` v7 for routing (`BrowserRouter`, all routes rendered in [App.jsx](../../src/app/App.jsx)).
 - **Vite** as the build tool, with `vite-plugin-pwa` for PWA/service-worker support and `vite-plugin-svgr` for importing SVGs as components.
 - **Redux Toolkit + redux-persist** for the logged-in user's profile/session data (persisted to `localStorage`).
 - **Zustand** for one small piece of ephemeral UI state — a global `isLoading` flag (see [state-management.md](./state-management.md)).
@@ -23,6 +23,13 @@ There is no server-side code in this repo — it is a Vite + React SPA.
 - **styled via CSS Modules / SCSS / plain CSS**, inconsistently, per component — see [ui-kit.md](./ui-kit.md).
 - **Cypress** for end-to-end tests (`cypress/e2e/milanTest.spec.js`), currently a minimal smoke test.
 
+## Folder structure
+
+The codebase is organized feature-first, not by page/component/hook type.
+Each feature under `src/features/<name>/` owns its own `pages/`, `components/`, `hooks/`, `services/`, `utils/`, and `constants/` subfolders as needed — only what that feature actually uses.
+`src/app/` is the app shell (entry point, root component, route table, Redux/Zustand store).
+`src/components/`, `src/services/`, `src/statics/`, `src/styles/`, `src/utils/`, and `src/assets/` hold code genuinely shared across more than one feature — see [architecture.md](./architecture.md) for the full rationale and known-issues.md for a couple of remaining single-consumer utilities that were kept shared rather than pulled into a feature.
+
 ## Path aliases
 
 Both `vite.config.mjs` and `jsconfig.json` define the same aliases; keep them in sync when adding a new one.
@@ -30,15 +37,17 @@ Both `vite.config.mjs` and `jsconfig.json` define the same aliases; keep them in
 | Alias | Resolves to |
 |---|---|
 | `@/*` | `src/*` |
+| `@app/*` | `src/app/*` |
+| `@features/*` | `src/features/*` |
 | `@components/*` | `src/components/*` |
+| `@services/*` | `src/services/*` |
+| `@statics/*` | `src/statics/*` |
 | `@hooks/*` | `src/hooks/*` |
-| `@pages/*` | `src/pages/*` |
-| `@redux/*` | `src/redux/*` |
-| `@service/*` | `src/service/*` |
 | `@utils/*` | `src/utils/*` |
 | `@styles/*` | `src/styles/*` |
+| `@assets/*` | `src/assets/*` |
 
-Much of the older code still uses relative imports (`../../components/shared`) instead of these aliases.
+Much of the older code still uses relative imports instead of these aliases.
 Both styles coexist; prefer the alias style in new code.
 
 ## Feature map

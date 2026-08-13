@@ -66,13 +66,15 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      "@app": path.resolve(import.meta.dirname, "./src/app"),
+      "@features": path.resolve(import.meta.dirname, "./src/features"),
       "@components": path.resolve(import.meta.dirname, "./src/components"),
+      "@services": path.resolve(import.meta.dirname, "./src/services"),
+      "@statics": path.resolve(import.meta.dirname, "./src/statics"),
       "@hooks": path.resolve(import.meta.dirname, "./src/hooks"),
-      "@pages": path.resolve(import.meta.dirname, "./src/pages"),
-      "@redux": path.resolve(import.meta.dirname, "./src/redux"),
-      "@service": path.resolve(import.meta.dirname, "./src/service"),
       "@utils": path.resolve(import.meta.dirname, "./src/utils"),
       "@styles": path.resolve(import.meta.dirname, "./src/styles"),
+      "@assets": path.resolve(import.meta.dirname, "./src/assets"),
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },

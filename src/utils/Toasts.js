@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import checkInternetConnection from "./CheckInternetConnection";
+import checkInternetConnection from "./CheckInternetConnection.js";
 
 /**
  * Displays a success toast message using React Toastify.

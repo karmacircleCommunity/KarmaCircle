@@ -2,7 +2,7 @@
 
 ## 404
 
-[src/pages/error/Error404.jsx](../../src/pages/error/Error404.jsx), matched by the `*` catch-all route in `routesConfig.jsx`.
+[src/features/error-handling/pages/Error404.jsx](../../src/features/error-handling/pages/Error404.jsx), matched by the `*` catch-all route in `routesConfig.jsx`.
 Renders a static SVG illustration and a `Button` (`to="/"`) back to home.
 No `<Helmet>`/SEO tags, unlike most other top-level pages — worth adding if you touch this file.
 
@@ -13,7 +13,7 @@ Network/API errors are instead surfaced per-call via toasts — see [Toasts.js c
 
 ## `Test.jsx` (dev leftover, currently routed)
 
-[src/pages/Test.jsx](../../src/pages/Test.jsx) is **not** wired into `routesConfig.jsx`, so it isn't reachable via any path, but it does still exist in the tree: on mount it immediately redirects the browser to `https://www.google.com`.
+[src/features/error-handling/pages/Test.jsx](../../src/features/error-handling/pages/Test.jsx) is **not** wired into `routesConfig.jsx`, so it isn't reachable via any path, but it does still exist in the tree: on mount it immediately redirects the browser to `https://www.google.com`.
 Almost certainly a debugging scratch file — safe to delete unless someone confirms otherwise, but flag it rather than silently removing it if you weren't specifically asked to clean up dead files.
 
 ## Cypress E2E

@@ -8,23 +8,23 @@ Everything below documents how the *frontend* calls it, not what the backend gua
 
 This is the single most important thing to know before adding a new API call: there are two different, uncoordinated ways calls are made.
 
-### Layer A — `src/service/MilanApi.js` (the one almost everything uses)
+### Layer A — `src/services/MilanApi.js` (the one almost everything uses)
 
 Plain `axios` calls (imported directly as `Axios`, not through `ApiConnector`).
 Each function catches errors and returns `error.response` (or `error` itself in a couple of functions) instead of throwing — callers must check `response?.status` rather than using `try/catch`.
 Functions exported: `LoginUser`, `RegisterUser`, `GetAllClubs`, `ReportProblem`, `completeProfileApiCall`, `updateUserProfile`, `GoogleAuth`, `successCallback`, `Logout`, `CreateEvent`, `fetchDashboard`.
 Most POST/PATCH calls pass `{ withCredentials: true }` so the backend's session/auth cookie is sent; a few reads (`GetAllClubs`) don't.
 
-### Layer B — `src/integrations/*.js` (only used for read-only club/event listing helpers)
+### Layer B — feature-level `services/` fetchers (only used for read-only club/event listing helpers)
 
-Goes through [ApiConnector.js](../../src/integrations/ApiConnector.js), a thin wrapper around a separate `axios.create({})` instance (`axiosInstance`), exposing `apiConnector(method, url, bodyData, headers, params)`.
-Only two consumers exist: `getClubs()` in [Clubs.js](../../src/integrations/Clubs.js) and `getEvents()` in [Events.js](../../src/integrations/Events.js) — and neither of those two functions is actually called anywhere in the app; `Clubs.jsx` and `Events.jsx` (the pages) both currently render hardcoded demo arrays instead.
+Goes through [ApiConnector.js](../../src/services/ApiConnector.js), a thin wrapper around a separate `axios.create({})` instance (`axiosInstance`), exposing `apiConnector(method, url, bodyData, headers, params)`.
+Only two consumers exist: `getClubs()` in [Clubs.js](../../src/features/clubs/services/Clubs.js) and `getEvents()` in [Events.js](../../src/features/events/services/Events.js) — and neither of those two functions is actually called anywhere in the app; `Clubs.jsx` and `Events.jsx` (the pages) both currently render hardcoded demo arrays instead.
 See [known-issues.md](./known-issues.md).
 `ApiConnector`'s dead status-600 check (`if (response.status === 400) console.error("Logout triggered due to status 600 response")`) is unreachable — `response.status === 400` never equals `600`, and axios throws (doesn't return) on 4xx/5xx by default anyway, so this branch is unreachable through the normal success path.
 
 **When adding a new call, follow Layer A's pattern** (`MilanApi.js` + direct `axios`) unless you're specifically building on top of the existing `getClubs`/`getEvents` read helpers.
 
-## Endpoint registry — `src/integrations/ApiEndpoints.js`
+## Endpoint registry — `src/services/ApiEndpoints.js`
 
 All endpoint URL strings/builders live here, grouped by domain, and are imported by both layers above.
 
@@ -56,7 +56,7 @@ SWR call sites:
 
 ## Status codes and messages
 
-[src/static/Constants.js](../../src/static/Constants.js) exports `STATUSCODE` (a full HTTP status-code map) and `STATUSMESSAGE` (a set of canned backend message strings).
+[src/statics/Constants.js](../../src/statics/Constants.js) exports `STATUSCODE` (a full HTTP status-code map) and `STATUSMESSAGE` (a set of canned backend message strings).
 `STATUSCODE.OK` is used in a handful of places (`useProfileCompletion.js`, `ProfileUpdate.jsx`, `CreateEvent.jsx`) to check `data.status === STATUSCODE.OK`; most other call sites just compare raw numbers (`response?.status === 201 || response?.status === 200`) inline instead of using the constant — prefer `STATUSCODE` in new code for consistency.
 `STATUSMESSAGE` values don't appear to be read anywhere in the frontend; toasts display whatever message string the backend response includes (`response?.data?.message`), so this constant is effectively documentation of expected backend messages rather than live code.
 
