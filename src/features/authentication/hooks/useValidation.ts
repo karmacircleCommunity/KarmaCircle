@@ -1,5 +1,20 @@
-const useValidation = (credentials, userSignup, clubSignup) => {
-  const errors = [];
+import type {
+  ValidatableCredentials,
+  ValidationError,
+  ValidationResult,
+} from "../types";
+
+/**
+ * Fuller, unused validator — not wired into `SignIn.jsx`/`SignUp.jsx`
+ * today (see `SPEC.md`). A plain function, not a hook despite the `use`
+ * prefix; kept as the target design for the richer club-signup flow.
+ */
+const useValidation = (
+  credentials: ValidatableCredentials,
+  userSignup: boolean,
+  clubSignup: boolean,
+): ValidationResult => {
+  const errors: ValidationError[] = [];
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const nameRegex = /^[a-zA-Z]+$/;
   const clubnameRegex = /^[a-zA-Z\s]+$/;
@@ -243,7 +258,7 @@ const useValidation = (credentials, userSignup, clubSignup) => {
         message: "Please enter your pincode",
         field: "pincode",
       });
-    } else if (pincode.length !== 6 && pincode.length !== 5) {
+    } else if (pincode?.length !== 6 && pincode?.length !== 5) {
       errors.push({
         error: true,
         message: "Please enter a valid pincode",

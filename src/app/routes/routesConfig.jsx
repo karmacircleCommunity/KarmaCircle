@@ -9,10 +9,10 @@ import {
 } from "./route.js";
 import Trending from "@features/donate-shop-trending/pages/Trending.jsx";
 import { lazy } from "react";
-import { default as DonotRenderWhenLoggedIn } from "@features/authentication/components/DonotRenderWhenLoggedIn.jsx";
+import { default as DonotRenderWhenLoggedIn } from "@features/authentication/components/DonotRenderWhenLoggedIn.tsx";
 
-const SignIn = lazy(() => import("@features/authentication/pages/SignIn.jsx"));
-const SignUp = lazy(() => import("@features/authentication/pages/SignUp.jsx"));
+const SignIn = lazy(() => import("@features/authentication/pages/SignIn.tsx"));
+const SignUp = lazy(() => import("@features/authentication/pages/SignUp.tsx"));
 
 const ProtectedSignIn = DonotRenderWhenLoggedIn(SignIn);
 const ProtectedSignUp = DonotRenderWhenLoggedIn(SignUp);

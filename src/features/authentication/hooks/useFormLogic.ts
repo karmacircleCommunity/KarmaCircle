@@ -1,28 +1,45 @@
 import { useState } from "react";
-import useValidation from "./useValidation.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
 import { useNavigate } from "react-router-dom";
 import checkInternetConnection from "@utils/CheckInternetConnection.js";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
 import useAuthStore from "@app/store/useAuth.js";
+import { UserType } from "@/types/user";
+import useValidation from "./useValidation";
+import type {
+  ClubFormState,
+  IndividualFormState,
+  SignupFormState,
+  SubmitCallback,
+  UseFormLogicResult,
+} from "../types";
 
+/**
+ * Unused generic submit-handler hook built on `useValidation.js` — not
+ * wired into any live page today (see `SPEC.md`). Driven by the Zustand
+ * `isLoading` flag (shared with `AuthButton.jsx`) rather than local
+ * `useState` loading.
+ */
 export function useFormLogic(
-  initialState,
-  submitCallback,
-  redirectPath,
-  isSignup,
-  userType,
-) {
+  initialState: SignupFormState,
+  submitCallback: SubmitCallback,
+  redirectPath: string,
+  isSignup: boolean,
+  userType: UserType,
+): UseFormLogicResult {
   const navigate = useNavigate();
-  const [formState, setFormState] = useState(initialState);
+  const [formState, setFormState] = useState<SignupFormState>(initialState);
   const { toggleLoading } = useAuthStore((state) => ({
     toggleLoading: state.toggleLoading,
   }));
 
-  const handleChange = (e) => {
+  const handleChange: UseFormLogicResult["handleChange"] = (e) => {
     setFormState({ ...formState, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e, country) => {
+  const handleSubmit: UseFormLogicResult["handleSubmit"] = async (
+    e,
+    country,
+  ) => {
     e.preventDefault();
 
     if (!checkInternetConnection()) {
@@ -34,23 +51,25 @@ export function useFormLogic(
     formState.country = country;
 
     const validationErrors = isSignup
-      ? userType === "individual"
+      ? userType === UserType.Individual
         ? useValidation(formState, true, false)
         : useValidation(formState, false, true)
       : [];
 
-    if (validationErrors.length > 0) {
+    if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       setFormState({ ...formState, errors: validationErrors });
       setTimeout(() => {
         toggleLoading(false);
       }, 1000);
     } else {
-      const data = await submitCallback(formState);
-      handleApiResponse(data);
+      const response = await submitCallback(formState);
+      handleApiResponse(response);
     }
   };
 
-  const handleApiResponse = (response) => {
+  const handleApiResponse: (
+    response: Awaited<ReturnType<SubmitCallback>>,
+  ) => void = (response) => {
     if (response?.status === 201 || response?.status === 200) {
       showSuccessToast(response?.data?.message);
       setTimeout(() => {
@@ -74,8 +93,8 @@ export function useFormLogic(
   };
 }
 
-export const individualInitialFormState = {
-  userType: "individual",
+export const individualInitialFormState: IndividualFormState = {
+  userType: UserType.Individual,
   slug: "",
   email: "",
   password: "",
@@ -89,8 +108,8 @@ export const individualInitialFormState = {
   lastName: "",
 };
 
-export const clubInitialFormState = {
-  userType: "club",
+export const clubInitialFormState: ClubFormState = {
+  userType: UserType.Club,
   slug: "",
   email: "",
   password: "",

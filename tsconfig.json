@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode (Vite) */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+
+    /* Incremental migration: JS and TS coexist in this repo.
+       .ts/.tsx files are strictly checked; .js/.jsx files are left alone
+       (allowJs lets TS infer their shapes for consumers, checkJs stays off
+       so untouched JS never fails the build). */
+    "allowJs": true,
+    "checkJs": false,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "paths": {
+      "@app": ["./src/app"],
+      "@app/*": ["./src/app/*"],
+      "@features": ["./src/features"],
+      "@features/*": ["./src/features/*"],
+      "@components": ["./src/components"],
+      "@components/*": ["./src/components/*"],
+      "@services": ["./src/services"],
+      "@services/*": ["./src/services/*"],
+      "@statics": ["./src/statics"],
+      "@statics/*": ["./src/statics/*"],
+      "@hooks": ["./src/hooks"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@utils": ["./src/utils"],
+      "@utils/*": ["./src/utils/*"],
+      "@styles": ["./src/styles"],
+      "@styles/*": ["./src/styles/*"],
+      "@assets": ["./src/assets"],
+      "@assets/*": ["./src/assets/*"],
+      "@": ["./src"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

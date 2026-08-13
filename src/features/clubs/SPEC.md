@@ -1,7 +1,7 @@
 # Clubs — Feature Spec
 
 Colocated, implementation-level companion to [docs/specs/clubs.md](../../../docs/specs/clubs.md).
-This is the smallest feature folder in the app — three real files — and the simplest to bring to life if asked, since the fetcher already exists and just isn't called.
+This is the smallest feature folder in the app — three logic files plus a `types/index.ts` — and the simplest to bring to life if asked, since the fetcher already exists and just isn't called.
 
 ## What this feature is responsible for
 
@@ -15,13 +15,14 @@ This page and `Events.jsx` (the `events` feature) are the two clearest examples 
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Clubs.jsx` | The `/clubs` page | ✅ routed, but renders **hardcoded data** |
+| `pages/Clubs.tsx` | The `/clubs` page | ✅ routed, but renders **hardcoded data** |
 | `pages/Clubs.scss` | Styles | ✅ |
-| `components/ClubCard.jsx` | Presentational card for one club | ✅ used by `Clubs.jsx` |
+| `components/ClubCard.tsx` | Presentational card for one club | ✅ used by `Clubs.tsx` |
 | `components/ClubCard.scss` | Styles | ✅ |
-| `services/Clubs.js` | `getClubs()` — the real fetcher | ❌ **defined, never called from anywhere** |
+| `services/Clubs.ts` | `getClubs()` — the real fetcher | ❌ **defined, never called from anywhere** |
+| `types/index.ts` | `Club`/`ClubCardProps` interfaces — see "Types" below | ✅ yes — imported by every other file in this folder |
 
-## `pages/Clubs.jsx`
+## `pages/Clubs.tsx`
 
 **The entire `clubs` array is hardcoded, not fetched:**
 ```js
@@ -46,7 +47,7 @@ Note this demo object includes a `password` field (a real-looking bcrypt hash) �
 
 **No pagination, no empty state, no error state** — none of these exist yet because there's no real fetch to have loading/empty/error states *for*.
 
-## `components/ClubCard.jsx`
+## `components/ClubCard.tsx`
 
 **Props:** `club` (a single club object, shaped like the hardcoded fixture above, or eventually like whatever `getClubs()`'s real response looks like — see caveat below).
 
@@ -54,9 +55,9 @@ Note this demo object includes a `password` field (a real-looking bcrypt hash) �
 
 **What's hardcoded regardless of the `club` prop:** the banner image (always the same static `clubbanner.jpg` asset — there is no per-club image field consumed at all, so even if `club.bannerImage` existed on a real record, this component has nowhere to plug it in without a code change) and the follower/event counts (`1.25k` Followers / `231` Events — static JSX, not derived from `club`).
 
-**Exported from the shared barrel** `src/components/index.js` as well as being importable directly — both import styles appear at different call sites across the app (see [ui-kit.md](../../../docs/specs/ui-kit.md)); prefer the barrel for new code.
+**Not exported from the shared barrel** `src/components/index.js` — despite an earlier version of this doc claiming otherwise, `ClubCard` is only ever imported directly (`@features/clubs/components/ClubCard`) by `Clubs.tsx`; the barrel has no `ClubCard` entry.
 
-## `services/Clubs.js` — `getClubs()`, defined and correct, never called
+## `services/Clubs.ts` — `getClubs()`, defined and correct, never called
 
 ```js
 export const getClubs = async () => {
@@ -79,7 +80,7 @@ Unlike `MilanApi.js`'s functions, `getClubs()` **throws** on a non-200 status ra
 
 **Today:**
 ```
-Clubs.jsx render
+Clubs.tsx render
    ▼
 clubs = 20x identical hardcoded object   (no network call)
    ▼
@@ -90,7 +91,7 @@ ClubCard reads club.name / club.description / club.userName only
 
 **If wired up** (the shape this page's own imports suggest it was heading toward):
 ```
-Clubs.jsx
+Clubs.tsx
    ▼
 useSWR(clubEndpoints.all, () => getClubs())   or a fetcher passed through swr's default fetcher slot
    │   getClubs() throws on non-200 — SWR's error state would populate from that
@@ -99,6 +100,13 @@ clubs = response.data   (shape TBD — verify against backend)
    ▼
 {!clubs ? <Loading /> : clubs.map(...)}   ← this ternary already exists; just needs a real `clubs` value
 ```
+
+## Types
+
+This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+clubs conversion pass — see `tsconfig.json` at the repo root.
+`types/index.ts` holds `Club` (the shape `ClubCard.tsx` and the hardcoded fixture in `Clubs.tsx` both read — deliberately loose with an open index signature, since the real `/clubs` response shape is unverified from this repo, see above) and `ClubCardProps`.
+`UserType` (used for `Club.userType`) lives in `src/types/user.ts` instead, since `authentication` needs it too.
+`services/Clubs.ts` types `getClubs()` as returning `Promise<Club[]>` — tighten or loosen that once the real backend shape is confirmed.
 
 ## Known issues specific to this feature
 
@@ -110,7 +118,7 @@ clubs = response.data   (shape TBD — verify against backend)
 
 ## If you're asked to...
 
-- **"Make the clubs page live"** → replace the hardcoded `clubs` array with `useSWR(clubEndpoints.all, getClubs)` (or a small wrapper fetcher — `getClubs` throws rather than resolving, see above) in `Clubs.jsx`. This is the single highest-value, most self-contained fix available in this feature — the card component, the loading fallback, and the fetcher are all already correct and just need connecting.
+- **"Make the clubs page live"** → replace the hardcoded `clubs` array with `useSWR(clubEndpoints.all, getClubs)` (or a small wrapper fetcher — `getClubs` throws rather than resolving, see above) in `Clubs.tsx`. This is the single highest-value, most self-contained fix available in this feature — the card component, the loading fallback, and the fetcher are all already correct and just need connecting.
 - **"Add search/filtering to the clubs page"** → both UI elements exist but are unwired; decide client-side filtering (over whatever `getClubs()` returns) vs. server-side (passing params through `apiConnector`'s `params` argument, which `getClubs()` doesn't currently forward — you'd extend its signature) before starting.
-- **"Show real follower/event counts on club cards"** → needs those fields added to whatever the backend's `/clubs` response includes, then read them in `ClubCard.jsx` in place of the hardcoded `1.25k`/`231`.
-- **"Make each club card show its own banner image"** → same as above — `ClubCard.jsx` has no prop path for a per-club image today; you'd add one and fall back to `clubbanner.jpg` when absent, matching the existing fallback pattern already used for `name`/`description`.
+- **"Show real follower/event counts on club cards"** → needs those fields added to whatever the backend's `/clubs` response includes, then read them in `ClubCard.tsx` in place of the hardcoded `1.25k`/`231`.
+- **"Make each club card show its own banner image"** → same as above — `ClubCard.tsx` has no prop path for a per-club image today; you'd add one and fall back to `clubbanner.jpg` when absent, matching the existing fallback pattern already used for `name`/`description`.

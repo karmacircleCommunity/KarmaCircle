@@ -48,8 +48,17 @@ Both are effectively unreachable dead code today — see [known-issues.md](./kno
 - Environment variables are read via `import.meta.env.*` and must be prefixed `VITE_`.
   The two names actually read in code are `VITE_API_URL` (base URL for every backend call) and `VITE_RAZORPAY_KEY_ID` (see [donate-shop-trending.md](./donate-shop-trending.md)).
   `.env.example` at the repo root documents `VITE_MILANAPI` instead of `VITE_API_URL` — that's a stale variable name; see [known-issues.md](./known-issues.md).
-- `eslint.config.js` and `.prettierrc` define lint/format rules; `husky` + `lint-staged` run `eslint --fix` and `prettier --write` on staged `.js`/`.jsx` files pre-commit.
+- `eslint.config.js` and `.prettierrc` define lint/format rules; `husky` + `lint-staged` run `eslint --fix` and `prettier --write` on staged `.js`/`.jsx`/`.ts`/`.tsx` files pre-commit.
 - `commitlint.config.js` enforces Conventional Commits via a husky `commit-msg` hook.
+
+## TypeScript
+
+`tsconfig.json` at the repo root added TypeScript to the project (replacing `jsconfig.json`, which it superseded — its `paths` are the same alias table, kept in sync with `vite.config.mjs`).
+It sets `allowJs: true` / `checkJs: false` and `moduleResolution: "bundler"` (matching Vite's own resolution) so `.ts`/`.tsx` files can coexist with the still-mostly-`.js`/`.jsx` codebase: TypeScript infers types from untouched JS files for anything a converted file imports, but never fails the build over an untouched JS file's own contents.
+Vite/esbuild already strip types from `.ts`/`.tsx` at bundle time with no config changes needed; `npm run type-check` (`tsc --noEmit`) is the actual type-checking step and isn't part of `npm run build`.
+`eslint.config.js` adds `typescript-eslint`'s recommended rules scoped to `**/*.{ts,tsx}` only, alongside the existing JS/React rules.
+Conversion is happening feature-by-feature, not as one repo-wide pass — see [README.md](./README.md#typescript) for which features are done.
+When a converted file needs a shared JS dependency (outside that pass's scope) typed more precisely than TS's own inference gives it, the convention is a sibling `.d.ts` next to the `.js` file (e.g. `src/statics/Constants.d.ts`) rather than converting or duplicating that file — the `.js` file still runs, the `.d.ts` only supplies type information.
 
 ## Directory layout
 

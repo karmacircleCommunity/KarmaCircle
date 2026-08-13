@@ -32,7 +32,8 @@ Each feature under `src/features/<name>/` owns its own `pages/`, `components/`, 
 
 ## Path aliases
 
-Both `vite.config.mjs` and `jsconfig.json` define the same aliases; keep them in sync when adding a new one.
+Both `vite.config.mjs` and `tsconfig.json` define the same aliases; keep them in sync when adding a new one.
+(`tsconfig.json` replaced `jsconfig.json` when TypeScript was introduced — see "TypeScript" below.)
 
 | Alias | Resolves to |
 |---|---|
@@ -49,6 +50,13 @@ Both `vite.config.mjs` and `jsconfig.json` define the same aliases; keep them in
 
 Much of the older code still uses relative imports instead of these aliases.
 Both styles coexist; prefer the alias style in new code.
+
+## TypeScript
+
+The repo is being converted to TypeScript feature by feature (not all at once) — see [architecture.md](./architecture.md#typescript) for the setup.
+`authentication` and `clubs` were the first two features converted; everything else is still plain JS (`.js`/`.jsx`) and stays that way until its own turn.
+`tsconfig.json` has `allowJs: true` so JS and TS coexist and TS can still infer types across the boundary; `checkJs` is off, so untouched JS files are never type-checked.
+Don't assume a feature is typed just because a shared dependency it imports (`MilanApi.js`, Redux slices, `Constants.js`, etc.) has types — those get real types only when their own turn comes, or when a converted feature needed a narrow `.d.ts` bridge for one (see `src/statics/Constants.d.ts`, `src/utils/Toasts.d.ts`, `src/components/buttons/globalbutton/Button.d.ts` for examples of that pattern).
 
 ## Feature map
 

@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import clubBanner from "@assets/pictures/Banner/clubbanner.jpg";
+import type { ClubCardProps } from "../types";
 import "./ClubCard.scss";
 
-const ClubCard = ({ club }) => {
+const ClubCard = ({ club }: ClubCardProps) => {
   return (
     <div className="clubcard_parent">
       {/* Top Section */}

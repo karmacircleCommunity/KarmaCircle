@@ -15,35 +15,44 @@ If you're asked to fix or centralize logout, you'll be working outside this fold
 ## Why it's shaped this way
 
 The backend (a separate repo, [NgoWorld-Backend](https://github.com/ngoworldcommunity/NGOWorld-Backend)) is the actual source of truth for whether credentials are valid; client-side validation here exists purely to reduce round-trips for obviously-bad input (empty fields, malformed email, weak password) and to give inline field-level feedback rather than a single toast.
-The codebase evolved two competing designs for that validation — a minimal one wired into the live pages (`useAuth.js`) and a much fuller one that never got wired in (`useValidation.js` + `useFormLogic.js`, see below) — which is the most important thing to understand before touching this folder: **there are two parallel, non-interoperating auth-form systems here, and only one of them runs in production.**
+The codebase evolved two competing designs for that validation — a minimal one wired into the live pages (`useAuth.ts`) and a much fuller one that never got wired in (`useValidation.ts` + `useFormLogic.ts`, see below) — which is the most important thing to understand before touching this folder: **there are two parallel, non-interoperating auth-form systems here, and only one of them runs in production.**
 Do not assume both are exercised by any given change.
 
 ## File manifest
 
 | File | Role | Actually used by a live page? |
 |---|---|---|
-| `pages/SignIn.jsx` | Sign-in form UI | ✅ yes — routed |
-| `pages/SignUp.jsx` | Sign-up form UI | ✅ yes — routed |
+| `pages/SignIn.tsx` | Sign-in form UI | ✅ yes — routed |
+| `pages/SignUp.tsx` | Sign-up form UI | ✅ yes — routed |
 | `pages/index.scss` | Shared styles for both pages (plain SCSS, BEM-ish `auth_*`/`signup_*` classes) | ✅ yes |
-| `hooks/useAuth.js` | The validator + submit handler both live pages actually call | ✅ yes |
-| `hooks/useValidation.js` | Fuller, unused validator (individual + club shapes) | ❌ no |
-| `hooks/useFormLogic.js` | Unused generic submit-handler hook built on `useValidation.js`; also the only place `individualInitialFormState`/`clubInitialFormState` are defined | ❌ no |
-| `components/DonotRenderWhenLoggedIn.jsx` | Route-guard HOC wrapping `SignIn`/`SignUp` in `routesConfig.jsx` | ✅ yes |
-| `components/AuthButton.jsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
-| `components/RenderErrorMessage.jsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
-| `utils/PasswordToggle.js` | Unused `password ⇄ text` input-type togglers | ❌ no (pages inline their own toggle logic instead) |
+| `hooks/useAuth.ts` | The validator + submit handler both live pages actually call | ✅ yes |
+| `hooks/useValidation.ts` | Fuller, unused validator (individual + club shapes) | ❌ no |
+| `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`clubInitialFormState` are defined | ❌ no |
+| `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `SignIn`/`SignUp` in `routesConfig.jsx` | ✅ yes |
+| `components/AuthButton.tsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
+| `components/RenderErrorMessage.tsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
+| `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (pages inline their own toggle logic instead) |
+| `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
 
-Five of the ten files in this folder (`useValidation.js`, `useFormLogic.js`, `AuthButton.jsx`, `RenderErrorMessage.jsx`, `PasswordToggle.js`) are not imported by anything that runs in the live app.
+Five of the ten non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
 Per [known-issues.md](../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller club-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live pages at all today, and this scaffolding is the closest thing to a spec for it.
 
-## `pages/SignIn.jsx`
+## Types
+
+This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+clubs conversion pass — see `tsconfig.json` at the repo root.
+`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), the live pages' `Credentials`/`AuthErrors` shapes, and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`ClubFormState`/`SignupFormState` shapes.
+`UserType` (the `"individual" | "club"` enum) and `AuthTypeOption` (the react-select option shape) live in `src/types/user.ts` instead, since `clubs` needs `UserType` too.
+Two of this feature's dependencies are plain JS outside this pass's scope, so they get a sibling `.d.ts` purely for type information (the `.js` file is still what runs): `src/statics/Constants.d.ts` (so `authTypeOptions` types as `AuthTypeOption[]` instead of a bare `{value: string}[]`) and `src/utils/Toasts.d.ts` (so `showSuccessToast`/`showErrorToast` accept the `string | undefined` they're actually called with). The shared `Button` component similarly got a `src/components/buttons/globalbutton/Button.d.ts`, since `disabled`/`onClickfunction` have no destructuring default in the JS and were otherwise inferred as required.
+Everything else this folder imports (`MilanApi.js`, `userSlice.js`, `CheckInternetConnection.js`, the Zustand `useAuth.js` store, `Navbar`/etc.) is still untyped JS and resolves to an implicit `any` at the boundary — normal for an incremental migration; tighten it if/when that file gets converted.
+
+## `pages/SignIn.tsx`
 
 Default export, function component, no props (rendered directly by the router).
 
 **Local state:**
-- `credentials` — `{ name: "", email: "", password: "" }`. Note `name` is initialized but never read or written anywhere else in this file; it's dead state, presumably copy-pasted from `SignUp.jsx`.
+- `credentials` — `{ name: "", email: "", password: "" }`. Note `name` is initialized but never read or written anywhere else in this file; it's dead state, presumably copy-pasted from `SignUp.tsx`.
 - `errors` — `{}`, keyed by field name (`email`, `password`), populated only by `useAuth`'s `authenticateUser`.
-- `showPassword` — boolean, toggles the password `<input>`'s `type` between `"password"`/`"text"` and swaps the `FaEye`/`FaEyeSlash` icon. Implemented inline with `useState`, **not** via `utils/PasswordToggle.js`.
+- `showPassword` — boolean, toggles the password `<input>`'s `type` between `"password"`/`"text"` and swaps the `FaEye`/`FaEyeSlash` icon. Implemented inline with `useState`, **not** via `utils/PasswordToggle.ts`.
 
 **Render structure:** `<Helmet>` (page title "NgoWorld | Login", meta description, `canonical` pinned to `/` — arguably should be `/auth/signin`) → `<Navbar />` → a two-column `.signup_container` (form on the left, a static banner image `authbanner.png` on the right) → `<form onSubmit>` that calls `e.preventDefault()` then `authenticateUser(credentials, setErrors)`.
 
@@ -53,9 +62,9 @@ Default export, function component, no props (rendered directly by the router).
 
 **Bottom link:** `<Link to="/auth/signup">Sign Up to NgoWorld</Link>` — a real, correct route.
 
-## `pages/SignUp.jsx`
+## `pages/SignUp.tsx`
 
-Structurally the sibling of `SignIn.jsx`, with two additions:
+Structurally the sibling of `SignIn.tsx`, with two additions:
 
 **Local state:** `credentials` starts as `{ name: "", email: "", password: "", userType: authTypeOptions[1] }` — `authTypeOptions` from `src/statics/Constants.js` is `[{value:"individual",label:"Individual"}, {value:"club",label:"Organization"}]`, so the form **defaults to "Organization"** (`authTypeOptions[1]`), not "Individual".
 
@@ -67,11 +76,11 @@ Both controls mutate the same `credentials.userType`, so if a consumer somehow d
 
 **Label/placeholder swap:** the name field's label/placeholder read `credentials.userType.value === "individual" ? "Full Name"/"John Doe" : "Organization Name"/"Save Tigers"` — purely cosmetic, does not change which field is actually submitted (`name` either way).
 
-**Submit gate:** `disabled={loading || !credentials.email || !credentials.password || !credentials.name}` — one more required field than `SignIn.jsx` (adds `name`).
+**Submit gate:** `disabled={loading || !credentials.email || !credentials.password || !credentials.name}` — one more required field than `SignIn.tsx` (adds `name`).
 
-**On submit:** same pattern as `SignIn.jsx` — `authenticateUser(credentials, setErrors)` from `useAuth("signup")`.
+**On submit:** same pattern as `SignIn.tsx` — `authenticateUser(credentials, setErrors)` from `useAuth("signup")`.
 
-## `hooks/useAuth.js` — the live validator + submit handler
+## `hooks/useAuth.ts` — the live validator + submit handler
 
 ```js
 export function useAuth(authType) // authType: "signin" | "signup"
@@ -85,23 +94,23 @@ export function useAuth(authType) // authType: "signin" | "signup"
 3. **Password strength.** Inline regex (not from `Constants.js`): `` /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/ `` — requires 8+ characters, at least one digit, one lowercase, one uppercase letter. **This check runs identically on sign-in**, not just sign-up. An existing account whose password predates this rule (or a user who simply mistypes) gets a client-side "password" field error and the request never reaches the backend, even though the backend might have accepted or correctly rejected the actual credentials. On failure: same `setErrors` pattern, field `password`, then return.
 4. **Sets `loading = true`**, then calls exactly one of:
    - `LoginUser(credentials)` (`MilanApi.js`, `POST /auth/signin`, `withCredentials: true`) when `authType === "signin"`.
-   - `RegisterUser({ ...credentials, userType: credentials.userType.value })` (`MilanApi.js`, `POST /auth/signup`, `withCredentials: true`) when `authType === "signup"` — note `userType` is unwrapped from its `react-select` `{value, label}` shape into a bare string **only here**; if you ever add a second `authType`-driven consumer that doesn't come through `SignUp.jsx`'s `<Select>`/`.status-switch` state shape, this line will throw (`credentials.userType.value` on a plain string would be `undefined`, so `userType` becomes `undefined` in the payload rather than throwing — silent data loss, not a crash).
+   - `RegisterUser({ ...credentials, userType: credentials.userType.value })` (`MilanApi.js`, `POST /auth/signup`, `withCredentials: true`) when `authType === "signup"` — note `userType` is unwrapped from its `react-select` `{value, label}` shape into a bare string **only here**; if you ever add a second `authType`-driven consumer that doesn't come through `SignUp.tsx`'s `<Select>`/`.status-switch` state shape, this line will throw (`credentials.userType.value` on a plain string would be `undefined`, so `userType` becomes `undefined` in the payload rather than throwing — silent data loss, not a crash).
 5. **On `response.status === 200 || 201`:** `showSuccessToast(response?.data?.message)`, then `dispatch(updateUserData({ ...response.data.user, isLoggedIn: true }))` — this is the point where the Redux `user` slice is first populated for the session; see [state-management.md](../../../docs/specs/state-management.md) for the slice's dynamic, schema-less shape. Then, after a **fixed 1000ms `setTimeout`** (not tied to the toast's own duration — just an arbitrary pause so the user sees the success toast before the page navigates away), `navigate("/")` and `setLoading(false)`.
 6. **Otherwise:** `showErrorToast(response?.data?.message)`, `setLoading(false)`. Note this branch is also reached if `LoginUser`/`RegisterUser` themselves failed with a network error, since both of those functions catch and return `error.response` rather than throwing — see [api-integration.md](../../../docs/specs/api-integration.md#layer-a--srcservicesmilanapijs-the-one-almost-everything-uses). If the network is down entirely (no `error.response`, e.g. DNS failure), `response` is `undefined` and `response?.data?.message` is `undefined` — `showErrorToast(undefined)` — check what `showErrorToast` does with an undefined message before assuming users see something meaningful in this case.
 
 `useAuth` does not distinguish "email already exists" from "wrong password" from "server error" at the hook level — whatever `response?.data?.message` the backend sent is shown verbatim in the toast; there's no client-side mapping to friendlier copy.
 
-## `hooks/useValidation.js` + `hooks/useFormLogic.js` — the unused, fuller system
+## `hooks/useValidation.ts` + `hooks/useFormLogic.ts` — the unused, fuller system
 
-These two files are not imported by `SignIn.jsx` or `SignUp.jsx` today, but they are the more complete design and are worth understanding in full if you're ever asked to build out real club-signup fields (tagline, description, address, slug, iframe) that the live pages don't currently collect at all.
+These two files are not imported by `SignIn.tsx` or `SignUp.tsx` today, but they are the more complete design and are worth understanding in full if you're ever asked to build out real club-signup fields (tagline, description, address, slug, iframe) that the live pages don't currently collect at all.
 
-**`useValidation(credentials, userSignup, clubSignup)`** — a plain function (not a hook despite the `use` prefix; called directly, not via the Hooks runtime) that returns either `[]`-shaped array of `{ error: true, message, field }` objects, or `{ error: false, message: "" }` if nothing failed. Always validates `email` (stricter regex than `useAuth.js`'s: `` /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ `` — properly escaped dot, 2+ char TLD) and `password` (present + 6+ chars — looser than `useAuth.js`'s 8-char/mixed-case/digit rule) and, if `confirmPassword` is present, that it matches `password`. If `userSignup` is true: validates `firstName`/`lastName` (letters only, 3–30 chars). If `clubSignup` is true: validates `name` (letters+spaces, 3–30), `tagLine` (20–220 chars), `description` (100–1000 chars), and requires `iframe` to be present (no format check beyond truthiness). If either signup flag is true: also validates `website` (optional, but must match a URL regex if provided), `slug` (required, must not start/end with `/`, must be `[a-zA-Z0-9-]` only, 3–30 chars — this is clearly meant to become the public profile username), `city`/`state`/`country` (required, presence only), `address` (20–200 chars), `pincode` (required, must stringify to length 5 or 6).
+**`useValidation(credentials, userSignup, clubSignup)`** — a plain function (not a hook despite the `use` prefix; called directly, not via the Hooks runtime) that returns either `[]`-shaped array of `{ error: true, message, field }` objects, or `{ error: false, message: "" }` if nothing failed. Always validates `email` (stricter regex than `useAuth.ts`'s: `` /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ `` — properly escaped dot, 2+ char TLD) and `password` (present + 6+ chars — looser than `useAuth.ts`'s 8-char/mixed-case/digit rule) and, if `confirmPassword` is present, that it matches `password`. If `userSignup` is true: validates `firstName`/`lastName` (letters only, 3–30 chars). If `clubSignup` is true: validates `name` (letters+spaces, 3–30), `tagLine` (20–220 chars), `description` (100–1000 chars), and requires `iframe` to be present (no format check beyond truthiness). If either signup flag is true: also validates `website` (optional, but must match a URL regex if provided), `slug` (required, must not start/end with `/`, must be `[a-zA-Z0-9-]` only, 3–30 chars — this is clearly meant to become the public profile username), `city`/`state`/`country` (required, presence only), `address` (20–200 chars), `pincode` (required, must stringify to length 5 or 6).
 
-**`useFormLogic(initialState, submitCallback, redirectPath, isSignup, userType)`** — a hook wrapping generic form state (`formState`, `handleChange`, `handleSubmit`) around the validator above, driven by the Zustand `isLoading` flag (`useAuthStore`, shared with `AuthButton.jsx`) rather than local `useState` loading. `handleSubmit` calls `useValidation` with `userType === "individual"` ⇒ `(formState, true, false)` or otherwise `(formState, false, true)` — i.e. it always validates as either full individual-signup or full club-signup, never as a plain sign-in; there's no `authType === "signin"` short path like `useAuth.js` has, meaning this hook was seemingly designed for the richer signup flow specifically. On validation success it awaits `submitCallback(formState)` (the actual API call is left to the caller — this hook doesn't call `MilanApi.js` directly) and handles the response's `status` the same 200/201-success shape as `useAuth.js`, but with a **2000ms** timeout before navigating (vs. `useAuth.js`'s 1000ms) and does **not** dispatch anything to Redux itself — a real consumer of this hook would need to handle the Redux dispatch inside its own `submitCallback`.
+**`useFormLogic(initialState, submitCallback, redirectPath, isSignup, userType)`** — a hook wrapping generic form state (`formState`, `handleChange`, `handleSubmit`) around the validator above, driven by the Zustand `isLoading` flag (`useAuthStore`, shared with `AuthButton.tsx`) rather than local `useState` loading. `handleSubmit` calls `useValidation` with `userType === "individual"` ⇒ `(formState, true, false)` or otherwise `(formState, false, true)` — i.e. it always validates as either full individual-signup or full club-signup, never as a plain sign-in; there's no `authType === "signin"` short path like `useAuth.ts` has, meaning this hook was seemingly designed for the richer signup flow specifically. On validation success it awaits `submitCallback(formState)` (the actual API call is left to the caller — this hook doesn't call `MilanApi.js` directly) and handles the response's `status` the same 200/201-success shape as `useAuth.ts`, but with a **2000ms** timeout before navigating (vs. `useAuth.ts`'s 1000ms) and does **not** dispatch anything to Redux itself — a real consumer of this hook would need to handle the Redux dispatch inside its own `submitCallback`.
 
 Also exports `individualInitialFormState` and `clubInitialFormState` — these are the two form shapes `useValidation` expects, and are the best available reference for "what fields does a complete club/individual signup need" since no live UI collects them all today.
 
-## `components/DonotRenderWhenLoggedIn.jsx` — the route guard
+## `components/DonotRenderWhenLoggedIn.tsx` — the route guard
 
 A higher-order component: `DonotRenderWhenLoggedIn(Component) → WrappedComponent`.
 Applied to `SignIn` and `SignUp` in [routesConfig.jsx](../../../src/app/routes/routesConfig.jsx) (both lazy-loaded: `lazy(() => import(...))`).
@@ -109,19 +118,19 @@ Guard condition: `Cookies.get("Token") && useSelector(selectIsLoggedIn)` — **b
 This is "pattern 2" of the three "is the user logged in" checks cataloged in [state-management.md](../../../docs/specs/state-management.md) — match it if you add a similar guard elsewhere, rather than introducing a fourth variant.
 This HOC protects exactly two routes; there is no equivalent "require login" guard anywhere in the app (e.g. nothing stops an anonymous visitor from loading `/dashboard` by URL).
 
-## `components/AuthButton.jsx` — unused
+## `components/AuthButton.tsx` — unused
 
-A self-contained submit button + "switch mode" link, meant to replace the bespoke markup `SignIn.jsx`/`SignUp.jsx` build inline (their own `<Button>` + `signup_or` + Google button + `auth_forgot_section` block).
+A self-contained submit button + "switch mode" link, meant to replace the bespoke markup `SignIn.tsx`/`SignUp.tsx` build inline (their own `<Button>` + `signup_or` + Google button + `auth_forgot_section` block).
 Reads `window.location.pathname.includes("signup")` to decide which copy/link to show — a pattern that only works if it's rendered from exactly `/auth/signin` or `/auth/signup`.
 **Newly observed bug, not previously documented:** the "switch mode" link navigates to `navigate("/auth/login")` — there is no `/auth/login` route (the real routes are `/auth/signin` and `/auth/signup`, confirmed in `routesConfig.jsx`); clicking it would land on the 404 page.
 Since this component is not currently rendered anywhere, the bug is latent — fix it before wiring this component into a page.
 
-## `components/RenderErrorMessage.jsx` — unused
+## `components/RenderErrorMessage.tsx` — unused
 
-`renderErrorMessage(fieldName, formState)` renders every entry in `formState.errors` (the `useValidation.js`-shaped array) whose `.field` matches `fieldName`, wrapped in `.authpage_error-div` / `.authpage_error-message`.
+`renderErrorMessage(fieldName, formState)` renders every entry in `formState.errors` (the `useValidation.ts`-shaped array) whose `.field` matches `fieldName`, wrapped in `.authpage_error-div` / `.authpage_error-message`.
 Only meaningful paired with `useFormLogic`'s `formState.errors` array shape — the live pages' `errors` object (`{ email: "...", password: "..." }`, one string per field) is a different shape and is rendered with plain `<p>{errors.email}</p>` inline instead.
 
-## `utils/PasswordToggle.js` — unused
+## `utils/PasswordToggle.ts` — unused
 
 `passwordToggle(passwordType, setPasswordType)` / `confirmPasswordToggle(...)` are generic `"password" ⇄ "text"` flippers meant to be paired with a `useState` pair per input.
 Both live pages instead inline their own `showPassword` boolean and swap `FaEye`/`FaEyeSlash` directly rather than calling these.
@@ -130,7 +139,7 @@ If you add a confirm-password field to either live page, prefer wiring these in 
 ## Data flow summary
 
 ```
-SignIn.jsx / SignUp.jsx (local `credentials`/`errors` state)
+SignIn.tsx / SignUp.tsx (local `credentials`/`errors` state)
         │  onSubmit
         ▼
 useAuth(authType).authenticateUser(credentials, setErrors)
@@ -147,10 +156,10 @@ response.status 200/201 ──► showSuccessToast → dispatch(updateUserData({
         └── else ──► showErrorToast(response?.data?.message)
 ```
 
-Google OAuth is a separate, parallel path that bypasses `useAuth.js` entirely:
+Google OAuth is a separate, parallel path that bypasses `useAuth.ts` entirely:
 
 ```
-SignIn.jsx / SignUp.jsx  handleGoogle()
+SignIn.tsx / SignUp.tsx  handleGoogle()
         ▼
 GoogleAuth()  [MilanApi.js, GET /auth/google]  →  window.location.href = <backend-provided URL>
         │   (full page navigation — leaves the React app)
@@ -169,19 +178,19 @@ Because completion of Google OAuth is handled by `Home.jsx` (a different feature
 
 ## Known issues specific to this feature (superset of known-issues.md's auth entries)
 
-- **Two validation systems, only one live** (see above) — don't assume a fix to `useValidation.js` affects real sign-in/sign-up behavior; it doesn't, today.
-- **`useAuth.js`'s email/password checks re-run on sign-in**, not just sign-up, and can block a legitimate login attempt with stale-relative-to-current-rules credentials before any network call happens.
+- **Two validation systems, only one live** (see above) — don't assume a fix to `useValidation.ts` affects real sign-in/sign-up behavior; it doesn't, today.
+- **`useAuth.ts`'s email/password checks re-run on sign-in**, not just sign-up, and can block a legitimate login attempt with stale-relative-to-current-rules credentials before any network call happens.
 - **Offline feedback is generic, not field-specific** — step 1 of `authenticateUser` shows a connectivity toast (via `checkInternetConnection()`) but never a field-level `email`/`password` error, unlike steps 2–3.
-- **`AuthButton.jsx` links to a nonexistent `/auth/login` route** (should be `/auth/signin`) — latent since the component is unused; fix before wiring it up.
-- **`SignIn.jsx`'s dead `name` field** in local state, unused.
-- **`SignUp.jsx`'s two `userType` toggle controls clear `errors` inconsistently** (checkbox toggle does, `<Select>` doesn't).
-- **`SignUp.jsx` defaults to `userType: "club"`** (`authTypeOptions[1]`, labeled "Organization") rather than "Individual" — confirm this is intentional product behavior before treating it as a bug.
-- The email regex actually enforced on live traffic (`Constants.js`'s `emailRegex`) is looser/buggier than `useValidation.js`'s unused one — see [known-issues.md](../../../docs/specs/known-issues.md) for the exact character-class bug.
+- **`AuthButton.tsx` links to a nonexistent `/auth/login` route** (should be `/auth/signin`) — latent since the component is unused; fix before wiring it up.
+- **`SignIn.tsx`'s dead `name` field** in local state, unused.
+- **`SignUp.tsx`'s two `userType` toggle controls clear `errors` inconsistently** (checkbox toggle does, `<Select>` doesn't).
+- **`SignUp.tsx` defaults to `userType: "club"`** (`authTypeOptions[1]`, labeled "Organization") rather than "Individual" — confirm this is intentional product behavior before treating it as a bug.
+- The email regex actually enforced on live traffic (`Constants.js`'s `emailRegex`) is looser/buggier than `useValidation.ts`'s unused one — see [known-issues.md](../../../docs/specs/known-issues.md) for the exact character-class bug.
 
 ## If you're asked to...
 
-- **"Fix a sign-in/sign-up bug users are hitting"** → almost certainly `hooks/useAuth.js` or the two page components; `useValidation.js`/`useFormLogic.js` are not in the live path.
-- **"Add a club-specific signup field" (tagline, description, address, etc.)** → the live `SignUp.jsx` collects none of these today. Converge on `useValidation.js` + `useFormLogic.js` + `clubInitialFormState` as the target design rather than inventing new field-handling from scratch; you'll need to actually wire `useFormLogic` into `SignUp.jsx` (or a new club-signup page) to make it live.
-- **"Standardize the password show/hide toggle"** → adopt `utils/PasswordToggle.js` in both pages instead of leaving each page with its own inline copy.
+- **"Fix a sign-in/sign-up bug users are hitting"** → almost certainly `hooks/useAuth.ts` or the two page components; `useValidation.ts`/`useFormLogic.ts` are not in the live path.
+- **"Add a club-specific signup field" (tagline, description, address, etc.)** → the live `SignUp.tsx` collects none of these today. Converge on `useValidation.ts` + `useFormLogic.ts` + `clubInitialFormState` as the target design rather than inventing new field-handling from scratch; you'll need to actually wire `useFormLogic` into `SignUp.tsx` (or a new club-signup page) to make it live.
+- **"Standardize the password show/hide toggle"** → adopt `utils/PasswordToggle.ts` in both pages instead of leaving each page with its own inline copy.
 - **"Make the Google button match the shared Button style"** → both pages currently use a raw `<button className="btn authpage_oauth">`, not the shared `Button` component; ui-kit.md's shared `Button` supports an `onClickfunction` prop pattern to follow if you convert it.
 - **"Centralize logout"** → out of scope for this folder; see `docs/specs/state-management.md` and the three call sites listed there.

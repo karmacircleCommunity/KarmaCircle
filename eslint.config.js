@@ -2,6 +2,12 @@ const js = require("@eslint/js");
 const react = require("eslint-plugin-react");
 const cypress = require("eslint-plugin-cypress");
 const globals = require("globals");
+const tseslint = require("typescript-eslint");
+
+const tsRecommended = tseslint.configs.recommended.map((config) => ({
+  ...config,
+  files: ["**/*.{ts,tsx}"],
+}));
 
 module.exports = [
   {
@@ -10,6 +16,7 @@ module.exports = [
   js.configs.recommended,
   {
     ...react.configs.flat.recommended,
+    files: ["**/*.{js,jsx,ts,tsx}"],
     languageOptions: {
       ...react.configs.flat.recommended.languageOptions,
       ecmaVersion: "latest",
@@ -32,6 +39,19 @@ module.exports = [
       "no-unused-vars": ["error", { ignoreRestSiblings: true }],
       "react/prop-types": "off",
       "react/react-in-jsx-scope": "off",
+    },
+  },
+  ...tsRecommended,
+  {
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      // Superseded by the TS-aware version below, which understands
+      // types (e.g. imports only used in a type position).
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { ignoreRestSiblings: true },
+      ],
     },
   },
   {

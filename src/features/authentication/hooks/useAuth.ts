@@ -1,18 +1,23 @@
-import { emailRegex } from "@statics/Constants.js";
-import { updateUserData } from "@app/store/slices/userSlice.js";
-import checkInternetConnection from "@utils/CheckInternetConnection.js";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { emailRegex } from "@statics/Constants.js";
+import { updateUserData } from "@app/store/slices/userSlice.js";
+import checkInternetConnection from "@utils/CheckInternetConnection.js";
 import { LoginUser, RegisterUser } from "@services/MilanApi.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import { AuthType } from "../types";
+import type { Credentials, SetAuthErrors, UseAuthResult } from "../types";
 
-export function useAuth(authType) {
+export function useAuth(authType: AuthType): UseAuthResult {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
-  async function authenticateUser(credentials, setErrors) {
+  async function authenticateUser(
+    credentials: Credentials,
+    setErrors: SetAuthErrors,
+  ): Promise<void> {
     if (!checkInternetConnection()) {
       return;
     }
@@ -38,11 +43,11 @@ export function useAuth(authType) {
 
     setLoading(true);
 
-    const response = await (authType === "signin"
+    const response = await (authType === AuthType.SignIn
       ? LoginUser(credentials)
       : RegisterUser({
           ...credentials,
-          userType: credentials.userType.value,
+          userType: credentials.userType?.value,
         }));
 
     if (response?.status === 201 || response?.status === 200) {
