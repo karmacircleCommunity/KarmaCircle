@@ -1,7 +1,7 @@
 # Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-08-15)
 
 ## Corpus Check
-- 92 files · ~451,451 words
+- 92 files · ~451,446 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -656,7 +656,7 @@ Nodes (1): Four coexisting styling approaches (plain .scss, plain .css, CSS Modu
 ## Knowledge Gaps
 - **118 isolated node(s):** `Stumptown Syndicate`, `Django Code of Conduct`, `Geek Feminism Anti-Harassment Policy`, `Weapons Policy`, `Expected Behavior` (+113 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 29`** (2 nodes): `cypress.config.js`, `setupNodeEvents()`
+- **Thin community `Community 29`** (2 nodes): `setupNodeEvents()`, `cypress.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 30`** (2 nodes): `Error404()`, `Error404.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.

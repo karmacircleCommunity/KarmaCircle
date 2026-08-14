@@ -148,17 +148,17 @@
     {
       "label": "cypress.config.js",
       "file_type": "code",
-      "source_file": "cypress.config.js",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/cypress.config.js",
       "source_location": "L1",
-      "id": "cypress_config_js",
+      "id": "users_tamalcodes_gh_karmacircle_cypress_config_js",
       "community": 29,
       "norm_label": "cypress.config.js"
     },
     {
       "label": "setupNodeEvents()",
       "file_type": "code",
-      "source_file": "cypress.config.js",
-      "source_location": "L8",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/cypress.config.js",
+      "source_location": "L7",
       "id": "cypress_config_setupnodeevents",
       "community": 29,
       "norm_label": "setupnodeevents()"
@@ -5372,12 +5372,12 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "cypress.config.js",
-      "source_location": "L8",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/cypress.config.js",
+      "source_location": "L7",
       "weight": 1.0,
-      "_src": "cypress_config_js",
+      "_src": "users_tamalcodes_gh_karmacircle_cypress_config_js",
       "_tgt": "cypress_config_setupnodeevents",
-      "source": "cypress_config_js",
+      "source": "users_tamalcodes_gh_karmacircle_cypress_config_js",
       "target": "cypress_config_setupnodeevents",
       "confidence_score": 1.0
     },
