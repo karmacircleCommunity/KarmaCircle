@@ -11,7 +11,7 @@ import "swiper/css/pagination";
 import useSWR from "swr";
 import { Button, Navbar } from "@components";
 import { clubEndpoints } from "@services/ApiEndpoints.js";
-import { resetUserData } from "@app/store/slices/userSlice.js";
+import { resetUserData } from "@app/store/slices/userSlice";
 import { Logout } from "@services/MilanApi.js";
 import fetcher from "@utils/Fetcher.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";

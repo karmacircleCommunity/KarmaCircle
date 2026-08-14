@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { selectIsLoggedIn } from "@app/store/slices/userSlice.js";
+import { selectIsLoggedIn } from "@app/store/slices/userSlice";
 import Cookies from "js-cookie";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";

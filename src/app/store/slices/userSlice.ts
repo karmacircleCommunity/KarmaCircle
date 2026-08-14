@@ -1,12 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
+import type { User } from "@/types/user";
+import type { RootState } from "@app/store/store";
 
-const initialState = { isLoggedIn: false };
+const initialState: User = { isLoggedIn: false };
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    updateUserData: (state, action) => {
+    updateUserData: (state, action: PayloadAction<Partial<User> | undefined>) => {
       return {
         ...state,
         ...action.payload,
@@ -26,8 +29,8 @@ const userSlice = createSlice({
   },
 });
 
-export const selectIsLoggedIn = (state) => state.user.isLoggedIn;
-export const selectUser = (state) => state.user;
+export const selectIsLoggedIn = (state: RootState) => state.user.isLoggedIn;
+export const selectUser = (state: RootState) => state.user;
 
 export const { updateUserData, resetUserData, toggleUserLogin } =
   userSlice.actions;

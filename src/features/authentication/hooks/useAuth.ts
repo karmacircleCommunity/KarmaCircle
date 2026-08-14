@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { emailRegex } from "@statics/Constants.js";
-import { updateUserData } from "@app/store/slices/userSlice.js";
+import { updateUserData } from "@app/store/slices/userSlice";
 import checkInternetConnection from "@utils/CheckInternetConnection.js";
 import { LoginUser, RegisterUser } from "@services/MilanApi.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";

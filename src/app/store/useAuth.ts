@@ -1,10 +1,14 @@
-/* eslint-disable no-unused-vars */
 import { create } from "zustand";
 
-const useAuthStore = create((set) => ({
+interface AuthState {
+  isLoading: boolean;
+  toggleLoading: (loading: boolean) => void;
+}
+
+const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   toggleLoading: (loading) => {
-    set((state) => ({
+    set(() => ({
       isLoading: loading,
     }));
   },

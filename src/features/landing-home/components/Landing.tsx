@@ -1,4 +1,4 @@
-import { selectIsLoggedIn } from "@app/store/slices/userSlice.js";
+import { selectIsLoggedIn } from "@app/store/slices/userSlice";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import Vector from "@assets/pictures/Banner/Vector.png";

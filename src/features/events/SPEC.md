@@ -10,7 +10,7 @@ Nothing rendered under `/events` today reflects real backend data — every visi
 
 ## Why it's shaped this way
 
-Two unrelated event-creation UIs were built at different times and never reconciled: `CreateEvent.tsx` was evidently built by copy-pasting `ProfileUpdate.jsx`/`ProfileCompletion.jsx` (same class-naming convention, same dropzone markup, same `credentials`/`address` state shape) as a starting point, and its API call was never swapped from the profile-update endpoint to an event-creation endpoint — so structurally it's a profile-editing form wearing event-creation labels. `CreateEvents.tsx` (plural) is a separate, purpose-built MUI form that does call the real event-creation endpoint correctly. Only one of the two is reachable from the live `/events` page.
+Two unrelated event-creation UIs were built at different times and never reconciled: `CreateEvent.tsx` was evidently built by copy-pasting `ProfileUpdate.tsx`/`ProfileCompletion.tsx` (same class-naming convention, same dropzone markup, same `credentials`/`address` state shape) as a starting point, and its API call was never swapped from the profile-update endpoint to an event-creation endpoint — so structurally it's a profile-editing form wearing event-creation labels. `CreateEvents.tsx` (plural) is a separate, purpose-built MUI form that does call the real event-creation endpoint correctly. Only one of the two is reachable from the live `/events` page.
 
 ## File manifest
 
@@ -55,7 +55,7 @@ This is **the exact same fixture object as `Clubs.tsx`'s hardcoded `clubs` array
 ### `CreateEvent.tsx` — reachable from `/events`, but cannot ever be submitted
 
 Opened by `Events.tsx`'s "Create An Event" button.
-Structurally near-identical to `ProfileUpdate.jsx`/`ProfileCompletion.jsx` (same `credentials = { description, name, coverImage, address: {...} }` shape, same dropzone markup, same `createevent_*` BEM class convention).
+Structurally near-identical to `ProfileUpdate.tsx`/`ProfileCompletion.tsx` (same `credentials = { description, name, coverImage, address: {...} }` shape, same dropzone markup, same `createevent_*` BEM class convention).
 
 **Wrong endpoint (already known):** `validateForm()` calls `updateUserProfile({ credentials })` — `PATCH /user/update`, the **profile**-update endpoint — not an event-creation endpoint. Submitting this form patches the logged-in user's own profile with whatever was typed into the "event" fields; it does not create an event.
 
@@ -131,7 +131,7 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 - **`FeaturedEventCard.tsx`** — same hardcoded content as `EventCard.tsx` (near-identical JSX, different class prefix `featured_eventcard_*`), also takes no props. Its CTA is "Register Now" — a plain `<button>` with no `onClick`.
 - **`FeaturedEventImage.tsx`** — a static "Featured" tag + a single hardcoded Devfolio-hosted image URL, no props.
 - **`EventSlider.tsx`** — builds a fixed 10-item `slides` array (alternating `FeaturedEventImage`/`FeaturedEventCard`, ids 1–10, all rendering identical static content per above), pairs them two-per-slide (`slides.length / 2` = 5 slides), and auto-advances `index` via `setInterval(..., 3000)` with CSS `transform: translateX(-${index*100}%)`. No Swiper/carousel library despite `swiper` CSS being imported at the page level for other components — this is a hand-rolled carousel. No pause-on-hover, no manual nav controls, no accessibility affordances (no `aria-live`, no keyboard control).
-- **`EventsMarqueeCards.tsx`** — **the one component in this feature that actually reads and correctly uses an `event` prop**: cover image, name, either a location (`CiLocationOn` + `event.address`, when `mode === "Offline"`) or a platform icon+name (`mode !== "Offline"`, icon URL chosen via a nested ternary keyed on `event.platform` — falls back to a generic "other" icon for any platform not literally `"Zoom Meeting"`/`"Google Meet"`/`"Microsoft Teams"`), and a formatted start date/time via `getFormattedDate(event?.startDate)` + `event?.startTime` rendered with responsive truncation (`window.innerWidth <= 500` shows an abbreviated date). **Not rendered by any page.** Given `Profile.jsx` (onboarding-profile feature) has a commented-out `Marquee` block referencing an `EventsCard`, this component looks like the intended content for that commented-out section — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md).
+- **`EventsMarqueeCards.tsx`** — **the one component in this feature that actually reads and correctly uses an `event` prop**: cover image, name, either a location (`CiLocationOn` + `event.address`, when `mode === "Offline"`) or a platform icon+name (`mode !== "Offline"`, icon URL chosen via a nested ternary keyed on `event.platform` — falls back to a generic "other" icon for any platform not literally `"Zoom Meeting"`/`"Google Meet"`/`"Microsoft Teams"`), and a formatted start date/time via `getFormattedDate(event?.startDate)` + `event?.startTime` rendered with responsive truncation (`window.innerWidth <= 500` shows an abbreviated date). **Not rendered by any page.** Given `Profile.tsx` (onboarding-profile feature) has a commented-out `Marquee` block referencing an `EventsCard`, this component looks like the intended content for that commented-out section — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md).
 
 ## `components/HostedEvents.tsx` — literally empty
 
@@ -142,7 +142,7 @@ Given the name, this was likely intended to show a logged-in club's own list of 
 
 ## `services/Events.ts` — `getEvents()`, correct, never called
 
-Identical shape to `clubs/services/Clubs.js`'s `getClubs()` — same `apiConnector`-based Layer B call pattern, same throw-on-non-200 behavior (see [clubs/SPEC.md](../clubs/SPEC.md) for the full explanation of this calling convention, which is the opposite of `MilanApi.js`'s catch-and-return-response pattern).
+Identical shape to `clubs/services/Clubs.ts`'s `getClubs()` — same `apiConnector`-based Layer B call pattern, same throw-on-non-200 behavior (see [clubs/SPEC.md](../clubs/SPEC.md) for the full explanation of this calling convention, which is the opposite of `MilanApi.js`'s catch-and-return-response pattern).
 `clubEndpoints.all` → `eventEndpoints.all` is the only substantive difference.
 Even the leftover comment above the function (`// get clubs`) is a copy-paste artifact from `Clubs.ts` — cosmetic, but a good signal of how directly one file was cloned from the other.
 
@@ -193,7 +193,7 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - **`CreateEvent.tsx`'s `htmlFor` attributes on `<div>` elements** (the event-mode picker) aren't valid on a `div` — harmless pre-existing markup, suppressed rather than removed.
 
 `Events.tsx`'s hardcoded `events` array is now explicitly typed as `Club[]` (imported from `@features/clubs/types`) rather than a home-grown `EventRecord[]`, to make the "this is club-shaped, not event-shaped" mismatch the type checker's problem too, not just a documentation note.
-`useEvent.ts`'s `submitCallback` asserts `CreateEvent()`'s (from `MilanApi.js`) return type at the call site, since that function's own catch block returns the caught error as-is rather than `error.response` — its real inferred type collapses to include `unknown`. `HostedEvents.tsx` stays a genuinely empty (0-byte) file, matching `HostedEvents.jsx` — there was nothing to add types to.
+`useEvent.ts`'s `submitCallback` asserts `CreateEvent()`'s (from `MilanApi.js`) return type at the call site, since that function's own catch block returns the caught error as-is rather than `error.response` — its real inferred type collapses to include `unknown`. `HostedEvents.tsx` stays a genuinely empty (0-byte) file, matching `HostedEvents.tsx` — there was nothing to add types to.
 
 ## Known issues specific to this feature (superset of known-issues.md's events entries, plus new findings)
 
@@ -215,4 +215,4 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - **"Make the events page live"** → same shape as the clubs-page fix: wire `useSWR(eventEndpoints.all, getEvents)` into `Events.tsx` in place of the hardcoded array, then fix `EventCard.tsx` to actually accept and render its `event` prop (it currently has no parameter to even destructure from).
 - **"Fix the copy-paste SEO bug on the events page"** → change `<ComponentHelmet type="Clubs" />` to `type="Events"` in `Events.tsx`.
 - **"Build a 'my hosted events' view for the dashboard"** → `HostedEvents.tsx` is the intended file (currently empty) — there's no existing logic to preserve, treat it as new work.
-- **"Show a real event's location/platform info somewhere"** → `EventsMarqueeCards.tsx` already does this correctly and just needs a page to render it from; the commented-out `Marquee` block in `onboarding-profile/pages/Profile.jsx` is the most likely intended destination.
+- **"Show a real event's location/platform info somewhere"** → `EventsMarqueeCards.tsx` already does this correctly and just needs a page to render it from; the commented-out `Marquee` block in `onboarding-profile/pages/Profile.tsx` is the most likely intended destination.

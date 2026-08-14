@@ -19,7 +19,7 @@ import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
 import Cookies from "js-cookie";
 import { Button, Footer, Navbar } from "@components";
 import { userEndpoints } from "@services/ApiEndpoints.js";
-import useAuthStore from "@app/store/useAuth.js";
+import useAuthStore from "@app/store/useAuth";
 import type { LogoutResponse, UserProfileDetails } from "../types";
 
 /**

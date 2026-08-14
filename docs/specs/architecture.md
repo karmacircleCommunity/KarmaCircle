@@ -2,12 +2,12 @@
 
 ## Entry point and providers
 
-[src/app/index.jsx](../../src/app/index.jsx) is the actual entry point (see `index.html`).
+[src/app/index.tsx](../../src/app/index.tsx) is the actual entry point (see `index.html`).
 It mounts `<App />` inside, from outermost to innermost: Redux `<Provider>`, `<HelmetProvider>` (for per-page `<title>`/meta tags via `react-helmet-async`), and redux-persist's `<PersistGate>`.
 `<Analytics />` and `<SpeedInsights />` from Vercel are rendered as siblings of `<App />`, so they run regardless of route.
 It also sets a `--vh` CSS custom property from `window.innerHeight` on load, a common mobile-viewport-height workaround; it is not recalculated on resize.
 
-[src/app/App.jsx](../../src/app/App.jsx) wraps the router in `<QueryClientProvider>` (from `@tanstack/react-query`) and MUI's `<LocalizationProvider>` (needed for the date/time pickers used in event creation).
+[src/app/App.tsx](../../src/app/App.tsx) wraps the router in `<QueryClientProvider>` (from `@tanstack/react-query`) and MUI's `<LocalizationProvider>` (needed for the date/time pickers used in event creation).
 It renders a global `<ToastContainer />` (react-toastify) and a global `<BacktoTop />` button outside the `<Routes>`, so both appear on every page.
 Route content is wrapped in `<Suspense fallback={"Loading . . ."}>` to support the two lazy-loaded auth pages (see below).
 
@@ -16,7 +16,7 @@ See [known-issues.md](./known-issues.md).
 
 ## Routing
 
-The route table lives in [src/app/routes/routesConfig.jsx](../../src/app/routes/routesConfig.jsx) and is consumed by `App.jsx`, which maps it into a flat list of `<Route>` elements (no nested routes, no layout routes).
+The route table lives in [src/app/routes/routesConfig.tsx](../../src/app/routes/routesConfig.tsx) and is consumed by `App.tsx`, which maps it into a flat list of `<Route>` elements (no nested routes, no layout routes).
 
 | Path | Element | Notes |
 |---|---|---|
@@ -32,14 +32,14 @@ The route table lives in [src/app/routes/routesConfig.jsx](../../src/app/routes/
 | `/trending` | `Trending` | "Coming soon" placeholder |
 | `*` | `Error404` | Catch-all |
 
-`SignIn` and `SignUp` are the only lazily-loaded routes (`lazy(() => import(...))`), and are each wrapped by [DonotRenderWhenLoggedIn](../../src/features/authentication/components/DonotRenderWhenLoggedIn.jsx) — a HOC that redirects an already-authenticated user to `/`.
+`SignIn` and `SignUp` are the only lazily-loaded routes (`lazy(() => import(...))`), and are each wrapped by [DonotRenderWhenLoggedIn](../../src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) — a HOC that redirects an already-authenticated user to `/`.
 See [authentication.md](./authentication.md).
 
-Pages are exported from a barrel file, [src/app/routes/route.js](../../src/app/routes/route.js), and re-exported under friendlier names (`Login` for `SignIn`, etc.).
-`routesConfig.jsx` imports most pages from this barrel but imports `Home` and `Trending` directly — there's no functional difference, just inconsistent style.
+Pages are exported from a barrel file, [src/app/routes/route.ts](../../src/app/routes/route.ts), and re-exported under friendlier names (`Login` for `SignIn`, etc.).
+`routesConfig.tsx` imports most pages from this barrel but imports `Home` and `Trending` directly — there's no functional difference, just inconsistent style.
 
-There is no `/donate` route registered anywhere, even though `src/features/donate-shop-trending/pages/Donate.jsx` exists.
-There is no `/events/:id` (or similar) detail route either, even though `src/features/events/pages/DetailedEvent.jsx` exists as a stub.
+There is no `/donate` route registered anywhere, even though `src/features/donate-shop-trending/pages/Donate.tsx` exists.
+There is no `/events/:id` (or similar) detail route either, even though `src/features/events/pages/DetailedEvent.tsx` exists as a stub.
 Both are effectively unreachable dead code today — see [known-issues.md](./known-issues.md).
 
 ## Build configuration
@@ -68,8 +68,8 @@ Each feature owns only the subfolders it actually needs; nothing here is a fixed
 ```
 src/
   app/                         — app shell / bootstrap
-    App.jsx, index.jsx         — root component + entry point
-    routes/                    — routesConfig.jsx (route table), route.js (page barrel)
+    App.tsx, index.tsx         — root component + entry point
+    routes/                    — routesConfig.tsx (route table), route.ts (page barrel)
     store/                     — Redux Toolkit store + userSlice, Zustand store (useAuth — loading flag only)
   features/
     authentication/            — SignIn/SignUp pages, AuthButton, DonotRenderWhenLoggedIn, useAuth/useValidation/useFormLogic
@@ -78,7 +78,7 @@ src/
     clubs/                     — Clubs page, ClubCard, Clubs.js fetcher
     events/                    — Events/DetailedEvent pages, event cards, CreateEvent(s), useEvent
     landing-home/               — Home page, Landing hero, MilanInfoBanner
-    donate-shop-trending/      — Donate, Shop, Trending pages, PaymentGateway.js (Razorpay)
+    donate-shop-trending/      — Donate, Shop, Trending pages, PaymentGateway.ts (Razorpay)
     error-handling/            — Error404, Test pages
   components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, BacktoTop, ComingSoon, ComponentHelmet, ClickAwayListener
   services/                    — MilanApi.js (most backend calls), ApiConnector.js + ApiEndpoints.js (shared API infra)

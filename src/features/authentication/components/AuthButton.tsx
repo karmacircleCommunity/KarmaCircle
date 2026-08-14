@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import useAuthStore from "@app/store/useAuth.js";
+import useAuthStore from "@app/store/useAuth";
 import Button from "@components/buttons/globalbutton/Button.jsx";
 
 /**

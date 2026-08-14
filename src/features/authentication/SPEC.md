@@ -9,7 +9,7 @@ Read [docs/specs/known-issues.md](../../../docs/specs/known-issues.md) too; seve
 
 Everything involved in turning an anonymous visitor into a session with a `Token` cookie and a populated Redux `user` slice: the sign-in form, the sign-up form, Google OAuth kickoff, the client-side field validation that runs before either form's network call, and the route guard that keeps an already-authenticated visitor off `/auth/signin` and `/auth/signup`.
 Logout is **not** owned by this feature — there is no `useLogout` hook or logout button here.
-`Logout()` (the API call) lives in `src/services/MilanApi.js` and is invoked from three other features (`components/navbar/Navbar.jsx`, `features/onboarding-profile/pages/Profile.jsx`, `features/onboarding-profile/pages/UserProfile.jsx`) with three slightly different cleanup sequences — see [state-management.md](../../../docs/specs/state-management.md).
+`Logout()` (the API call) lives in `src/services/MilanApi.js` and is invoked from three other features (`components/navbar/Navbar.jsx`, `features/onboarding-profile/pages/Profile.tsx`, `features/onboarding-profile/pages/UserProfile.tsx`) with three slightly different cleanup sequences — see [state-management.md](../../../docs/specs/state-management.md).
 If you're asked to fix or centralize logout, you'll be working outside this folder.
 
 ## Why it's shaped this way
@@ -28,7 +28,7 @@ Do not assume both are exercised by any given change.
 | `hooks/useAuth.ts` | The validator + submit handler both live pages actually call | ✅ yes |
 | `hooks/useValidation.ts` | Fuller, unused validator (individual + club shapes) | ❌ no |
 | `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`clubInitialFormState` are defined | ❌ no |
-| `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `SignIn`/`SignUp` in `routesConfig.jsx` | ✅ yes |
+| `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `SignIn`/`SignUp` in `routesConfig.tsx` | ✅ yes |
 | `components/AuthButton.tsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
 | `components/RenderErrorMessage.tsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
 | `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (pages inline their own toggle logic instead) |
@@ -43,7 +43,7 @@ This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+clubs conversion p
 `types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), the live pages' `Credentials`/`AuthErrors` shapes, and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`ClubFormState`/`SignupFormState` shapes.
 `UserType` (the `"individual" | "club"` enum) and `AuthTypeOption` (the react-select option shape) live in `src/types/user.ts` instead, since `clubs` needs `UserType` too.
 Two of this feature's dependencies are plain JS outside this pass's scope, so they get a sibling `.d.ts` purely for type information (the `.js` file is still what runs): `src/statics/Constants.d.ts` (so `authTypeOptions` types as `AuthTypeOption[]` instead of a bare `{value: string}[]`) and `src/utils/Toasts.d.ts` (so `showSuccessToast`/`showErrorToast` accept the `string | undefined` they're actually called with). The shared `Button` component similarly got a `src/components/buttons/globalbutton/Button.d.ts`, since `disabled`/`onClickfunction` have no destructuring default in the JS and were otherwise inferred as required.
-Everything else this folder imports (`MilanApi.js`, `userSlice.js`, `CheckInternetConnection.js`, the Zustand `useAuth.js` store, `Navbar`/etc.) is still untyped JS and resolves to an implicit `any` at the boundary — normal for an incremental migration; tighten it if/when that file gets converted.
+The Redux `userSlice.ts` and the Zustand `useAuth.ts` store are now typed (app shell converted — see `docs/specs/architecture.md#typescript`). Everything else this folder imports (`MilanApi.js`, `CheckInternetConnection.js`, `Navbar`/etc.) is still untyped JS and resolves to an implicit `any` at the boundary — normal for an incremental migration; tighten it if/when that file gets converted.
 
 ## `pages/SignIn.tsx`
 
@@ -113,7 +113,7 @@ Also exports `individualInitialFormState` and `clubInitialFormState` — these a
 ## `components/DonotRenderWhenLoggedIn.tsx` — the route guard
 
 A higher-order component: `DonotRenderWhenLoggedIn(Component) → WrappedComponent`.
-Applied to `SignIn` and `SignUp` in [routesConfig.jsx](../../../src/app/routes/routesConfig.jsx) (both lazy-loaded: `lazy(() => import(...))`).
+Applied to `SignIn` and `SignUp` in [routesConfig.tsx](../../../src/app/routes/routesConfig.tsx) (both lazy-loaded: `lazy(() => import(...))`).
 Guard condition: `Cookies.get("Token") && useSelector(selectIsLoggedIn)` — **both** must be truthy to redirect (`<Navigate to="/" />`); either one alone renders the wrapped page normally.
 This is "pattern 2" of the three "is the user logged in" checks cataloged in [state-management.md](../../../docs/specs/state-management.md) — match it if you add a similar guard elsewhere, rather than introducing a fourth variant.
 This HOC protects exactly two routes; there is no equivalent "require login" guard anywhere in the app (e.g. nothing stops an anonymous visitor from loading `/dashboard` by URL).
@@ -122,7 +122,7 @@ This HOC protects exactly two routes; there is no equivalent "require login" gua
 
 A self-contained submit button + "switch mode" link, meant to replace the bespoke markup `SignIn.tsx`/`SignUp.tsx` build inline (their own `<Button>` + `signup_or` + Google button + `auth_forgot_section` block).
 Reads `window.location.pathname.includes("signup")` to decide which copy/link to show — a pattern that only works if it's rendered from exactly `/auth/signin` or `/auth/signup`.
-**Newly observed bug, not previously documented:** the "switch mode" link navigates to `navigate("/auth/login")` — there is no `/auth/login` route (the real routes are `/auth/signin` and `/auth/signup`, confirmed in `routesConfig.jsx`); clicking it would land on the 404 page.
+**Newly observed bug, not previously documented:** the "switch mode" link navigates to `navigate("/auth/login")` — there is no `/auth/login` route (the real routes are `/auth/signin` and `/auth/signup`, confirmed in `routesConfig.tsx`); clicking it would land on the 404 page.
 Since this component is not currently rendered anywhere, the bug is latent — fix it before wiring this component into a page.
 
 ## `components/RenderErrorMessage.tsx` — unused
@@ -168,13 +168,13 @@ GoogleAuth()  [MilanApi.js, GET /auth/google]  →  window.location.href = <back
         ▼
 backend redirects back to the frontend and sets an `OAuthLoginInitiated` cookie
         ▼
-Home.jsx (features/landing-home) checks that cookie on mount
+Home.tsx (features/landing-home) checks that cookie on mount
         │  if present: successCallback()  [MilanApi.js, GET /auth/login/success]
         ▼
-dispatch(updateUserData(...)) + dispatch(toggleUserLogin())   ← two separate dispatches, done in Home.jsx, not here
+dispatch(updateUserData(...)) + dispatch(toggleUserLogin())   ← two separate dispatches, done in Home.tsx, not here
 ```
 
-Because completion of Google OAuth is handled by `Home.jsx` (a different feature) rather than anything in this folder, **a Google sign-in only "completes" on the frontend if the user's redirect lands back on `/`** — this feature has no way to finish the OAuth handshake on its own. See [landing-home/SPEC.md](../landing-home/SPEC.md) for the other half of this flow.
+Because completion of Google OAuth is handled by `Home.tsx` (a different feature) rather than anything in this folder, **a Google sign-in only "completes" on the frontend if the user's redirect lands back on `/`** — this feature has no way to finish the OAuth handshake on its own. See [landing-home/SPEC.md](../landing-home/SPEC.md) for the other half of this flow.
 
 ## Known issues specific to this feature (superset of known-issues.md's auth entries)
 

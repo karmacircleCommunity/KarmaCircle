@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { useDispatch } from "react-redux";
 import Landing from "@features/landing-home/components/Landing";
 import { Footer } from "@components";
-import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice.js";
+import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice";
 import { successCallback } from "@services/MilanApi.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
 import type { OAuthSuccessResponse } from "../types";

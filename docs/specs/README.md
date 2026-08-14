@@ -13,7 +13,7 @@ There is no server-side code in this repo — it is a Vite + React SPA.
 
 ## Tech stack
 
-- **React 19** with `react-router-dom` v7 for routing (`BrowserRouter`, all routes rendered in [App.jsx](../../src/app/App.jsx)).
+- **React 19** with `react-router-dom` v7 for routing (`BrowserRouter`, all routes rendered in [App.tsx](../../src/app/App.tsx)).
 - **Vite** as the build tool, with `vite-plugin-pwa` for PWA/service-worker support and `vite-plugin-svgr` for importing SVGs as components.
 - **Redux Toolkit + redux-persist** for the logged-in user's profile/session data (persisted to `localStorage`).
 - **Zustand** for one small piece of ephemeral UI state — a global `isLoading` flag (see [state-management.md](./state-management.md)).
@@ -54,7 +54,7 @@ Both styles coexist; prefer the alias style in new code.
 ## TypeScript
 
 The repo is being converted to TypeScript feature by feature (not all at once) — see [architecture.md](./architecture.md#typescript) for the setup.
-Converted so far: `authentication`, `clubs`, `dashboard`, `donate-shop-trending`, `error-handling`, `events`. Everything else is still plain JS (`.js`/`.jsx`) and stays that way until its own turn.
+Converted so far: the app shell (`src/app/`) plus `authentication`, `clubs`, `dashboard`, `donate-shop-trending`, `error-handling`, `events`, `landing-home`, `onboarding-profile`. Everything else is still plain JS (`.js`/`.jsx`) and stays that way until its own turn.
 `tsconfig.json` has `allowJs: true` so JS and TS coexist and TS can still infer types across the boundary; `checkJs` is off, so untouched JS files are never type-checked.
 Don't assume a feature is typed just because a shared dependency it imports (`MilanApi.js`, Redux slices, `Constants.js`, etc.) has types — those get real types only when their own turn comes, or when a converted feature needed a narrow `.d.ts` bridge for one (see `src/statics/Constants.d.ts`, `src/utils/Toasts.d.ts`, `src/components/buttons/globalbutton/Button.d.ts` for examples of that pattern).
 
@@ -74,7 +74,7 @@ Don't assume a feature is typed just because a shared dependency it imports (`Mi
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, BackToTop, page `<Helmet>` usage |
 | [ui-kit.md](./ui-kit.md) | Shared `Button`, `AuthButton`, card components, and the styling conventions behind them |
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay), Shop and Trending "coming soon" placeholders |
-| [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.jsx` |
+| [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.tsx` |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs, dead code, and inconsistencies found while writing these specs — read this before touching adjacent code |
 
 ## Deeper, colocated specs

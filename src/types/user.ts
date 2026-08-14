@@ -20,7 +20,7 @@ export interface AuthTypeOption {
 
 /**
  * The logged-in user as stored in the Redux `user` slice
- * (`src/app/store/slices/userSlice.js`). The slice is intentionally
+ * (`src/app/store/slices/userSlice.ts`). The slice is intentionally
  * schema-less — it's whatever `response.data.user` the backend returns,
  * spread onto `{ isLoggedIn }` — so this type only pins down the fields
  * every consumer in this codebase actually relies on and leaves the rest

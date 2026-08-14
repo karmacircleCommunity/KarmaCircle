@@ -7,7 +7,7 @@ import { ToastContainer } from "react-toastify";
 import { BacktoTop } from "@components";
 import "@styles/App.css";
 import "@styles/Globals.scss";
-import routesConfig from "@app/routes/routesConfig.jsx";
+import routesConfig from "@app/routes/routesConfig";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -23,9 +23,8 @@ const App = () => {
                 {routesConfig.map((route, index) => (
                   <Route
                     key={index}
-                    exact
-                    path={route?.path}
-                    element={route?.element}
+                    path={route.path}
+                    element={route.element}
                   />
                 ))}
               </Routes>

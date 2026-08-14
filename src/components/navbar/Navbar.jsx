@@ -7,7 +7,7 @@ import { RxCaretDown, RxCross2 } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import navbarbrand from "@assets/pictures/Navbar/MilanNavBrand.svg";
-import { resetUserData, selectUser } from "@app/store/slices/userSlice.js";
+import { resetUserData, selectUser } from "@app/store/slices/userSlice.ts";
 import { Logout } from "@services/MilanApi.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
 import Button from "@components/buttons/globalbutton/Button.jsx";

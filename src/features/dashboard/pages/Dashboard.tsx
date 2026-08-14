@@ -2,7 +2,7 @@ import { userEndpoints } from "@services/ApiEndpoints.js";
 import TrackSection from "@features/dashboard/components/TrackSection";
 import ProfileUpdate from "@features/onboarding-profile/components/ProfileUpdate";
 import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion";
-import { updateUserData } from "@app/store/slices/userSlice.js";
+import { updateUserData } from "@app/store/slices/userSlice";
 import fetcher from "@utils/Fetcher.js";
 import { showErrorToast } from "@utils/Toasts.js";
 import { useState } from "react";

@@ -1,7 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import userReducer from "@app/store/slices/userSlice.js";
+import userReducer from "@app/store/slices/userSlice";
 
 const rootReducer = combineReducers({
   user: userReducer,
@@ -24,3 +24,6 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+export type RootState = ReturnType<typeof rootReducer>;
+export type AppDispatch = typeof store.dispatch;
