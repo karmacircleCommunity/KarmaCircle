@@ -1,7 +1,7 @@
 # Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-08-15)
 
 ## Corpus Check
-- 92 files · ~451,579 words
+- 92 files · ~451,451 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary

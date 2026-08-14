@@ -6276,8 +6276,8 @@
       "source_file": "src/utils/Toasts.js",
       "source_location": "L12",
       "weight": 1.0,
-      "_src": "checkinternetconnection_checkinternetconnection",
-      "_tgt": "toasts_showsuccesstoast",
+      "_src": "toasts_showsuccesstoast",
+      "_tgt": "checkinternetconnection_checkinternetconnection",
       "source": "toasts_showsuccesstoast",
       "target": "checkinternetconnection_checkinternetconnection"
     },
@@ -6288,8 +6288,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/src/components/navbar/Navbar.tsx",
       "source_location": "L78",
       "weight": 1.0,
-      "_src": "navbar_handlelogout",
-      "_tgt": "toasts_showsuccesstoast",
+      "_src": "toasts_showsuccesstoast",
+      "_tgt": "navbar_handlelogout",
       "source": "toasts_showsuccesstoast",
       "target": "navbar_handlelogout"
     },
@@ -6300,8 +6300,8 @@
       "source_file": "src/utils/Toasts.js",
       "source_location": "L40",
       "weight": 1.0,
-      "_src": "checkinternetconnection_checkinternetconnection",
-      "_tgt": "toasts_showerrortoast",
+      "_src": "toasts_showerrortoast",
+      "_tgt": "checkinternetconnection_checkinternetconnection",
       "source": "toasts_showerrortoast",
       "target": "checkinternetconnection_checkinternetconnection"
     },
@@ -6312,8 +6312,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/src/components/navbar/Navbar.tsx",
       "source_location": "L87",
       "weight": 1.0,
-      "_src": "navbar_handlelogout",
-      "_tgt": "toasts_showerrortoast",
+      "_src": "toasts_showerrortoast",
+      "_tgt": "navbar_handlelogout",
       "source": "toasts_showerrortoast",
       "target": "navbar_handlelogout"
     },
