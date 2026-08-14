@@ -15,19 +15,34 @@ import { resetUserData } from "@app/store/slices/userSlice.js";
 import { Logout } from "@services/MilanApi.js";
 import fetcher from "@utils/Fetcher.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
-import { checkMissingFields } from "@features/onboarding-profile/utils/checkMissingFields.js";
+import { checkMissingFields } from "@features/onboarding-profile/utils/checkMissingFields";
+import type { LogoutResponse, ProfileDetails } from "../types";
 import "./Profile.scss";
 
+/**
+ * The live public profile page, routed at both `/user/:userName` and
+ * `/club/:userName`. `showProfileModal`/`setShowProfileModal` is set by
+ * `toggleProfileModal()` (wired to the "Edit profile" button) but,
+ * despite its name and despite an earlier version of this doc claiming
+ * otherwise, **nothing in this file's JSX ever reads it to render
+ * `ProfileCompletion` or any other modal** — this component doesn't
+ * import `ProfileCompletion` at all. Clicking "Edit profile" here
+ * currently has no visible effect. See SPEC.md.
+ */
 const Profile = () => {
   const params = useParams();
   const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editProfile, seteditProfile] = useState(false);
+  // Set by toggleProfileModal() but never read — see SPEC.md.
+  void editProfile;
 
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.user);
+  const user = useSelector(
+    (state: { user?: { userName?: string; iframe?: string } }) => state.user,
+  );
   const trueUser = user?.userName === params.userName;
-  const { data: details } = useSWR(
+  const { data: details } = useSWR<ProfileDetails>(
     clubEndpoints.details(params.userName),
     fetcher,
   );
@@ -43,7 +58,7 @@ const Profile = () => {
   }, []);
 
   async function handleLogout() {
-    const data = await Logout();
+    const data = (await Logout()) as LogoutResponse;
 
     if (data?.status === 200) {
       showSuccessToast(data?.data?.message);
@@ -249,7 +264,7 @@ const Profile = () => {
                   user?.iframe ||
                   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14741.482534684159!2d88.35842639207846!3d22.527784753774615!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a0276d0a2583ccf%3A0xf1efff5c088752e2!2s6%20Ballygunge%20Place!5e0!3m2!1sen!2sin!4v1695572606793!5m2!1sen!2sin"
                 }
-                allowfullscreen=""
+                allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               ></iframe>

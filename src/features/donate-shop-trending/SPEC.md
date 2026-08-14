@@ -9,7 +9,7 @@ A donation flow (broken, unroutable), the Razorpay checkout integration that don
 
 ## Why it's shaped this way
 
-`Shop.tsx`/`Trending.tsx` are genuinely, deliberately incomplete — no feature was ever built, and that's fine, they're not broken code, just not-yet-written product surface. `Donate.tsx` is different: it's *stale* code from before a component reorganization (it imports paths that no longer exist), left in the tree without a route pointing to it, so it currently causes no runtime harm but would break the build the moment anyone wires it into `routesConfig.jsx` without first fixing it.
+`Shop.tsx`/`Trending.tsx` are genuinely, deliberately incomplete — no feature was ever built, and that's fine, they're not broken code, just not-yet-written product surface. `Donate.tsx` is different: it's *stale* code from before a component reorganization (it imports paths that no longer exist), left in the tree without a route pointing to it, so it currently causes no runtime harm but would break the build the moment anyone wires it into `routesConfig.tsx` without first fixing it.
 
 ## File manifest
 
@@ -23,7 +23,7 @@ A donation flow (broken, unroutable), the Razorpay checkout integration that don
 
 ## `pages/Donate.tsx` — broken imports, not routed, would fail to build if reached
 
-**No entry in `routesConfig.jsx`** — confirmed, `/donate` does not exist as a route.
+**No entry in `routesConfig.tsx`** — confirmed, `/donate` does not exist as a route.
 This alone means the file's other problems are currently harmless — nothing imports this module at build time via the route table, so bundlers that only walk reachable import graphs from entry points won't necessarily choke on it (verify this holds for this repo's specific Vite/Rollup config before relying on it for anything more than "it hasn't broken CI yet").
 
 **Two imports point at paths that no longer exist:**
@@ -38,7 +38,7 @@ Neither `components/Cards/SingleClubEvent/` nor a bare `components/Loading` (the
 
 - **`useEffect(() => { loadScript(...) })` has no dependency array.** Every re-render of this component (not just the initial mount) appends a brand-new `<script src="https://checkout.razorpay.com/v1/checkout.js">` tag to `document.body` and lets it load again — with no dependency array, this runs after **every** render, unconditionally. If this component is ever fixed and rendered for any length of time with re-renders happening (state changes, parent re-renders, etc.), this would inject an unbounded, ever-growing number of duplicate `<script>` tags into the DOM. This needs an empty `[]` dependency array (or a one-time module-level check for whether the script's already loaded) as part of any real fix, not just the import paths.
 - **`document.title = "Milan | Donate the needy"` is set imperatively at the top of the component body**, then a `<Helmet><title>NgoWorld | Donations</title></Helmet>` block is rendered further down with a *different* title string. These two mechanisms conflict — `react-helmet-async` manages `document.title` reactively once mounted, so the imperative assignment is likely immediately superseded by the `<Helmet>` version at runtime, making the top-of-component line dead/misleading code; every other page in the app uses `<Helmet>` exclusively (or, per [layout-navigation.md](../../../docs/specs/layout-navigation.md), `ComponentHelmet`) — remove the imperative line if you're fixing this file, to match the rest of the codebase's convention.
-- **Login gate redirects to a route that doesn't exist:** `if (!Cookies.get("isLoggedIn")) { toast.error(...); navigate("/user/login"); }` — there is no `/user/login` route in `routesConfig.jsx` (the real sign-in route is `/auth/signin`); even setting aside that `Cookies.get("isLoggedIn")` is a cookie nothing else in the app ever sets (see [state-management.md](../../../docs/specs/state-management.md) — the rest of the app uses the `Token` cookie + Redux `isLoggedIn`, "pattern 2"), the redirect target itself is also wrong and would land on the 404 page.
+- **Login gate redirects to a route that doesn't exist:** `if (!Cookies.get("isLoggedIn")) { toast.error(...); navigate("/user/login"); }` — there is no `/user/login` route in `routesConfig.tsx` (the real sign-in route is `/auth/signin`); even setting aside that `Cookies.get("isLoggedIn")` is a cookie nothing else in the app ever sets (see [state-management.md](../../../docs/specs/state-management.md) — the rest of the app uses the `Token` cookie + Redux `isLoggedIn`, "pattern 2"), the redirect target itself is also wrong and would land on the 404 page.
 - **Uses raw `react-toastify`'s `toast.error(...)` directly**, not the app's `showErrorToast`/`showSuccessToast` wrapper from `src/utils/Toasts.js` — bypasses the offline-suppression behavior every other toast call site in the app gets for free (see [api-integration.md](../../../docs/specs/api-integration.md#toast-conventions)).
 - **`GetAllClubs()` response is stored directly as `clubData`** (`const response = await GetAllClubs(); setClubData(response);`) without checking `response.status` first — `GetAllClubs()` (`MilanApi.js`) follows the catch-and-return-`error.response` pattern, so on a failed request `clubData` would become an Axios *error response* object (with `.status`, `.data`, etc.) rather than an array, and the later `clubData.map(...)` call would throw (`.map` is not a function on a non-array object) rather than showing any error state.
 
@@ -74,7 +74,7 @@ Razorpay's checkout widget requires a valid `order_id` to open a real payment se
 
 Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/comingSoon/ComingSoon.jsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
 `Shop.tsx` passes `` `shop's page.` `` (note the trailing period, which `ComingSoon`'s own copy presumably incorporates into a sentence), `Trending.tsx` passes `"Trending section"` (no trailing period — a minor inconsistency between the two call sites' string formatting, cosmetic only).
-Both are correctly routed (`/shop`, `/trending`) in `routesConfig.jsx`.
+Both are correctly routed (`/shop`, `/trending`) in `routesConfig.tsx`.
 **Unlike `Donate.tsx`, there is nothing broken here** — these two files are exactly as finished as they're meant to be today.
 If asked to "build the shop" or "build trending," this is genuinely new feature work with no existing scaffolding to build from in this folder (contrast with `clubs`/`events`, where a real fetcher already exists and just needs wiring) — don't go looking for a half-built shop/trending implementation elsewhere in the repo; there isn't one.
 

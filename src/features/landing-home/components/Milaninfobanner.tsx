@@ -1,11 +1,18 @@
 import AOS from "aos";
 import "aos/dist/aos.css";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import MilanBuild from "@assets/pictures/Banner/MilanBuild.svg";
 import MilanCollaborate from "@assets/pictures/Banner/MilanCollaborate.svg";
 import MilanConnect from "@assets/pictures/Banner/MilanConnect.svg";
 import "./MilanInfoBanner.css";
 
+/**
+ * A second, finished marketing section — not mounted by `Home.tsx` or
+ * anywhere else today. See SPEC.md, including the `target="blank"`
+ * typo and the resize-reactivity gap (this component reads
+ * `window.innerWidth` directly at render time rather than via a
+ * `resize` listener, unlike `Landing.tsx`) — both kept as-is here.
+ */
 const Milaninfobanner = () => {
   useEffect(() => {
     AOS.init({

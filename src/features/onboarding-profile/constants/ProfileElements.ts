@@ -1,4 +1,13 @@
-const ProfileElements = [
+import type { ProfileFieldElement } from "../types";
+
+/**
+ * Declarative field metadata for a hypothetical generic field renderer.
+ * Not imported by `ProfileCompletion.tsx`/`ProfileUpdate.tsx` — both
+ * hardcode their own JSX per field instead. Its `minimumLength` values
+ * disagree with what's actually validated elsewhere — see SPEC.md
+ * before trusting these numbers in isolation.
+ */
+const ProfileElements: ProfileFieldElement[] = [
   {
     id: "name",
     label: "Name",

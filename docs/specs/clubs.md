@@ -16,7 +16,7 @@ The `Loading` fallback (`!clubs || clubs?.length === 0`) can currently never tri
 ## `ClubCard`
 
 [src/features/clubs/components/ClubCard.tsx](../../src/features/clubs/components/ClubCard.tsx).
-Presentational card: banner image (always the same static `clubbanner.jpg` asset, regardless of the club passed in — there's no per-club image field consumed), `club?.name`/`club?.description` with hardcoded fallback text, static follower/event counts (not derived from the `club` prop), and a link to `/club/{club?.userName}` (which resolves to `Profile.jsx` — see [onboarding-profile.md](./onboarding-profile.md)).
+Presentational card: banner image (always the same static `clubbanner.jpg` asset, regardless of the club passed in — there's no per-club image field consumed), `club?.name`/`club?.description` with hardcoded fallback text, static follower/event counts (not derived from the `club` prop), and a link to `/club/{club?.userName}` (which resolves to `Profile.tsx` — see [onboarding-profile.md](./onboarding-profile.md)).
 
 Not exported from the shared barrel (`src/components/index.js`) — only imported directly by `Clubs.tsx`.
 

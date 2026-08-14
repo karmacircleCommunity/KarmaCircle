@@ -4,7 +4,7 @@ Three low-priority/incomplete areas grouped together because none of them repres
 
 ## Donate (currently unroutable)
 
-[src/features/donate-shop-trending/pages/Donate.tsx](../../src/features/donate-shop-trending/pages/Donate.tsx) exists but **has no entry in `routesConfig.jsx`** — it cannot be reached by navigating the live app.
+[src/features/donate-shop-trending/pages/Donate.tsx](../../src/features/donate-shop-trending/pages/Donate.tsx) exists but **has no entry in `routesConfig.tsx`** — it cannot be reached by navigating the live app.
 It also imports two components that no longer exist in the current file tree: `../../components/Cards/SingleClubEvent/SingleClubEvent` and `../../components/Loading` (the real `Loading` component now lives at `src/components/loading/Loading.jsx`, exported from the shared barrel).
 **Importing this file today will fail the build** — it is stale code from before a component reorganization, not a working feature.
 It fetches clubs via `GetAllClubs()` (`MilanApi.js`, `GET /clubs`), loads the Razorpay checkout script (`https://checkout.razorpay.com/v1/checkout.js`) via a hand-rolled `loadScript` helper, and gates access on `Cookies.get("isLoggedIn")` — a cookie that, per [state-management.md](./state-management.md), is not set anywhere else in the current codebase (the rest of the app uses the `Token` cookie + Redux `isLoggedIn`), so this gate can never pass today even if the imports were fixed.

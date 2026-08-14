@@ -1,21 +1,44 @@
-/* eslint-disable no-unused-vars */
-import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion.js";
+import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion";
 import { completeProfileApiCall } from "@services/MilanApi.js";
 import { showSuccessToast } from "@utils/Toasts.js";
 import clsx from "clsx";
+import type { ChangeEvent } from "react";
 import { useState } from "react";
 import { Button } from "@components";
+import type { ProfileCompletionProps } from "../types";
 import "./ProfileCompletion.scss";
 
-const ProfileCompletion = ({ setShowEditModal, refreshProfileData }) => {
+/**
+ * Modal: first-time profile completion (also, confusingly, reused for
+ * edits triggered from `Dashboard.tsx` — see SPEC.md's "two Save
+ * buttons, two different behaviors" breakdown, the most important thing
+ * to know about this component).
+ */
+const ProfileCompletion = ({
+  setShowEditModal,
+  refreshProfileData,
+}: ProfileCompletionProps) => {
   const { errors, validateForm, handleChange, credentials, handleResetFields } =
     useProfileCompletion();
+  // Destructured but never called in this component, same as the original
+  // (the file-level `eslint-disable no-unused-vars` it used to carry
+  // covered this — see SPEC.md).
+  void handleResetFields;
 
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [uploadedProfilePicture, setUploadedProfilePicture] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // Only a cover-image dropzone is rendered below (contrast with
+  // ProfileUpdate.tsx, which has both) — this state is set but never
+  // read, kept for parity with the original.
+  const [uploadedProfilePicture, setUploadedProfilePicture] = useState<
+    string | null
+  >(null);
+  void uploadedProfilePicture;
 
-  const handleFileChange = (event, type) => {
-    const file = event.target.files[0];
+  const handleFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    type: string,
+  ) => {
+    const file = event.target.files?.[0];
     if (file) {
       const imageURL = URL.createObjectURL(file);
       if (type === "cover") {

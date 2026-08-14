@@ -2,20 +2,26 @@ import Cookies from "js-cookie";
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch } from "react-redux";
-import Landing from "@features/landing-home/components/Landing.jsx";
+import Landing from "@features/landing-home/components/Landing";
 import { Footer } from "@components";
 import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice.js";
 import { successCallback } from "@services/MilanApi.js";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import type { OAuthSuccessResponse } from "../types";
 
+/**
+ * The `/` page. Doubles as the landing pad for the Google OAuth
+ * handshake started in the `authentication` feature — see SPEC.md and
+ * authentication/SPEC.md#google-oauth-flow for the full round trip.
+ */
 const Home = () => {
   const dispatch = useDispatch();
   const handleToken = async () => {
-    const authData = await successCallback();
+    const authData = (await successCallback()) as OAuthSuccessResponse;
 
     if (authData?.status === 200) {
       showSuccessToast(authData?.data?.message);
-      dispatch(updateUserData(authData.data.user));
+      dispatch(updateUserData(authData.data?.user));
       dispatch(toggleUserLogin());
     } else {
       showErrorToast(authData?.message);

@@ -18,7 +18,7 @@ Most POST/PATCH calls pass `{ withCredentials: true }` so the backend's session/
 ### Layer B — feature-level `services/` fetchers (only used for read-only club/event listing helpers)
 
 Goes through [ApiConnector.js](../../src/services/ApiConnector.js), a thin wrapper around a separate `axios.create({})` instance (`axiosInstance`), exposing `apiConnector(method, url, bodyData, headers, params)`.
-Only two consumers exist: `getClubs()` in [Clubs.js](../../src/features/clubs/services/Clubs.js) and `getEvents()` in [Events.js](../../src/features/events/services/Events.js) — and neither of those two functions is actually called anywhere in the app; `Clubs.jsx` and `Events.jsx` (the pages) both currently render hardcoded demo arrays instead.
+Only two consumers exist: `getClubs()` in [Clubs.ts](../../src/features/clubs/services/Clubs.ts) and `getEvents()` in [Events.ts](../../src/features/events/services/Events.ts) — and neither of those two functions is actually called anywhere in the app; `Clubs.tsx` and `Events.tsx` (the pages) both currently render hardcoded demo arrays instead.
 See [known-issues.md](./known-issues.md).
 `ApiConnector`'s dead status-600 check (`if (response.status === 400) console.error("Logout triggered due to status 600 response")`) is unreachable — `response.status === 400` never equals `600`, and axios throws (doesn't return) on 4xx/5xx by default anyway, so this branch is unreachable through the normal success path.
 
@@ -35,8 +35,8 @@ eventEndpoints: all, create
 authEndpoints:  signin, signup, googleLogin, googleLoginSuccess, logout
 ```
 
-Note `userEndpoints.update` and `userEndpoints.updateProfile` both exist and point to different URLs (`/user/update/profile` vs `/user/update`) — only `updateProfile` is actually referenced (`ProfileUpdate.jsx`/`useValidation`-adjacent flows).
-`clubEndpoints.details(userName)` is queried with `?userName=` but is used for both individual users and clubs (see [onboarding-profile.md](./onboarding-profile.md) — `Profile.jsx` calls `clubEndpoints.details` even on the `/user/:userName` route).
+Note `userEndpoints.update` and `userEndpoints.updateProfile` both exist and point to different URLs (`/user/update/profile` vs `/user/update`) — only `updateProfile` is actually referenced (`ProfileUpdate.tsx`/`useValidation`-adjacent flows).
+`clubEndpoints.details(userName)` is queried with `?userName=` but is used for both individual users and clubs (see [onboarding-profile.md](./onboarding-profile.md) — `Profile.tsx` calls `clubEndpoints.details` even on the `/user/:userName` route).
 
 ## SWR usage (data fetching in components)
 
@@ -48,16 +48,16 @@ Two fetcher functions exist:
 SWR call sites:
 | Component | Key | Purpose |
 |---|---|---|
-| `Dashboard.jsx` | `userEndpoints.profile` | Loads the logged-in club/org's own profile; `onSuccess` re-syncs Redux |
-| `Profile.jsx` | `clubEndpoints.details(userName)` | Loads a public profile by username, for both `/user/:userName` and `/club/:userName` |
-| `UserProfile.jsx` | `userEndpoints.details(slug)` | Loads a public profile by slug (a second, mostly-unused profile page — see [onboarding-profile.md](./onboarding-profile.md)) |
+| `Dashboard.tsx` | `userEndpoints.profile` | Loads the logged-in club/org's own profile; `onSuccess` re-syncs Redux |
+| `Profile.tsx` | `clubEndpoints.details(userName)` | Loads a public profile by username, for both `/user/:userName` and `/club/:userName` |
+| `UserProfile.tsx` | `userEndpoints.details(slug)` | Loads a public profile by slug (a second, mostly-unused profile page — see [onboarding-profile.md](./onboarding-profile.md)) |
 
-`useEvent.js`'s `submitCallback` calls `mutate(eventEndpoints.all)` from `useSWRConfig()` after a successful event creation, to invalidate any cached `eventEndpoints.all` SWR key — but no component currently fetches `eventEndpoints.all` via SWR, so this revalidation currently has no listener.
+`useEvent.ts`'s `submitCallback` calls `mutate(eventEndpoints.all)` from `useSWRConfig()` after a successful event creation, to invalidate any cached `eventEndpoints.all` SWR key — but no component currently fetches `eventEndpoints.all` via SWR, so this revalidation currently has no listener.
 
 ## Status codes and messages
 
 [src/statics/Constants.js](../../src/statics/Constants.js) exports `STATUSCODE` (a full HTTP status-code map) and `STATUSMESSAGE` (a set of canned backend message strings).
-`STATUSCODE.OK` is used in a handful of places (`useProfileCompletion.js`, `ProfileUpdate.jsx`, `CreateEvent.jsx`) to check `data.status === STATUSCODE.OK`; most other call sites just compare raw numbers (`response?.status === 201 || response?.status === 200`) inline instead of using the constant — prefer `STATUSCODE` in new code for consistency.
+`STATUSCODE.OK` is used in a handful of places (`useProfileCompletion.ts`, `ProfileUpdate.tsx`, `CreateEvent.tsx`) to check `data.status === STATUSCODE.OK`; most other call sites just compare raw numbers (`response?.status === 201 || response?.status === 200`) inline instead of using the constant — prefer `STATUSCODE` in new code for consistency.
 `STATUSMESSAGE` values don't appear to be read anywhere in the frontend; toasts display whatever message string the backend response includes (`response?.data?.message`), so this constant is effectively documentation of expected backend messages rather than live code.
 
 ## Toast conventions

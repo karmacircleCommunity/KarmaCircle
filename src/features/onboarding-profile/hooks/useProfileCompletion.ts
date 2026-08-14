@@ -2,39 +2,42 @@ import { STATUSCODE } from "@statics/Constants.js";
 import { completeProfileApiCall } from "@services/MilanApi.js";
 import { showSuccessToast } from "@utils/Toasts.js";
 import { useState } from "react";
+import type { ChangeEvent } from "react";
+import type {
+  ProfileCompletionCredentials,
+  ProfileCompletionDefaultValues,
+  ProfileCompletionErrors,
+  UseProfileCompletionResult,
+} from "../types";
 
-const useProfileCompletion = () => {
-  const [errors, setErrors] = useState({});
+const emptyCredentials: ProfileCompletionCredentials = {
+  description: "",
+  coverImage: "",
+  address: {
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
+  },
+};
 
-  const [credentials, setCredentials] = useState({
-    description: "",
-    coverImage: "",
-    address: {
-      line1: "",
-      line2: "",
-      city: "",
-      state: "",
-      country: "",
-      pincode: "",
-    },
-  });
+/** Owns all local state for the `ProfileCompletion` modal. See SPEC.md
+ * for the full validate/submit bug catalog. */
+const useProfileCompletion = (): UseProfileCompletionResult => {
+  const [errors, setErrors] = useState<ProfileCompletionErrors>({});
+
+  const [credentials, setCredentials] =
+    useState<ProfileCompletionCredentials>(emptyCredentials);
 
   const handleResetFields = () => {
-    setCredentials({
-      description: "",
-      coverImage: "",
-      address: {
-        line1: "",
-        line2: "",
-        city: "",
-        state: "",
-        country: "",
-        pincode: "",
-      },
-    });
+    setCredentials(emptyCredentials);
   };
 
-  const handleSetDefaultValues = (profileData) => {
+  const handleSetDefaultValues = (
+    profileData?: ProfileCompletionDefaultValues,
+  ) => {
     console.log("🚀 ~ handleSetDefaultValues ~ profileData:", profileData);
     setCredentials({
       description: profileData?.description || "",
@@ -50,11 +53,13 @@ const useProfileCompletion = () => {
     });
   };
 
-  const validateForm = async (updatedCredentials) => {
-    const newErrors = {};
+  const validateForm = async (
+    updatedCredentials: ProfileCompletionCredentials,
+  ): Promise<boolean | undefined> => {
+    const newErrors: ProfileCompletionErrors = {};
 
     // Check required fields for top-level fields
-    const requiredFields = ["description"];
+    const requiredFields = ["description"] as const;
     requiredFields.forEach((field) => {
       if (
         !updatedCredentials[field] ||
@@ -72,7 +77,7 @@ const useProfileCompletion = () => {
       "state",
       "country",
       "pincode",
-    ];
+    ] as const;
     addressFields.forEach((field) => {
       if (
         !updatedCredentials.address[field] ||
@@ -100,7 +105,7 @@ const useProfileCompletion = () => {
     // Pincode validation
     if (
       updatedCredentials.address.pincode &&
-      isNaN(updatedCredentials.address.pincode)
+      isNaN(Number(updatedCredentials.address.pincode))
     ) {
       newErrors["address.pincode"] = "Pincode must be a valid number.";
     }
@@ -124,25 +129,30 @@ const useProfileCompletion = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const clearError = (field) => {
+  const clearError = (field: string) => {
     setErrors((prevErrors) => {
       const { [field]: ignored, ...rest } = prevErrors;
+      void ignored;
       return rest;
     });
   };
 
-  const handleChange = (field) => (event) => {
-    const updatedCredentials = { ...credentials };
+  const handleChange =
+    (field: string) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const updatedCredentials = { ...credentials };
 
-    if (field === "description") {
-      updatedCredentials.description = event.target.value;
-    } else {
-      // For address fields, update the address object inside the credentials
-      updatedCredentials.address[field] = event.target.value;
-    }
+      if (field === "description") {
+        updatedCredentials.description = event.target.value;
+      } else {
+        // For address fields, update the address object inside the credentials
+        (updatedCredentials.address as unknown as Record<string, string>)[
+          field
+        ] = event.target.value;
+      }
 
-    setCredentials(updatedCredentials);
-  };
+      setCredentials(updatedCredentials);
+    };
 
   return {
     credentials,

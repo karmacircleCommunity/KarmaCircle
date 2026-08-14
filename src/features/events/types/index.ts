@@ -1,8 +1,8 @@
 import type { Dayjs } from "dayjs";
 
 /**
- * State shape used by the broken `CreateEvent.jsx` — copy-pasted from
- * `ProfileUpdate.jsx`/`ProfileCompletion.jsx` (profile-editing shape,
+ * State shape used by the broken `CreateEvent.tsx` — copy-pasted from
+ * `ProfileUpdate.tsx`/`ProfileCompletion.tsx` (profile-editing shape,
  * not an event shape) and never swapped over. Kept exactly as the
  * component actually uses it; see SPEC.md for the "eight inputs share
  * two state slots" bug this shape enables.

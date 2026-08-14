@@ -8,7 +8,7 @@ For where the resulting session state is stored, see [state-management.md](./sta
 - [src/features/authentication/pages/SignIn.tsx](../../src/features/authentication/pages/SignIn.tsx) — email + password form.
 - [src/features/authentication/pages/SignUp.tsx](../../src/features/authentication/pages/SignUp.tsx) — name + email + password form, plus an "Individual" vs "Organization" (`userType`) toggle built with `react-select` (desktop label: "Account Type" dropdown) and a separate custom checkbox-styled toggle (the `.status-switch` div) on the right-hand panel — two different UI controls that both flip the same `userType` state, shown at different breakpoints.
 - Both pages share `./index.scss` and mount `<Navbar />` at the top but no `<Footer />`.
-- Both are lazy-loaded in [routesConfig.jsx](../../src/app/routes/routesConfig.jsx) and wrapped in `DonotRenderWhenLoggedIn` (see below).
+- Both are lazy-loaded in [routesConfig.tsx](../../src/app/routes/routesConfig.tsx) and wrapped in `DonotRenderWhenLoggedIn` (see below).
 
 ## The `useAuth` hook
 
@@ -41,18 +41,18 @@ Treat this pair as the design to converge toward if you're asked to build out fu
 ## Google OAuth
 
 `handleGoogle()` on both auth pages calls `GoogleAuth()` (`MilanApi.js`, `GET /auth/google`) and full-page-redirects (`window.location.href = response`) to the URL the backend returns.
-The backend is expected to redirect back to the frontend after auth and set an `OAuthLoginInitiated` cookie; [Home.jsx](../../src/features/landing-home/pages/Home.jsx) checks for that cookie on mount and, if present, calls `successCallback()` (`GET /auth/login/success`) to fetch the now-authenticated user and dispatch `updateUserData(...)` + `toggleUserLogin()` into Redux.
+The backend is expected to redirect back to the frontend after auth and set an `OAuthLoginInitiated` cookie; [Home.tsx](../../src/features/landing-home/pages/Home.tsx) checks for that cookie on mount and, if present, calls `successCallback()` (`GET /auth/login/success`) to fetch the now-authenticated user and dispatch `updateUserData(...)` + `toggleUserLogin()` into Redux.
 This means a Google sign-in only "completes" on the frontend if the user lands back on `/` — landing anywhere else after the OAuth redirect would skip this step.
 
 ## Logout
 
-`Logout()` (`MilanApi.js`, `GET /auth/logout`) is called from three places with three slightly different cleanup sequences: `Navbar.jsx`, `Profile.jsx`, and `UserProfile.jsx`.
-All three dispatch `resetUserData()` on success; `Navbar.jsx` additionally calls `localStorage.clear()`, `Profile.jsx` additionally calls `Cookies.remove("skipProfileCompletion")`, and `UserProfile.jsx` does neither extra step but does toggle the Zustand `isLoading` flag around the call.
+`Logout()` (`MilanApi.js`, `GET /auth/logout`) is called from three places with three slightly different cleanup sequences: `Navbar.jsx`, `Profile.tsx`, and `UserProfile.tsx`.
+All three dispatch `resetUserData()` on success; `Navbar.jsx` additionally calls `localStorage.clear()`, `Profile.tsx` additionally calls `Cookies.remove("skipProfileCompletion")`, and `UserProfile.tsx` does neither extra step but does toggle the Zustand `isLoading` flag around the call.
 There is no shared `useLogout()` hook — consider extracting one if you need to touch this again, so the cleanup steps stay consistent.
 
 ## Route guard: `DonotRenderWhenLoggedIn`
 
-[src/features/authentication/components/DonotRenderWhenLoggedIn.tsx](../../src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) is a HOC (`DonotRenderWhenLoggedIn(Component)`) applied to `SignIn` and `SignUp` in `routesConfig.jsx`.
+[src/features/authentication/components/DonotRenderWhenLoggedIn.tsx](../../src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) is a HOC (`DonotRenderWhenLoggedIn(Component)`) applied to `SignIn` and `SignUp` in `routesConfig.tsx`.
 It redirects to `/` (`<Navigate to="/" />`) if both `Cookies.get("Token")` and the Redux `isLoggedIn` selector are truthy; otherwise it renders the wrapped component.
 It does not protect any other route — there is currently no equivalent "require login" guard for e.g. `/dashboard`, which is reachable by URL regardless of auth state (pages that need a logged-in user instead fetch data scoped to the session cookie and render whatever comes back, including nothing).
 

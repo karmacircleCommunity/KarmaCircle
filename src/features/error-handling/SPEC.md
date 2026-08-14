@@ -22,17 +22,17 @@ There's no centralized error-handling *system* to document here beyond "toasts, 
 
 ## `pages/Error404.tsx`
 
-Matched by the `*` catch-all route in `routesConfig.jsx` — the last entry in the route table, catching any path that doesn't match one of the explicit routes.
+Matched by the `*` catch-all route in `routesConfig.tsx` — the last entry in the route table, catching any path that doesn't match one of the explicit routes.
 
 **Entire implementation:** a static SVG illustration (`error404Svg`, imported from `@assets/pictures/error404.svg`) and a single `<Button to="/">Back to Home</Button>` using the shared `Button` component's `to` prop (a correct, working navigation link).
 
-**No `<Helmet>`/SEO tags** — every other top-level page in the app sets a `<title>`/meta description via either `<Helmet>` directly (`Home.jsx`, `SignIn.jsx`, `SignUp.jsx`, the broken `Donate.jsx`) or `ComponentHelmet` (`Clubs.jsx`, `Events.tsx`); this page has neither, so a visitor landing on any unmatched URL sees whatever `<title>` was last set by the page they navigated *from* (or the default `index.html` title, on a fresh load) rather than something like "NgoWorld | Page Not Found." Worth adding if you touch this file, to match the convention documented in [layout-navigation.md](../../../docs/specs/layout-navigation.md#componenthelmet-per-page-seo).
+**No `<Helmet>`/SEO tags** — every other top-level page in the app sets a `<title>`/meta description via either `<Helmet>` directly (`Home.tsx`, `SignIn.tsx`, `SignUp.tsx`, the broken `Donate.tsx`) or `ComponentHelmet` (`Clubs.tsx`, `Events.tsx`); this page has neither, so a visitor landing on any unmatched URL sees whatever `<title>` was last set by the page they navigated *from* (or the default `index.html` title, on a fresh load) rather than something like "NgoWorld | Page Not Found." Worth adding if you touch this file, to match the convention documented in [layout-navigation.md](../../../docs/specs/layout-navigation.md#componenthelmet-per-page-seo).
 
 **No `<Navbar />` or `<Footer />` either** — every other page in the app renders at least `<Navbar />`; this one renders neither, so a 404 visitor has no site chrome to navigate away with other than the single "Back to Home" button. This may well be intentional (a stripped-down error page is a defensible design choice), but it's worth confirming with whoever's asking before assuming it's a bug to fix.
 
 ## `pages/Test.tsx` — dev leftover, unreachable but present
 
-**Not wired into `routesConfig.jsx` at all** — no route points here, so it cannot be reached through any navigation in the live app.
+**Not wired into `routesConfig.tsx` at all** — no route points here, so it cannot be reached through any navigation in the live app.
 
 **Entire implementation:**
 ```jsx
@@ -50,7 +50,7 @@ On mount, immediately full-page-redirects the browser to Google — this would o
 
 ## App-wide error conventions this feature sits next to (not owned by it, but relevant to anyone debugging an error report)
 
-**No React error boundary anywhere in the app.** Confirmed via a full-repo read — no `componentDidCatch`, no `static getDerivedStateFromError`, no `react-error-boundary` package usage. An uncaught render error in *any* component, in *any* feature, produces a blank white screen with no fallback UI, no error message, nothing — the entire React tree unmounts. This is relevant well beyond this folder: several other feature specs in this repo (`dashboard/SPEC.md`, `onboarding-profile/SPEC.md`) document specific reproducible crash paths (an undefined function call, a `TypeError` on a network-failure response) that would hit exactly this gap — a blank screen, not a caught error — if triggered in production. If you're ever asked to make the app "fail more gracefully," adding a top-level error boundary (most naturally in `src/app/App.jsx`, wrapping the `<Routes>` block) is the single highest-leverage fix available, and this feature folder (`error-handling`) would be a reasonable home for the fallback UI component itself, even though the boundary's `try/catch`-equivalent wiring would live in `src/app/`.
+**No React error boundary anywhere in the app.** Confirmed via a full-repo read — no `componentDidCatch`, no `static getDerivedStateFromError`, no `react-error-boundary` package usage. An uncaught render error in *any* component, in *any* feature, produces a blank white screen with no fallback UI, no error message, nothing — the entire React tree unmounts. This is relevant well beyond this folder: several other feature specs in this repo (`dashboard/SPEC.md`, `onboarding-profile/SPEC.md`) document specific reproducible crash paths (an undefined function call, a `TypeError` on a network-failure response) that would hit exactly this gap — a blank screen, not a caught error — if triggered in production. If you're ever asked to make the app "fail more gracefully," adding a top-level error boundary (most naturally in `src/app/App.tsx`, wrapping the `<Routes>` block) is the single highest-leverage fix available, and this feature folder (`error-handling`) would be a reasonable home for the fallback UI component itself, even though the boundary's `try/catch`-equivalent wiring would live in `src/app/`.
 
 **API/network error feedback is per-call, via toasts, not a global mechanism.** Every `MilanApi.js` function catches its own errors and returns a response-shaped value rather than throwing (see [api-integration.md](../../../docs/specs/api-integration.md)); callers are individually responsible for checking `response?.status` and calling `showErrorToast(...)`. There is no interceptor-level (e.g. Axios response interceptor) centralized error handling anywhere in `src/services/` — each of the roughly dozen `MilanApi.js` functions repeats its own `try/catch`.
 
@@ -79,7 +79,7 @@ This folder is TypeScript now — see [authentication/SPEC.md](../authentication
 
 ## If you're asked to...
 
-- **"Make the app not go blank on errors"** → add a top-level error boundary in `src/app/App.jsx` around `<Routes>`; this folder is a reasonable home for the fallback-UI component (visually, it could reuse `Error404.tsx`'s illustration/button pattern for a consistent "something went wrong" look).
+- **"Make the app not go blank on errors"** → add a top-level error boundary in `src/app/App.tsx` around `<Routes>`; this folder is a reasonable home for the fallback-UI component (visually, it could reuse `Error404.tsx`'s illustration/button pattern for a consistent "something went wrong" look).
 - **"Clean up dead files"** → `pages/Test.tsx` is the clearest candidate in this folder; confirm before deleting per the guidance above.
-- **"Add SEO tags to the 404 page"** → follow the `<Helmet>` pattern used by `Home.jsx`/`SignIn.jsx` (simplest, most consistent with a page that has no `type`-keyed `ComponentHelmet` branch of its own).
+- **"Add SEO tags to the 404 page"** → follow the `<Helmet>` pattern used by `Home.tsx`/`SignIn.tsx` (simplest, most consistent with a page that has no `type`-keyed `ComponentHelmet` branch of its own).
 - **"Fix the offline experience"** → the current one-shot generic toast (from `checkInternetConnection()`) is the entire offline UX; a persistent banner (the thing the original design assumption in `docs/specs/error-handling.md` gestures at but never built) would be new work, not a wiring fix.

@@ -12,7 +12,7 @@ While `isLoading` is true, `children` are replaced with a `react-spinners` `Clip
 
 ## `AuthButton`
 
-[src/features/authentication/components/AuthButton.jsx](../../src/features/authentication/components/AuthButton.jsx) — see [authentication.md](./authentication.md). Built on top of `Button`, currently unused by the live auth pages.
+[src/features/authentication/components/AuthButton.tsx](../../src/features/authentication/components/AuthButton.tsx) — see [authentication.md](./authentication.md). Built on top of `Button`, currently unused by the live auth pages.
 
 ## Card components
 
@@ -35,5 +35,5 @@ Four different styling approaches coexist, chosen per-component with no clear ru
 There's no CSS-in-JS despite `styled-components` and `@emotion/styled`/`@mui/styled-engine-sc` being installed dependencies (pulled in transitively by MUI) — no component in `src/` actually authors styled-components.
 When adding a new component, match the styling approach of its immediate siblings (e.g. new profile-related components → plain `.scss` + BEM-ish class names, matching `ProfileCompletion.scss`/`ProfileUpdate.scss`) rather than introducing a fifth pattern.
 
-[src/styles/Globals.scss](../../src/styles/Globals.scss) and [src/styles/App.css](../../src/styles/App.css) hold app-wide resets/variables and are imported once, from `App.jsx`.
+[src/styles/Globals.scss](../../src/styles/Globals.scss) and [src/styles/App.css](../../src/styles/App.css) hold app-wide resets/variables and are imported once, from `App.tsx`.
 [src/styles/index.css](../../src/styles/index.css) is imported once, from `index.jsx`.

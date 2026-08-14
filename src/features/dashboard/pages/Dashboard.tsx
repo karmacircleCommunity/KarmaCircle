@@ -1,7 +1,7 @@
 import { userEndpoints } from "@services/ApiEndpoints.js";
 import TrackSection from "@features/dashboard/components/TrackSection";
-import ProfileUpdate from "@features/onboarding-profile/components/ProfileUpdate.jsx";
-import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion.js";
+import ProfileUpdate from "@features/onboarding-profile/components/ProfileUpdate";
+import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion";
 import { updateUserData } from "@app/store/slices/userSlice.js";
 import fetcher from "@utils/Fetcher.js";
 import { showErrorToast } from "@utils/Toasts.js";
@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import useSWR from "swr";
 import { Navbar } from "@components";
-import ProfileCompletion from "@features/onboarding-profile/components/ProfileCompletion.jsx";
+import ProfileCompletion from "@features/onboarding-profile/components/ProfileCompletion";
 import type { DashboardProfileResponse } from "../types";
 import "./Dashboard.scss";
 
@@ -86,7 +86,7 @@ const Dashboard = () => {
 
       {profileData?.user?.config?.hasCompletedProfile === false && (
         // Pre-existing prop-name mismatch, not introduced by this
-        // conversion: ProfileCompletion.jsx destructures
+        // conversion: ProfileCompletion.tsx's props are
         // `{ setShowEditModal, refreshProfileData }`, not `edit`/`setOpenModal`.
         // See docs/specs/dashboard.md and dashboard/SPEC.md's "Critical
         // prop-name mismatch" section — fixing it is a behavior change

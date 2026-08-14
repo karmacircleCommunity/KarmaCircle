@@ -1,4 +1,3 @@
-import React from "react";
 import "./UserProfile.css";
 
 import { BiEdit, BiLinkExternal, BiLogoGmail, BiLogOut } from "react-icons/bi";
@@ -21,7 +20,15 @@ import Cookies from "js-cookie";
 import { Button, Footer, Navbar } from "@components";
 import { userEndpoints } from "@services/ApiEndpoints.js";
 import useAuthStore from "@app/store/useAuth.js";
+import type { LogoutResponse, UserProfileDetails } from "../types";
 
+/**
+ * A second, more visually developed public profile page — not routed
+ * anywhere in `routesConfig.jsx`, unreachable through any navigation.
+ * See SPEC.md, including the always-false `Cookies.get("userName")`
+ * own-profile check and the placeholder text concatenated onto (not
+ * replaced by) real fetched data.
+ */
 const UserProfile = () => {
   const navigate = useNavigate();
   const params = useParams();
@@ -31,14 +38,14 @@ const UserProfile = () => {
     isLoading: state.isLoading,
   }));
 
-  const { data: userdetails } = useSWR(
+  const { data: userdetails } = useSWR<UserProfileDetails>(
     userEndpoints.details(params.slug),
     fetcher,
   );
 
   async function handleLogout() {
     toggleLoading(true);
-    const data = await Logout();
+    const data = (await Logout()) as LogoutResponse;
 
     if (data?.status === 200) {
       showSuccessToast(data?.data?.message);
@@ -109,6 +116,18 @@ const UserProfile = () => {
                     <Button
                       type="button"
                       variant="outline"
+                      // @ts-expect-error — previously-undocumented bug, not
+                      // introduced by this conversion: the shared Button
+                      // component only wires up its own `onClickfunction`
+                      // prop; Button.jsx spreads `...props` (which would
+                      // include a plain `onClick`) and then explicitly sets
+                      // `onClick={onClickfunction}` afterwards, silently
+                      // overriding whatever was passed here. This Logout
+                      // button has never actually worked. Kept as-is since
+                      // this page isn't routed anywhere (see SPEC.md) and
+                      // fixing it is a behavior change out of scope for a
+                      // types-only pass — swap to `onClickfunction` if this
+                      // page is ever wired up.
                       onClick={() => {
                         handleLogout();
                       }}
@@ -252,22 +271,6 @@ const UserProfile = () => {
               modules={[Pagination, Autoplay, Navigation]}
               className="mySwiper"
             >
-              <SwiperSlide>
-                <div className="clubdetails_eventcard">
-                  <img
-                    src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
-                    alt=""
-                  />
-
-                  <div className="clubdetails_eventcard_body">
-                    <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
-                      <p>01</p>
-                      <p>OCT</p>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
               <SwiperSlide>
                 <div className="clubdetails_eventcard">
                   <img

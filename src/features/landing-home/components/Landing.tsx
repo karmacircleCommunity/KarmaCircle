@@ -5,6 +5,7 @@ import Vector from "@assets/pictures/Banner/Vector.png";
 import { Button, Navbar } from "@components";
 import "./Landing.scss";
 
+/** The marketing hero rendered by `Home.tsx`. See SPEC.md. */
 const Landing = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const isLoggedIn = useSelector(selectIsLoggedIn);

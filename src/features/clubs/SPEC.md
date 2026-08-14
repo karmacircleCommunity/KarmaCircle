@@ -5,7 +5,7 @@ This is the smallest feature folder in the app — three logic files plus a `typ
 
 ## What this feature is responsible for
 
-The `/clubs` directory page: a grid of club/org cards, each linking to that club's public profile (`/club/:userName`, handled by `Profile.jsx` in `onboarding-profile` — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md)).
+The `/clubs` directory page: a grid of club/org cards, each linking to that club's public profile (`/club/:userName`, handled by `Profile.tsx` in `onboarding-profile` — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md)).
 
 ## Why it's shaped this way
 

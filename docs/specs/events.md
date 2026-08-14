@@ -7,7 +7,7 @@ Covers the events directory page, the (two, redundant) event-creation modals, an
 [src/features/events/pages/Events.tsx](../../src/features/events/pages/Events.tsx).
 Renders `<ComponentHelmet type="Clubs" />` (note: passes `"Clubs"`, not `"Events"`, so it shows the Clubs SEO copy — likely a copy-paste bug; `ComponentHelmet` does have an `"Events"` branch, see [layout-navigation.md](./layout-navigation.md)), `<Navbar />`, a search input + non-functional "Filters" button, a "Create An Event" button that opens the creation modal, `<EventSlider />` (featured events carousel), a grid of `<EventCard />`, and `<Footer />`.
 
-**The event list is hardcoded**, same pattern as `Clubs.jsx`: 20 identical fake objects (which are actually shaped like *user/club* records, not event records — `{ _id, userType, userName, name, email, password, cart, __v }` — copy-pasted from the `Clubs.jsx` demo data and not updated).
+**The event list is hardcoded**, same pattern as `Clubs.tsx`: 20 identical fake objects (which are actually shaped like *user/club* records, not event records — `{ _id, userType, userName, name, email, password, cart, __v }` — copy-pasted from the `Clubs.tsx` demo data and not updated).
 `EventCard` doesn't even read the `event` prop it's passed (see below), so this mismatch is currently invisible.
 The real fetcher, `getEvents()` in [src/features/events/services/Events.ts](../../src/features/events/services/Events.ts) (`GET /events` via `eventEndpoints.all`), exists but is never called here.
 
@@ -19,9 +19,9 @@ There are **two separate, differently-implemented "create an event" modals** in 
 
 ### `CreateEvent` (shared, used by `Events.tsx`)
 [src/features/events/components/CreateEvent.tsx](../../src/features/events/components/CreateEvent.tsx).
-A generic dropzone-based form (cover image preview, name, description with a 500-char counter, contact number/email, an "Online"/"Offline" radio-style mode picker, and address line1/line2/city/state/country/pincode inputs) — structurally identical to `ProfileUpdate.jsx`/`ProfileCompletion.jsx`, reusing the same CSS class naming convention (`createevent_*`).
+A generic dropzone-based form (cover image preview, name, description with a 500-char counter, contact number/email, an "Online"/"Offline" radio-style mode picker, and address line1/line2/city/state/country/pincode inputs) — structurally identical to `ProfileUpdate.tsx`/`ProfileCompletion.tsx`, reusing the same CSS class naming convention (`createevent_*`).
 Its `validateForm()` calls **`updateUserProfile(...)`** (`PATCH /user/update`), not an event-creation endpoint — this form does not actually create an event; it patches the user's own profile with whatever was typed into the "event" fields.
-This looks like `ProfileUpdate.jsx` was duplicated as a starting point for event creation and the API call was never swapped out.
+This looks like `ProfileUpdate.tsx` was duplicated as a starting point for event creation and the API call was never swapped out.
 Several address-block inputs bind to the wrong `credentials.address.*` keys (e.g. the "City"/"State" row and the "Address Line 1/2" row both read/write `line1`/`line2` instead of `city`/`state` — copy-paste from the row above them).
 Treat this component as **not functional** for its stated purpose; if asked to fix event creation from `/events`, the more complete implementation to build from is `CreateEvents` (below), not this one.
 
@@ -43,7 +43,7 @@ On success (`response.status === 201`): success toast, closes the modal, and cal
 
 ## Event display components
 
-- [EventsMarqueeCards.tsx](../../src/features/events/components/EventsMarqueeCards.tsx) — takes an `event` prop, renders cover image, name, and either a location (Offline) or a platform icon+name (Online), plus a formatted start date/time (via [getFormattedDate.ts](../../src/features/events/utils/getFormattedDate.ts)). Responsive text truncation at `window.innerWidth <= 500`. Not currently rendered by any page — looks intended for a "recent events" marquee (there's a commented-out `<Marquee>` block in `Profile.jsx` that would have used something like this).
+- [EventsMarqueeCards.tsx](../../src/features/events/components/EventsMarqueeCards.tsx) — takes an `event` prop, renders cover image, name, and either a location (Offline) or a platform icon+name (Online), plus a formatted start date/time (via [getFormattedDate.ts](../../src/features/events/utils/getFormattedDate.ts)). Responsive text truncation at `window.innerWidth <= 500`. Not currently rendered by any page — looks intended for a "recent events" marquee (there's a commented-out `<Marquee>` block in `Profile.tsx` that would have used something like this).
 - [EventCard.tsx](../../src/features/events/components/EventCard.tsx) — the card rendered in the `Events.tsx` grid. **Does not use its data at all**: no props are accepted or destructured; every field (title "Food Marathon, 2025", club name, description, avatar images, "+300 Participated") is hardcoded JSX. `Events.tsx` passes `event={event}` to it, but the prop is ignored.
 - [EventSlider.tsx](../../src/features/events/components/EventSlider.tsx) — a custom (non-Swiper) auto-advancing carousel over a hardcoded array alternating `FeaturedEventImage`/`FeaturedEventCard`, paired two-per-slide. Advances every 3s via `setInterval`.
 - [FeaturedEventCard.tsx](../../src/features/events/components/FeaturedEventCard.tsx) / [FeaturedEventImage.tsx](../../src/features/events/components/FeaturedEventImage.tsx) — also fully static/hardcoded, no props.
@@ -53,7 +53,7 @@ On success (`response.status === 201`): success toast, closes the modal, and cal
 ## `HostedEvents` and `DetailedEvent` (empty stubs)
 
 - [src/features/events/components/HostedEvents.tsx](../../src/features/events/components/HostedEvents.tsx) — file exists but is **completely empty** (0 bytes); importing it would fail.
-- [src/features/events/pages/DetailedEvent.tsx](../../src/features/events/pages/DetailedEvent.tsx) — a one-line placeholder (`<div>DetailedEvent</div>`), not registered in `routesConfig.jsx` (no `/events/:id`-style route exists).
+- [src/features/events/pages/DetailedEvent.tsx](../../src/features/events/pages/DetailedEvent.tsx) — a one-line placeholder (`<div>DetailedEvent</div>`), not registered in `routesConfig.tsx` (no `/events/:id`-style route exists).
 
 ## Types
 

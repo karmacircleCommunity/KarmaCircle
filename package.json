@@ -82,6 +82,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@types/aos": "^3.0.8",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",

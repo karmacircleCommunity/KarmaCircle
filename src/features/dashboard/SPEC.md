@@ -6,7 +6,7 @@ Read [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md) first — this 
 ## What this feature is responsible for
 
 The single logged-in-account "your own dashboard" page, routed at `/dashboard`.
-It is the other entry point (besides `Profile.jsx`) into the profile-completion/edit modals, and it's meant to eventually show real engagement analytics (`TrackSection`) — today that part is a static visual placeholder.
+It is the other entry point (besides `Profile.tsx`) into the profile-completion/edit modals, and it's meant to eventually show real engagement analytics (`TrackSection`) — today that part is a static visual placeholder.
 
 ## Why it's shaped this way
 
@@ -72,11 +72,11 @@ Only `setOpenModal(true)` has any real effect — it causes `ProfileUpdate` (not
 - **`ProfileUpdate`** renders whenever `openModal === true`, i.e. only after the "Edit Profile" button is clicked.
 - **These two conditions are not mutually exclusive.** If an account has an incomplete profile (`hasCompletedProfile === false`) *and* the user clicks "Edit Profile," **both modals mount at the same time** — two full-screen overlay modals stacked on top of each other, since neither overlay is a portal-with-single-slot and both build their own `position: fixed`-style `*_overlay` div independently (see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md)). This is a newly-identified bug, not previously documented — reproduce it by loading `/dashboard` as an account with `hasCompletedProfile: false` and clicking "Edit Profile."
 
-**Critical prop-name mismatch (newly identified, not in `docs/specs/dashboard.md` or `known-issues.md`):** `Dashboard.tsx` passes `setOpenModal` and `edit` to `ProfileCompletion`, but [`ProfileCompletion.jsx`](../onboarding-profile/components/ProfileCompletion.jsx) destructures its props as `({ setShowEditModal, refreshProfileData })` — there is no `setOpenModal` or `edit` prop in its signature.
+**Critical prop-name mismatch (newly identified, not in `docs/specs/dashboard.md` or `known-issues.md`):** `Dashboard.tsx` passes `setOpenModal` and `edit` to `ProfileCompletion`, but [`ProfileCompletion.tsx`](../onboarding-profile/components/ProfileCompletion.tsx) destructures its props as `({ setShowEditModal, refreshProfileData })` — there is no `setOpenModal` or `edit` prop in its signature.
 Concretely: `setShowEditModal` is `undefined` inside `ProfileCompletion` when it's rendered from this page (`refreshProfileData` *is* correctly named and does work).
 **`ProfileCompletion`'s header "Save" button calls `setShowEditModal(false)` on a successful save — calling `undefined(false)` throws `TypeError: setShowEditModal is not a function`, uncaught, with no error boundary anywhere in the app (see [error-handling/SPEC.md](../error-handling/SPEC.md)).**
 The form's own bottom "Submit" button doesn't call `setShowEditModal` at all (see `onboarding-profile/SPEC.md`'s breakdown of `useProfileCompletion.validateForm`), so that path doesn't crash, but it also never closes the modal on this page either way (same non-closing behavior documented in `onboarding-profile/SPEC.md`) — combined, **there is currently no way to close `ProfileCompletion` from `/dashboard` without a full page reload or navigating away**, and clicking its header Save button will crash the render tree.
-This is very likely the single highest-value bug to fix in this feature if you're asked to "fix the dashboard profile completion modal" — the fix is either renaming the prop `Dashboard.tsx` passes (`setShowEditModal={setOpenModal}`) to match `ProfileCompletion`'s actual signature, or changing `ProfileCompletion.jsx` to accept `setOpenModal` — confirm which naming convention to converge on, since `Profile.jsx` (the other place `ProfileCompletion` is rendered) passes `setShowEditModal` correctly today and shouldn't be broken by the fix.
+This is very likely the single highest-value bug to fix in this feature if you're asked to "fix the dashboard profile completion modal" — the fix is either renaming the prop `Dashboard.tsx` passes (`setShowEditModal={setOpenModal}`) to match `ProfileCompletion`'s actual signature, or changing `ProfileCompletion.tsx` to accept `setOpenModal` — confirm which naming convention to converge on, since `Profile.tsx` (the other place `ProfileCompletion` is rendered) passes `setShowEditModal` correctly today and shouldn't be broken by the fix.
 
 ## `components/TrackSection.tsx`
 
@@ -123,8 +123,8 @@ profileData?.user  (ignored: cover photo, profile picture, follower/event counts
 
 This folder is TypeScript (`.ts`/`.tsx`) as of the dashboard/donate-shop-trending conversion pass — see `tsconfig.json` at the repo root and [authentication/SPEC.md](../authentication/SPEC.md#types) for the general pattern this repo follows.
 `types/index.ts` holds `DashboardProfileUser`/`DashboardProfileResponse` — the shape of `useSWR(userEndpoints.profile, fetcher)`'s data, kept independent of `src/types/user.ts`'s `User` (the Redux slice shape) since they're different data sources that happen to overlap, not the same type.
-The `edit`/`setOpenModal`/`setShowEditModal` prop-name mismatch documented above is a real, pre-existing bug — converting to TypeScript actually surfaces it as a compile error (`ProfileCompletion.jsx`'s inferred prop type doesn't have `edit`/`setOpenModal`), which is suppressed with a documented `@ts-expect-error` rather than fixed, since fixing it is a behavior change out of scope for a types-only pass. Remove that suppression in the same change if you ever do fix the mismatch.
-`ProfileCompletion.jsx`, `ProfileUpdate.jsx`, and `useProfileCompletion.js` (all in `onboarding-profile`, out of scope here) stay untyped JS; TS infers loose/implicit-`any` shapes for them at the boundary.
+The `edit`/`setOpenModal`/`setShowEditModal` prop-name mismatch documented above is a real, pre-existing bug — converting to TypeScript actually surfaces it as a compile error (`ProfileCompletion.tsx`'s inferred prop type doesn't have `edit`/`setOpenModal`), which is suppressed with a documented `@ts-expect-error` rather than fixed, since fixing it is a behavior change out of scope for a types-only pass. Remove that suppression in the same change if you ever do fix the mismatch.
+`ProfileCompletion.tsx`, `ProfileUpdate.tsx`, and `useProfileCompletion.ts` (all in `onboarding-profile`, out of scope here) stay untyped JS; TS infers loose/implicit-`any` shapes for them at the boundary.
 
 ## Known issues specific to this feature
 

@@ -2,13 +2,35 @@ import { STATUSCODE } from "@statics/Constants.js";
 import { updateUserProfile } from "@services/MilanApi.js";
 import { showSuccessToast } from "@utils/Toasts.js";
 import clsx from "clsx";
+import type { ChangeEvent } from "react";
 import { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { Button } from "@components";
+import type {
+  Address,
+  ProfileCompletionErrors,
+  ProfileUpdateProps,
+} from "../types";
 import "./ProfileUpdate.scss";
 
-const ProfileUpdate = ({ setOpenModal, refreshProfileData, profileData }) => {
-  const [credentials, setCredentials] = useState({
+interface ProfileUpdateCredentials {
+  description: string;
+  name: string;
+  coverImage: string;
+  address: Address;
+}
+
+/**
+ * Modal: profile editing, triggered from `Dashboard.tsx`. Fully
+ * separate, parallel implementation of the same shape as
+ * `useProfileCompletion.ts` — not a reuse of it. See SPEC.md.
+ */
+const ProfileUpdate = ({
+  setOpenModal,
+  refreshProfileData,
+  profileData,
+}: ProfileUpdateProps) => {
+  const [credentials, setCredentials] = useState<ProfileUpdateCredentials>({
     description: profileData?.description || "",
     name: profileData?.name || "",
     coverImage: "",
@@ -21,25 +43,35 @@ const ProfileUpdate = ({ setOpenModal, refreshProfileData, profileData }) => {
       pincode: profileData?.address?.pincode || "",
     },
   });
-  const [errors, setErrors] = useState({});
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [uploadedProfilePicture, setUploadedProfilePicture] = useState(null);
+  const [errors, setErrors] = useState<ProfileCompletionErrors>({});
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedProfilePicture, setUploadedProfilePicture] = useState<
+    string | null
+  >(null);
 
-  const handleChange = (field) => (event) => {
-    const updatedCredentials = { ...credentials };
+  const handleChange =
+    (field: string) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const updatedCredentials = { ...credentials };
 
-    if (field === "description" || field === "name") {
-      updatedCredentials[field] = event.target.value;
-    } else {
-      // For address fields, update the address object inside the credentials
-      updatedCredentials.address[field] = event.target.value;
-    }
+      if (field === "description" || field === "name") {
+        (updatedCredentials as unknown as Record<string, string>)[field] =
+          event.target.value;
+      } else {
+        // For address fields, update the address object inside the credentials
+        (
+          updatedCredentials.address as unknown as Record<string, string>
+        )[field] = event.target.value;
+      }
 
-    setCredentials(updatedCredentials);
-  };
+      setCredentials(updatedCredentials);
+    };
 
-  const handleFileChange = (event, type) => {
-    const file = event.target.files[0];
+  const handleFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    type: string,
+  ) => {
+    const file = event.target.files?.[0];
     if (file) {
       const imageURL = URL.createObjectURL(file);
       if (type === "cover") {
@@ -51,6 +83,13 @@ const ProfileUpdate = ({ setOpenModal, refreshProfileData, profileData }) => {
   };
 
   const handleResetFields = () => {
+    // Pre-existing bug, not introduced here: `name` is missing from this
+    // reset object (copy-pasted from useProfileCompletion.ts's
+    // handleResetFields, whose credentials shape never had a `name`
+    // field to begin with) — closing and reopening this modal after a
+    // reset would show a blank Organization Name. Kept as-is; see
+    // SPEC.md.
+    // @ts-expect-error — see comment above.
     setCredentials({
       description: "",
       coverImage: "",
@@ -66,10 +105,10 @@ const ProfileUpdate = ({ setOpenModal, refreshProfileData, profileData }) => {
   };
 
   const validateForm = async () => {
-    const newErrors = {};
+    const newErrors: ProfileCompletionErrors = {};
 
     // Check required fields for top-level fields
-    const requiredFields = ["description", "name"];
+    const requiredFields = ["description", "name"] as const;
     requiredFields.forEach((field) => {
       if (!credentials[field] || credentials[field].trim() === "") {
         newErrors[field] = `${field} is required.`;
@@ -84,7 +123,7 @@ const ProfileUpdate = ({ setOpenModal, refreshProfileData, profileData }) => {
       "state",
       "country",
       "pincode",
-    ];
+    ] as const;
     addressFields.forEach((field) => {
       if (
         !credentials.address[field] ||
@@ -104,7 +143,10 @@ const ProfileUpdate = ({ setOpenModal, refreshProfileData, profileData }) => {
     }
 
     // Pincode validation
-    if (credentials.address.pincode && isNaN(credentials.address.pincode)) {
+    if (
+      credentials.address.pincode &&
+      isNaN(Number(credentials.address.pincode))
+    ) {
       newErrors["address.pincode"] = "Pincode must be a valid number.";
     }
 
