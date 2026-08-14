@@ -3,10 +3,8 @@ import { toast } from "react-toastify";
 /**
  * Checks for an active internet connection using the browser's navigator.
  * If there is no internet connection, displays an error toast message using React Toastify.
- *
- * @returns {boolean} - Returns true if there is an active internet connection, else returns false.
  */
-function checkInternetConnection() {
+function checkInternetConnection(): boolean {
   if (navigator.onLine === false) {
     toast.error("Please check your internet connection", {
       position: "top-right",

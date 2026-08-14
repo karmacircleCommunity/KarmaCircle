@@ -53,10 +53,10 @@ Both styles coexist; prefer the alias style in new code.
 
 ## TypeScript
 
-The repo is being converted to TypeScript feature by feature (not all at once) — see [architecture.md](./architecture.md#typescript) for the setup.
-Converted so far: the app shell (`src/app/`) plus `authentication`, `clubs`, `dashboard`, `donate-shop-trending`, `error-handling`, `events`, `landing-home`, `onboarding-profile`. Everything else is still plain JS (`.js`/`.jsx`) and stays that way until its own turn.
-`tsconfig.json` has `allowJs: true` so JS and TS coexist and TS can still infer types across the boundary; `checkJs` is off, so untouched JS files are never type-checked.
-Don't assume a feature is typed just because a shared dependency it imports (`MilanApi.js`, Redux slices, `Constants.js`, etc.) has types — those get real types only when their own turn comes, or when a converted feature needed a narrow `.d.ts` bridge for one (see `src/statics/Constants.d.ts`, `src/utils/Toasts.d.ts`, `src/components/buttons/globalbutton/Button.d.ts` for examples of that pattern).
+The repo was converted to TypeScript feature by feature (not all at once) — see [architecture.md](./architecture.md#typescript) for the setup.
+Every file under `src/` is now `.ts`/`.tsx`: the app shell (`src/app/`), every feature (`authentication`, `clubs`, `dashboard`, `donate-shop-trending`, `error-handling`, `events`, `landing-home`, `onboarding-profile`), and the shared layer (`src/components/`, `src/services/`, `src/statics/`, `src/utils/`).
+`tsconfig.json` still has `allowJs: true` (harmless now that no `.js`/`.jsx` files remain under `src/`) and `checkJs: false`.
+The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, `Toasts.d.ts`, `Button.d.ts`) is gone — those files got real types directly once their own conversion pass landed, and the bridges were deleted.
 
 ## Feature map
 
@@ -64,7 +64,7 @@ Don't assume a feature is typed just because a shared dependency it imports (`Mi
 |---|---|
 | [architecture.md](./architecture.md) | App shell, routing table, providers, build config |
 | [state-management.md](./state-management.md) | Redux store/slice, Zustand store, redux-persist, cookies |
-| [api-integration.md](./api-integration.md) | Every way the frontend talks to the backend: `MilanApi.js`, `integrations/*`, `ApiConnector`, SWR fetchers |
+| [api-integration.md](./api-integration.md) | Every way the frontend talks to the backend: `MilanApi.ts`, `integrations/*`, `ApiConnector`, SWR fetchers |
 | [authentication.md](./authentication.md) | Sign in, sign up, Google OAuth, logout, route guarding, password/email validation |
 | [onboarding-profile.md](./onboarding-profile.md) | Post-signup profile completion, profile editing, the public Profile/UserProfile pages |
 | [dashboard.md](./dashboard.md) | The logged-in club/org dashboard |

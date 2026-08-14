@@ -7,10 +7,11 @@ import { RxCaretDown, RxCross2 } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import navbarbrand from "@assets/pictures/Navbar/MilanNavBrand.svg";
-import { resetUserData, selectUser } from "@app/store/slices/userSlice.ts";
-import { Logout } from "@services/MilanApi.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
-import Button from "@components/buttons/globalbutton/Button.jsx";
+import { resetUserData, selectUser } from "@app/store/slices/userSlice";
+import type { RootState } from "@app/store/store";
+import { Logout } from "@services/MilanApi";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
+import Button from "@components/buttons/globalbutton/Button";
 import "./Navbar.scss";
 
 const Links = [
@@ -40,7 +41,9 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
+  const isLoggedIn = useSelector(
+    (state: RootState) => state.user.isLoggedIn,
+  );
   const user = useSelector(selectUser);
   console.log("🚀 ~ Navbar ~ user:", user);
 
@@ -66,15 +69,21 @@ const Navbar = () => {
   async function handleLogout() {
     const data = await Logout();
 
+    // @ts-expect-error — pre-existing loose access into `Logout()`'s
+    // response shape (catch branch returns the raw caught error, not
+    // `error.response` — see MilanApi.ts/SPEC.md); preserved as-is for
+    // a types-only pass.
     if (data?.status === 200) {
+      // @ts-expect-error — see above.
       showSuccessToast(data?.data?.message);
       navigate("/");
       dispatch(resetUserData());
       localStorage.clear();
       document
         .querySelector(".nav_dropdown")
-        .classList.remove("nav_dropdown_visible");
+        ?.classList.remove("nav_dropdown_visible");
     } else {
+      // @ts-expect-error — see above.
       showErrorToast(data?.message);
     }
   }
@@ -110,7 +119,7 @@ const Navbar = () => {
                 onClick={() => {
                   document
                     .querySelector(".nav_dropdown")
-                    .classList.toggle("nav_dropdown_visible");
+                    ?.classList.toggle("nav_dropdown_visible");
                 }}
                 className="navbar_dropdown_name"
               >
@@ -127,7 +136,7 @@ const Navbar = () => {
         {!isNavbarOpen &&
           (Cookies.get("Token") ? (
             <img
-              src={user?.profileImage || profileImage}
+              src={(user?.profileImage as string | undefined) || profileImage}
               alt=""
               className="navbar_hamimg"
               onClick={() => {
@@ -224,6 +233,7 @@ const Navbar = () => {
             {user?.userType === "club" ? (
               <Link to={"/event/create"}>Your Events</Link>
             ) : null}
+            {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
             <Link>Settings</Link>
           </div>
           <div className="myaccount">
@@ -232,7 +242,9 @@ const Navbar = () => {
               aria-orientation="horizontal"
               className="myaccount_separator"
             ></div>
+            {/* @ts-expect-error — see above. */}
             <Link>Support</Link>
+            {/* @ts-expect-error — see above. */}
             <Link
               onClick={() => {
                 handleLogout();

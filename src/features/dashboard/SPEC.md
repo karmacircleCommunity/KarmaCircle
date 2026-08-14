@@ -86,9 +86,9 @@ Two static stat boxes: "Impressions: 6,025" and "Click Rate: 43%" — not derive
 A "See detailed analytics" `<Link to="/">` — points at the home page, not a real analytics view.
 This intentionally matches the "Real time Analytics — Coming Soon" label wrapped around it in `Dashboard.tsx`; it is a deliberate visual placeholder, not a partially-wired feature.
 
-## `services/fetchDashboard()` — exists, unused (lives in `src/services/MilanApi.js`, not this folder)
+## `services/fetchDashboard()` — exists, unused (lives in `src/services/MilanApi.ts`, not this folder)
 
-`fetchDashboard()` (`GET /clubs/dashboard`, via `clubEndpoints.dashboard`) is exported from the shared `MilanApi.js` but **no component in this feature (or anywhere else) calls it**.
+`fetchDashboard()` (`GET /clubs/dashboard`, via `clubEndpoints.dashboard`) is exported from the shared `MilanApi.ts` but **no component in this feature (or anywhere else) calls it**.
 `Dashboard.tsx` fetches `userEndpoints.profile` instead, which returns the account's own user/club record — not aggregate dashboard analytics.
 If you're ever asked to wire up the real analytics `TrackSection` is a placeholder for, `fetchDashboard()` is the endpoint that was evidently built for exactly that purpose; nothing about its response shape can be verified from this repo (no backend code here) — check the backend repo for what `GET /clubs/dashboard` actually returns before assuming a shape.
 
@@ -124,7 +124,7 @@ profileData?.user  (ignored: cover photo, profile picture, follower/event counts
 This folder is TypeScript (`.ts`/`.tsx`) as of the dashboard/donate-shop-trending conversion pass — see `tsconfig.json` at the repo root and [authentication/SPEC.md](../authentication/SPEC.md#types) for the general pattern this repo follows.
 `types/index.ts` holds `DashboardProfileUser`/`DashboardProfileResponse` — the shape of `useSWR(userEndpoints.profile, fetcher)`'s data, kept independent of `src/types/user.ts`'s `User` (the Redux slice shape) since they're different data sources that happen to overlap, not the same type.
 The `edit`/`setOpenModal`/`setShowEditModal` prop-name mismatch documented above is a real, pre-existing bug — converting to TypeScript actually surfaces it as a compile error (`ProfileCompletion.tsx`'s inferred prop type doesn't have `edit`/`setOpenModal`), which is suppressed with a documented `@ts-expect-error` rather than fixed, since fixing it is a behavior change out of scope for a types-only pass. Remove that suppression in the same change if you ever do fix the mismatch.
-`ProfileCompletion.tsx`, `ProfileUpdate.tsx`, and `useProfileCompletion.ts` (all in `onboarding-profile`, out of scope here) stay untyped JS; TS infers loose/implicit-`any` shapes for them at the boundary.
+`ProfileCompletion.tsx`, `ProfileUpdate.tsx`, and `useProfileCompletion.ts` (all in `onboarding-profile`) are themselves typed too, as of that feature's own conversion pass.
 
 ## Known issues specific to this feature
 
@@ -142,5 +142,5 @@ The `edit`/`setOpenModal`/`setShowEditModal` prop-name mismatch documented above
 - **"Fix the dashboard's edit-profile modal crashing / not closing"** → fix the `setShowEditModal`/`setOpenModal` prop mismatch described above first; that's the reproducible crash.
 - **"Stop both modals from showing at once"** → add a mutual-exclusion condition, e.g. only render `ProfileUpdate` when `hasCompletedProfile` is not `false`, or close `ProfileCompletion` before opening `ProfileUpdate`.
 - **"Make the Edit Profile button actually pre-fill from existing data"** → `ProfileUpdate` already does this correctly via its `profileData` prop; if the ask is about `ProfileCompletion` specifically, remember its internal `useProfileCompletion()` instance is separate from Dashboard's — you'd need to either lift the hook up and pass `credentials`/`handleChange` down as props, or drop Dashboard's redundant `handleSetDefaultValues` call as dead code.
-- **"Wire up real analytics"** → `fetchDashboard()` (`MilanApi.js`) is the intended data source; `TrackSection.tsx` is the component to make dynamic (currently fully static).
+- **"Wire up real analytics"** → `fetchDashboard()` (`MilanApi.ts`) is the intended data source; `TrackSection.tsx` is the component to make dynamic (currently fully static).
 - **"Show real follower/event counts and cover/profile images"** → these need real fields on the `userEndpoints.profile` response (check the backend repo for what's actually available) wired into the corresponding static JSX in `Dashboard.tsx`.

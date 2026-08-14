@@ -9,7 +9,7 @@ import { Button, Navbar } from "@components";
 import { useAuth } from "@features/authentication/hooks/useAuth";
 import { AuthType } from "@features/authentication/types";
 import type { AuthErrors, Credentials } from "@features/authentication/types";
-import { GoogleAuth } from "@services/MilanApi.js";
+import { GoogleAuth } from "@services/MilanApi";
 import "./index.scss";
 
 const SignIn = () => {

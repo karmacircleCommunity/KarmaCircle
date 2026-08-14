@@ -1,6 +1,6 @@
-import { STATUSCODE } from "@statics/Constants.js";
-import { updateUserProfile } from "@services/MilanApi.js";
-import { showSuccessToast } from "@utils/Toasts.js";
+import { STATUSCODE } from "@statics/Constants";
+import { updateUserProfile } from "@services/MilanApi";
+import { showSuccessToast } from "@utils/Toasts";
 import clsx from "clsx";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
@@ -156,6 +156,11 @@ const ProfileUpdate = ({
       credentials,
     });
 
+    // @ts-expect-error — pre-existing bug (see SPEC.md/known-issues.md):
+    // `data` is `undefined` on a pure network failure (no HTTP response
+    // at all), and this throws an uncaught TypeError rather than being
+    // guarded with `?.`. Preserved as-is, out of scope for a types-only
+    // pass.
     if (data.status === STATUSCODE.OK) {
       showSuccessToast(data?.data?.message);
       refreshProfileData();

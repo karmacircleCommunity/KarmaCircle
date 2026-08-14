@@ -2,7 +2,7 @@ import {
   addressFields,
   brandingFields,
   mandatoryFields,
-} from "@statics/Constants.js";
+} from "@statics/Constants";
 import type { ProfileFieldsInfo } from "../types";
 
 /** Not exported — see SPEC.md's correction to the centralized docs,

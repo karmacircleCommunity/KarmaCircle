@@ -5,9 +5,9 @@ Three low-priority/incomplete areas grouped together because none of them repres
 ## Donate (currently unroutable)
 
 [src/features/donate-shop-trending/pages/Donate.tsx](../../src/features/donate-shop-trending/pages/Donate.tsx) exists but **has no entry in `routesConfig.tsx`** — it cannot be reached by navigating the live app.
-It also imports two components that no longer exist in the current file tree: `../../components/Cards/SingleClubEvent/SingleClubEvent` and `../../components/Loading` (the real `Loading` component now lives at `src/components/loading/Loading.jsx`, exported from the shared barrel).
+It also imports two components that no longer exist in the current file tree: `../../components/Cards/SingleClubEvent/SingleClubEvent` and `../../components/Loading` (the real `Loading` component now lives at `src/components/loading/Loading.tsx`, exported from the shared barrel).
 **Importing this file today will fail the build** — it is stale code from before a component reorganization, not a working feature.
-It fetches clubs via `GetAllClubs()` (`MilanApi.js`, `GET /clubs`), loads the Razorpay checkout script (`https://checkout.razorpay.com/v1/checkout.js`) via a hand-rolled `loadScript` helper, and gates access on `Cookies.get("isLoggedIn")` — a cookie that, per [state-management.md](./state-management.md), is not set anywhere else in the current codebase (the rest of the app uses the `Token` cookie + Redux `isLoggedIn`), so this gate can never pass today even if the imports were fixed.
+It fetches clubs via `GetAllClubs()` (`MilanApi.ts`, `GET /clubs`), loads the Razorpay checkout script (`https://checkout.razorpay.com/v1/checkout.js`) via a hand-rolled `loadScript` helper, and gates access on `Cookies.get("isLoggedIn")` — a cookie that, per [state-management.md](./state-management.md), is not set anywhere else in the current codebase (the rest of the app uses the `Token` cookie + Redux `isLoggedIn`), so this gate can never pass today even if the imports were fixed.
 
 If asked to "fix the donate page," treat this as a near-full rewrite (fix imports, register a route, align the login-gate check with the rest of the app) rather than a small patch — confirm scope before starting.
 
@@ -20,7 +20,7 @@ Not currently imported by any component (since `Donate.tsx` can't build) — the
 
 ## Shop and Trending — intentional placeholders
 
-[src/features/donate-shop-trending/pages/Shop.tsx](../../src/features/donate-shop-trending/pages/Shop.tsx) (routed `/shop`) and [src/features/donate-shop-trending/pages/Trending.tsx](../../src/features/donate-shop-trending/pages/Trending.tsx) (routed `/trending`) are both thin wrappers around the shared `<ComingSoon />` component — see [src/components/comingSoon/ComingSoon.jsx](../../src/components/comingSoon/ComingSoon.jsx).
+[src/features/donate-shop-trending/pages/Shop.tsx](../../src/features/donate-shop-trending/pages/Shop.tsx) (routed `/shop`) and [src/features/donate-shop-trending/pages/Trending.tsx](../../src/features/donate-shop-trending/pages/Trending.tsx) (routed `/trending`) are both thin wrappers around the shared `<ComingSoon />` component — see [src/components/comingSoon/ComingSoon.tsx](../../src/components/comingSoon/ComingSoon.tsx).
 `ComingSoon` takes a `launchitem` string (e.g. `"shop's page."`, `"Trending section"`) and renders a static illustration, a heading, and a "Sign up to get notified" CTA linking to `/auth/signup`.
 These two pages are deliberately unfinished — unlike Donate, there is no broken/dead code here to fix, just no feature built yet.
 

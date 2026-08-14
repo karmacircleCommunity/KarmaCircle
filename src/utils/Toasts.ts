@@ -1,14 +1,11 @@
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import checkInternetConnection from "./CheckInternetConnection.js";
+import checkInternetConnection from "./CheckInternetConnection";
 
 /**
  * Displays a success toast message using React Toastify.
- *
- * @param {string} message - The message to be displayed in the success toast.
- * @returns {void}
  */
-export const showSuccessToast = (message) => {
+export const showSuccessToast = (message?: string): void => {
   if (!checkInternetConnection()) {
     return;
   }
@@ -22,6 +19,9 @@ export const showSuccessToast = (message) => {
     draggable: false,
     progress: undefined,
     closeButton: false,
+    // @ts-expect-error — `bodyStyle` isn't a real `ToastOptions` field
+    // (react-toastify silently ignores it at runtime); pre-existing,
+    // preserved as-is rather than removed for a types-only pass.
     bodyStyle: {
       borderRadius: "50%",
       fontFamily: "Outfit, sans-serif",
@@ -32,11 +32,8 @@ export const showSuccessToast = (message) => {
 
 /**
  * Displays an error toast message using React Toastify.
- *
- * @param {string} message - The message to be displayed in the error toast.
- * @returns {void}
  */
-export const showErrorToast = (message) => {
+export const showErrorToast = (message?: string): void => {
   if (!checkInternetConnection()) {
     return;
   }

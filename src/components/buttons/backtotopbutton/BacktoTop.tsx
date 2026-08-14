@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { IoIosArrowUp } from "react-icons/io";
 import "./BackToTop.scss";
 
@@ -11,7 +11,7 @@ const BackToTop = () => {
   };
 
   const listenToScroll = () => {
-    let heightToHidden = 250;
+    const heightToHidden = 250;
     const winScroll =
       document.body.scrollTop || document.documentElement.scrollTop;
     if (winScroll > heightToHidden) {
@@ -21,9 +21,12 @@ const BackToTop = () => {
     }
   };
 
-  const debounce = (callback, delay) => {
-    let timer;
-    return (...args) => {
+  const debounce = <T extends (...args: never[]) => void>(
+    callback: T,
+    delay: number,
+  ) => {
+    let timer: ReturnType<typeof setTimeout>;
+    return (...args: Parameters<T>) => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         callback(...args);

@@ -1,6 +1,10 @@
 import { Helmet } from "react-helmet-async";
 
-function ComponentHelmet({ type }) {
+interface ComponentHelmetProps {
+  type?: string;
+}
+
+function ComponentHelmet({ type }: ComponentHelmetProps) {
   return type == "Clubs" ? (
     <Helmet>
       <title>NgoWorld | {type}</title>

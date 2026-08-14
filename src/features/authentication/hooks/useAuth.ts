@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { emailRegex } from "@statics/Constants.js";
+import { emailRegex } from "@statics/Constants";
 import { updateUserData } from "@app/store/slices/userSlice";
-import checkInternetConnection from "@utils/CheckInternetConnection.js";
-import { LoginUser, RegisterUser } from "@services/MilanApi.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import checkInternetConnection from "@utils/CheckInternetConnection";
+import { LoginUser, RegisterUser } from "@services/MilanApi";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { AuthType } from "../types";
 import type { Credentials, SetAuthErrors, UseAuthResult } from "../types";
 

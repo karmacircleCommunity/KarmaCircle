@@ -54,11 +54,11 @@ Both are effectively unreachable dead code today — see [known-issues.md](./kno
 ## TypeScript
 
 `tsconfig.json` at the repo root added TypeScript to the project (replacing `jsconfig.json`, which it superseded — its `paths` are the same alias table, kept in sync with `vite.config.mjs`).
-It sets `allowJs: true` / `checkJs: false` and `moduleResolution: "bundler"` (matching Vite's own resolution) so `.ts`/`.tsx` files can coexist with the still-mostly-`.js`/`.jsx` codebase: TypeScript infers types from untouched JS files for anything a converted file imports, but never fails the build over an untouched JS file's own contents.
+It sets `allowJs: true` / `checkJs: false` and `moduleResolution: "bundler"` (matching Vite's own resolution); `allowJs`/`checkJs` are vestigial now that the conversion is complete (no `.js`/`.jsx` files remain under `src/`), kept only because there's no reason to churn the config.
 Vite/esbuild already strip types from `.ts`/`.tsx` at bundle time with no config changes needed; `npm run type-check` (`tsc --noEmit`) is the actual type-checking step and isn't part of `npm run build`.
 `eslint.config.js` adds `typescript-eslint`'s recommended rules scoped to `**/*.{ts,tsx}` only, alongside the existing JS/React rules.
-Conversion is happening feature-by-feature, not as one repo-wide pass — see [README.md](./README.md#typescript) for which features are done.
-When a converted file needs a shared JS dependency (outside that pass's scope) typed more precisely than TS's own inference gives it, the convention is a sibling `.d.ts` next to the `.js` file (e.g. `src/statics/Constants.d.ts`) rather than converting or duplicating that file — the `.js` file still runs, the `.d.ts` only supplies type information.
+The conversion happened feature-by-feature (not as one repo-wide pass) ending with the shared layer (`src/components/`, `src/services/`, `src/statics/`, `src/utils/`) — see [README.md](./README.md#typescript).
+The sibling-`.d.ts`-bridge convention this doc used to describe for shared JS dependencies (e.g. a `src/statics/Constants.d.ts` next to the still-JS `Constants.js`) no longer applies — every former bridge target got real types directly and the bridge files were deleted.
 
 ## Directory layout
 
@@ -75,14 +75,14 @@ src/
     authentication/            — SignIn/SignUp pages, AuthButton, DonotRenderWhenLoggedIn, useAuth/useValidation/useFormLogic
     onboarding-profile/        — Profile/UserProfile pages, ProfileCompletion/ProfileUpdate modals, ProfileElements
     dashboard/                 — Dashboard page, ProfileSection, TrackSection
-    clubs/                     — Clubs page, ClubCard, Clubs.js fetcher
+    clubs/                     — Clubs page, ClubCard, Clubs.ts fetcher
     events/                    — Events/DetailedEvent pages, event cards, CreateEvent(s), useEvent
     landing-home/               — Home page, Landing hero, MilanInfoBanner
     donate-shop-trending/      — Donate, Shop, Trending pages, PaymentGateway.ts (Razorpay)
     error-handling/            — Error404, Test pages
   components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, BacktoTop, ComingSoon, ComponentHelmet, ClickAwayListener
-  services/                    — MilanApi.js (most backend calls), ApiConnector.js + ApiEndpoints.js (shared API infra)
-  statics/                     — static reference data (Constants.js, CountryList.js, OnlinePlatform.js)
+  services/                    — MilanApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
+  statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts)
   utils/                       — cross-cutting helpers used by 2+ features (toasts, fetcher, connectivity check)
   styles/                      — global CSS/SCSS
   assets/                      — images, SVGs
@@ -91,5 +91,5 @@ src/
 Inside a feature folder, only the needed subfolders exist — e.g. `clubs/` has no `hooks/`, `donate-shop-trending/` has no `components/`.
 A file only lives at the top level (`components/`, `services/`, `utils/`) when more than one feature actually imports it; single-consumer helpers moved into that consumer's feature folder even if they were previously top-level.
 
-Two backend-call layers coexist: `src/services/MilanApi.js` (raw `axios`, most calls) and the feature-level `services/Clubs.js` / `services/Events.js` fetchers under `src/features/clubs/` and `src/features/events/` (go through `src/services/ApiConnector.js`, only used by `getClubs`/`getEvents`).
+Two backend-call layers coexist: `src/services/MilanApi.ts` (raw `axios`, most calls) and the feature-level `services/Clubs.js` / `services/Events.js` fetchers under `src/features/clubs/` and `src/features/events/` (go through `src/services/ApiConnector.ts`, only used by `getClubs`/`getEvents`).
 See [api-integration.md](./api-integration.md) for which one each feature actually uses.

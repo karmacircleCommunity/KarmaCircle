@@ -15,10 +15,10 @@ import "react-toastify/dist/ReactToastify.css";
 // pass. See docs/specs/donate-shop-trending.md.
 import SingleClubEvent from "../../components/Cards/SingleClubEvent/SingleClubEvent";
 // @ts-expect-error — same as above: the real Loading component now
-// lives at src/components/loading/Loading.jsx (exported from the
+// lives at src/components/loading/Loading.tsx (exported from the
 // shared @components barrel), not this path.
 import Loading from "../../components/Loading";
-import { GetAllClubs } from "@services/MilanApi.js";
+import { GetAllClubs } from "@services/MilanApi";
 import "./Donate.css";
 
 const Donate = () => {
@@ -36,6 +36,11 @@ const Donate = () => {
     const fetchClubData = async () => {
       setLoading(true);
       const response = await GetAllClubs();
+      // @ts-expect-error — pre-existing bug (see SPEC.md/known-issues.md):
+      // stores the raw response directly instead of `response.data`, and
+      // doesn't check `response.status` first, so a failed request (now
+      // typed as possibly `undefined`) would be stored as `clubData`
+      // as-is. Preserved as-is, out of scope for a types-only pass.
       setClubData(response);
       setLoading(false);
     };

@@ -1,8 +1,11 @@
-import React from "react";
 import "./Header.css";
-import data from "./HeaderData.js";
+import data from "./HeaderData";
 
-const Header = ({ type }) => {
+interface HeaderProps {
+  type?: string;
+}
+
+const Header = ({ type }: HeaderProps) => {
   const headerData = data.find((item) => item.key === type);
 
   if (!headerData) {

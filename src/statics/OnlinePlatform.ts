@@ -1,4 +1,10 @@
-const platforms = [
+export interface OnlinePlatform {
+  label: string;
+  value: string;
+  icon: string;
+}
+
+const platforms: OnlinePlatform[] = [
   {
     label: "Zoom Meeting",
     value: "zoom",

@@ -5,8 +5,8 @@ import { useDispatch } from "react-redux";
 import Landing from "@features/landing-home/components/Landing";
 import { Footer } from "@components";
 import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice";
-import { successCallback } from "@services/MilanApi.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import { successCallback } from "@services/MilanApi";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { OAuthSuccessResponse } from "../types";
 
 /**

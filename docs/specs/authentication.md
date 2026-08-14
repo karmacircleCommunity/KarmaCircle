@@ -17,9 +17,9 @@ It returns `{ authenticateUser, loading }`.
 
 `authenticateUser(credentials, setErrors)` does, in order:
 1. Bails out (no-op) if `checkInternetConnection()` reports offline.
-2. Validates `credentials.email` against `emailRegex` from `static/Constants.js`. On failure, sets a field-level error via `setErrors` and returns — **this also runs on sign-in**, not just sign-up.
+2. Validates `credentials.email` against `emailRegex` from `static/Constants.ts`. On failure, sets a field-level error via `setErrors` and returns — **this also runs on sign-in**, not just sign-up.
 3. Validates `credentials.password` against an inline regex requiring 8+ chars, at least one digit, one lowercase, one uppercase letter. Same behavior: applies on sign-in too, so an existing user whose password predates this rule (or simply doesn't match the pattern for a `signin` typo) will get a client-side "password" error even though the backend would have rejected it anyway. This client check happens before any network call is made.
-4. Sets `loading = true`, then calls `LoginUser(credentials)` or `RegisterUser({ ...credentials, userType: credentials.userType.value })` from `MilanApi.js`. Note `userType` is only unwrapped from its `react-select` `{value, label}` shape for sign-up.
+4. Sets `loading = true`, then calls `LoginUser(credentials)` or `RegisterUser({ ...credentials, userType: credentials.userType.value })` from `MilanApi.ts`. Note `userType` is only unwrapped from its `react-select` `{value, label}` shape for sign-up.
 5. On `response.status` 200/201: shows a success toast, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })` to Redux, then after a fixed 1000ms `setTimeout`, navigates to `/` and clears `loading`.
 6. Otherwise: shows an error toast with `response?.data?.message` and clears `loading`.
 
@@ -40,14 +40,14 @@ Treat this pair as the design to converge toward if you're asked to build out fu
 
 ## Google OAuth
 
-`handleGoogle()` on both auth pages calls `GoogleAuth()` (`MilanApi.js`, `GET /auth/google`) and full-page-redirects (`window.location.href = response`) to the URL the backend returns.
+`handleGoogle()` on both auth pages calls `GoogleAuth()` (`MilanApi.ts`, `GET /auth/google`) and full-page-redirects (`window.location.href = response`) to the URL the backend returns.
 The backend is expected to redirect back to the frontend after auth and set an `OAuthLoginInitiated` cookie; [Home.tsx](../../src/features/landing-home/pages/Home.tsx) checks for that cookie on mount and, if present, calls `successCallback()` (`GET /auth/login/success`) to fetch the now-authenticated user and dispatch `updateUserData(...)` + `toggleUserLogin()` into Redux.
 This means a Google sign-in only "completes" on the frontend if the user lands back on `/` — landing anywhere else after the OAuth redirect would skip this step.
 
 ## Logout
 
-`Logout()` (`MilanApi.js`, `GET /auth/logout`) is called from three places with three slightly different cleanup sequences: `Navbar.jsx`, `Profile.tsx`, and `UserProfile.tsx`.
-All three dispatch `resetUserData()` on success; `Navbar.jsx` additionally calls `localStorage.clear()`, `Profile.tsx` additionally calls `Cookies.remove("skipProfileCompletion")`, and `UserProfile.tsx` does neither extra step but does toggle the Zustand `isLoading` flag around the call.
+`Logout()` (`MilanApi.ts`, `GET /auth/logout`) is called from three places with three slightly different cleanup sequences: `Navbar.tsx`, `Profile.tsx`, and `UserProfile.tsx`.
+All three dispatch `resetUserData()` on success; `Navbar.tsx` additionally calls `localStorage.clear()`, `Profile.tsx` additionally calls `Cookies.remove("skipProfileCompletion")`, and `UserProfile.tsx` does neither extra step but does toggle the Zustand `isLoading` flag around the call.
 There is no shared `useLogout()` hook — consider extracting one if you need to touch this again, so the cleanup steps stay consistent.
 
 ## Route guard: `DonotRenderWhenLoggedIn`

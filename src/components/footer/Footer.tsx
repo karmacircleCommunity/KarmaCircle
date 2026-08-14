@@ -1,4 +1,4 @@
-import { footerLinks } from "./footerLinksConfig.js";
+import { footerLinks } from "./footerLinksConfig";
 import { FaGithub, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
@@ -6,7 +6,7 @@ import brand from "@assets/pictures/Navbar/MilanNavBrand.svg";
 import "./Footer.scss";
 
 const Footer = () => {
-  const icons = {
+  const icons: Record<string, typeof FaLinkedinIn> = {
     FaLinkedinIn: FaLinkedinIn,
     FaXTwitter: FaXTwitter,
     FaGithub: FaGithub,
@@ -76,7 +76,7 @@ const Footer = () => {
 
         <div className="rightside">
           {footerLinks?.social?.map((item, index) => {
-            const IconComponent = icons[item.icon];
+            const IconComponent = icons[item.icon ?? ""];
             return (
               <a
                 key={index}

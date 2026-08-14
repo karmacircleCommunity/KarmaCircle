@@ -1,5 +1,5 @@
-import { apiConnector } from "@services/ApiConnector.js";
-import { eventEndpoints } from "@services/ApiEndpoints.js";
+import { apiConnector } from "@services/ApiConnector";
+import { eventEndpoints } from "@services/ApiEndpoints";
 import type { EventRecord } from "../types";
 
 /**

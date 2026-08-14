@@ -2,7 +2,7 @@
 
 ## `Button`
 
-[src/components/buttons/globalbutton/Button.jsx](../../src/components/buttons/globalbutton/Button.jsx), styled via [Button.module.css](../../src/components/buttons/globalbutton/Button.module.css) (CSS Modules).
+[src/components/buttons/globalbutton/Button.tsx](../../src/components/buttons/globalbutton/Button.tsx), styled via [Button.module.css](../../src/components/buttons/globalbutton/Button.module.css) (CSS Modules).
 This is the one truly shared, widely-adopted primitive in the app — used across auth, profile, clubs, events, dashboard, and error pages.
 
 Props: `type` (default `"button"`), `variant` (default `"solid"`; also `"outline"` is used at call sites — check `Button.module.css` for the full set of variant classes before assuming others exist), `className`, `size`, `fontweight`, `to`, `disabled`, `isLoading`, `cypressfield` (sets `data-cy`, for Cypress test targeting), `onClickfunction` (the click handler prop — **not** `onClick`; passing a plain `onClick` would be spread onto the element via `...props` and technically still work as a native handler, but `onClickfunction` is the prop this codebase consistently uses at every call site, so use it for consistency).
@@ -19,7 +19,7 @@ While `isLoading` is true, `children` are replaced with a `react-spinners` `Clip
 - `ClubCard` — see [clubs.md](./clubs.md).
 - `EventCard`, `EventSlider`, `FeaturedEventCard`, `FeaturedEventImage`, `EventsMarqueeCards` — see [events.md](./events.md).
 
-All card components are exported from `src/components/index.js` (or imported directly by deep path — both patterns appear at different call sites; prefer the barrel for anything already exported there).
+All card components are exported from `src/components/index.ts` (or imported directly by deep path — both patterns appear at different call sites; prefer the barrel for anything already exported there).
 
 ## Styling conventions (inconsistent — know this before adding a component)
 
@@ -36,4 +36,4 @@ There's no CSS-in-JS despite `styled-components` and `@emotion/styled`/`@mui/sty
 When adding a new component, match the styling approach of its immediate siblings (e.g. new profile-related components → plain `.scss` + BEM-ish class names, matching `ProfileCompletion.scss`/`ProfileUpdate.scss`) rather than introducing a fifth pattern.
 
 [src/styles/Globals.scss](../../src/styles/Globals.scss) and [src/styles/App.css](../../src/styles/App.css) hold app-wide resets/variables and are imported once, from `App.tsx`.
-[src/styles/index.css](../../src/styles/index.css) is imported once, from `index.jsx`.
+[src/styles/index.css](../../src/styles/index.css) is imported once, from `index.tsx`.

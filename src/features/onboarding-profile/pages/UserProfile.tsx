@@ -12,13 +12,13 @@ import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useSWR from "swr";
-import { Logout } from "@services/MilanApi.js";
-import fetcher from "@utils/Fetcher.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import { Logout } from "@services/MilanApi";
+import fetcher from "@utils/Fetcher";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 
 import Cookies from "js-cookie";
 import { Button, Footer, Navbar } from "@components";
-import { userEndpoints } from "@services/ApiEndpoints.js";
+import { userEndpoints } from "@services/ApiEndpoints";
 import useAuthStore from "@app/store/useAuth";
 import type { LogoutResponse, UserProfileDetails } from "../types";
 

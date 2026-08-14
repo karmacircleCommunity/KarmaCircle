@@ -1,7 +1,13 @@
-import React from "react";
+import type { ReactNode } from "react";
 import style from "./Modal.module.css";
 
-const Modal = ({ children, onClose, className }) => {
+interface ModalProps {
+  children?: ReactNode;
+  onClose?: () => void;
+  className?: string;
+}
+
+const Modal = ({ children, onClose, className }: ModalProps) => {
   return (
     <div className={style.overlay}>
       <div className={`${style.modal} ${className}`}>

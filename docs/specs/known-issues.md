@@ -54,11 +54,11 @@ These exist, work as isolated units, and appear to be intended for future/finish
 - `ProfileElements.ts` + `getProfileFields.ts` — generic profile-field metadata, unused by the (hardcoded-field) `ProfileCompletion`/`ProfileUpdate` forms.
 - `useValidation.ts` + `useFormLogic.ts` — a fuller signup validator/handler pair, unused by the live `SignIn`/`SignUp` pages.
 - `AuthButton.tsx` — unused by the live auth pages.
-- `Modal.jsx` — a generic modal shell, unused; every modal in the app builds its own overlay markup instead.
+- `Modal.tsx` — a generic modal shell, unused; every modal in the app builds its own overlay markup instead.
 - `MilanInfoBanner` — a finished marketing section, unmounted from `Home.tsx`.
-- `Header.jsx` + `HeaderData.js` — has ready-made "clubs"/"events" copy, but `Clubs.tsx`/`Events.tsx` both build their own inline header instead of using it.
-- `PatchFetcher.js` — an SWR-style PATCH fetcher, unused (mutations go through direct `MilanApi.js` calls + `mutate()` instead).
-- `ClickAwayListener.jsx` — unused generic utility.
+- `Header.tsx` + `HeaderData.ts` — has ready-made "clubs"/"events" copy, but `Clubs.tsx`/`Events.tsx` both build their own inline header instead of using it.
+- `PatchFetcher.ts` — an SWR-style PATCH fetcher, unused (mutations go through direct `MilanApi.ts` calls + `mutate()` instead).
+- `ClickAwayListener.tsx` — unused generic utility.
 - `getEvents()` / `getClubs()` (`src/features/events/services/Events.ts`, `src/features/clubs/services/Clubs.ts`) — real fetchers for events/clubs, unused because the pages that need them use hardcoded arrays instead.
 
 ## Smaller one-off issues
@@ -66,11 +66,11 @@ These exist, work as isolated units, and appear to be intended for future/finish
 - `Events.tsx` passes `type="Clubs"` to `<ComponentHelmet>` instead of `"Events"` (that component does have an `"Events"` branch).
 - `Profile.tsx` renders its Subscribe/Sponsor/Edit/Logout button block twice in a row (copy-paste duplication, not an intentional repeated layout).
 - `Profile.tsx`'s map `<iframe>` reads `user?.iframe` (the viewer's own Redux state) instead of `details?.iframe` (the profile being viewed).
-- `Navbar.jsx` has a stray `console.log` of the full user object on every render.
+- `Navbar.tsx` has a stray `console.log` of the full user object on every render.
 - `Dashboard.tsx` has a stray `console.log` in its "Edit Profile" click handler.
 - `useEvent.ts`'s `submitCallback` checks a module-scope `errors` object populated by the *last* `validateEvent()` call rather than re-validating the event being submitted right now — callers must call `validateEvent()` immediately beforehand to keep these in sync (which `CreateEvents.tsx` does today, but it's an easy thing to break).
-- `ApiConnector.js` has a dead/unreachable status check (`if (response.status === 400) console.error("... status 600 ...")`) — the comment references 600 but the condition checks 400, and axios throws rather than resolving on 4xx by default, so this branch doesn't currently fire in practice.
-- `emailRegex` in `statics/Constants.js` (`/^[a-zA-Z0-9._:$!%-]+@[a-zA-Z0-9.-]+.[a-zA-Z]$/`) has an unescaped `.` before the final TLD character class and requires only a single trailing letter — it's looser/buggier than a typical email regex (e.g. it would accept `a@bXc` because the unescaped `.` matches any character, and it only requires one character after the last literal dot). It's the one actually used by `useAuth.ts`'s live email check, so tightening it would change real signup/signin validation behavior — coordinate before changing.
+- `ApiConnector.ts` has a dead/unreachable status check (`if (response.status === 400) console.error("... status 600 ...")`) — the comment references 600 but the condition checks 400, and axios throws rather than resolving on 4xx by default, so this branch doesn't currently fire in practice.
+- `emailRegex` in `statics/Constants.ts` (`/^[a-zA-Z0-9._:$!%-]+@[a-zA-Z0-9.-]+.[a-zA-Z]$/`) has an unescaped `.` before the final TLD character class and requires only a single trailing letter — it's looser/buggier than a typical email regex (e.g. it would accept `a@bXc` because the unescaped `.` matches any character, and it only requires one character after the last literal dot). It's the one actually used by `useAuth.ts`'s live email check, so tightening it would change real signup/signin validation behavior — coordinate before changing.
 - `routesConfig.tsx` lazy-loads `SignIn`/`SignUp` (`lazy(() => import(...))`), but `route.ts` (the page barrel) also statically re-exports them (`Login`/`SignUp`) and is itself statically imported for the other routes. The bundler reports `[INEFFECTIVE_DYNAMIC_IMPORT]` for both at build time — the static re-export pulls `SignIn`/`SignUp` into the main chunk anyway, so the `lazy()` wrapping doesn't actually code-split them. Pre-existing (not introduced by the feature-based restructure, just newly visible in the build log); fix would be to drop `Login`/`SignUp` from `route.ts` since `routesConfig.tsx` doesn't consume them from there.
 
 ## Newly identified while writing per-feature `SPEC.md` files (August 2026)

@@ -2,16 +2,17 @@
 // These functions will be exported and then imported wherever needed
 
 import Axios from "axios";
+import type { AxiosError } from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import {
   authEndpoints,
   clubEndpoints,
   eventEndpoints,
   userEndpoints,
-} from "./ApiEndpoints.js";
+} from "./ApiEndpoints";
 
 // LOGIN USER
-export const LoginUser = async (credentials) => {
+export const LoginUser = async (credentials: unknown) => {
   try {
     const User = await Axios.post(authEndpoints.signin, credentials, {
       withCredentials: true,
@@ -19,19 +20,19 @@ export const LoginUser = async (credentials) => {
 
     return User;
   } catch (error) {
-    return error.response;
+    return (error as AxiosError).response;
   }
 };
 
 // REGISTER USER
-export const RegisterUser = async (credentials) => {
+export const RegisterUser = async (credentials: unknown) => {
   try {
     const User = await Axios.post(authEndpoints.signup, credentials, {
       withCredentials: true,
     });
     return User;
   } catch (error) {
-    return error.response;
+    return (error as AxiosError).response;
   }
 };
 
@@ -41,12 +42,12 @@ export const GetAllClubs = async () => {
     const clubs = await Axios.get(clubEndpoints.all);
     return clubs;
   } catch (error) {
-    return error.response;
+    return (error as AxiosError).response;
   }
 };
 
 // REPORT PROBLEMS
-export const ReportProblem = async (credentials) => {
+export const ReportProblem = async (credentials: unknown) => {
   try {
     const response = await Axios.post(userEndpoints.report, credentials);
     if (response.data.success === true) {
@@ -63,7 +64,11 @@ export const ReportProblem = async (credentials) => {
 };
 
 // Complete User Profile
-export const completeProfileApiCall = async ({ credentials }) => {
+export const completeProfileApiCall = async ({
+  credentials,
+}: {
+  credentials: unknown;
+}) => {
   try {
     const response = await Axios.patch(
       userEndpoints.completeProfile,
@@ -75,12 +80,16 @@ export const completeProfileApiCall = async ({ credentials }) => {
 
     return response;
   } catch (error) {
-    return error.response;
+    return (error as AxiosError).response;
   }
 };
 
 // Update User Profile
-export const updateUserProfile = async ({ credentials }) => {
+export const updateUserProfile = async ({
+  credentials,
+}: {
+  credentials: unknown;
+}) => {
   try {
     const response = await Axios.patch(
       userEndpoints.updateProfile,
@@ -92,7 +101,7 @@ export const updateUserProfile = async ({ credentials }) => {
 
     return response;
   } catch (error) {
-    return error.response;
+    return (error as AxiosError).response;
   }
 };
 
@@ -140,7 +149,7 @@ export const Logout = async () => {
 };
 
 // create event API
-export const CreateEvent = async (event) => {
+export const CreateEvent = async (event: unknown) => {
   try {
     const response = await Axios.post(eventEndpoints.create, event, {
       withCredentials: true,

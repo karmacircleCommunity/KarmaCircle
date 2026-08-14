@@ -1,8 +1,12 @@
 import ComingSoonLogo from "@assets/pictures/comingsoon.svg";
-import Button from "@components/buttons/globalbutton/Button.jsx";
+import Button from "@components/buttons/globalbutton/Button";
 import "./ComingSoon.scss";
 
-const ComingSoon = ({ launchitem }) => {
+interface ComingSoonProps {
+  launchitem?: string;
+}
+
+const ComingSoon = ({ launchitem }: ComingSoonProps) => {
   return (
     <div className="comingsoon_parent">
       <img src={ComingSoonLogo} alt="" />

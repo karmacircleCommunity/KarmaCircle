@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "@app/store/useAuth";
-import Button from "@components/buttons/globalbutton/Button.jsx";
+import Button from "@components/buttons/globalbutton/Button";
 
 /**
  * Unused self-contained submit button + "switch mode" link (see

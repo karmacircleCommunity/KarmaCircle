@@ -9,7 +9,7 @@ No `<Helmet>`/SEO tags, unlike most other top-level pages — worth adding if yo
 ## API/network error feedback
 
 There is no error boundary (`componentDidCatch`/React error boundary) anywhere in the app — an uncaught render error in any component will produce a blank white screen with no fallback UI.
-Network/API errors are instead surfaced per-call via toasts — see [Toasts.js conventions](./api-integration.md#toast-conventions) and [checkInternetConnection.js](../../src/utils/CheckInternetConnection.js), which suppresses all toasts (success and error alike) whenever `navigator.onLine === false`, on the assumption that an offline banner would be more useful than a flood of failed-request toasts (no such offline banner currently exists, though — the user just sees nothing).
+Network/API errors are instead surfaced per-call via toasts — see [Toasts.ts conventions](./api-integration.md#toast-conventions) and [checkInternetConnection.js](../../src/utils/CheckInternetConnection.ts), which suppresses all toasts (success and error alike) whenever `navigator.onLine === false`, on the assumption that an offline banner would be more useful than a flood of failed-request toasts (no such offline banner currently exists, though — the user just sees nothing).
 
 ## `Test.tsx` (dev leftover, currently routed)
 

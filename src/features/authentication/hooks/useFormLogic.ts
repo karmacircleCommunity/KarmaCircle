@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import checkInternetConnection from "@utils/CheckInternetConnection.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import checkInternetConnection from "@utils/CheckInternetConnection";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import useAuthStore from "@app/store/useAuth";
 import { UserType } from "@/types/user";
 import useValidation from "./useValidation";

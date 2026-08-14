@@ -1,7 +1,7 @@
 import { useSWRConfig } from "swr";
-import { eventEndpoints } from "@services/ApiEndpoints.js";
-import { CreateEvent } from "@services/MilanApi.js";
-import { showErrorToast, showSuccessToast } from "@utils/Toasts.js";
+import { eventEndpoints } from "@services/ApiEndpoints";
+import { CreateEvent } from "@services/MilanApi";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { EventFormErrors, EventFormState, UseEventResult } from "../types";
 
 /**

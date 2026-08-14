@@ -1,5 +1,5 @@
 // Import statements
-import { authTypeOptions } from "@statics/Constants.js";
+import { authTypeOptions } from "@statics/Constants";
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { FaEye } from "react-icons/fa";
@@ -13,7 +13,7 @@ import { useAuth } from "@features/authentication/hooks/useAuth";
 import { AuthType } from "@features/authentication/types";
 import type { AuthErrors, Credentials } from "@features/authentication/types";
 import { UserType } from "@/types/user";
-import { GoogleAuth } from "@services/MilanApi.js";
+import { GoogleAuth } from "@services/MilanApi";
 import "./index.scss";
 
 const SignUp = () => {

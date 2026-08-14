@@ -1,4 +1,13 @@
-const data = [
+export interface HeaderDataEntry {
+  key: string;
+  value: {
+    topheader_large: string;
+    bottomheader_large: string;
+    bottomheader_small: string;
+  };
+}
+
+const data: HeaderDataEntry[] = [
   {
     key: "clubs",
     value: {

@@ -31,7 +31,7 @@ This alone means the file's other problems are currently harmless — nothing im
 import SingleClubEvent from "../../components/Cards/SingleClubEvent/SingleClubEvent";
 import Loading from "../../components/Loading";
 ```
-Neither `components/Cards/SingleClubEvent/` nor a bare `components/Loading` (the real component now lives at `src/components/loading/Loading.jsx`, exported from the shared barrel `@components`) exists in the current tree.
+Neither `components/Cards/SingleClubEvent/` nor a bare `components/Loading` (the real component now lives at `src/components/loading/Loading.tsx`, exported from the shared barrel `@components`) exists in the current tree.
 **The moment this file is imported by anything reachable — adding a route, or importing it from another component for any reason — the build fails immediately** with a module-not-found error.
 
 **Additional issues beyond the two broken imports (not previously documented at this level of detail):**
@@ -39,8 +39,8 @@ Neither `components/Cards/SingleClubEvent/` nor a bare `components/Loading` (the
 - **`useEffect(() => { loadScript(...) })` has no dependency array.** Every re-render of this component (not just the initial mount) appends a brand-new `<script src="https://checkout.razorpay.com/v1/checkout.js">` tag to `document.body` and lets it load again — with no dependency array, this runs after **every** render, unconditionally. If this component is ever fixed and rendered for any length of time with re-renders happening (state changes, parent re-renders, etc.), this would inject an unbounded, ever-growing number of duplicate `<script>` tags into the DOM. This needs an empty `[]` dependency array (or a one-time module-level check for whether the script's already loaded) as part of any real fix, not just the import paths.
 - **`document.title = "Milan | Donate the needy"` is set imperatively at the top of the component body**, then a `<Helmet><title>NgoWorld | Donations</title></Helmet>` block is rendered further down with a *different* title string. These two mechanisms conflict — `react-helmet-async` manages `document.title` reactively once mounted, so the imperative assignment is likely immediately superseded by the `<Helmet>` version at runtime, making the top-of-component line dead/misleading code; every other page in the app uses `<Helmet>` exclusively (or, per [layout-navigation.md](../../../docs/specs/layout-navigation.md), `ComponentHelmet`) — remove the imperative line if you're fixing this file, to match the rest of the codebase's convention.
 - **Login gate redirects to a route that doesn't exist:** `if (!Cookies.get("isLoggedIn")) { toast.error(...); navigate("/user/login"); }` — there is no `/user/login` route in `routesConfig.tsx` (the real sign-in route is `/auth/signin`); even setting aside that `Cookies.get("isLoggedIn")` is a cookie nothing else in the app ever sets (see [state-management.md](../../../docs/specs/state-management.md) — the rest of the app uses the `Token` cookie + Redux `isLoggedIn`, "pattern 2"), the redirect target itself is also wrong and would land on the 404 page.
-- **Uses raw `react-toastify`'s `toast.error(...)` directly**, not the app's `showErrorToast`/`showSuccessToast` wrapper from `src/utils/Toasts.js` — bypasses the offline-suppression behavior every other toast call site in the app gets for free (see [api-integration.md](../../../docs/specs/api-integration.md#toast-conventions)).
-- **`GetAllClubs()` response is stored directly as `clubData`** (`const response = await GetAllClubs(); setClubData(response);`) without checking `response.status` first — `GetAllClubs()` (`MilanApi.js`) follows the catch-and-return-`error.response` pattern, so on a failed request `clubData` would become an Axios *error response* object (with `.status`, `.data`, etc.) rather than an array, and the later `clubData.map(...)` call would throw (`.map` is not a function on a non-array object) rather than showing any error state.
+- **Uses raw `react-toastify`'s `toast.error(...)` directly**, not the app's `showErrorToast`/`showSuccessToast` wrapper from `src/utils/Toasts.ts` — bypasses the offline-suppression behavior every other toast call site in the app gets for free (see [api-integration.md](../../../docs/specs/api-integration.md#toast-conventions)).
+- **`GetAllClubs()` response is stored directly as `clubData`** (`const response = await GetAllClubs(); setClubData(response);`) without checking `response.status` first — `GetAllClubs()` (`MilanApi.ts`) follows the catch-and-return-`error.response` pattern, so on a failed request `clubData` would become an Axios *error response* object (with `.status`, `.data`, etc.) rather than an array, and the later `clubData.map(...)` call would throw (`.map` is not a function on a non-array object) rather than showing any error state.
 
 **If asked to "fix the donate page,"** treat this as a near-full rewrite — fix the two broken imports, add a route, fix the `useEffect` dependency array, remove the imperative `document.title`, align the login gate with the rest of the app's `Token`-cookie + Redux pattern (and point it at `/auth/signin`), switch to `showErrorToast`, and add a response-status check before setting `clubData` — not a small patch. Confirm scope before starting, per the existing guidance in `docs/specs/donate-shop-trending.md`; this spec adds several more items to that scope than were previously catalogued.
 
@@ -72,7 +72,7 @@ Razorpay's checkout widget requires a valid `order_id` to open a real payment se
 
 ## `pages/Shop.tsx` and `pages/Trending.tsx` — intentional, working placeholders
 
-Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/comingSoon/ComingSoon.jsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
+Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/comingSoon/ComingSoon.tsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
 `Shop.tsx` passes `` `shop's page.` `` (note the trailing period, which `ComingSoon`'s own copy presumably incorporates into a sentence), `Trending.tsx` passes `"Trending section"` (no trailing period — a minor inconsistency between the two call sites' string formatting, cosmetic only).
 Both are correctly routed (`/shop`, `/trending`) in `routesConfig.tsx`.
 **Unlike `Donate.tsx`, there is nothing broken here** — these two files are exactly as finished as they're meant to be today.
@@ -83,7 +83,7 @@ If asked to "build the shop" or "build trending," this is genuinely new feature 
 ```
 Donate.tsx mount
    ▼
-GetAllClubs()   [MilanApi.js, GET /clubs]  →  clubData
+GetAllClubs()   [MilanApi.ts, GET /clubs]  →  clubData
    ▼
 clubData.map(club => <SingleClubEvent club={club} />)   ⚠ SingleClubEvent no longer exists — needs rebuilding, not just an import-path fix
    │
@@ -122,4 +122,4 @@ This folder is TypeScript (`.ts`/`.tsx`) as of the dashboard/donate-shop-trendin
 
 - **"Fix the donate page"** → full rework, not a patch; see the itemized list under `pages/Donate.tsx` above. Confirm scope first — this touches routing, a missing component (`SingleClubEvent`), login-state consistency, and the payment integration's own bug.
 - **"Fix the Razorpay integration" specifically** → start with `data.currency`/`data.id` → `data.data.currency`/`data.data.id` in `PaymentGateway.ts`; this is the highest-value, most self-contained fix in this feature and is currently untested because nothing calls this function.
-- **"Build the shop/trending page"** → genuinely new work, no existing scaffolding beyond the current `ComingSoon` placeholder; `ComingSoon`'s implementation lives in `src/components/comingSoon/ComingSoon.jsx`, outside this feature.
+- **"Build the shop/trending page"** → genuinely new work, no existing scaffolding beyond the current `ComingSoon` placeholder; `ComingSoon`'s implementation lives in `src/components/comingSoon/ComingSoon.tsx`, outside this feature.

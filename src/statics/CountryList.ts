@@ -1,4 +1,9 @@
-const countries = [
+export interface Country {
+  value: string;
+  label: string;
+}
+
+const countries: Country[] = [
   { value: "afghanistan", label: "Afghanistan" },
   { value: "albania", label: "Albania" },
   { value: "algeria", label: "Algeria" },

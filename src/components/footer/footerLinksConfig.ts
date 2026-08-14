@@ -1,6 +1,15 @@
-// src/config/footerLinksConfig.js
+export interface FooterLink {
+  name: string;
+  path: string;
+  icon?: string;
+}
 
-export const footerLinks = {
+export const footerLinks: {
+  quickStarts: FooterLink[];
+  resources: FooterLink[];
+  policies: FooterLink[];
+  social: FooterLink[];
+} = {
   quickStarts: [
     { name: "Trending Events", path: "/trending" },
     { name: "NGOs near you", path: "/clubs" },

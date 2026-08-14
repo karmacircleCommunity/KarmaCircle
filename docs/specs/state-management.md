@@ -18,7 +18,7 @@ There is no single source of truth for "is the user logged in" — that fact is 
 **Where it's written:**
 - [useAuth.ts](../../src/features/authentication/hooks/useAuth.ts) — on successful sign-in/sign-up, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })`.
 - [Home.tsx](../../src/features/landing-home/pages/Home.tsx) — after a Google OAuth redirect completes, dispatches `updateUserData(...)` then `toggleUserLogin()` (two separate dispatches, not one).
-- [Profile.tsx](../../src/features/onboarding-profile/pages/Profile.tsx) and [Navbar.jsx](../../src/components/navbar/Navbar.jsx) — on logout, dispatch `resetUserData()`.
+- [Profile.tsx](../../src/features/onboarding-profile/pages/Profile.tsx) and [Navbar.tsx](../../src/components/navbar/Navbar.tsx) — on logout, dispatch `resetUserData()`.
 - [Dashboard.tsx](../../src/features/dashboard/pages/Dashboard.tsx) — on every SWR fetch of `userEndpoints.profile`, re-dispatches `updateUserData(data?.user)` in the `onSuccess` callback, keeping Redux in sync with the latest server copy.
 
 ## 2. Zustand (`useAuthStore`)
@@ -36,18 +36,18 @@ Cookies actually read in the frontend:
 
 | Cookie | Read in | Purpose |
 |---|---|---|
-| `Token` | `Navbar.jsx`, `DonotRenderWhenLoggedIn.tsx` | Presence used as a login signal, combined with the Redux `isLoggedIn` flag |
+| `Token` | `Navbar.tsx`, `DonotRenderWhenLoggedIn.tsx` | Presence used as a login signal, combined with the Redux `isLoggedIn` flag |
 | `skipProfileCompletion` | `Profile.tsx` | If set, suppresses the profile-completion modal even if fields are missing |
 | `userName` | `UserProfile.tsx` | Compared against the route's `:slug` param to decide if the viewer owns the profile |
 | `isLoggedIn` | `Donate.tsx` | Gate for the (currently unrouted) donate page — see [donate-shop-trending.md](./donate-shop-trending.md) |
 | `OAuthLoginInitiated` | `Home.tsx` | Set presumably by the backend/redirect flow before bouncing back from Google OAuth; its presence triggers `successCallback()` |
 
-`Cookies.remove("skipProfileCompletion")` and `localStorage.clear()` are both called on logout (in `Profile.tsx` and `Navbar.jsx` respectively) alongside `resetUserData()` — three different mechanisms cleaned up in three different places, not one central "logout" utility.
+`Cookies.remove("skipProfileCompletion")` and `localStorage.clear()` are both called on logout (in `Profile.tsx` and `Navbar.tsx` respectively) alongside `resetUserData()` — three different mechanisms cleaned up in three different places, not one central "logout" utility.
 
 ## "Is the user logged in?" — three different checks in the wild
 
 1. `useSelector(selectIsLoggedIn)` — Redux only (used by `DonotRenderWhenLoggedIn`, `Landing.tsx`).
-2. `Cookies.get("Token") && isLoggedIn` — cookie presence *and* Redux flag together (used by `Navbar.jsx`, `DonotRenderWhenLoggedIn`).
+2. `Cookies.get("Token") && isLoggedIn` — cookie presence *and* Redux flag together (used by `Navbar.tsx`, `DonotRenderWhenLoggedIn`).
 3. `Cookies.get("isLoggedIn")` — a *different* cookie name, unrelated to the `Token` cookie above (used only by the orphaned `Donate.tsx`).
 
 When adding new auth-gated UI, match whichever pattern the surrounding file already uses rather than introducing a fourth variant, and prefer pattern 2 (cookie + Redux) since that's what `Navbar` and the route guard use.

@@ -1,10 +1,10 @@
-import { userEndpoints } from "@services/ApiEndpoints.js";
+import { userEndpoints } from "@services/ApiEndpoints";
 import TrackSection from "@features/dashboard/components/TrackSection";
 import ProfileUpdate from "@features/onboarding-profile/components/ProfileUpdate";
 import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion";
 import { updateUserData } from "@app/store/slices/userSlice";
-import fetcher from "@utils/Fetcher.js";
-import { showErrorToast } from "@utils/Toasts.js";
+import fetcher from "@utils/Fetcher";
+import { showErrorToast } from "@utils/Toasts";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import useSWR from "swr";

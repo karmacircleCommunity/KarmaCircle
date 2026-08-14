@@ -100,7 +100,7 @@ Note `startTime`/`endTime` default to a fixed hardcoded date-time (`2022-04-17T1
 
 **Cover image:** `handleCreateBase64` (wrapped in `useCallback`) calls `convertToBase64(e)` (this feature's own util, see below) and stores the result directly in `event.coverImage` as a base64 data URI — **unlike the profile/`CreateEvent.tsx` dropzones, this one actually attaches the uploaded file to the data that gets submitted**, rather than only previewing it.
 
-**Mode-dependent fields (MUI `Accordion`):** `mode === "Offline"` shows city/state/address (plain text inputs) + a country `<Select>` populated from [`src/statics/CountryList.js`](../../../src/statics/CountryList.js) + a `mapIframe` text input (a raw iframe *string*, not validated as one, no live preview). `mode === "Online"` shows a platform `<Select>` populated from [`src/statics/OnlinePlatform.js`](../../../src/statics/OnlinePlatform.js) (Zoom/Google Meet/Microsoft Teams/etc., each entry with an `icon` rendered inline in the `<MenuItem>`) + a `platformLink` text input.
+**Mode-dependent fields (MUI `Accordion`):** `mode === "Offline"` shows city/state/address (plain text inputs) + a country `<Select>` populated from [`src/statics/CountryList.ts`](../../../src/statics/CountryList.ts) + a `mapIframe` text input (a raw iframe *string*, not validated as one, no live preview). `mode === "Online"` shows a platform `<Select>` populated from [`src/statics/OnlinePlatform.ts`](../../../src/statics/OnlinePlatform.ts) (Zoom/Google Meet/Microsoft Teams/etc., each entry with an `icon` rendered inline in the `<MenuItem>`) + a `platformLink` text input.
 
 **Submit:** `handleSubmit()` calls `seterrors(validateEvent())` then, in the same synchronous call, `submitCallback(event, setshowCreateModal)` — see `useEvent.ts` below for why calling both in this exact order, from the same render, matters.
 
@@ -121,8 +121,8 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 4. Returns the `errors` object (not a boolean, not throwing) — callers must inspect `Object.keys(errors).length`.
 
 **`submitCallback(event, setshowCreateModal)`:**
-- If the closure's `errors` is empty (see the same-render caveat above): calls `CreateEvent(event)` (`MilanApi.js`, `POST /events/create`, **the real event-creation endpoint** — contrast with `CreateEvent.tsx`'s wrong-endpoint bug above; naming collision alert: the *hook's* `CreateEvent` import from `MilanApi.js` and the *component* `CreateEvent.tsx` are unrelated same-named things). On `response.status === 201`: success toast, `setshowCreateModal(false)`, and `mutate(eventEndpoints.all)` via `useSWRConfig()` — invalidates any cached SWR entry for `eventEndpoints.all`. **Per [api-integration.md](../../../docs/specs/api-integration.md), no component currently fetches `eventEndpoints.all` via SWR (`Events.tsx` uses a hardcoded array instead), so this revalidation call currently has no listener** — it's correct/harmless, just currently inert, and would start doing useful work the moment `Events.tsx` is wired up to a real SWR fetch of that key.
-- On any other status: `showErrorToast(response.response.data.message)` — note the doubled `.response.response` — this only works if `CreateEvent()` (the `MilanApi.js` function) returned a raw Axios error object with `.response.data.message` rather than the `error.response` shape `MilanApi.js`'s other functions typically return; check `CreateEvent`'s own catch block in `MilanApi.js` before assuming this path is exercised correctly (it returns the caught `error` object as-is, not `error.response`, unlike most other `MilanApi.js` functions — so `response` here actually holds the full Axios error, and `response.response.data.message` is consistent with that, if unusual compared to sibling functions).
+- If the closure's `errors` is empty (see the same-render caveat above): calls `CreateEvent(event)` (`MilanApi.ts`, `POST /events/create`, **the real event-creation endpoint** — contrast with `CreateEvent.tsx`'s wrong-endpoint bug above; naming collision alert: the *hook's* `CreateEvent` import from `MilanApi.ts` and the *component* `CreateEvent.tsx` are unrelated same-named things). On `response.status === 201`: success toast, `setshowCreateModal(false)`, and `mutate(eventEndpoints.all)` via `useSWRConfig()` — invalidates any cached SWR entry for `eventEndpoints.all`. **Per [api-integration.md](../../../docs/specs/api-integration.md), no component currently fetches `eventEndpoints.all` via SWR (`Events.tsx` uses a hardcoded array instead), so this revalidation call currently has no listener** — it's correct/harmless, just currently inert, and would start doing useful work the moment `Events.tsx` is wired up to a real SWR fetch of that key.
+- On any other status: `showErrorToast(response.response.data.message)` — note the doubled `.response.response` — this only works if `CreateEvent()` (the `MilanApi.ts` function) returned a raw Axios error object with `.response.data.message` rather than the `error.response` shape `MilanApi.ts`'s other functions typically return; check `CreateEvent`'s own catch block in `MilanApi.ts` before assuming this path is exercised correctly (it returns the caught `error` object as-is, not `error.response`, unlike most other `MilanApi.ts` functions — so `response` here actually holds the full Axios error, and `response.response.data.message` is consistent with that, if unusual compared to sibling functions).
 - If `errors` is non-empty: a single generic toast, "Please fill all the required fields" — no per-field detail in the toast (per-field detail is shown inline via `errors.name`/`errors.uid`/etc. in the form itself).
 
 ## Event display components — none read real data except one unused component
@@ -142,7 +142,7 @@ Given the name, this was likely intended to show a logged-in club's own list of 
 
 ## `services/Events.ts` — `getEvents()`, correct, never called
 
-Identical shape to `clubs/services/Clubs.ts`'s `getClubs()` — same `apiConnector`-based Layer B call pattern, same throw-on-non-200 behavior (see [clubs/SPEC.md](../clubs/SPEC.md) for the full explanation of this calling convention, which is the opposite of `MilanApi.js`'s catch-and-return-response pattern).
+Identical shape to `clubs/services/Clubs.ts`'s `getClubs()` — same `apiConnector`-based Layer B call pattern, same throw-on-non-200 behavior (see [clubs/SPEC.md](../clubs/SPEC.md) for the full explanation of this calling convention, which is the opposite of `MilanApi.ts`'s catch-and-return-response pattern).
 `clubEndpoints.all` → `eventEndpoints.all` is the only substantive difference.
 Even the leftover comment above the function (`// get clubs`) is a copy-paste artifact from `Clubs.ts` — cosmetic, but a good signal of how directly one file was cloned from the other.
 
@@ -179,7 +179,7 @@ local `event` state (name/dates/mode/uid/description/coverImage/mode-specific fi
 handleSubmit() → seterrors(validateEvent()); submitCallback(event, setshowCreateModal);
                     (same render's useEvent(event) closures — order-dependent, see above)
    ▼
-CreateEvent(event)   [MilanApi.js, POST /events/create]
+CreateEvent(event)   [MilanApi.ts, POST /events/create]
    ▼
 201 ──► toast, close modal, mutate(eventEndpoints.all)   (currently has no SWR listener)
 ```
@@ -193,7 +193,7 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - **`CreateEvent.tsx`'s `htmlFor` attributes on `<div>` elements** (the event-mode picker) aren't valid on a `div` — harmless pre-existing markup, suppressed rather than removed.
 
 `Events.tsx`'s hardcoded `events` array is now explicitly typed as `Club[]` (imported from `@features/clubs/types`) rather than a home-grown `EventRecord[]`, to make the "this is club-shaped, not event-shaped" mismatch the type checker's problem too, not just a documentation note.
-`useEvent.ts`'s `submitCallback` asserts `CreateEvent()`'s (from `MilanApi.js`) return type at the call site, since that function's own catch block returns the caught error as-is rather than `error.response` — its real inferred type collapses to include `unknown`. `HostedEvents.tsx` stays a genuinely empty (0-byte) file, matching `HostedEvents.tsx` — there was nothing to add types to.
+`useEvent.ts`'s `submitCallback` asserts `CreateEvent()`'s (from `MilanApi.ts`) return type at the call site, since that function's own catch block returns the caught error as-is rather than `error.response` — its real inferred type collapses to include `unknown`. `HostedEvents.tsx` stays a genuinely empty (0-byte) file, matching `HostedEvents.tsx` — there was nothing to add types to.
 
 ## Known issues specific to this feature (superset of known-issues.md's events entries, plus new findings)
 

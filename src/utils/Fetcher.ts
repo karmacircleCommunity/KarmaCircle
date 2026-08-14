@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const PatchFetcher = async (url) => {
+const fetcher = async <T = unknown>(url: string): Promise<T> => {
   const data = await axios
-    .patch(url, {
+    .get(url, {
       withCredentials: true,
     })
     .then((res) => res.data);
   return data;
 };
 
-export default PatchFetcher;
+export default fetcher;

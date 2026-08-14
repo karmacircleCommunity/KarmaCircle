@@ -9,7 +9,7 @@ The `/clubs` directory page: a grid of club/org cards, each linking to that club
 
 ## Why it's shaped this way
 
-This page and `Events.jsx` (the `events` feature) are the two clearest examples in the codebase of "the read path was built with a working fetcher, but the fetcher was never actually plugged into the page" — see [api-integration.md](../../../docs/specs/api-integration.md) for why two separate call layers exist (`MilanApi.js` vs. `ApiConnector`-based `services/*.js` fetchers) and which one this feature uses.
+This page and `Events.jsx` (the `events` feature) are the two clearest examples in the codebase of "the read path was built with a working fetcher, but the fetcher was never actually plugged into the page" — see [api-integration.md](../../../docs/specs/api-integration.md) for why two separate call layers exist (`MilanApi.ts` vs. `ApiConnector`-based `services/*.js` fetchers) and which one this feature uses.
 
 ## File manifest
 
@@ -55,7 +55,7 @@ Note this demo object includes a `password` field (a real-looking bcrypt hash) �
 
 **What's hardcoded regardless of the `club` prop:** the banner image (always the same static `clubbanner.jpg` asset — there is no per-club image field consumed at all, so even if `club.bannerImage` existed on a real record, this component has nowhere to plug it in without a code change) and the follower/event counts (`1.25k` Followers / `231` Events — static JSX, not derived from `club`).
 
-**Not exported from the shared barrel** `src/components/index.js` — despite an earlier version of this doc claiming otherwise, `ClubCard` is only ever imported directly (`@features/clubs/components/ClubCard`) by `Clubs.tsx`; the barrel has no `ClubCard` entry.
+**Not exported from the shared barrel** `src/components/index.ts` — despite an earlier version of this doc claiming otherwise, `ClubCard` is only ever imported directly (`@features/clubs/components/ClubCard`) by `Clubs.tsx`; the barrel has no `ClubCard` entry.
 
 ## `services/Clubs.ts` — `getClubs()`, defined and correct, never called
 
@@ -69,8 +69,8 @@ export const getClubs = async () => {
 };
 ```
 
-Goes through `apiConnector()` (`src/services/ApiConnector.js`) — the "Layer B" call path described in [api-integration.md](../../../docs/specs/api-integration.md), a thin `axios.create({})` wrapper (`axiosInstance`), **not** the `Axios` instance `MilanApi.js`'s functions use.
-Unlike `MilanApi.js`'s functions, `getClubs()` **throws** on a non-200 status rather than returning the error response — a caller needs a `try/catch`, not an `if (response?.status === ...)` check; this is the opposite calling convention from every `MilanApi.js` function, so don't copy the `MilanApi.js` catch-and-return-response pattern if you wire this in — wrap the call site in `try/catch` instead, or change `useSWR`'s error handling to expect a thrown error (SWR natively supports throwing fetchers — this shape is actually SWR-idiomatic, more so than `MilanApi.js`'s pattern is).
+Goes through `apiConnector()` (`src/services/ApiConnector.ts`) — the "Layer B" call path described in [api-integration.md](../../../docs/specs/api-integration.md), a thin `axios.create({})` wrapper (`axiosInstance`), **not** the `Axios` instance `MilanApi.ts`'s functions use.
+Unlike `MilanApi.ts`'s functions, `getClubs()` **throws** on a non-200 status rather than returning the error response — a caller needs a `try/catch`, not an `if (response?.status === ...)` check; this is the opposite calling convention from every `MilanApi.ts` function, so don't copy the `MilanApi.ts` catch-and-return-response pattern if you wire this in — wrap the call site in `try/catch` instead, or change `useSWR`'s error handling to expect a thrown error (SWR natively supports throwing fetchers — this shape is actually SWR-idiomatic, more so than `MilanApi.ts`'s pattern is).
 
 `apiConnector()` itself has a dead/unreachable branch: `if (response.status === 400) console.error("Logout triggered due to status 600 response")` — the comment references a status `600` that the condition doesn't actually check for (it checks `400`), and axios throws rather than resolving on 4xx by default anyway, so in practice this branch is never reached via the normal success path (a 400 would land in the `catch` block instead, which unconditionally re-throws after logging). Not specific to this feature (shared infra), but relevant since `getClubs()` is one of only two consumers of this file (`getEvents()` in the `events` feature is the other) — see [api-integration.md](../../../docs/specs/api-integration.md).
 

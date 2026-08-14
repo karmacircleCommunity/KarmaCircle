@@ -1,6 +1,6 @@
-import { STATUSCODE } from "@statics/Constants.js";
-import { completeProfileApiCall } from "@services/MilanApi.js";
-import { showSuccessToast } from "@utils/Toasts.js";
+import { STATUSCODE } from "@statics/Constants";
+import { completeProfileApiCall } from "@services/MilanApi";
+import { showSuccessToast } from "@utils/Toasts";
 import { useState } from "react";
 import type { ChangeEvent } from "react";
 import type {
@@ -121,6 +121,11 @@ const useProfileCompletion = (): UseProfileCompletionResult => {
       },
     });
 
+    // @ts-expect-error — pre-existing bug (see SPEC.md/known-issues.md):
+    // `data` is `undefined` on a pure network failure (no HTTP response
+    // at all), and this throws an uncaught TypeError rather than being
+    // guarded with `?.`. Preserved as-is, out of scope for a types-only
+    // pass.
     if (data.status === STATUSCODE.OK) {
       showSuccessToast(data?.data?.message);
       return;

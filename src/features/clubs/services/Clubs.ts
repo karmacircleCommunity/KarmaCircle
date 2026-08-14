@@ -1,5 +1,5 @@
-import { apiConnector } from "@services/ApiConnector.js";
-import { clubEndpoints } from "@services/ApiEndpoints.js";
+import { apiConnector } from "@services/ApiConnector";
+import { clubEndpoints } from "@services/ApiEndpoints";
 import type { Club } from "../types";
 
 /**

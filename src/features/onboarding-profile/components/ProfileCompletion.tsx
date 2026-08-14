@@ -1,6 +1,6 @@
 import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion";
-import { completeProfileApiCall } from "@services/MilanApi.js";
-import { showSuccessToast } from "@utils/Toasts.js";
+import { completeProfileApiCall } from "@services/MilanApi";
+import { showSuccessToast } from "@utils/Toasts";
 import clsx from "clsx";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
