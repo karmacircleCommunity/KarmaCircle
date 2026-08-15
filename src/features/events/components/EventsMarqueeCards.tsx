@@ -1,7 +1,6 @@
 import { CiCalendar, CiLocationOn } from "react-icons/ci";
 import getFormattedDate from "@features/events/utils/getFormattedDate";
 import type { EventRecord } from "../types";
-import "./EventsMarqueeCards.scss";
 
 interface EventsMarqueeCardsProps {
   event?: EventRecord;
@@ -23,18 +22,24 @@ const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
 
   return (
     <>
-      <div className="eventmarque_parent">
-        <img src={event?.coverImage} alt="" />
+      <div className="flex w-[380px] flex-row cursor-pointer! gap-4 rounded-2xl border border-[#f0efef] bg-white p-[14px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out max-[500px]:w-[90vw] hover:cursor-default hover:border-[#ff5a318a] hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
+        <img
+          src={event?.coverImage}
+          alt=""
+          className="h-20 w-20 self-stretch rounded-lg object-cover"
+        />
 
-        <div className="eventmarque_details">
-          <h1 className="eventmarque_name">{event?.name}</h1>
-          <div className="eventmarque_datetime">
+        <div>
+          <h1 className="self-start font-poppins text-[17px] leading-normal font-semibold tracking-[0.4px] text-brand-secondary">
+            {event?.name}
+          </h1>
+          <div className="flex flex-col font-outfit text-[15px]">
             {event?.mode === "Offline" ? (
-              <span>
-                <CiLocationOn /> {event?.address}
+              <span className="flex items-center gap-2">
+                <CiLocationOn className="h-5 w-5" /> {event?.address}
               </span>
             ) : (
-              <span>
+              <span className="flex items-center gap-2">
                 <img
                   src={
                     event?.platform === "Zoom Meeting"
@@ -46,6 +51,7 @@ const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
                           : "https://img.icons8.com/color/48/000000/other.png"
                   }
                   alt=""
+                  className="h-5 w-5"
                   style={{
                     position: "relative",
                     top: "1px",
@@ -55,8 +61,8 @@ const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
               </span>
             )}
 
-            <span>
-              <CiCalendar />{" "}
+            <span className="flex items-center gap-2">
+              <CiCalendar className="h-5 w-5" />{" "}
               {window?.innerWidth > 500
                 ? formattedStartDate + " from " + formattedStartTime
                 : formattedStartDate.split(" ")[0] +

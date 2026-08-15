@@ -12,7 +12,6 @@ import type { RootState } from "@app/store/store";
 import { Logout } from "@services/MilanApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import Button from "@components/buttons/globalbutton/Button";
-import "./Navbar.scss";
 
 const Links = [
   {
@@ -90,24 +89,33 @@ const Navbar = () => {
 
   return (
     <nav>
-      <div className="navbar_parent">
-        <Link className="navbar_brand" to={"/"}>
-          <img src={navbarbrand} alt="Milan-logo" className="nav_brand_img" />
+      <div className="mx-8 flex items-center justify-between px-28 py-[0.8rem] sticky z-99 max-[430px]:px-6">
+        <Link to={"/"}>
+          <img
+            src={navbarbrand}
+            alt="Milan-logo"
+            className="z-[9999999999999999999999] w-[150px] cursor-pointer max-[430px]:z-10 max-[430px]:w-[130px]"
+          />
         </Link>
 
         {windowWidth > 900 && (
-          <div className="navbar_links_parent">
-            <div className="navbar_links">
+          <div className="flex items-center gap-[25px]">
+            <div className="z-1 flex items-center gap-[25px]">
               {Links.map((item, index) => {
                 return (
                   <div key={index}>
-                    <Link key={index} className="navbar_link" to={item.link}>
+                    <Link
+                      key={index}
+                      className="text-[17px] leading-none font-medium text-[#8c321b] no-underline font-outfit"
+                      to={item.link}
+                    >
                       {item.name}
                     </Link>
                     <div
                       className={
-                        "" +
-                        (location.pathname === item?.link ? "active-link" : "")
+                        location.pathname === item?.link
+                          ? "mx-auto w-1/2 border-b-2 border-[#28183b]"
+                          : ""
                       }
                     ></div>
                   </div>
@@ -121,12 +129,15 @@ const Navbar = () => {
                     .querySelector(".nav_dropdown")
                     ?.classList.toggle("nav_dropdown_visible");
                 }}
-                className="navbar_dropdown_name"
+                className="m-0 flex cursor-pointer items-center justify-center text-[17px] leading-none font-medium text-[#8c321b] no-underline font-outfit"
               >
-                Profile <RxCaretDown />
+                Profile <RxCaretDown className="h-[25px] w-[25px]" />
               </p>
             ) : (
-              <Button to="/auth/signup" className="navbar_cta">
+              <Button
+                to="/auth/signup"
+                className="z-3 flex w-auto items-center justify-around gap-[10px] rounded-[5px] border-none px-5 py-2 text-base font-normal not-italic font-outfit hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_#ff5a30,0px_0px_8.191px_0px_#ff5a30,0px_0px_28.084px_0px_#ff5a30] hover:transition-all hover:duration-300 hover:ease-in-out"
+              >
                 <span>Sign Up</span>
               </Button>
             )}
@@ -138,14 +149,14 @@ const Navbar = () => {
             <img
               src={(user?.profileImage as string | undefined) || profileImage}
               alt=""
-              className="navbar_hamimg"
+              className="hidden h-[30px] w-[30px] cursor-pointer rounded-full max-[430px]:block"
               onClick={() => {
                 toggleNavbar();
               }}
             />
           ) : (
             <GiHamburgerMenu
-              className="navbar_ham"
+              className="hidden h-[30px] w-[30px] cursor-pointer text-[#28183b] max-[430px]:block"
               onClick={() => {
                 toggleNavbar();
               }}
@@ -153,10 +164,10 @@ const Navbar = () => {
           ))}
 
         {isNavbarOpen && (
-          <div className="navbar_mobile_linksparent">
-            <div className="navbar_mobile_links">
+          <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/[0.867] transition-all duration-300 ease-in-out">
+            <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-[30px] rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)]">
               <RxCross2
-                className="navbar_mobile_close"
+                className="absolute top-[10px] right-[10px] cursor-pointer"
                 onClick={() => {
                   toggleNavbar();
                 }}
@@ -167,15 +178,16 @@ const Navbar = () => {
                   <div key={index}>
                     <Link
                       key={index}
-                      className="navbar_mobile_link"
+                      className="m-0 flex cursor-pointer items-center justify-center text-[17px] leading-none font-medium text-black no-underline font-outfit"
                       to={item.link}
                     >
                       {item.name}
                     </Link>
                     <div
                       className={
-                        "" +
-                        (location.pathname === item?.link ? "active-link" : "")
+                        location.pathname === item?.link
+                          ? "mx-auto w-1/2 border-b-2 border-[#28183b]"
+                          : ""
                       }
                     ></div>
                   </div>
@@ -185,7 +197,10 @@ const Navbar = () => {
               {isLoggedIn ? (
                 <>
                   <div>
-                    <Link className="navbar_mobile_link" to={"/dashboard"}>
+                    <Link
+                      className="m-0 flex cursor-pointer items-center justify-center text-[17px] leading-none font-medium text-black no-underline font-outfit"
+                      to={"/dashboard"}
+                    >
                       {user?.userType === "individual"
                         ? "Profile"
                         : "Dashboard"}
@@ -193,7 +208,7 @@ const Navbar = () => {
                   </div>
                   <div>
                     <p
-                      className="navbar_mobile_link"
+                      className="m-0 flex cursor-pointer items-center justify-center text-[17px] leading-none font-medium text-black no-underline font-outfit"
                       onClick={() => {
                         handleLogout();
                         setIsNavbarOpen(false);
@@ -204,7 +219,10 @@ const Navbar = () => {
                   </div>
                 </>
               ) : (
-                <Button to={"/auth/signup"} className="navbar_mobile_cta">
+                <Button
+                  to={"/auth/signup"}
+                  className="flex w-auto items-center gap-[5px] px-4 py-2 text-[17px] no-underline font-outfit"
+                >
                   <span>Sign Up</span>
                   <FaChevronRight />
                 </Button>
@@ -213,13 +231,15 @@ const Navbar = () => {
           </div>
         )}
 
-        <div className="nav_dropdown">
-          <div className="myaccount">
-            <span className="name">Hello @{user?.userName}</span>
+        <div className="nav_dropdown absolute top-10 right-[71px] z-10 hidden w-[200px] flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_#ff593020,0px_0px_8.191px_0px_#ff593020,0px_0px_28.084px_0px_#ff593020] transition-all duration-1000 ease-in-out">
+          <div className="flex flex-col justify-center">
+            <span className="mb-[5px] p-[10px] text-base font-outfit">
+              Hello @{user?.userName}
+            </span>
             <div
               role="separator"
               aria-orientation="horizontal"
-              className="myaccount_separator"
+              className="h-px w-full bg-[#e2e5e883]"
             ></div>
             <Link
               to={
@@ -227,28 +247,39 @@ const Navbar = () => {
                   ? `/user/${user?.userName}`
                   : `/dashboard`
               }
+              className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]"
             >
               {user?.userType === "individual" ? "Your Profile" : "Dashboard"}
             </Link>
             {user?.userType === "club" ? (
-              <Link to={"/event/create"}>Your Events</Link>
+              <Link
+                to={"/event/create"}
+                className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]"
+              >
+                Your Events
+              </Link>
             ) : null}
             {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
-            <Link>Settings</Link>
+            <Link className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]">
+              Settings
+            </Link>
           </div>
-          <div className="myaccount">
+          <div className="flex flex-col justify-center">
             <div
               role="separator"
               aria-orientation="horizontal"
-              className="myaccount_separator"
+              className="h-px w-full bg-[#e2e5e883]"
             ></div>
             {/* @ts-expect-error — see above. */}
-            <Link>Support</Link>
+            <Link className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]">
+              Support
+            </Link>
             {/* @ts-expect-error — see above. */}
             <Link
               onClick={() => {
                 handleLogout();
               }}
+              className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]"
             >
               Logout
             </Link>

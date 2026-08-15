@@ -1,6 +1,5 @@
 import ComingSoonLogo from "@assets/pictures/comingsoon.svg";
 import Button from "@components/buttons/globalbutton/Button";
-import "./ComingSoon.scss";
 
 interface ComingSoonProps {
   launchitem?: string;
@@ -8,10 +7,12 @@ interface ComingSoonProps {
 
 const ComingSoon = ({ launchitem }: ComingSoonProps) => {
   return (
-    <div className="comingsoon_parent">
-      <img src={ComingSoonLogo} alt="" />
-      <h1>Launching Soon !</h1>
-      <p>
+    <div className="flex h-screen flex-col items-center justify-center font-outfit">
+      <img src={ComingSoonLogo} alt="" className="w-[300px]" />
+      <h1 className="mt-8 text-center text-[60px] leading-[80px] font-black text-[#28183b]">
+        Launching Soon !
+      </h1>
+      <p className="mt-0 mb-[50px] text-center text-lg tracking-[1px] text-black">
         We will let you know as soon as we launch our{" "}
         {launchitem ? launchitem : "page"}
       </p>

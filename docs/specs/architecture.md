@@ -85,7 +85,7 @@ src/
   services/                    — MilanApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
   statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts)
   utils/                       — cross-cutting helpers used by 2+ features (toasts, fetcher, connectivity check)
-  styles/                      — global CSS/SCSS
+  styles/                      — Tailwind entry point + hand-written global CSS (index.css), plus App.css
   assets/                      — images, SVGs
 ```
 

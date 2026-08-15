@@ -20,7 +20,7 @@ There is no server-side code in this repo — it is a Vite + React SPA.
 - **SWR** (`useSWR`) for server-state fetching/caching in most read paths; a few older call sites use raw `axios` in `useEffect` instead.
 - **`@tanstack/react-query`**'s `QueryClientProvider` wraps the whole app but is not actually used by any query hooks yet — see [known-issues.md](./known-issues.md).
 - **MUI** (`@mui/material`, `@mui/x-date-pickers`) for the event-creation date/time pickers and a few form controls.
-- **styled via CSS Modules / SCSS / plain CSS**, inconsistently, per component — see [ui-kit.md](./ui-kit.md).
+- **Tailwind CSS v4** for all component styling (via `@tailwindcss/vite`), plus a small amount of hand-written global CSS in `src/styles/index.css` for things Tailwind's class scanner can't reach — react-select/MUI-generated class names, a `<input type="radio">`-driven pseudo-element toggle switch, and Bootstrap's `.container` replicated for a few not-yet-Tailwind files. See [ui-kit.md](./ui-kit.md).
 - **Cypress** for end-to-end tests (`cypress/e2e/milanTest.spec.js`), currently a minimal smoke test.
 
 ## Folder structure

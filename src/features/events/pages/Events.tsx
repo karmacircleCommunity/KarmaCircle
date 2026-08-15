@@ -12,7 +12,6 @@ import "swiper/css";
 import "swiper/css/autoplay";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import "./Events.scss";
 
 const Events = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -37,21 +36,22 @@ const Events = () => {
       <ComponentHelmet type="Clubs" />
       <Navbar />
 
-      <div className="events_header">
-        <div className="events_search_parent">
+      <div className="mx-12 flex items-center gap-[1.2rem] px-28 py-8 font-outfit">
+        <div className="flex h-[62px] w-full grow items-center gap-4 rounded-lg bg-white p-[10px] shadow-[0px_4px_10px_rgba(0,0,0,0.04)]">
           <input
             type="text"
             name=""
             id=""
             placeholder="Type to begin search, or use the filters"
+            className="grow rounded-[5px] border border-[#00000041] bg-[#f5f7f7] px-4 py-2 font-outfit text-[15px] outline-none"
           />
-          <button>
-            Filters <CiFilter />
+          <button className="flex w-[15%] items-center justify-center gap-[10px] rounded-[5px] border border-[#00000041] bg-[#f5f7f7] px-4 py-2 text-center font-outfit text-[15px] outline-none">
+            Filters <CiFilter className="min-h-[20px] min-w-[20px]" />
           </button>
         </div>
 
         <Button
-          className="createevent"
+          className="flex h-[55px] w-1/5 items-center justify-center gap-[10px] rounded-lg border-2 border-[#ff5a317a] bg-[#fba18b55] text-center font-outfit text-[15px] font-semibold whitespace-nowrap text-[#ff5a31f0] outline-none"
           onClickfunction={() => {
             setShowCreateModal(true);
           }}
@@ -62,9 +62,9 @@ const Events = () => {
 
       <EventSlider />
 
-      <hr className="events_separator" />
+      <hr className="my-4 mx-44 h-px justify-center border-none bg-[#00000041]" />
 
-      <div className="events_parent">
+      <div className="mx-12 grid min-h-screen grid-cols-2 grid-rows-2 gap-8 px-28 py-8 max-[1200px]:grid-cols-2 max-[1200px]:grid-rows-3 max-[1200px]:px-12 max-[1200px]:py-8 max-[800px]:mx-0 max-[800px]:grid-cols-1 max-[800px]:grid-rows-4 max-[800px]:px-8 max-[800px]:py-12">
         {!events || events?.length === 0 ? (
           <Loading />
         ) : (

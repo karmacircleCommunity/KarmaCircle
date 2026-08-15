@@ -93,7 +93,7 @@ const Donate = () => {
 
         <div
           id="donatecol_1"
-          className="d-flex flex-column justify-content-center align-items-start me-5"
+          className="flex flex-col items-start justify-center mr-12"
         >
           <h1 className="mb-4">Yes, you help live !!</h1>
           <p>
@@ -109,7 +109,7 @@ const Donate = () => {
       <hr className="container" />
 
       <div className="main-card-container">
-        <div className="cards justify-content-center">
+        <div className="cards justify-center">
           {loading ? (
             <Loading />
           ) : (

@@ -1,6 +1,5 @@
 import { TbExternalLink } from "react-icons/tb";
 import { Link } from "react-router-dom";
-import "./TrackSection.scss";
 
 /**
  * Purely presentational analytics widget — no props, no data fetching.
@@ -9,37 +8,51 @@ import "./TrackSection.scss";
  */
 const TrackSection = () => {
   return (
-    <div className="trackSection_parent">
-      <div className="trackSection_header">
-        <p className="trackSection_title">Analytics</p>
+    <div className="flex h-[200px] flex-col gap-[1.2rem] rounded-xl p-4 shadow-[0px_0px_10px_1px_rgba(0,0,0,0.1)] blur-[3px]">
+      <div className="flex items-center justify-between">
+        <p className="m-0 font-outfit text-[18px] leading-none font-medium">
+          Analytics
+        </p>
 
-        <div className="tracker_calendar">
-          <p className="active_calendar">7D</p>
-          <p>14D</p>
-          <p>28D</p>
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          <p className="rounded-[5px] border border-brand bg-[#4a11030e] px-2 cursor-pointer">
+            7D
+          </p>
+          <p className="rounded-[5px] border border-brand px-2 cursor-pointer">
+            14D
+          </p>
+          <p className="rounded-[5px] border border-brand px-2 cursor-pointer">
+            28D
+          </p>
         </div>
       </div>
 
-      <div className="tracker_container">
-        <div className="tracker_box">
-          <p className="tracker_header">Impressions</p>
+      <div className="flex gap-4">
+        <div className="flex w-1/2 flex-col gap-[10px] rounded border border-[#e0e0e0] p-[6px] font-outfit">
+          <p className="m-0 flex items-center justify-between text-sm leading-none">
+            Impressions
+          </p>
 
-          <div className="tracker_footer">
-            <p className="tracker_number">6,025</p>
+          <div className="flex items-end justify-between gap-4">
+            <p className="m-0 text-2xl leading-none font-semibold">6,025</p>
           </div>
         </div>
 
-        <div className="tracker_box">
-          <p className="tracker_header">Click Rate</p>
+        <div className="flex w-1/2 flex-col gap-[10px] rounded border border-[#e0e0e0] p-[6px] font-outfit">
+          <p className="m-0 flex items-center justify-between text-sm leading-none">
+            Click Rate
+          </p>
 
-          <div className="tracker_footer">
-            <p className="tracker_number">43% </p>
-            {/* <GrFormNext className="tracker_icon" /> */}
+          <div className="flex items-end justify-between gap-4">
+            <p className="m-0 text-2xl leading-none font-semibold">43% </p>
           </div>
         </div>
       </div>
 
-      <Link to={"/"} className="">
+      <Link
+        to={"/"}
+        className="flex items-center gap-[5px] pt-[10px] font-outfit text-sm font-normal text-black no-underline"
+      >
         See detailed analytics <TbExternalLink />
       </Link>
     </div>

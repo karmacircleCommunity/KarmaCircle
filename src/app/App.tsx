@@ -6,7 +6,6 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { BacktoTop } from "@components";
 import "@styles/App.css";
-import "@styles/Globals.scss";
 import routesConfig from "@app/routes/routesConfig";
 
 const App = () => {

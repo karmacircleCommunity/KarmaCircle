@@ -7,7 +7,9 @@ import type { ChangeEvent } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { Button } from "@components";
 import type { CreateEventCredentials } from "../types";
-import "./CreateEvent.scss";
+
+const authInputClasses =
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-[#00000083] focus:shadow-none focus:outline-none";
 
 interface CreateEventProps {
   setShowCreateModal: (open: boolean) => void;
@@ -162,19 +164,24 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
   };
 
   return (
-    <div className="createevent_overlay">
-      <div className="createevent_modal">
-        <div className="createevent_header">
-          <div className="createevent_header_edit">
+    <div className="fixed inset-0 z-[101] flex h-full w-full items-center justify-center bg-black/80 backdrop-blur-[6px]">
+      <div className="relative flex max-h-[80vh] min-h-[400px] w-[40vw] min-w-[900px] flex-col justify-between overflow-y-auto rounded-[15px] bg-white text-black max-[525px]:w-[89vw] max-[525px]:min-w-[220px]">
+        <div className="sticky top-0 z-10 bg-white px-4 py-[10px]">
+          <div className="flex items-center gap-4">
             <RxCross2
+              className="mr-[1.2rem] h-[23px] w-[23px] cursor-pointer"
               onClick={() => {
                 setShowCreateModal(false);
                 handleResetFields();
               }}
             />
-            <h1> Create an event </h1>
+            <h1 className="mb-0 font-outfit text-2xl font-bold text-brand-secondary">
+              {" "}
+              Create an event{" "}
+            </h1>
             <Button
               type="submit"
+              className="mt-0 ml-auto w-[15%] rounded-[10px] font-outfit"
               onClickfunction={(e) => {
                 e.preventDefault();
                 validateForm();
@@ -194,22 +201,27 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           </div>
         </div>
 
-        <form>
-          <div className="createevent_element">
-            <div className="dropzone_container">
-              <p className="dropzone_coverlabel">Cover Image</p>
+        <form className="flex w-full flex-col gap-[1.2rem] p-4 font-outfit">
+          <div className="relative flex w-full flex-col font-outfit">
+            <div className="flex w-full flex-col items-start justify-center">
+              <p className="mb-[3px] text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Cover Image
+              </p>
 
-              <label htmlFor="dropzone_file" className="dropzone_label">
+              <label
+                htmlFor="dropzone_file"
+                className="flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] transition-colors duration-300 hover:bg-[#f5f7fd] h-[200px] cursor-pointer"
+              >
                 {uploadedImage ? (
                   <img
                     src={uploadedImage}
                     alt="Uploaded Preview"
-                    className="uploaded-image"
+                    className="h-full w-full rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="dropzone_content">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="dropzone_icon"
+                      className="mb-4 h-8 w-8 text-[#6b7280]"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -224,11 +236,11 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
                       />
                     </svg>
 
-                    <p className="dropzone_text">
+                    <p className="mb-2 text-sm text-[#6b7280]">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="dropzone_subtext">
+                    <p className="text-xs text-[#6b7280]">
                       PNG, JPG up to 10MB (800 X 200)
                     </p>
                   </div>
@@ -244,26 +256,26 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
             </div>
           </div>
 
-          <div className="createevent_element edit_section">
+          <div className="relative mt-10 flex w-full flex-col font-outfit">
             <label>
-              <div>
-                Event Name <span>*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Event Name <span className="text-sm text-red-600">*</span>
               </div>
             </label>
             <input
               value={credentials?.name}
               onChange={handleChange("name")}
-              className="auth_input"
+              className={authInputClasses}
               placeholder={`A catchy name for your event`}
             />
           </div>
-          <div className={clsx("createevent_element", "")}>
+          <div className={clsx("relative flex w-full flex-col font-outfit")}>
             <label>
-              <div>
-                Event Description <span>*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Event Description <span className="text-sm text-red-600">*</span>
               </div>
 
-              <span className="counter">
+              <span className="text-[13px] text-[#6b2615bd]">
                 {credentials["description"]?.length || 0}/500
               </span>
             </label>
@@ -271,50 +283,54 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
               value={credentials["description"]}
               name="description"
               onChange={handleChange("description")}
-              className="auth_input"
+              className={clsx(authInputClasses, "h-[100px] max-[500px]:text-[10px]!")}
               placeholder={`A brief description about your event`}
             />
             {errors["description"] && (
-              <span className="createevent_error">{errors["description"]}</span>
+              <span className="mt-[5px] text-[15px] text-red-600">
+                {errors["description"]}
+              </span>
             )}
           </div>
 
-          <div className="createevent_flexbox">
-            <div className="createevent_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Contact Number <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Contact Number <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line1}
                 onChange={handleChange("line1")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Contact Number for your event`}
               />
             </div>
 
-            <div className="createevent_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Contact Email <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Contact Email <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line2}
                 onChange={handleChange("line2")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Email Id for your event`}
               />
             </div>
           </div>
 
-          <div className="createevent_mode">
-            <div className="plans">
-              <div className="title">Event Mode</div>
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex flex-wrap items-center justify-between box-border max-[991px]:mx-5 max-[991px]:flex-col max-[991px]:items-start max-[991px]:p-10">
+              <div className="mb-[10px] basis-full font-outfit text-[17px] text-brand-secondary">
+                Event Mode
+              </div>
 
               <div
-                className="plan basic-plan"
+                className="h-full w-[48.5%] cursor-pointer max-[991px]:w-full"
                 // @ts-expect-error — `htmlFor` is not a valid attribute on a
                 // <div> (only <label>/<output>); harmless pre-existing
                 // markup mistake, kept as-is rather than fixed here.
@@ -323,16 +339,26 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
                   setCredentials({ ...credentials, eventMode: "online" });
                 }}
               >
-                <input checked type="radio" name="plan" id="basic" />
-                <div className="plan-content">
+                <input
+                  checked
+                  type="radio"
+                  name="plan"
+                  id="basic"
+                  readOnly
+                  className="peer absolute opacity-0"
+                />
+                <div className="relative box-border flex items-center rounded-[10px] border-2 border-[#e1e2e7] p-[15px] transition-shadow duration-[400ms] after:absolute after:top-5 after:right-5 after:h-2 after:w-2 after:rounded-full after:border-[3px] after:border-white after:bg-[#ff5a3110] after:opacity-0 after:shadow-[0px_0px_0px_2px_#ff5b31] after:content-[''] hover:shadow-[0px_3px_5px_0px_#e8e8e8] peer-checked:border-brand peer-checked:bg-[#ff5a3110] peer-checked:transition-[background-color,border-color] peer-checked:duration-300 peer-checked:after:opacity-100 max-[991px]:after:top-[45%] max-[991px]:after:-translate-x-1/2 max-[540px]:flex-col max-[540px]:items-baseline max-[540px]:p-5 max-[540px]:after:top-5 max-[540px]:after:right-[10px]">
                   <img
                     loading="lazy"
                     src="https://ismailvtl-images-project.vercel.app/life-saver-img.svg"
                     alt=""
+                    className="mr-5 h-[60px] max-[540px]:mb-5 max-[540px]:h-[56px] max-[540px]:transition-[height] max-[540px]:duration-[400ms]"
                   />
-                  <div className="plan-details">
-                    <span>Online</span>
-                    <p>
+                  <div className="max-[991px]:inline-block max-[991px]:w-[70%] max-[767px]:w-[60%] max-[540px]:w-full">
+                    <span className="mb-[10px] block font-outfit text-xl leading-6 text-black">
+                      Online
+                    </span>
+                    <p className="m-0 text-sm leading-[18px] text-[#646a79]">
                       Recommended for smaller organizations, with limited
                       budget.
                     </p>
@@ -341,23 +367,31 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
               </div>
 
               <div
-                className="plan complete-plan"
+                className="h-full w-[48.5%] cursor-pointer max-[991px]:w-full"
                 // @ts-expect-error — see comment on the "basic-plan" div above.
                 htmlFor="complete"
                 onClick={() => {
                   setCredentials({ ...credentials, eventMode: "offline" });
                 }}
               >
-                <input type="radio" id="complete" name="plan" />
-                <div className="plan-content">
+                <input
+                  type="radio"
+                  id="complete"
+                  name="plan"
+                  className="peer absolute opacity-0"
+                />
+                <div className="relative box-border flex items-center rounded-[10px] border-2 border-[#e1e2e7] p-[15px] transition-shadow duration-[400ms] after:absolute after:top-5 after:right-5 after:h-2 after:w-2 after:rounded-full after:border-[3px] after:border-white after:bg-[#ff5a3110] after:opacity-0 after:shadow-[0px_0px_0px_2px_#ff5b31] after:content-[''] hover:shadow-[0px_3px_5px_0px_#e8e8e8] peer-checked:border-brand peer-checked:bg-[#ff5a3110] peer-checked:transition-[background-color,border-color] peer-checked:duration-300 peer-checked:after:opacity-100 max-[991px]:after:top-[45%] max-[991px]:after:-translate-x-1/2 max-[540px]:flex-col max-[540px]:items-baseline max-[540px]:p-5 max-[540px]:after:top-5 max-[540px]:after:right-[10px]">
                   <img
                     loading="lazy"
                     src="https://ismailvtl-images-project.vercel.app/potted-plant-img.svg"
                     alt=""
+                    className="mr-5 h-[60px] max-[540px]:mb-5 max-[540px]:h-[56px] max-[540px]:transition-[height] max-[540px]:duration-[400ms]"
                   />
-                  <div className="plan-details">
-                    <span>Offline</span>
-                    <p>
+                  <div className="max-[991px]:inline-block max-[991px]:w-[70%] max-[767px]:w-[60%] max-[540px]:w-full">
+                    <span className="mb-[10px] block font-outfit text-xl leading-6 text-black">
+                      Offline
+                    </span>
+                    <p className="m-0 text-sm leading-[18px] text-[#646a79]">
                       Recommended for larger organizations, with more budget &
                       resources.
                     </p>
@@ -367,91 +401,92 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
             </div>
           </div>
 
-          <div className="createevent_flexbox">
-            <div className="createevent_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Address Line 1 <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Address Line 1 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line1}
                 onChange={handleChange("line1")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Social Link for your event`}
               />
             </div>
 
-            <div className="createevent_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Address Line 2 <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Address Line 2 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line2}
                 onChange={handleChange("line2")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Email Id for your event`}
               />
             </div>
           </div>
 
-          <div className="createevent_flexbox">
-            <div className="createevent_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  City <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  City <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line1}
                 onChange={handleChange("line1")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Social Link for your event`}
               />
             </div>
 
-            <div className="createevent_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  State/Province <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  State/Province <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line2}
                 onChange={handleChange("line2")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Email Id for your event`}
               />
             </div>
           </div>
 
-          <div className="createevent_flexbox">
-            <div className="createevent_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Country of establishment <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Country of establishment{" "}
+                  <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line1}
                 onChange={handleChange("line1")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Social Link for your event`}
               />
             </div>
 
-            <div className="createevent_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Pincode / Zipcode <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Pincode / Zipcode <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line2}
                 onChange={handleChange("line2")}
-                className="auth_input"
+                className={authInputClasses}
                 placeholder={`Email Id for your event`}
               />
             </div>

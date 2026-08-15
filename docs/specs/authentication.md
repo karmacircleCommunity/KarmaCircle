@@ -7,7 +7,7 @@ For where the resulting session state is stored, see [state-management.md](./sta
 
 - [src/features/authentication/pages/SignIn.tsx](../../src/features/authentication/pages/SignIn.tsx) — email + password form.
 - [src/features/authentication/pages/SignUp.tsx](../../src/features/authentication/pages/SignUp.tsx) — name + email + password form, plus an "Individual" vs "Organization" (`userType`) toggle built with `react-select` (desktop label: "Account Type" dropdown) and a separate custom checkbox-styled toggle (the `.status-switch` div) on the right-hand panel — two different UI controls that both flip the same `userType` state, shown at different breakpoints.
-- Both pages share `./index.scss` and mount `<Navbar />` at the top but no `<Footer />`.
+- Both pages share the same Tailwind utility classes (matching visual layout, no shared stylesheet — the `.status-switch` toggle's pseudo-element/`content: attr(...)` styling lives as hand-written global CSS in `src/styles/index.css` since Tailwind's scanner can't reach it) and mount `<Navbar />` at the top but no `<Footer />`.
 - Both are lazy-loaded in [routesConfig.tsx](../../src/app/routes/routesConfig.tsx) and wrapped in `DonotRenderWhenLoggedIn` (see below).
 
 ## The `useAuth` hook

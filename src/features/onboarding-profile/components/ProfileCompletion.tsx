@@ -6,7 +6,9 @@ import type { ChangeEvent } from "react";
 import { useState } from "react";
 import { Button } from "@components";
 import type { ProfileCompletionProps } from "../types";
-import "./ProfileCompletion.scss";
+
+const inputClasses =
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-[#00000083] focus:shadow-none focus:outline-none";
 
 /**
  * Modal: first-time profile completion (also, confusingly, reused for
@@ -50,13 +52,16 @@ const ProfileCompletion = ({
   };
 
   return (
-    <div className="profilecompletion_overlay">
-      <div className="profilecompletion_modal">
-        <div className="profilecompletion_header">
-          <div className="profilecompletion_header_top">
+    <div className="fixed inset-0 z-[101] flex h-full w-full items-center justify-center bg-black/80 backdrop-blur-[6px]">
+      <div className="relative flex max-h-[80vh] min-h-[400px] w-[40vw] min-w-[800px] flex-col justify-between overflow-y-auto rounded-[15px] bg-white text-black max-[525px]:w-[89vw] max-[525px]:min-w-[220px]">
+        <div className="sticky top-0 z-10 bg-white px-4 py-[10px]">
+          <div className="flex items-start justify-between">
             <div>
-              <h1> We&apos;re almost done </h1>
-              <p>
+              <h1 className="mb-0 font-outfit text-2xl font-bold text-brand-secondary">
+                {" "}
+                We&apos;re almost done{" "}
+              </h1>
+              <p className="mb-8 font-outfit text-[15px] font-normal text-black">
                 To make your Organization visible to others, please complete
                 your profile.
               </p>
@@ -64,6 +69,7 @@ const ProfileCompletion = ({
 
             <Button
               type="submit"
+              className="w-[15%] font-outfit"
               disabled={
                 !credentials?.description ||
                 !credentials?.address?.line1 ||
@@ -91,26 +97,32 @@ const ProfileCompletion = ({
         </div>
 
         <form
+          className="flex w-full flex-col gap-[1.2rem] p-4 font-outfit"
           onSubmit={(e) => {
             e.preventDefault();
             validateForm(credentials);
           }}
         >
-          <div className="profilecompletion_element">
-            <div className="dropzone_container">
-              <p className="dropzone_coverlabel">Cover Image</p>
+          <div className="relative flex w-full flex-col font-outfit">
+            <div className="flex w-full flex-col items-start justify-center">
+              <p className="mb-[3px] text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Cover Image
+              </p>
 
-              <label htmlFor="dropzone_file" className="dropzone_label">
+              <label
+                htmlFor="dropzone_file"
+                className="flex h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] transition-colors duration-300 hover:bg-[#f5f7fd]"
+              >
                 {uploadedImage ? (
                   <img
                     src={uploadedImage}
                     alt="Uploaded Preview"
-                    className="uploaded-image"
+                    className="h-full w-full rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="dropzone_content">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="dropzone_icon"
+                      className="mb-4 h-8 w-8 text-[#6b7280]"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -125,11 +137,11 @@ const ProfileCompletion = ({
                       />
                     </svg>
 
-                    <p className="dropzone_text">
+                    <p className="mb-2 text-sm text-[#6b7280]">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="dropzone_subtext">
+                    <p className="text-xs text-[#6b7280]">
                       PNG, JPG up to 10MB (800 X 200)
                     </p>
                   </div>
@@ -145,113 +157,113 @@ const ProfileCompletion = ({
             </div>
           </div>
           <div
-            className={clsx("profilecompletion_element", "edit_section")}
+            className={clsx("relative mt-10 flex w-full flex-col font-outfit")}
             key={"description"}
           >
             <label>
-              <div>
-                Organization Description <span>*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Organization Description <span className="text-sm text-red-600">*</span>
               </div>
 
-              <span className="counter">
+              <span className="text-[13px] text-[#6b2615bd]">
                 {credentials["description"]?.length || 0}/500
               </span>
             </label>
             <textarea
               value={credentials["description"]}
               onChange={handleChange("description")}
-              className="auth_input"
+              className={`${inputClasses} h-[100px] max-[500px]:text-[10px]!`}
               placeholder={`Enter a meaningful description about your organization`}
             />
             {errors["description"] && (
-              <span className="profilecompletion_error">
+              <span className="mt-[5px] text-[15px] text-red-600">
                 {errors["description"]}
               </span>
             )}
           </div>
 
-          <div className="profilecompletion_flexbox">
-            <div className="profilecompletion_element" key={"description"}>
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
               <label>
-                <div>
-                  Address Line 1 <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Address Line 1 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line1}
                 onChange={handleChange("line1")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Address Line 1`}
               />
             </div>
 
-            <div className="profilecompletion_element" key={"description"}>
+            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
               <label>
-                <div>
-                  Address Line 2 <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Address Line 2 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line2}
                 onChange={handleChange("line2")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Address Line 2`}
               />
             </div>
           </div>
 
-          <div className="profilecompletion_flexbox">
-            <div className="profilecompletion_element" key={"description"}>
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
               <label>
-                <div>
-                  City <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  City <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 name="city"
                 value={credentials?.address?.city}
                 onChange={handleChange("city")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`City Name`}
               />
             </div>
 
-            <div className="profilecompletion_element" key={"description"}>
+            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
               <label>
-                <div>
-                  State/Province <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  State/Province <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 name="stat e"
                 value={credentials?.address?.state}
                 onChange={handleChange("state")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`State Name`}
               />
             </div>
           </div>
 
-          <div className="profilecompletion_flexbox">
-            <div className="profilecompletion_element" key={"description"}>
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
               <label>
-                <div>
-                  Country of establishment <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Country of establishment <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 name="country"
                 value={credentials?.address?.country}
                 onChange={handleChange("country")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Country Name`}
               />
             </div>
 
-            <div className="profilecompletion_element" key={"description"}>
+            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
               <label>
-                <div>
-                  Pincode / Zipcode <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Pincode / Zipcode <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
@@ -259,15 +271,16 @@ const ProfileCompletion = ({
                 type="number"
                 value={credentials?.address?.pincode}
                 onChange={handleChange("pincode")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Pincode`}
               />
             </div>
           </div>
 
-          <div className="profilecompletion_btndiv">
+          <div className="mt-4 flex justify-end gap-4">
             <Button
               type="submit"
+              className="rounded-[5px] px-4 py-2 text-base font-medium font-outfit transition-all duration-300 ease-in-out"
               disabled={
                 !credentials?.description ||
                 !credentials?.address?.line1 ||

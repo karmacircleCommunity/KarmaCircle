@@ -11,7 +11,9 @@ import type {
   ProfileCompletionErrors,
   ProfileUpdateProps,
 } from "../types";
-import "./ProfileUpdate.scss";
+
+const inputClasses =
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-[#00000083] focus:shadow-none focus:outline-none";
 
 interface ProfileUpdateCredentials {
   description: string;
@@ -172,19 +174,24 @@ const ProfileUpdate = ({
   };
 
   return (
-    <div className="profileupdate_overlay">
-      <div className="profileupdate_modal">
-        <div className="profileupdate_header">
-          <div className="profileupdate_header_edit">
+    <div className="fixed inset-0 z-[101] flex h-full w-full items-center justify-center bg-black/80 backdrop-blur-[6px]">
+      <div className="relative flex max-h-[80vh] min-h-[400px] w-[40vw] min-w-[800px] flex-col justify-between overflow-y-auto rounded-[15px] bg-white text-black max-[525px]:w-[89vw] max-[525px]:min-w-[220px]">
+        <div className="sticky top-0 z-10 bg-white px-4 py-[10px]">
+          <div className="flex items-center gap-4">
             <RxCross2
+              className="mr-[1.2rem] h-[23px] w-[23px] cursor-pointer"
               onClick={() => {
                 setOpenModal(false);
                 handleResetFields();
               }}
             />
-            <h1> Edit profile </h1>
+            <h1 className="mb-0 font-outfit text-2xl font-bold text-brand-secondary">
+              {" "}
+              Edit profile{" "}
+            </h1>
             <Button
               type="submit"
+              className="mt-0 ml-auto w-[15%] rounded-[10px] font-outfit"
               onClickfunction={(e) => {
                 e.preventDefault();
                 validateForm();
@@ -204,22 +211,27 @@ const ProfileUpdate = ({
           </div>
         </div>
 
-        <form>
-          <div className="profileupdate_element">
-            <div className="dropzone_container">
-              <p className="dropzone_coverlabel">Cover Image</p>
+        <form className="flex w-full flex-col gap-[1.2rem] p-4 font-outfit">
+          <div className="relative flex w-full flex-col font-outfit">
+            <div className="flex w-full flex-col items-start justify-center">
+              <p className="mb-[3px] text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Cover Image
+              </p>
 
-              <label htmlFor="dropzone_file" className="dropzone_label">
+              <label
+                htmlFor="dropzone_file"
+                className="flex h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] transition-colors duration-300 hover:bg-[#f5f7fd]"
+              >
                 {uploadedImage ? (
                   <img
                     src={uploadedImage}
                     alt="Uploaded Preview"
-                    className="uploaded-image"
+                    className="h-full w-full rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="dropzone_content">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="dropzone_icon"
+                      className="mb-4 h-8 w-8 text-[#6b7280]"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -234,11 +246,11 @@ const ProfileUpdate = ({
                       />
                     </svg>
 
-                    <p className="dropzone_text">
+                    <p className="mb-2 text-sm text-[#6b7280]">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="dropzone_subtext">
+                    <p className="text-xs text-[#6b7280]">
                       PNG, JPG up to 10MB (800 X 200)
                     </p>
                   </div>
@@ -254,18 +266,18 @@ const ProfileUpdate = ({
 
               <label
                 htmlFor="dropzone_pfp"
-                className="dropzone_label profile_picture_label"
+                className="absolute top-[223px] left-16 flex h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] object-cover transition-colors duration-300 hover:bg-[#f5f7fd] [&_svg]:mb-0!"
               >
                 {uploadedProfilePicture ? (
                   <img
                     src={uploadedProfilePicture}
                     alt="Uploaded Preview"
-                    className="uploaded-image profile_picture"
+                    className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
-                  <div className="dropzone_content">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="dropzone_icon"
+                      className="mb-4 h-8 w-8 text-[#6b7280]"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -292,26 +304,26 @@ const ProfileUpdate = ({
             </div>
           </div>
 
-          <div className="profileupdate_element edit_section">
+          <div className="relative mt-10 flex w-full flex-col font-outfit">
             <label>
-              <div>
-                Organization Name <span>*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Organization Name <span className="text-sm text-red-600">*</span>
               </div>
             </label>
             <input
               value={credentials?.name}
               onChange={handleChange("name")}
-              className="auth_input"
+              className={inputClasses}
               placeholder={`The name of your organization`}
             />
           </div>
-          <div className={clsx("profileupdate_element", "")}>
+          <div className={clsx("relative flex w-full flex-col font-outfit")}>
             <label>
-              <div>
-                Organization Description <span>*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                Organization Description <span className="text-sm text-red-600">*</span>
               </div>
 
-              <span className="counter">
+              <span className="text-[13px] text-[#6b2615bd]">
                 {credentials["description"]?.length || 0}/500
               </span>
             </label>
@@ -319,98 +331,98 @@ const ProfileUpdate = ({
               value={credentials["description"]}
               name="description"
               onChange={handleChange("description")}
-              className="auth_input"
+              className={`${inputClasses} h-[100px] max-[500px]:text-[10px]!`}
               placeholder={`Enter a meaningful description about your organization`}
             />
             {errors["description"] && (
-              <span className="profileupdate_error">
+              <span className="mt-[5px] text-[15px] text-red-600">
                 {errors["description"]}
               </span>
             )}
           </div>
 
-          <div className="profileupdate_flexbox">
-            <div className="profileupdate_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Address Line 1 <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Address Line 1 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line1}
                 onChange={handleChange("line1")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Address Line 1`}
               />
             </div>
 
-            <div className="profileupdate_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Address Line 2 <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Address Line 2 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 value={credentials?.address?.line2}
                 onChange={handleChange("line2")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Address Line 2`}
               />
             </div>
           </div>
 
-          <div className="profileupdate_flexbox">
-            <div className="profileupdate_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  City <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  City <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 name="city"
                 value={credentials?.address?.city}
                 onChange={handleChange("city")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`City Name`}
               />
             </div>
 
-            <div className="profileupdate_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  State/Province <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  State/Province <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 name="stat e"
                 value={credentials?.address?.state}
                 onChange={handleChange("state")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`State Name`}
               />
             </div>
           </div>
 
-          <div className="profileupdate_flexbox">
-            <div className="profileupdate_element">
+          <div className="flex items-center gap-5">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Country of establishment <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Country of establishment <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
                 name="country"
                 value={credentials?.address?.country}
                 onChange={handleChange("country")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Country Name`}
               />
             </div>
 
-            <div className="profileupdate_element">
+            <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div>
-                  Pincode / Zipcode <span>*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                  Pincode / Zipcode <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
@@ -418,7 +430,7 @@ const ProfileUpdate = ({
                 type="number"
                 value={credentials?.address?.pincode}
                 onChange={handleChange("pincode")}
-                className="auth_input"
+                className={inputClasses}
                 placeholder={`Pincode`}
               />
             </div>

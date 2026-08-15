@@ -45,7 +45,7 @@ These are drawn from how the *majority* of the existing code already does things
 - **Status codes:** compare against `STATUSCODE` from `src/statics/Constants.js` (e.g. `STATUSCODE.OK`) rather than a bare `200`.
 - **Toasts:** use `showSuccessToast`/`showErrorToast` from `src/utils/Toasts.js` for any API-triggered feedback, not `toast.success`/`toast.error` directly — they already handle the offline case.
 - **Buttons:** use the shared `Button` component (`src/components/buttons/globalbutton/Button.jsx`) and its `onClickfunction` prop, not a raw `<button onClick>`, for anything that should look like the rest of the app.
-- **Styling:** match whatever the immediate sibling files in that folder already use (plain `.scss` with BEM-ish class names is the majority pattern) — don't introduce styled-components or a new CSS Modules file into a folder that's currently all `.scss`.
+- **Styling:** use Tailwind CSS utility classes directly in `className` — this is now the convention across the whole app, no `.scss` files remain. `Button.module.css`/`Modal.module.css` are the sole leftover CSS Modules exception; match them only if you're extending those specific components. See [docs/specs/ui-kit.md](./docs/specs/ui-kit.md#styling-conventions) for design tokens (`text-brand`, `font-outfit`, etc.) and the handful of things that still need hand-written global CSS (react-select/MUI internals, the signup toggle switch) because Tailwind's scanner can't reach them.
 - **Validation on submit:** if you fix a form's validation, make sure a non-empty `errors` object actually blocks the API call — several existing forms compute errors but call the API anyway (see `known-issues.md`); don't copy that pattern into new code.
 
 ## Keep the specs honest

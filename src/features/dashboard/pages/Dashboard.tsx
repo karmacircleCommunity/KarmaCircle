@@ -11,7 +11,6 @@ import useSWR from "swr";
 import { Navbar } from "@components";
 import ProfileCompletion from "@features/onboarding-profile/components/ProfileCompletion";
 import type { DashboardProfileResponse } from "../types";
-import "./Dashboard.scss";
 
 const Dashboard = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -32,33 +31,34 @@ const Dashboard = () => {
   return (
     <>
       <Navbar />
-      <div className="dashboard_parent">
-        <div className="profile_header">
-          <div className="profileSection_container">
+      <div className="mx-12 px-28 py-8">
+        <div className="flex h-full items-start gap-[1.2rem]">
+          <div className="relative w-[70%] grow rounded-xl">
             <img
               src="https://images.pexels.com/photos/7130555/pexels-photo-7130555.jpeg?cs=srgb&dl=pexels-codioful-7130555.jpg&fm=jpg"
               alt=""
               srcSet=""
-              className="profile_Coverpicture"
+              className="h-[200px] w-full rounded-xl object-cover"
             />
 
             <img
               src="https://t3.ftcdn.net/jpg/04/56/00/16/360_F_456001627_vYt7ZFjxEQ1sshme67JAXorKRPo8gsfN.jpg"
               alt=""
-              className="profile_picture"
+              className="absolute top-[197px] left-16 h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white object-cover"
             />
 
-            <div className="profile_numbers">
-              <p className="counts followersCount">
-                <span>1.25k</span> Followers
+            <div className="absolute top-[225px] left-[269px] flex -translate-x-1/2 -translate-y-1/2 items-center gap-8 font-outfit">
+              <p className="m-0 text-[15px] leading-none">
+                <span className="font-semibold">1.25k</span> Followers
               </p>
 
-              <p className="counts EventsCount">
-                <span>231</span> Hosted Events
+              <p className="m-0 text-[15px] leading-none">
+                <span className="font-semibold">231</span> Hosted Events
               </p>
             </div>
 
             <button
+              className="absolute top-[225px] -right-[63px] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-[5px] border-[1.2px] border-brand bg-transparent px-6 py-[0.3rem] font-outfit text-base transition-all duration-200 ease-in-out"
               onClick={() => {
                 setOpenModal(true);
                 handleSetDefaultValues(profileData?.user);
@@ -68,14 +68,18 @@ const Dashboard = () => {
               Edit Profile
             </button>
 
-            <div className="profile_details">
-              <h2>{profileData?.user?.name}</h2>
-              <p>{profileData?.user?.description}</p>
+            <div className="relative mt-16 left-[18px] flex flex-col items-start">
+              <h2 className="m-0 font-outfit text-2xl font-semibold">
+                {profileData?.user?.name}
+              </h2>
+              <p className="m-0 mt-2 font-outfit text-base">
+                {profileData?.user?.description}
+              </p>
             </div>
           </div>
 
-          <div className="dashboard_track">
-            <p className="dashboard_track_p">
+          <div className="relative h-full w-[30%] rounded-xl border border-black/60">
+            <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center font-outfit text-xl font-bold whitespace-nowrap">
               <span> Real time Analytics</span> <br />
               <span>Coming Soon</span>
             </p>

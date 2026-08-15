@@ -17,7 +17,6 @@ import fetcher from "@utils/Fetcher";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { checkMissingFields } from "@features/onboarding-profile/utils/checkMissingFields";
 import type { LogoutResponse, ProfileDetails } from "../types";
-import "./Profile.scss";
 
 /**
  * The live public profile page, routed at both `/user/:userName` and
@@ -81,40 +80,48 @@ const Profile = () => {
     <>
       <Navbar />
 
-      <div className="profile_container">
-        <div className="profile_parent">
-          <div className="profile_header">
+      <div className="flex flex-col items-center pt-32 pb-16 max-[430px]:px-4 max-[430px]:py-24">
+        <div className="mx-auto flex max-w-[1000px] flex-col gap-16 max-[430px]:max-w-[100vw] max-[430px]:gap-8">
+          <div className="flex gap-4">
             <img
               src="https://api.freelogodesign.org/assets/thumb/logo/bdd55f703a074abb8bf50c0d3891c0a9_400.png?t=638314396148720000"
               alt=""
+              className="mr-5 h-[150px] w-[150px] rounded-md max-[430px]:mr-0 max-[430px]:h-[100px] max-[430px]:w-[100px]"
             />
 
-            <div className="profile_header_details">
+            <div className="flex flex-col items-start justify-between">
               {details?.userType === "club" ? (
                 <div>
-                  <h1 className="profile_header_name">{details?.name} </h1>
-                  <h2 className="profile_header_tagline">{details?.tagLine}</h2>
+                  <h1 className="text-[2.1rem] font-extrabold font-mont text-brand-secondary max-[430px]:font-poppins max-[430px]:text-[1.4rem] max-[430px]:font-bold">
+                    {details?.name}{" "}
+                  </h1>
+                  <h2 className="font-poppins text-lg font-medium text-black max-[430px]:text-sm max-[430px]:font-normal max-[430px]:break-all">
+                    {details?.tagLine}
+                  </h2>
                 </div>
               ) : (
                 <div>
-                  <h1 className="profile_header_name">
+                  <h1 className="text-[2.1rem] font-extrabold font-mont text-brand-secondary max-[430px]:font-poppins max-[430px]:text-[1.4rem] max-[430px]:font-bold">
                     {details?.firstName} {details?.lastName}{" "}
                   </h1>
                 </div>
               )}
 
-              <div className="profile_header_ctadiv">
+              <div className="flex w-full items-center justify-start gap-4 max-[430px]:hidden">
                 {trueUser ? (
                   <Button
                     variant="solid"
-                    className="profile_header_cta"
+                    className="flex w-auto items-center justify-between rounded-md px-6 py-2 text-base [&_svg]:h-[25px] [&_svg]:w-[25px] [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
                     onClickfunction={toggleProfileModal}
                   >
                     <FiEdit3 />
                     Edit profile
                   </Button>
                 ) : (
-                  <Button variant="solid" className="profile_header_cta">
+                  <Button
+                    variant="solid"
+                    className="flex w-auto items-center justify-between rounded-md px-6 py-2 text-base [&_svg]:h-[25px] [&_svg]:w-[25px] [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
+                  >
                     <svg
                       stroke="currentColor"
                       fill="currentColor"
@@ -135,7 +142,7 @@ const Profile = () => {
                 {trueUser ? (
                   <Button
                     variant="outline"
-                    className="profile_header_cta"
+                    className="flex w-auto items-center justify-between rounded-md px-6 py-2 text-base [&_svg]:h-[25px] [&_svg]:w-[25px] [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
                     onClickfunction={handleLogout}
                   >
                     <MdLogout
@@ -146,7 +153,10 @@ const Profile = () => {
                     Logout
                   </Button>
                 ) : (
-                  <Button variant="solid" className="profile_header_cta">
+                  <Button
+                    variant="solid"
+                    className="flex w-auto items-center justify-between rounded-md px-6 py-2 text-base [&_svg]:h-[25px] [&_svg]:w-[25px] [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
+                  >
                     <svg
                       stroke="currentColor"
                       fill="currentColor"
@@ -167,18 +177,21 @@ const Profile = () => {
             </div>
           </div>
 
-          <div className="profile_header_ctadiv">
+          <div className="flex w-full items-center justify-between gap-4 min-[430px]:hidden">
             {trueUser ? (
               <Button
                 variant="solid"
-                className="profile_header_cta"
+                className="flex w-full items-center justify-center rounded-md px-6 py-2 text-sm whitespace-nowrap [&_svg]:h-5 [&_svg]:w-5 [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
                 onClickfunction={toggleProfileModal}
               >
                 <FiEdit3 />
                 Edit profile
               </Button>
             ) : (
-              <Button variant="solid" className="profile_header_cta">
+              <Button
+                variant="solid"
+                className="flex w-full items-center justify-center rounded-md px-6 py-2 text-sm whitespace-nowrap [&_svg]:h-5 [&_svg]:w-5 [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
+              >
                 <svg
                   stroke="currentColor"
                   fill="currentColor"
@@ -199,7 +212,7 @@ const Profile = () => {
             {trueUser ? (
               <Button
                 variant="outline"
-                className="profile_header_cta"
+                className="flex w-full items-center justify-center rounded-md px-6 py-2 text-sm whitespace-nowrap [&_svg]:h-5 [&_svg]:w-5 [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
                 onClickfunction={handleLogout}
               >
                 <MdLogout
@@ -210,7 +223,10 @@ const Profile = () => {
                 Logout
               </Button>
             ) : (
-              <Button variant="solid" className="profile_header_cta">
+              <Button
+                variant="solid"
+                className="flex w-full items-center justify-center rounded-md px-6 py-2 text-sm whitespace-nowrap [&_svg]:h-5 [&_svg]:w-5 [&_svg]:text-[20px] [&_svg]:font-bold [&_svg]:text-white"
+              >
                 <svg
                   stroke="currentColor"
                   fill="currentColor"
@@ -249,17 +265,24 @@ const Profile = () => {
           )} */}
 
           {details?.description && (
-            <div className="profile_about">
-              <h1 className="profile_about_title">About Us</h1>
+            <div className="flex flex-col items-start">
+              <h1 className="font-mont text-[2rem] font-extrabold text-brand-secondary max-[430px]:text-2xl max-[430px]:font-bold max-[430px]:font-poppins">
+                About Us
+              </h1>
 
-              <p>{details?.description}</p>
+              <p className="font-outfit text-xl font-normal text-black max-[430px]:text-start max-[430px]:text-[17px]">
+                {details?.description}
+              </p>
             </div>
           )}
 
           {details?.userType === "club" && (
-            <div className="profile_map">
-              <h1 className="profile_about_title">Find us here</h1>
+            <div className="flex flex-col items-start">
+              <h1 className="mb-4 font-mont text-[2rem] font-extrabold text-brand-secondary max-[430px]:text-2xl max-[430px]:font-bold max-[430px]:font-poppins">
+                Find us here
+              </h1>
               <iframe
+                className="h-[500px] w-full min-w-[900px] rounded-[10px] border-2 border-brand-secondary max-[430px]:min-w-0"
                 src={
                   user?.iframe ||
                   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14741.482534684159!2d88.35842639207846!3d22.527784753774615!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a0276d0a2583ccf%3A0xf1efff5c088752e2!2s6%20Ballygunge%20Place!5e0!3m2!1sen!2sin!4v1695572606793!5m2!1sen!2sin"

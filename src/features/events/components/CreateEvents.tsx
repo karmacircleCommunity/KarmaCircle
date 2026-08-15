@@ -20,7 +20,9 @@ import platforms from "@statics/OnlinePlatform";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { Button } from "@components";
 import type { EventFormState } from "../types";
-import "./CreateEvents.scss";
+
+const formInputClasses =
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-base leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out max-[500px]:text-sm! focus:border-black focus:shadow-none focus:outline-none";
 
 interface CreateEventsProps {
   setshowCreateModal: (open: boolean) => void;
@@ -83,49 +85,60 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
   };
 
   return (
-    <div className="createevent_overlay">
-      <div className="createevent_modal">
+    <div className="fixed inset-0 z-20 flex h-full w-full items-center justify-center bg-black/80 backdrop-blur-[5px]">
+      <div className="relative flex max-h-[80vh] min-h-[400px] w-[35vw] min-w-[500px] flex-col overflow-auto rounded-lg bg-white p-4 text-black [&::-webkit-scrollbar]:hidden! max-[525px]:w-[89vw] max-[525px]:min-w-[220px]">
         <IoMdCloseCircleOutline
-          className="crossButton"
+          className="absolute top-[15px] right-3 m-0 cursor-pointer border-0 p-0 text-[27px] text-brand-secondary shadow-none"
           onClick={() => {
             setshowCreateModal(false);
           }}
         />
 
-        <div className="createevent_header">
-          <h1>Create</h1>
+        <div>
+          <h1 className="font-poppins text-[2rem] font-bold text-brand-secondary max-[500px]:text-2xl">
+            Create
+          </h1>
         </div>
 
-        <div className="createevent_form">
-          <img src={event.coverImage} alt="" />
+        <div className="flex w-full flex-col gap-[1.2rem]">
+          <img
+            src={event.coverImage}
+            alt=""
+            className="h-[250px] w-full rounded-lg object-cover"
+          />
 
-          <div className="form_header">
-            <div className="host">
+          <div className="flex justify-between gap-4">
+            <div className="flex items-center justify-start gap-4 opacity-70">
               <img
                 src="https://www.thetechies.org/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fuser3.04b79840.webp&w=640&q=75"
                 alt=""
+                className="h-10 w-10 rounded-full"
               />
 
-              <div className="details">
+              <div className="flex flex-col gap-0 font-outfit text-base leading-none text-[gray]">
                 <span>Hosted by</span>
                 <span>{user?.name}</span>
               </div>
             </div>
 
-            <div className="thumbnail">
-              <label htmlFor="file-input">
+            <div>
+              <label
+                htmlFor="file-input"
+                className="flex w-fit cursor-pointer items-center gap-4 rounded-[5px] bg-[#21252917] px-[15px] py-[10px] font-outfit text-base max-[430px]:gap-2 max-[430px]:px-[10px] max-[430px]:py-[5px] max-[430px]:text-sm"
+              >
                 <IoCloudUploadOutline />
                 Upload {window.innerWidth > 430 && "Thumbnail"}
               </label>
               <input
                 type="file"
                 id="file-input"
+                className="hidden"
                 onChange={handleCreateBase64}
               />
             </div>
           </div>
 
-          <div className="form_inputs">
+          <div className="flex flex-col gap-[1.2rem]">
             <input
               type="text"
               placeholder="Event Name"
@@ -134,13 +147,16 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 handleChange(e);
               }}
               value={event.name}
+              className={formInputClasses}
             />
 
             {errors.name && (
-              <span className="error_message">{errors.name}</span>
+              <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                {errors.name}
+              </span>
             )}
 
-            <div className="date_range">
+            <div className="CreateEvents_date_range mt-8 flex justify-between gap-4">
               <DatePicker
                 label="Start Date"
                 value={event.startDate}
@@ -161,7 +177,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               />
             </div>
 
-            <div className="date_range">
+            <div className="CreateEvents_date_range mt-8 flex justify-between gap-4">
               <DatePicker
                 label="End Date"
                 value={event.endDate}
@@ -182,8 +198,11 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               />
             </div>
 
-            <FormControl fullWidth className="event_mode">
-              <InputLabel id="demo-simple-select-label label">
+            <FormControl fullWidth className="mt-8 mb-8">
+              <InputLabel
+                id="demo-simple-select-label label"
+                className="font-poppins text-[15px]! max-[500px]:text-sm!"
+              >
                 Event Mode
               </InputLabel>
               <Select
@@ -192,7 +211,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 value={event.mode}
                 name="mode"
                 label="Event Mode"
-                className="select"
+                className="font-poppins text-[15px]! max-[500px]:text-sm!"
                 onChange={(e) => {
                   setevent({ ...event, mode: e.target.value as EventFormState["mode"] });
                 }}
@@ -210,8 +229,13 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               onChange={(e) => {
                 handleChange(e);
               }}
+              className={formInputClasses}
             />
-            {errors.uid && <span className="error_message">{errors.uid}</span>}
+            {errors.uid && (
+              <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                {errors.uid}
+              </span>
+            )}
 
             <textarea
               placeholder="Event Description"
@@ -220,24 +244,32 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               onChange={(e) => {
                 handleChange(e);
               }}
+              className={`${formInputClasses} mt-8 min-h-[150px] placeholder:font-poppins placeholder:text-base! max-[500px]:placeholder:text-sm!`}
             />
             {errors.description && (
-              <span className="error_message">{errors.description}</span>
+              <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                {errors.description}
+              </span>
             )}
 
             {event?.mode === "Offline" ? (
-              <Accordion defaultExpanded className="location">
+              <Accordion
+                defaultExpanded
+                className="my-8 items-center justify-between rounded-[0.375rem] border border-[#ced4da] bg-transparent px-[10px] py-0 shadow-none"
+              >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls="panel1-content"
                   id="panel1-header"
-                  className="location_header"
+                  className="p-0"
                 >
-                  <p>Location Details</p>
+                  <p className="mb-0 font-poppins text-base">
+                    Location Details
+                  </p>
                 </AccordionSummary>
 
-                <div className="location_citystate">
-                  <AccordionDetails className="accordionbody">
+                <div className="flex items-center justify-between gap-4">
+                  <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
                     <input
                       type="text"
                       placeholder="City"
@@ -246,12 +278,15 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                       onChange={(e) => {
                         handleChange(e);
                       }}
+                      className={formInputClasses}
                     />
                     {errors.city && (
-                      <span className="error_message">{errors.city}</span>
+                      <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                        {errors.city}
+                      </span>
                     )}
                   </AccordionDetails>
-                  <AccordionDetails className="accordionbody">
+                  <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
                     <input
                       type="text"
                       placeholder="State"
@@ -260,14 +295,17 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                       onChange={(e) => {
                         handleChange(e);
                       }}
+                      className={formInputClasses}
                     />
                     {errors.state && (
-                      <span className="error_message">{errors.state}</span>
+                      <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                        {errors.state}
+                      </span>
                     )}
                   </AccordionDetails>
                 </div>
 
-                <AccordionDetails className="accordionbody">
+                <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
                   <input
                     type="text"
                     placeholder="Address"
@@ -276,14 +314,20 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     onChange={(e) => {
                       handleChange(e);
                     }}
+                    className={formInputClasses}
                   />
                   {errors.address && (
-                    <span className="error_message">{errors.address}</span>
+                    <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                      {errors.address}
+                    </span>
                   )}
                 </AccordionDetails>
 
-                <FormControl fullWidth className="country_accordion">
-                  <InputLabel id="demo-simple-select-label label">
+                <FormControl fullWidth className="mt-8 mb-4">
+                  <InputLabel
+                    id="demo-simple-select-label label"
+                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
+                  >
                     Country Name
                   </InputLabel>
                   <Select
@@ -292,7 +336,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     value={event.country}
                     name="country"
                     label="Event Mode"
-                    className="select"
+                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
                     onChange={(e) => {
                       setevent({ ...event, country: e.target.value });
                     }}
@@ -307,7 +351,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                   </Select>
                 </FormControl>
 
-                <AccordionDetails className="accordionbody">
+                <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
                   <input
                     type="text"
                     placeholder="Map Iframe"
@@ -316,25 +360,36 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     onChange={(e) => {
                       handleChange(e);
                     }}
+                    className={formInputClasses}
                   />
                   {errors.mapIframe && (
-                    <span className="error_message">{errors.mapIframe}</span>
+                    <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                      {errors.mapIframe}
+                    </span>
                   )}
                 </AccordionDetails>
               </Accordion>
             ) : (
-              <Accordion defaultExpanded className="location">
+              <Accordion
+                defaultExpanded
+                className="my-8 items-center justify-between rounded-[0.375rem] border border-[#ced4da] bg-transparent px-[10px] py-0 shadow-none"
+              >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls="panel1-content"
                   id="panel1-header"
-                  className="location_header"
+                  className="p-0"
                 >
-                  <p>Meeting Details</p>
+                  <p className="mb-0 font-poppins text-base">
+                    Meeting Details
+                  </p>
                 </AccordionSummary>
 
-                <FormControl fullWidth className="country_accordion">
-                  <InputLabel id="demo-simple-select-label label">
+                <FormControl fullWidth className="mt-8 mb-4">
+                  <InputLabel
+                    id="demo-simple-select-label label"
+                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
+                  >
                     Online Platform
                   </InputLabel>
                   <Select
@@ -343,7 +398,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     value={event.platform}
                     name="platform"
                     label="Event Mode"
-                    className="select"
+                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
                     onChange={(e) => {
                       setevent({ ...event, platform: e.target.value });
                     }}
@@ -367,7 +422,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                   </Select>
                 </FormControl>
 
-                <AccordionDetails className="accordionbody">
+                <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
                   <input
                     type="text"
                     placeholder="Platform Link"
@@ -376,9 +431,12 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     onChange={(e) => {
                       handleChange(e);
                     }}
+                    className={formInputClasses}
                   />
                   {errors.platformLink && (
-                    <span className="error_message">{errors.platformLink}</span>
+                    <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                      {errors.platformLink}
+                    </span>
                   )}
                 </AccordionDetails>
               </Accordion>

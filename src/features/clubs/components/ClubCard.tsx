@@ -1,21 +1,25 @@
 import { Link } from "react-router-dom";
 import clubBanner from "@assets/pictures/Banner/clubbanner.jpg";
 import type { ClubCardProps } from "../types";
-import "./ClubCard.scss";
 
 const ClubCard = ({ club }: ClubCardProps) => {
   return (
-    <div className="clubcard_parent">
+    <div className="relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-[#f0efef] bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-[#ff5a318a] hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
       {/* Top Section */}
-      <div className="clubcard_top">
+      <div className="flex flex-col gap-[10px] max-[500px]:flex-row max-[500px]:gap-[15px]">
         <img
           src={clubBanner}
           alt={`${club?.name || "Club"} banner`}
-          className="clubcard_banner"
+          className="h-[150px] max-w-full self-stretch rounded-[10px] object-cover max-[500px]:h-[110px] max-[500px]:w-[110px]"
         />
-        <div className="clubcard_text">
-          <h1>{club?.name || "The Monk community"}</h1>
-          <p title={club?.description}>
+        <div className="flex flex-col gap-[10px]">
+          <h1 className="font-outfit text-xl leading-none font-semibold">
+            {club?.name || "The Monk community"}
+          </h1>
+          <p
+            title={club?.description}
+            className="line-clamp-2 font-outfit text-sm max-[500px]:line-clamp-3"
+          >
             {club?.description ||
               "Organizing @Hack4Bengal, Engineering @Edilitics • Worked w/ 5+ startups • Building OSS product with 200+ users • Open to Frontend Roles"}
           </p>
@@ -23,21 +27,20 @@ const ClubCard = ({ club }: ClubCardProps) => {
       </div>
 
       {/* Call to Action Section */}
-      <div className="clubcard_ctadiv">
-        <div className="profile_numbers">
-          <p className="counts followersCount">
-            <span>1.25k</span> Followers
+      <div className="flex w-full items-center justify-between">
+        <div className="flex items-center gap-4 font-outfit">
+          <p className="m-0 text-sm leading-none">
+            <span className="font-semibold">1.25k</span> Followers
           </p>
 
-          <p className="counts EventsCount">
-            <span>231</span> Events
+          <p className="m-0 text-sm leading-none">
+            <span className="font-semibold">231</span> Events
           </p>
         </div>
 
         <Link
           to={`/club/${club?.userName}`}
           aria-label={`Visit ${club?.name || "club"} page`}
-          className="clubcard_cta_link"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -45,7 +48,7 @@ const ClubCard = ({ club }: ClubCardProps) => {
             height="21"
             viewBox="0 0 29 29"
             fill="none"
-            className="clubcard_cta_arrow"
+            className="flex h-[33px] w-[33px] -rotate-90 items-center justify-center gap-2 rounded-full bg-brand p-[7px] text-[15px] font-normal tracking-[0.4px] object-contain"
             role="img"
           >
             <path

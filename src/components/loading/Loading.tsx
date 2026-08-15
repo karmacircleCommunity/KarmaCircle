@@ -1,14 +1,11 @@
-import "./Loading.scss";
-
 const Loading = () => {
   return (
-    <div id="spinner-wrapper" className="text-center">
+    <div className="w-screen text-center">
       <div
-        id="spinner"
-        className="spinner-border text-primary m-5"
+        className="m-5 inline-block h-16 w-16 animate-spin rounded-full border-4 border-brand! border-r-transparent align-middle"
         role="status"
       ></div>
-      <span className="visually-hidden">Loading...</span>
+      <span className="sr-only">Loading...</span>
     </div>
   );
 };

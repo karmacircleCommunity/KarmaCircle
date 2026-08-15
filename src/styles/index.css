@@ -1,7 +1,15 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import "tailwindcss";
+
+@theme {
+  --font-mont: "Montserrat", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+  --color-brand-secondary: #6b2615;
+  --color-brand: #ff5b31;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -75,6 +83,14 @@ code {
   }
 }
 
+/* Navbar.tsx toggles this class imperatively via classList (not React state) */
+.nav_dropdown_visible {
+  display: flex;
+  top: 60px;
+  z-index: 100;
+  transition: all 1s ease-in-out;
+}
+
 /* HTML: <div class="loader"></div> */
 .loader {
   width: 30px;
@@ -94,6 +110,135 @@ code {
   100% {
     transform: rotate(1turn);
   }
+}
+
+/* Bootstrap's .container, replicated for the handful of non-SCSS files
+   (Donate.tsx, Landing.tsx, Milaninfobanner.tsx) that still rely on it
+   now that Bootstrap itself has been removed */
+.container {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+  }
+}
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1320px;
+  }
+}
+
+/* react-select's own generated class name; can't be reached by Tailwind's scanner */
+.css-13cymwt-control {
+  font-family: var(--font-outfit) !important;
+}
+
+/* MUI's own generated/internal class names; can't be reached by Tailwind's scanner */
+.MuiMenuItem-root {
+  font-family: var(--font-poppins) !important;
+  font-size: 15px !important;
+}
+.css-o4b71y-MuiAccordionSummary-content {
+  margin: 0 !important;
+}
+.CreateEvents_date_range .MuiFormControl-root {
+  width: 100%;
+}
+.CreateEvents_date_range .MuiInputBase-input {
+  border: none;
+  font-family: var(--font-poppins);
+  font-size: 15px !important;
+}
+.CreateEvents_date_range .MuiInputBase-input:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #000000 !important;
+}
+@media screen and (max-width: 500px) {
+  .CreateEvents_date_range .MuiInputBase-input {
+    font-size: 14px !important;
+  }
+}
+
+/* Individual/Organization toggle on the signup page: an input:checked-driven
+   pseudo-element switch (content: attr(...)), not expressible as Tailwind utilities */
+.custom-checkbox {
+  width: 250px;
+  height: 40px;
+  font-size: 15px;
+  border-radius: 20px;
+}
+.custom-checkbox input#status {
+  display: none;
+}
+.custom-checkbox input#status + label {
+  height: 100%;
+  width: 100%;
+}
+.custom-checkbox input#status + label > .status-switch {
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: rgb(255, 255, 255);
+  border: 1px solid #000000;
+  color: #000000;
+  transition: all 0.5s ease;
+  padding: 3px;
+  font-family: var(--font-outfit);
+  border-radius: 8px;
+}
+.custom-checkbox input#status + label > .status-switch:before,
+.custom-checkbox input#status + label > .status-switch:after {
+  border-radius: 2px;
+  height: calc(100% - 6px);
+  width: calc(50% - 3px);
+  display: flex;
+  align-items: center;
+  position: absolute;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.custom-checkbox input#status + label > .status-switch:before {
+  background-color: #000000eb;
+  color: #ffffff;
+  border-radius: 5px;
+  left: 3px;
+  z-index: 10;
+  content: attr(data-unchecked);
+}
+.custom-checkbox input#status + label > .status-switch:after {
+  right: 0;
+  content: attr(data-checked);
+}
+.custom-checkbox input#status:checked + label > .status-switch:after {
+  left: 0;
+  content: attr(data-unchecked);
+}
+.custom-checkbox input#status:checked + label > .status-switch:before {
+  color: #ffffff;
+  left: 50%;
+  content: attr(data-checked);
 }
 
 /* Chrome, Safari, Edge, Opera */

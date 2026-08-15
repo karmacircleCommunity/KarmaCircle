@@ -34,7 +34,7 @@ Not currently used anywhere — `ProfileCompletion`, `ProfileUpdate`, and `Creat
 ## `Loading`
 
 [src/components/loading/Loading.tsx](../../src/components/loading/Loading.tsx).
-A Bootstrap-spinner-styled loading indicator (class names `spinner-border`, `visually-hidden` — vestigial from an earlier Bootstrap-based version of this app; no Bootstrap CSS is actually imported anymore, so these classes rely entirely on `Loading.scss` to look right).
+A spinning-ring loading indicator, styled with Tailwind (`animate-spin` + a transparent-right-border trick to mimic Bootstrap's old spinner look, plus `sr-only` for the "Loading..." text). Bootstrap itself has been fully removed from the app (was previously loaded via a `<link>`/`<script>` CDN pair in `index.html`) — this component no longer depends on it.
 Used as the "no data yet" fallback in `Clubs.tsx` and `Events.jsx` (though, per [clubs.md](./clubs.md)/[events.md](./events.md), those arrays are currently always populated with hardcoded data, so the fallback branch is effectively unreachable today), and in `Donate.tsx` (unrouted — see [donate-shop-trending.md](./donate-shop-trending.md)).
 
 ## `BacktoTop`
