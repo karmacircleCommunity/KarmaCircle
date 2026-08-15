@@ -1,16 +1,4 @@
-/**
- * Shared user/account types — used by more than one feature (authentication,
- * clubs, and eventually onboarding-profile/dashboard), so they live under
- * `src/types` rather than inside a single feature folder.
- */
-
-/** The two account kinds the backend recognizes. Mirrors the string values
- * `src/statics/Constants.ts`'s `authTypeOptions` already used at runtime;
- * this enum gives that same value a real type instead of a bare string. */
-export enum UserType {
-  Individual = "individual",
-  Club = "club",
-}
+import type { UserType } from "./enums";
 
 /** Shape of each entry in `authTypeOptions` (react-select option objects). */
 export interface AuthTypeOption {

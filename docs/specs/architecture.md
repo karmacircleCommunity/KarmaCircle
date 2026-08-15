@@ -59,6 +59,7 @@ Vite/esbuild already strip types from `.ts`/`.tsx` at bundle time with no config
 `eslint.config.js` adds `typescript-eslint`'s recommended rules scoped to `**/*.{ts,tsx}` only, alongside the existing JS/React rules.
 The conversion happened feature-by-feature (not as one repo-wide pass) ending with the shared layer (`src/components/`, `src/services/`, `src/statics/`, `src/utils/`) — see [README.md](./README.md#typescript).
 The sibling-`.d.ts`-bridge convention this doc used to describe for shared JS dependencies (e.g. a `src/statics/Constants.d.ts` next to the still-JS `Constants.js`) no longer applies — every former bridge target got real types directly and the bridge files were deleted.
+Each feature's type surface lives in a colocated `types/` folder (`src/features/<name>/types/`, or `src/types/` for cross-feature types), split by declaration kind rather than combined into one file: `interfaces.ts` for `interface` declarations, `enums.ts` for `enum` declarations, `types.ts` for type aliases. See [CLAUDE.md](../../CLAUDE.md#coding-conventions-for-this-repo).
 
 ## Directory layout
 
