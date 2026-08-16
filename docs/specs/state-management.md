@@ -18,7 +18,7 @@ There is no single source of truth for "is the user logged in" — that fact is 
 **Where it's written:**
 - [useAuth.ts](../../src/features/authentication/hooks/useAuth.ts) — on successful sign-in/sign-up, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })`.
 - [Home.tsx](../../src/features/landing-home/pages/Home.tsx) — after a Google OAuth redirect completes, dispatches `updateUserData(...)` then `toggleUserLogin()` (two separate dispatches, not one).
-- [Profile.tsx](../../src/features/onboarding-profile/pages/Profile.tsx) and [Navbar.tsx](../../src/components/navbar/Navbar.tsx) — on logout, dispatch `resetUserData()`.
+- [Profile.tsx](../../src/features/onboarding-profile/pages/Profile.tsx) and [Navbar.tsx](../../src/components/Navbar.tsx) — on logout, dispatch `resetUserData()`.
 - [Dashboard.tsx](../../src/features/dashboard/pages/Dashboard.tsx) — on every SWR fetch of `userEndpoints.profile`, re-dispatches `updateUserData(data?.user)` in the `onSuccess` callback, keeping Redux in sync with the latest server copy.
 
 ## 2. Zustand (`useAuthStore`)

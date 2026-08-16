@@ -9,7 +9,7 @@ Read [docs/specs/known-issues.md](../../../docs/specs/known-issues.md) too; seve
 
 Everything involved in turning an anonymous visitor into a session with a `Token` cookie and a populated Redux `user` slice: the sign-in form, the sign-up form, Google OAuth kickoff, the client-side field validation that runs before either form's network call, and the route guard that keeps an already-authenticated visitor off `/auth/signin` and `/auth/signup`.
 Logout is **not** owned by this feature — there is no `useLogout` hook or logout button here.
-`Logout()` (the API call) lives in `src/services/MilanApi.ts` and is invoked from three other features (`components/navbar/Navbar.tsx`, `features/onboarding-profile/pages/Profile.tsx`, `features/onboarding-profile/pages/UserProfile.tsx`) with three slightly different cleanup sequences — see [state-management.md](../../../docs/specs/state-management.md).
+`Logout()` (the API call) lives in `src/services/MilanApi.ts` and is invoked from three other features (`components/Navbar.tsx`, `features/onboarding-profile/pages/Profile.tsx`, `features/onboarding-profile/pages/UserProfile.tsx`) with three slightly different cleanup sequences — see [state-management.md](../../../docs/specs/state-management.md).
 If you're asked to fix or centralize logout, you'll be working outside this folder.
 
 ## Why it's shaped this way

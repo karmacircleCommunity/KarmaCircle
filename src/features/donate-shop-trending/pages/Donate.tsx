@@ -14,9 +14,9 @@ import "react-toastify/dist/ReactToastify.css";
 // since fixing it is a near-full rewrite out of scope for a types-only
 // pass. See docs/specs/donate-shop-trending.md.
 import SingleClubEvent from "../../components/Cards/SingleClubEvent/SingleClubEvent";
-// @ts-expect-error — same as above: the real Loading component now
-// lives at src/components/loading/Loading.tsx (exported from the
-// shared @components barrel), not this path.
+// @ts-expect-error — same as above: wrong relative depth (this resolves to
+// src/features/components/Loading, not src/components/Loading.tsx, where
+// the real component now lives, exported from the shared @components barrel).
 import Loading from "../../components/Loading";
 import { GetAllClubs } from "@services/MilanApi";
 import "./Donate.css";

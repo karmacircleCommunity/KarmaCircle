@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import style from "./Modal.module.css";
 
 interface ModalProps {
   children?: ReactNode;
@@ -9,11 +8,13 @@ interface ModalProps {
 
 const Modal = ({ children, onClose, className }: ModalProps) => {
   return (
-    <div className={style.overlay}>
-      <div className={`${style.modal} ${className}`}>
+    <div className="fixed inset-0 z-20 flex h-full w-full items-center justify-center bg-black/80">
+      <div
+        className={`relative h-fit w-[30vw] min-w-[500px] rounded-2xl bg-white p-4 text-black max-[525px]:w-[89vw] max-[525px]:min-w-[220px] max-[525px]:text-center ${className}`}
+      >
         <button
           type="button"
-          className={`btn-close ${style.crossButton}`}
+          className="btn-close absolute top-[7px] right-[12px] m-0 border-0 p-0 text-sm shadow-none"
           aria-label="Close"
           onClick={onClose}
         ></button>

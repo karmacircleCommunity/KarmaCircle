@@ -2,14 +2,18 @@
 import { Link } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
-import styles from "./Button.module.css";
+
+const variantClasses: Record<string, string> = {
+  solid:
+    "bg-brand text-white transition-all duration-200 ease-in-out hover:bg-[#ff5a31d1] disabled:cursor-not-allowed disabled:bg-brand disabled:text-white disabled:pointer-events-none disabled:opacity-50",
+  outline:
+    "rounded-xl border border-heading bg-white transition-all duration-200 ease-in-out hover:border-[#ff5a31d1] focus:border-[#ff5a31d1] active:border-[#ff5a31d1] disabled:cursor-not-allowed disabled:border-black disabled:bg-heading disabled:text-black disabled:opacity-50",
+};
 
 export interface ButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
   children?: ReactNode;
   variant?: string;
-  size?: string;
-  fontweight?: string;
   to?: string;
   isLoading?: boolean;
   cypressfield?: string;
@@ -21,8 +25,6 @@ const Button = ({
   type = "button",
   variant = "solid",
   className = "",
-  size = "",
-  fontweight = "",
   to = "",
   disabled,
   isLoading = false,
@@ -30,9 +32,8 @@ const Button = ({
   onClickfunction,
   ...props
 }: ButtonProps) => {
-  const classes = `btn ${styles.btn} ${className}  ${styles[variant]} ${
-    size ? styles[size] : ""
-  } ${fontweight ? styles[fontweight] : ""}`;
+  const classes =
+    `btn cursor-pointer ${variantClasses[variant] ?? ""} ${className}`.trim();
 
   if (to && navigator.onLine === true) {
     return (

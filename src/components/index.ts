@@ -1,8 +1,8 @@
-export { default as BacktoTop } from "./buttons/backtotopbutton/BacktoTop";
-export { default as Button } from "./buttons/globalbutton/Button";
-export { default as ComingSoon } from "./comingSoon/ComingSoon";
+export { default as BacktoTop } from "./buttons/BacktoTop";
+export { default as Button } from "./buttons/Button";
+export { default as ComingSoon } from "./ComingSoon";
 export { default as Footer } from "./footer/Footer";
 export { default as Header } from "./header/Header";
-export { default as Loading } from "./loading/Loading";
-export { default as Modal } from "./modal/Modal";
-export { default as Navbar } from "./navbar/Navbar";
+export { default as Loading } from "./Loading";
+export { default as Modal } from "./Modal";
+export { default as Navbar } from "./Navbar";

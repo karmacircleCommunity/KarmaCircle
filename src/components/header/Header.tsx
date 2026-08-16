@@ -1,19 +1,25 @@
-import "./Header.css";
 import data from "./HeaderData";
 
 interface HeaderProps {
   type?: string;
 }
 
+const headerTextDivClasses =
+  "mt-12 flex flex-col items-center justify-center gap-4 max-[500px]:mt-8 max-[500px]:gap-8";
+const header1Classes =
+  "z-3 mt-8 text-center text-[3.5rem] leading-none font-black text-brand-secondary uppercase font-mont max-[500px]:text-left max-[500px]:text-[45px] max-[500px]:leading-[43px]";
+const header2Classes =
+  "z-3 mx-auto mt-4 w-[70%] text-center text-[18px] font-normal tracking-[1.2px] text-brand-secondary font-poppins max-[500px]:mt-0 max-[500px]:w-[95%] max-[500px]:text-left max-[500px]:tracking-[1px] max-[500px]:break-all max-[500px]:text-black";
+
 const Header = ({ type }: HeaderProps) => {
   const headerData = data.find((item) => item.key === type);
 
   if (!headerData) {
     return (
-      <header className="pageheader_parent">
-        <div className="pageheader_textdiv">
-          <h1 className="pageheader_header1">Default Header</h1>
-          <p className="pageheader_header2">Default Description</p>
+      <header className="flex flex-col items-center justify-center text-center">
+        <div className={headerTextDivClasses}>
+          <h1 className={header1Classes}>Default Header</h1>
+          <p className={header2Classes}>Default Description</p>
         </div>
       </header>
     );
@@ -23,13 +29,13 @@ const Header = ({ type }: HeaderProps) => {
     headerData.value;
 
   return (
-    <header className="pageheader_parent">
-      <div className="pageheader_textdiv">
-        <h1 className="pageheader_header1">{topheader_large}</h1>
+    <header className="flex flex-col items-center justify-center text-center">
+      <div className={headerTextDivClasses}>
+        <h1 className={header1Classes}>{topheader_large}</h1>
         {window.innerWidth < 800 ? (
-          <p className="pageheader_header2">{bottomheader_small}</p>
+          <p className={header2Classes}>{bottomheader_small}</p>
         ) : (
-          <p className="pageheader_header2">{bottomheader_large}</p>
+          <p className={header2Classes}>{bottomheader_large}</p>
         )}
       </div>
     </header>

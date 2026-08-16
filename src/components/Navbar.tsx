@@ -11,7 +11,7 @@ import { resetUserData, selectUser } from "@app/store/slices/userSlice";
 import type { RootState } from "@app/store/store";
 import { Logout } from "@services/MilanApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
-import Button from "@components/buttons/globalbutton/Button";
+import Button from "@components/buttons/Button";
 
 const Links = [
   {

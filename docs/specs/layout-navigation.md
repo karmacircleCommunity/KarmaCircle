@@ -5,7 +5,7 @@ None of these are rendered by a shared layout route — every page imports `<Nav
 
 ## `Navbar`
 
-[src/components/navbar/Navbar.tsx](../../src/components/navbar/Navbar.tsx).
+[src/components/Navbar.tsx](../../src/components/Navbar.tsx).
 Nav links are a local hardcoded array: Home `/`, Clubs `/clubs`, Trending `/trending`, Events `/events`, Shops `/shop`.
 Responsive behavior is driven by a `window.resize` listener + local `windowWidth` state (breakpoint `900px`), not CSS — above 900px shows the horizontal link row plus either a "Sign Up" CTA or (if `Cookies.get("Token") && isLoggedIn`) a "Profile ▾" dropdown trigger; below 900px shows a hamburger icon (or the user's avatar image if logged in) that opens a full mobile link panel.
 The account dropdown (`.nav_dropdown`) is toggled by directly mutating the DOM (`document.querySelector(".nav_dropdown").classList.toggle(...)`) rather than React state — this only exists once per page since `Navbar` itself is rendered once, so it's safe today but is worth noting if `Navbar` is ever rendered more than once on a page.
@@ -27,19 +27,19 @@ Swaps between a long and short description at the `800px` breakpoint (read once 
 
 ## `Modal`
 
-[src/components/modal/Modal.tsx](../../src/components/modal/Modal.tsx).
-A generic overlay shell (CSS Modules) taking `children`, `onClose`, and `className`, with a built-in close button.
+[src/components/Modal.tsx](../../src/components/Modal.tsx).
+A generic overlay shell (Tailwind utility classes) taking `children`, `onClose`, and `className`, with a built-in close button.
 Not currently used anywhere — `ProfileCompletion`, `ProfileUpdate`, and `CreateEvent`/`CreateEvents` all build their own bespoke `*_overlay`/`*_modal` markup instead of wrapping this component. If asked to standardize modal styling/behavior across the app, this is the shell to converge on.
 
 ## `Loading`
 
-[src/components/loading/Loading.tsx](../../src/components/loading/Loading.tsx).
+[src/components/Loading.tsx](../../src/components/Loading.tsx).
 A spinning-ring loading indicator, styled with Tailwind (`animate-spin` + a transparent-right-border trick to mimic Bootstrap's old spinner look, plus `sr-only` for the "Loading..." text). Bootstrap itself has been fully removed from the app (was previously loaded via a `<link>`/`<script>` CDN pair in `index.html`) — this component no longer depends on it.
 Used as the "no data yet" fallback in `Clubs.tsx` and `Events.jsx` (though, per [clubs.md](./clubs.md)/[events.md](./events.md), those arrays are currently always populated with hardcoded data, so the fallback branch is effectively unreachable today), and in `Donate.tsx` (unrouted — see [donate-shop-trending.md](./donate-shop-trending.md)).
 
 ## `BacktoTop`
 
-[src/components/buttons/backtotopbutton/BacktoTop.tsx](../../src/components/buttons/backtotopbutton/BacktoTop.tsx).
+[src/components/buttons/BacktoTop.tsx](../../src/components/buttons/BacktoTop.tsx).
 Rendered once, globally, in `App.tsx` (outside `<Routes>`), so it appears on every page.
 Shows a scroll-to-top arrow once `document.documentElement.scrollTop` exceeds 250px, debounced (300ms) via a small hand-rolled `debounce` helper defined inline in the component.
 
@@ -50,7 +50,7 @@ A generic wrapper that calls `onClickAway()` on any `mousedown` outside a `.clic
 
 ## `ComponentHelmet` (per-page SEO)
 
-[src/components/seo/ComponentHelmet.tsx](../../src/components/seo/ComponentHelmet.tsx).
+[src/components/ComponentHelmet.tsx](../../src/components/ComponentHelmet.tsx).
 A `type`-keyed `<Helmet>` wrapper supporting `"Clubs"` and `"Events"` (exact string match, case-sensitive); returns `null` for anything else.
 Used by `Clubs.tsx` (`type="Clubs"`, correct) and `Events.jsx` (`type="Clubs"` — likely should be `"Events"`; see [events.md](./events.md)).
 Most other pages (`Home`, `SignIn`, `SignUp`, `Donate`) instead inline their own `<Helmet>` block directly rather than extending this component — if you add a new page needing SEO tags, either extend `ComponentHelmet` with a new `type` branch (consistent with `Clubs`/`Events`) or follow the inline-`<Helmet>` pattern (consistent with `Home`/auth pages); both exist today, no single convention has won yet.

@@ -3,7 +3,7 @@ import { PiCaretLeftBold } from "react-icons/pi";
 import { useNavigate } from "react-router-dom";
 import { Button, Footer, Loading, Navbar } from "@components";
 import ClubCard from "@features/clubs/components/ClubCard";
-import ComponentHelmet from "@components/seo/ComponentHelmet";
+import ComponentHelmet from "@components/ComponentHelmet";
 import { UserType } from "@/types/user";
 import type { Club } from "../types";
 

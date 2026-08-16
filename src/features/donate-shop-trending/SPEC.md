@@ -26,12 +26,13 @@ A donation flow (broken, unroutable), the Razorpay checkout integration that don
 **No entry in `routesConfig.tsx`** — confirmed, `/donate` does not exist as a route.
 This alone means the file's other problems are currently harmless — nothing imports this module at build time via the route table, so bundlers that only walk reachable import graphs from entry points won't necessarily choke on it (verify this holds for this repo's specific Vite/Rollup config before relying on it for anything more than "it hasn't broken CI yet").
 
-**Two imports point at paths that no longer exist:**
+**Two imports point at paths that don't resolve:**
 ```js
 import SingleClubEvent from "../../components/Cards/SingleClubEvent/SingleClubEvent";
 import Loading from "../../components/Loading";
 ```
-Neither `components/Cards/SingleClubEvent/` nor a bare `components/Loading` (the real component now lives at `src/components/loading/Loading.tsx`, exported from the shared barrel `@components`) exists in the current tree.
+`components/Cards/SingleClubEvent/` doesn't exist in the current tree.
+`../../components/Loading` is off by one directory level — from `pages/Donate.tsx` it resolves to `src/features/components/Loading`, not `src/components/Loading.tsx`, where the real component now lives (also exported from the shared barrel `@components`).
 **The moment this file is imported by anything reachable — adding a route, or importing it from another component for any reason — the build fails immediately** with a module-not-found error.
 
 **Additional issues beyond the two broken imports (not previously documented at this level of detail):**
@@ -72,7 +73,7 @@ Razorpay's checkout widget requires a valid `order_id` to open a real payment se
 
 ## `pages/Shop.tsx` and `pages/Trending.tsx` — intentional, working placeholders
 
-Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/comingSoon/ComingSoon.tsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
+Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/ComingSoon.tsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
 `Shop.tsx` passes `` `shop's page.` `` (note the trailing period, which `ComingSoon`'s own copy presumably incorporates into a sentence), `Trending.tsx` passes `"Trending section"` (no trailing period — a minor inconsistency between the two call sites' string formatting, cosmetic only).
 Both are correctly routed (`/shop`, `/trending`) in `routesConfig.tsx`.
 **Unlike `Donate.tsx`, there is nothing broken here** — these two files are exactly as finished as they're meant to be today.
@@ -122,4 +123,4 @@ This folder is TypeScript (`.ts`/`.tsx`) as of the dashboard/donate-shop-trendin
 
 - **"Fix the donate page"** → full rework, not a patch; see the itemized list under `pages/Donate.tsx` above. Confirm scope first — this touches routing, a missing component (`SingleClubEvent`), login-state consistency, and the payment integration's own bug.
 - **"Fix the Razorpay integration" specifically** → start with `data.currency`/`data.id` → `data.data.currency`/`data.data.id` in `PaymentGateway.ts`; this is the highest-value, most self-contained fix in this feature and is currently untested because nothing calls this function.
-- **"Build the shop/trending page"** → genuinely new work, no existing scaffolding beyond the current `ComingSoon` placeholder; `ComingSoon`'s implementation lives in `src/components/comingSoon/ComingSoon.tsx`, outside this feature.
+- **"Build the shop/trending page"** → genuinely new work, no existing scaffolding beyond the current `ComingSoon` placeholder; `ComingSoon`'s implementation lives in `src/components/ComingSoon.tsx`, outside this feature.

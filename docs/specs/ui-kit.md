@@ -2,10 +2,10 @@
 
 ## `Button`
 
-[src/components/buttons/globalbutton/Button.tsx](../../src/components/buttons/globalbutton/Button.tsx), styled via [Button.module.css](../../src/components/buttons/globalbutton/Button.module.css) (CSS Modules).
+[src/components/buttons/Button.tsx](../../src/components/buttons/Button.tsx), styled with Tailwind utility classes (a `variantClasses` lookup keyed by `variant`).
 This is the one truly shared, widely-adopted primitive in the app — used across auth, profile, clubs, events, dashboard, and error pages.
 
-Props: `type` (default `"button"`), `variant` (default `"solid"`; also `"outline"` is used at call sites — check `Button.module.css` for the full set of variant classes before assuming others exist), `className`, `size`, `fontweight`, `to`, `disabled`, `isLoading`, `cypressfield` (sets `data-cy`, for Cypress test targeting), `onClickfunction` (the click handler prop — **not** `onClick`; passing a plain `onClick` would be spread onto the element via `...props` and technically still work as a native handler, but `onClickfunction` is the prop this codebase consistently uses at every call site, so use it for consistency).
+Props: `type` (default `"button"`), `variant` (default `"solid"`; also `"outline"` is used at call sites — check `Button.tsx`'s `variantClasses` for the full set of variant classes before assuming others exist), `className`, `to`, `disabled`, `isLoading`, `cypressfield` (sets `data-cy`, for Cypress test targeting), `onClickfunction` (the click handler prop — **not** `onClick`; passing a plain `onClick` would be spread onto the element via `...props` and technically still work as a native handler, but `onClickfunction` is the prop this codebase consistently uses at every call site, so use it for consistency).
 
 Behavior: if `to` is set **and** `navigator.onLine === true`, renders a `react-router-dom` `<Link>` instead of a `<button>` — an offline visitor passing `to` would silently get a plain, non-navigating `<button>` element instead (this is presumably intentional, to avoid dead navigation while offline, but it means `onClickfunction` also won't fire in that case since the button has no handler wired either way unless one was passed via `...props`).
 While `isLoading` is true, `children` are replaced with a `react-spinners` `ClipLoader`.
@@ -23,8 +23,7 @@ All card components are exported from `src/components/index.ts` (or imported dir
 
 ## Styling conventions
 
-**Tailwind CSS v4** (via `@tailwindcss/vite`) is the convention for all component styling — utility classes applied directly in `className`, no `.scss` files left anywhere under `src/`.
-`Button.module.css` and `Modal.module.css` are the one remaining exception (CSS Modules), kept as-is since they weren't part of the SCSS→Tailwind migration; match them if extending `Button`/`Modal` specifically, otherwise use Tailwind for anything new.
+**Tailwind CSS v4** (via `@tailwindcss/vite`) is the convention for all component styling — utility classes applied directly in `className`, no `.scss` or CSS Modules files left anywhere under `src/`. `Button` and `Modal` (formerly the last two CSS Modules holdouts) have been converted to Tailwind utility classes too.
 
 Bootstrap (the CDN `<link>`/`<script>` that used to be in `index.html`) has been removed entirely; a `.container` class replicating Bootstrap's centered/max-width behavior lives in `src/styles/index.css` for the handful of files (`Donate.tsx`, `Landing.tsx`, `Milaninfobanner.tsx`) that relied on it and haven't been touched since.
 

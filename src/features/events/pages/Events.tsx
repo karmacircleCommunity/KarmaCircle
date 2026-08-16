@@ -2,7 +2,7 @@ import { Button, Footer, Loading, Navbar } from "@components";
 import EventCard from "@features/events/components/EventCard";
 import EventSlider from "@features/events/components/EventSlider";
 import CreateEvent from "@features/events/components/CreateEvent";
-import ComponentHelmet from "@components/seo/ComponentHelmet";
+import ComponentHelmet from "@components/ComponentHelmet";
 import { useState } from "react";
 import { CiFilter } from "react-icons/ci";
 import { FaPlus } from "react-icons/fa6";

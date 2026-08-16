@@ -1,5 +1,5 @@
 import ComingSoonLogo from "@assets/pictures/comingsoon.svg";
-import Button from "@components/buttons/globalbutton/Button";
+import Button from "@components/buttons/Button";
 
 interface ComingSoonProps {
   launchitem?: string;
