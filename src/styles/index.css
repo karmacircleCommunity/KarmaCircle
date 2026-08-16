@@ -1,11 +1,52 @@
 @import "tailwindcss";
 
+/* Named variants for the two breakpoints repeated across the app as
+   arbitrary values (max-[430px]/max-[500px]/min-[430px]). Deliberately
+   @custom-variant, not a --breakpoint-* @theme token: this app already
+   renders a bare `container` class (Landing.tsx) that picks up Tailwind's
+   own auto-generated .container utility alongside this file's hand-written
+   Bootstrap-style .container below — registering these as real breakpoints
+   would add 430px/500px tiers to that utility too and shift the hero's
+   width in that range. @custom-variant produces the identical media query
+   without touching the breakpoint/container scale. */
+@custom-variant max-430px {
+  @media (width < 430px) {
+    @slot;
+  }
+}
+@custom-variant min-430px {
+  @media (width >= 430px) {
+    @slot;
+  }
+}
+@custom-variant max-500px {
+  @media (width < 500px) {
+    @slot;
+  }
+}
+
 @theme {
   --font-mont: "Montserrat", sans-serif;
   --font-poppins: "Poppins", sans-serif;
   --font-outfit: "Outfit", sans-serif;
   --color-brand-secondary: #6b2615;
   --color-brand: #ff5b31;
+
+  /* Font-size tokens for the three sizes repeated across the app as
+     arbitrary values (text-[15px]/[17px]/[10px]) — named here so they're
+     first-class Tailwind utilities instead of one-off brackets. */
+  --text-caption: 0.625rem; /* 10px */
+  --text-body: 0.9375rem; /* 15px */
+  --text-body-lg: 1.0625rem; /* 17px */
+
+  /* Border-radius tokens for the three radii repeated across the app as
+     arbitrary values (rounded-[5px]/[10px]/[15px]) — none land on Tailwind's
+     default radius scale (xs/sm/md/lg/xl = 2/4/6/8/12px), and md/lg/xl are
+     already relied on elsewhere with their real default meaning, so these
+     use literal-px names rather than overloading the sm/md/lg scale. */
+  --radius-5px: 0.3125rem; /* 5px */
+  --radius-10px: 0.625rem; /* 10px */
+  --radius-15px: 0.9375rem; /* 15px */
 
   /* Neutral/semantic tokens: repeated non-brand colors pulled out of arbitrary
      hex values so the palette has a single source of truth. Colors that

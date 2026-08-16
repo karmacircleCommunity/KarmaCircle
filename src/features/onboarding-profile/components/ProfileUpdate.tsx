@@ -12,8 +12,9 @@ import type {
   ProfileUpdateProps,
 } from "../types";
 
-const inputClasses =
-  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-black/[51%] focus:shadow-none focus:outline-none";
+const inputClasses = clsx(
+  "block w-full appearance-none rounded-md border border-input-border bg-white bg-clip-padding px-3 py-1.5 font-outfit text-body leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-body! focus:border-black/[51%] focus:shadow-none focus:outline-none",
+);
 
 interface ProfileUpdateCredentials {
   description: string;
@@ -174,12 +175,12 @@ const ProfileUpdate = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[101] flex h-full w-full items-center justify-center bg-black/80 backdrop-blur-[6px]">
-      <div className="relative flex max-h-[80vh] min-h-[400px] w-[40vw] min-w-[800px] flex-col justify-between overflow-y-auto rounded-[15px] bg-white text-black max-[525px]:w-[89vw] max-[525px]:min-w-[220px]">
-        <div className="sticky top-0 z-10 bg-white px-4 py-[10px]">
+    <div className="fixed inset-0 z-101 flex size-full items-center justify-center bg-black/80 backdrop-blur-[6px]">
+      <div className="relative flex max-h-[80vh] min-h-100 w-[40vw] min-w-200 flex-col justify-between overflow-y-auto rounded-15px bg-white text-black max-[525px]:w-[89vw] max-[525px]:min-w-55">
+        <div className="sticky top-0 z-10 bg-white px-4 py-2.5">
           <div className="flex items-center gap-4">
             <RxCross2
-              className="mr-[1.2rem] h-[23px] w-[23px] cursor-pointer"
+              className="mr-[1.2rem] size-5.75 cursor-pointer"
               onClick={() => {
                 setOpenModal(false);
                 handleResetFields();
@@ -191,7 +192,7 @@ const ProfileUpdate = ({
             </h1>
             <Button
               type="submit"
-              className="mt-0 ml-auto w-[15%] rounded-[10px] font-outfit"
+              className="mt-0 ml-auto w-[15%] rounded-10px font-outfit"
               onClickfunction={(e) => {
                 e.preventDefault();
                 validateForm();
@@ -214,24 +215,24 @@ const ProfileUpdate = ({
         <form className="flex w-full flex-col gap-[1.2rem] p-4 font-outfit">
           <div className="relative flex w-full flex-col font-outfit">
             <div className="flex w-full flex-col items-start justify-center">
-              <p className="mb-[3px] text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+              <p className="mb-0.75 text-body-lg font-normal text-brand-secondary max-500px:text-body">
                 Cover Image
               </p>
 
               <label
                 htmlFor="dropzone_file"
-                className="flex h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-300 hover:bg-surface-hover"
+                className="flex h-50 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-300 hover:bg-surface-hover"
               >
                 {uploadedImage ? (
                   <img
                     src={uploadedImage}
                     alt="Uploaded Preview"
-                    className="h-full w-full rounded-lg object-cover"
+                    className="size-full rounded-lg object-cover"
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="mb-4 h-8 w-8 text-gray-500"
+                      className="mb-4 size-8 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -266,18 +267,18 @@ const ProfileUpdate = ({
 
               <label
                 htmlFor="dropzone_pfp"
-                className="absolute top-[223px] left-16 flex h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-gray-50 object-cover transition-colors duration-300 hover:bg-surface-hover [&_svg]:mb-0!"
+                className="absolute top-55.75 left-16 flex size-25 -translate-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-gray-50 object-cover transition-colors duration-300 hover:bg-surface-hover [&_svg]:mb-0!"
               >
                 {uploadedProfilePicture ? (
                   <img
                     src={uploadedProfilePicture}
                     alt="Uploaded Preview"
-                    className="h-full w-full rounded-full object-cover"
+                    className="size-full rounded-full object-cover"
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="mb-4 h-8 w-8 text-gray-500"
+                      className="mb-4 size-8 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -306,7 +307,7 @@ const ProfileUpdate = ({
 
           <div className="relative mt-10 flex w-full flex-col font-outfit">
             <label>
-              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+              <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                 Organization Name{" "}
                 <span className="text-sm text-red-600">*</span>
               </div>
@@ -320,7 +321,7 @@ const ProfileUpdate = ({
           </div>
           <div className={clsx("relative flex w-full flex-col font-outfit")}>
             <label>
-              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+              <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                 Organization Description{" "}
                 <span className="text-sm text-red-600">*</span>
               </div>
@@ -333,11 +334,11 @@ const ProfileUpdate = ({
               value={credentials["description"]}
               name="description"
               onChange={handleChange("description")}
-              className={`${inputClasses} h-[100px] max-[500px]:text-[10px]!`}
+              className={`${inputClasses} h-25 max-500px:text-caption!`}
               placeholder={`Enter a meaningful description about your organization`}
             />
             {errors["description"] && (
-              <span className="mt-[5px] text-[15px] text-red-600">
+              <span className="mt-1.25 text-body text-red-600">
                 {errors["description"]}
               </span>
             )}
@@ -346,7 +347,7 @@ const ProfileUpdate = ({
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                   Address Line 1 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -360,7 +361,7 @@ const ProfileUpdate = ({
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                   Address Line 2 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -376,7 +377,7 @@ const ProfileUpdate = ({
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                   City <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -391,7 +392,7 @@ const ProfileUpdate = ({
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                   State/Province <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -408,7 +409,7 @@ const ProfileUpdate = ({
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                   Country of establishment{" "}
                   <span className="text-sm text-red-600">*</span>
                 </div>
@@ -424,7 +425,7 @@ const ProfileUpdate = ({
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                <div className="mb-0.75 flex items-center justify-between text-body-lg font-normal text-brand-secondary max-500px:text-body">
                   Pincode / Zipcode{" "}
                   <span className="text-sm text-red-600">*</span>
                 </div>

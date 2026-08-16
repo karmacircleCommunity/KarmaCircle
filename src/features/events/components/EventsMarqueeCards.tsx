@@ -22,21 +22,21 @@ const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
 
   return (
     <>
-      <div className="flex w-[380px] flex-row cursor-pointer! gap-4 rounded-2xl border border-border-subtle bg-white p-[14px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out max-[500px]:w-[90vw] hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
+      <div className="flex w-95 cursor-pointer! flex-row gap-4 rounded-2xl border border-border-subtle bg-white p-3.5 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out max-500px:w-[90vw]">
         <img
           src={event?.coverImage}
           alt=""
-          className="h-20 w-20 self-stretch rounded-lg object-cover"
+          className="size-20 self-stretch rounded-lg object-cover"
         />
 
         <div>
-          <h1 className="self-start font-poppins text-[17px] leading-normal font-semibold tracking-[0.4px] text-brand-secondary">
+          <h1 className="self-start font-poppins text-body-lg leading-normal font-semibold tracking-[0.4px] text-brand-secondary">
             {event?.name}
           </h1>
-          <div className="flex flex-col font-outfit text-[15px]">
+          <div className="flex flex-col font-outfit text-body">
             {event?.mode === "Offline" ? (
               <span className="flex items-center gap-2">
-                <CiLocationOn className="h-5 w-5" /> {event?.address}
+                <CiLocationOn className="size-5" /> {event?.address}
               </span>
             ) : (
               <span className="flex items-center gap-2">
@@ -51,18 +51,14 @@ const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
                           : "https://img.icons8.com/color/48/000000/other.png"
                   }
                   alt=""
-                  className="h-5 w-5"
-                  style={{
-                    position: "relative",
-                    top: "1px",
-                  }}
+                  className="relative top-0.25 size-5"
                 />
                 {event?.platform}
               </span>
             )}
 
             <span className="flex items-center gap-2">
-              <CiCalendar className="h-5 w-5" />{" "}
+              <CiCalendar className="size-5" />{" "}
               {window?.innerWidth > 500
                 ? formattedStartDate + " from " + formattedStartTime
                 : formattedStartDate.split(" ")[0] +

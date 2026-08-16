@@ -6,19 +6,19 @@ const ClubCard = ({ club }: ClubCardProps) => {
   return (
     <div className="relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
       {/* Top Section */}
-      <div className="flex flex-col gap-[10px] max-[500px]:flex-row max-[500px]:gap-[15px]">
+      <div className="flex flex-col gap-2.5 max-500px:flex-row max-500px:gap-3.75">
         <img
           src={clubBanner}
           alt={`${club?.name || "Club"} banner`}
-          className="h-[150px] max-w-full self-stretch rounded-[10px] object-cover max-[500px]:h-[110px] max-[500px]:w-[110px]"
+          className="h-37.5 max-w-full self-stretch rounded-10px object-cover max-500px:size-27.5"
         />
-        <div className="flex flex-col gap-[10px]">
+        <div className="flex flex-col gap-2.5">
           <h1 className="font-outfit text-xl leading-none font-semibold">
             {club?.name || "The Monk community"}
           </h1>
           <p
             title={club?.description}
-            className="line-clamp-2 font-outfit text-sm max-[500px]:line-clamp-3"
+            className="line-clamp-2 font-outfit text-sm max-500px:line-clamp-3"
           >
             {club?.description ||
               "Organizing @Hack4Bengal, Engineering @Edilitics • Worked w/ 5+ startups • Building OSS product with 200+ users • Open to Frontend Roles"}
@@ -48,7 +48,7 @@ const ClubCard = ({ club }: ClubCardProps) => {
             height="21"
             viewBox="0 0 29 29"
             fill="none"
-            className="flex h-[33px] w-[33px] -rotate-90 items-center justify-center gap-2 rounded-full bg-brand p-[7px] text-[15px] font-normal tracking-[0.4px] object-contain"
+            className="flex size-8.25 -rotate-90 items-center justify-center gap-2 rounded-full bg-brand object-contain p-1.75 text-body font-normal tracking-[0.4px]"
             role="img"
           >
             <path

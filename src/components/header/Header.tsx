@@ -1,15 +1,19 @@
+import clsx from "clsx";
 import data from "./HeaderData";
 
 interface HeaderProps {
   type?: string;
 }
 
-const headerTextDivClasses =
-  "mt-12 flex flex-col items-center justify-center gap-4 max-[500px]:mt-8 max-[500px]:gap-8";
-const header1Classes =
-  "z-3 mt-8 text-center text-[3.5rem] leading-none font-black text-brand-secondary uppercase font-mont max-[500px]:text-left max-[500px]:text-[45px] max-[500px]:leading-[43px]";
-const header2Classes =
-  "z-3 mx-auto mt-4 w-[70%] text-center text-[18px] font-normal tracking-[1.2px] text-brand-secondary font-poppins max-[500px]:mt-0 max-[500px]:w-[95%] max-[500px]:text-left max-[500px]:tracking-[1px] max-[500px]:break-all max-[500px]:text-black";
+const headerTextDivClasses = clsx(
+  "mt-12 flex flex-col items-center justify-center gap-4 max-500px:mt-8 max-500px:gap-8",
+);
+const header1Classes = clsx(
+  "z-3 mt-8 text-center font-mont text-[3.5rem] leading-none font-black text-brand-secondary uppercase max-500px:text-left max-500px:text-[45px] max-500px:leading-10.75",
+);
+const header2Classes = clsx(
+  "z-3 mx-auto mt-4 w-[70%] text-center font-poppins text-lg font-normal tracking-[1.2px] text-brand-secondary max-500px:mt-0 max-500px:w-[95%] max-500px:text-left max-500px:tracking-[1px] max-500px:break-all max-500px:text-black",
+);
 
 const Header = ({ type }: HeaderProps) => {
   const headerData = data.find((item) => item.key === type);

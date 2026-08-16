@@ -13,15 +13,15 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="flex max-w-[100vw] items-start justify-between bg-[#1b1b1b] p-28 max-lg:flex-col max-lg:items-center max-lg:gap-12 max-lg:p-12 max-lg:px-4 max-[500px]:gap-8">
-        <div className="flex items-start gap-20 max-lg:gap-12 max-[500px]:flex-col max-[500px]:gap-12">
+      <footer className="flex max-w-[100vw] items-start justify-between bg-[#1b1b1b] p-28 max-lg:flex-col max-lg:items-center max-lg:gap-12 max-lg:p-12 max-lg:px-4 max-500px:gap-8">
+        <div className="flex items-start gap-20 max-lg:gap-12 max-500px:flex-col max-500px:gap-12">
           <div className="-mt-2">
             <img src={brand} alt="" />
           </div>
 
           <div className="flex gap-20">
             <div className="flex flex-col">
-              <h1 className="mb-6 font-poppins text-[17px] text-white/85">
+              <h1 className="mb-6 font-poppins text-body-lg text-white/85">
                 QUICK STARTS
               </h1>
 
@@ -30,7 +30,7 @@ const Footer = () => {
                   <Link
                     key={index}
                     to={item?.path}
-                    className="mb-[5px] font-poppins text-[15px] text-white/55 no-underline hover:text-white/85"
+                    className="mb-1.25 font-poppins text-body text-white/55 no-underline hover:text-white/85"
                   >
                     {item?.name}
                   </Link>
@@ -38,7 +38,7 @@ const Footer = () => {
               })}
             </div>
             <div className="flex flex-col">
-              <h1 className="mb-6 font-poppins text-[17px] text-white/85">
+              <h1 className="mb-6 font-poppins text-body-lg text-white/85">
                 RESOURCES
               </h1>
               {footerLinks?.resources?.map((item, index) => {
@@ -48,7 +48,7 @@ const Footer = () => {
                     href={item?.path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mb-[5px] font-poppins text-[15px] text-white/55 no-underline hover:text-white/85"
+                    className="mb-1.25 font-poppins text-body text-white/55 no-underline hover:text-white/85"
                   >
                     {item?.name}
                   </a>
@@ -56,15 +56,15 @@ const Footer = () => {
                   <Link
                     key={index}
                     to={item?.path}
-                    className="mb-[5px] font-poppins text-[15px] text-white/55 no-underline hover:text-white/85"
+                    className="mb-1.25 font-poppins text-body text-white/55 no-underline hover:text-white/85"
                   >
                     {item?.name}
                   </Link>
                 );
               })}
             </div>
-            <div className="flex flex-col max-[500px]:hidden">
-              <h1 className="mb-6 font-poppins text-[17px] text-white/85">
+            <div className="flex flex-col max-500px:hidden">
+              <h1 className="mb-6 font-poppins text-body-lg text-white/85">
                 POLICIES
               </h1>
               {footerLinks?.policies?.map((item, index) => {
@@ -73,7 +73,7 @@ const Footer = () => {
                     key={index}
                     to={item?.path}
                     target="_blank"
-                    className="mb-[5px] font-poppins text-[15px] text-white/55 no-underline hover:text-white/85"
+                    className="mb-1.25 font-poppins text-body text-white/55 no-underline hover:text-white/85"
                   >
                     {item?.name}
                   </Link>
@@ -82,14 +82,14 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="hidden w-full max-[500px]:flex max-[500px]:flex-wrap max-[500px]:justify-center max-[500px]:gap-4">
+          <div className="hidden w-full max-500px:flex max-500px:flex-wrap max-500px:justify-center max-500px:gap-4">
             {footerLinks?.policies?.map((item, index) => {
               return (
                 <Link
                   key={index}
                   to={item?.path}
                   target="_blank"
-                  className="font-poppins text-[15px] text-white/55 no-underline hover:text-white/85"
+                  className="font-poppins text-body text-white/55 no-underline hover:text-white/85"
                 >
                   {item?.name}
                 </Link>
@@ -108,7 +108,7 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <IconComponent className="h-[1.4rem] w-[1.4rem] cursor-pointer text-white! hover:text-brand" />
+                <IconComponent className="size-[1.4rem] cursor-pointer text-white! hover:text-brand" />
               </a>
             );
           })}

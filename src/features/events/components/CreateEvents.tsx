@@ -20,9 +20,11 @@ import platforms from "@statics/OnlinePlatform";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { Button } from "@components";
 import type { EventFormState } from "../types";
+import clsx from "clsx";
 
-const formInputClasses =
-  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-base leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out max-[500px]:text-sm! focus:border-black focus:shadow-none focus:outline-none";
+const formInputClasses = clsx(
+  "block w-full appearance-none rounded-md border border-input-border bg-white bg-clip-padding px-3 py-1.5 font-outfit text-base leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out focus:border-black focus:shadow-none focus:outline-none max-500px:text-sm!",
+);
 
 interface CreateEventsProps {
   setshowCreateModal: (open: boolean) => void;
@@ -85,17 +87,17 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex h-full w-full items-center justify-center bg-black/80 backdrop-blur-[5px]">
-      <div className="relative flex max-h-[80vh] min-h-[400px] w-[35vw] min-w-[500px] flex-col overflow-auto rounded-lg bg-white p-4 text-black [&::-webkit-scrollbar]:hidden! max-[525px]:w-[89vw] max-[525px]:min-w-[220px]">
+    <div className="fixed inset-0 z-20 flex size-full items-center justify-center bg-black/80 backdrop-blur-[5px]">
+      <div className="relative flex max-h-[80vh] min-h-100 w-[35vw] min-w-125 flex-col overflow-auto rounded-lg bg-white p-4 text-black max-[525px]:w-[89vw] max-[525px]:min-w-55 [&::-webkit-scrollbar]:hidden!">
         <IoMdCloseCircleOutline
-          className="absolute top-[15px] right-3 m-0 cursor-pointer border-0 p-0 text-[27px] text-brand-secondary shadow-none"
+          className="absolute top-3.75 right-3 m-0 cursor-pointer border-0 p-0 text-[27px] text-brand-secondary shadow-none"
           onClick={() => {
             setshowCreateModal(false);
           }}
         />
 
         <div>
-          <h1 className="font-poppins text-[2rem] font-bold text-brand-secondary max-[500px]:text-2xl">
+          <h1 className="font-poppins text-[2rem] font-bold text-brand-secondary max-500px:text-2xl">
             Create
           </h1>
         </div>
@@ -104,7 +106,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
           <img
             src={event.coverImage}
             alt=""
-            className="h-[250px] w-full rounded-lg object-cover"
+            className="h-62.5 w-full rounded-lg object-cover"
           />
 
           <div className="flex justify-between gap-4">
@@ -112,7 +114,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               <img
                 src="https://www.thetechies.org/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fuser3.04b79840.webp&w=640&q=75"
                 alt=""
-                className="h-10 w-10 rounded-full"
+                className="size-10 rounded-full"
               />
 
               <div className="flex flex-col gap-0 font-outfit text-base leading-none text-[gray]">
@@ -124,7 +126,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             <div>
               <label
                 htmlFor="file-input"
-                className="flex w-fit cursor-pointer items-center gap-4 rounded-[5px] bg-ink/9 px-[15px] py-[10px] font-outfit text-base max-[430px]:gap-2 max-[430px]:px-[10px] max-[430px]:py-[5px] max-[430px]:text-sm"
+                className="flex w-fit cursor-pointer items-center gap-4 rounded-5px bg-ink/9 px-3.75 py-2.5 font-outfit text-base max-430px:gap-2 max-430px:px-2.5 max-430px:py-1.25 max-430px:text-sm"
               >
                 <IoCloudUploadOutline />
                 Upload {window.innerWidth > 430 && "Thumbnail"}
@@ -151,7 +153,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             />
 
             {errors.name && (
-              <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+              <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                 {errors.name}
               </span>
             )}
@@ -198,10 +200,10 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               />
             </div>
 
-            <FormControl fullWidth className="mt-8 mb-8">
+            <FormControl fullWidth className="my-8">
               <InputLabel
                 id="demo-simple-select-label label"
-                className="font-poppins text-[15px]! max-[500px]:text-sm!"
+                className="font-poppins text-body! max-500px:text-sm!"
               >
                 Event Mode
               </InputLabel>
@@ -211,7 +213,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 value={event.mode}
                 name="mode"
                 label="Event Mode"
-                className="font-poppins text-[15px]! max-[500px]:text-sm!"
+                className="font-poppins text-body! max-500px:text-sm!"
                 onChange={(e) => {
                   setevent({
                     ...event,
@@ -235,7 +237,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               className={formInputClasses}
             />
             {errors.uid && (
-              <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+              <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                 {errors.uid}
               </span>
             )}
@@ -247,10 +249,10 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
               onChange={(e) => {
                 handleChange(e);
               }}
-              className={`${formInputClasses} mt-8 min-h-[150px] placeholder:font-poppins placeholder:text-base! max-[500px]:placeholder:text-sm!`}
+              className={`${formInputClasses} mt-8 min-h-37.5 placeholder:font-poppins placeholder:text-base! max-500px:placeholder:text-sm!`}
             />
             {errors.description && (
-              <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+              <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                 {errors.description}
               </span>
             )}
@@ -258,7 +260,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             {event?.mode === "Offline" ? (
               <Accordion
                 defaultExpanded
-                className="my-8 items-center justify-between rounded-[0.375rem] border border-input-border bg-transparent px-[10px] py-0 shadow-none"
+                className="my-8 items-center justify-between rounded-md border border-input-border bg-transparent px-2.5 py-0 shadow-none"
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
@@ -272,7 +274,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 </AccordionSummary>
 
                 <div className="flex items-center justify-between gap-4">
-                  <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
+                  <AccordionDetails className="mb-2.5 flex w-full flex-col p-0">
                     <input
                       type="text"
                       placeholder="City"
@@ -284,12 +286,12 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                       className={formInputClasses}
                     />
                     {errors.city && (
-                      <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                      <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                         {errors.city}
                       </span>
                     )}
                   </AccordionDetails>
-                  <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
+                  <AccordionDetails className="mb-2.5 flex w-full flex-col p-0">
                     <input
                       type="text"
                       placeholder="State"
@@ -301,14 +303,14 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                       className={formInputClasses}
                     />
                     {errors.state && (
-                      <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                      <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                         {errors.state}
                       </span>
                     )}
                   </AccordionDetails>
                 </div>
 
-                <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
+                <AccordionDetails className="mb-2.5 flex w-full flex-col p-0">
                   <input
                     type="text"
                     placeholder="Address"
@@ -320,7 +322,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     className={formInputClasses}
                   />
                   {errors.address && (
-                    <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                    <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                       {errors.address}
                     </span>
                   )}
@@ -329,7 +331,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 <FormControl fullWidth className="mt-8 mb-4">
                   <InputLabel
                     id="demo-simple-select-label label"
-                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
+                    className="font-poppins text-[0.9rem] max-500px:text-sm!"
                   >
                     Country Name
                   </InputLabel>
@@ -339,7 +341,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     value={event.country}
                     name="country"
                     label="Event Mode"
-                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
+                    className="font-poppins text-[0.9rem] max-500px:text-sm!"
                     onChange={(e) => {
                       setevent({ ...event, country: e.target.value });
                     }}
@@ -354,7 +356,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                   </Select>
                 </FormControl>
 
-                <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
+                <AccordionDetails className="mb-2.5 flex w-full flex-col p-0">
                   <input
                     type="text"
                     placeholder="Map Iframe"
@@ -366,7 +368,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     className={formInputClasses}
                   />
                   {errors.mapIframe && (
-                    <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                    <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                       {errors.mapIframe}
                     </span>
                   )}
@@ -375,7 +377,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             ) : (
               <Accordion
                 defaultExpanded
-                className="my-8 items-center justify-between rounded-[0.375rem] border border-input-border bg-transparent px-[10px] py-0 shadow-none"
+                className="my-8 items-center justify-between rounded-md border border-input-border bg-transparent px-2.5 py-0 shadow-none"
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
@@ -389,7 +391,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 <FormControl fullWidth className="mt-8 mb-4">
                   <InputLabel
                     id="demo-simple-select-label label"
-                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
+                    className="font-poppins text-[0.9rem] max-500px:text-sm!"
                   >
                     Online Platform
                   </InputLabel>
@@ -399,7 +401,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     value={event.platform}
                     name="platform"
                     label="Event Mode"
-                    className="font-poppins text-[0.9rem] max-[500px]:text-sm!"
+                    className="font-poppins text-[0.9rem] max-500px:text-sm!"
                     onChange={(e) => {
                       setevent({ ...event, platform: e.target.value });
                     }}
@@ -410,11 +412,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                           <img
                             src={platform.icon}
                             alt=""
-                            style={{
-                              width: "20px",
-                              height: "20px",
-                              marginRight: "10px",
-                            }}
+                            className="mr-2.5 size-5"
                           />
                           {platform.label}
                         </MenuItem>
@@ -423,7 +421,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                   </Select>
                 </FormControl>
 
-                <AccordionDetails className="mb-[10px] flex w-full flex-col p-0">
+                <AccordionDetails className="mb-2.5 flex w-full flex-col p-0">
                   <input
                     type="text"
                     placeholder="Platform Link"
@@ -435,7 +433,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                     className={formInputClasses}
                   />
                   {errors.platformLink && (
-                    <span className="mt-[5px] mb-0 font-outfit text-[15px] text-red-600">
+                    <span className="mt-1.25 mb-0 font-outfit text-body text-red-600">
                       {errors.platformLink}
                     </span>
                   )}

@@ -28,26 +28,26 @@ const Clubs = () => {
       <Navbar />
 
       <div className="mx-12 flex items-center gap-[1.2rem] px-28 py-8 font-outfit">
-        <div className="flex h-[62px] w-full grow items-center gap-4 rounded-lg bg-white p-[10px] shadow-[0px_4px_10px_rgba(0,0,0,0.04)]">
+        <div className="flex h-15.5 w-full grow items-center gap-4 rounded-lg bg-white p-2.5 shadow-[0px_4px_10px_rgba(0,0,0,0.04)]">
           <input
             type="text"
             name=""
             id=""
             placeholder="Type to begin search, or use the filters"
-            className="grow rounded-[5px] border border-black/25 bg-surface-muted px-4 py-2 font-outfit text-[15px] outline-none"
+            className="grow rounded-5px border border-black/25 bg-surface-muted px-4 py-2 font-outfit text-body outline-none"
           />
-          <button className="flex w-[15%] items-center justify-center gap-[10px] rounded-[5px] border border-black/25 bg-surface-muted px-4 py-2 text-center font-outfit text-[15px] outline-none">
-            Filters <CiFilter className="min-h-[20px] min-w-[20px]" />
+          <button className="flex w-[15%] items-center justify-center gap-2.5 rounded-5px border border-black/25 bg-surface-muted px-4 py-2 text-center font-outfit text-body outline-none">
+            Filters <CiFilter className="min-h-5 min-w-5" />
           </button>
         </div>
 
         <Button
-          className="flex h-[55px] w-1/5 items-center justify-center rounded-lg border-2 border-brand/50 bg-[#fba18b55] text-center font-outfit text-[15px] font-semibold whitespace-nowrap text-brand/95 outline-none"
+          className="flex h-13.75 w-1/5 items-center justify-center rounded-lg border-2 border-brand/50 bg-[#fba18b55] text-center font-outfit text-body font-semibold whitespace-nowrap text-brand/95 outline-none"
           onClickfunction={() => {
             navigate("/dashboard");
           }}
         >
-          Your Dashboard <PiCaretLeftBold className="h-5 w-5 rotate-180" />
+          Your Dashboard <PiCaretLeftBold className="size-5 rotate-180" />
         </Button>
       </div>
 
