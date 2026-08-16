@@ -18,14 +18,14 @@ const EventCard = () => {
           <h1 className="m-0 font-outfit text-xl leading-none font-semibold">
             Food Marathon, 2025
           </h1>
-          <span className="font-outfit text-sm font-normal text-[#000000b4]">
+          <span className="font-outfit text-sm font-normal text-black/70">
             GodLike Club
           </span>
         </div>
 
         <div className="flex items-center gap-[10px]">
-          <RiTwitterXLine className="h-10 w-10 cursor-pointer rounded-[10px] bg-[#f5f7f7] p-[10px]" />
-          <FiLink className="h-10 w-10 cursor-pointer rounded-[10px] bg-[#f5f7f7] p-[10px]" />
+          <RiTwitterXLine className="h-10 w-10 cursor-pointer rounded-[10px] bg-surface-muted p-[10px]" />
+          <FiLink className="h-10 w-10 cursor-pointer rounded-[10px] bg-surface-muted p-[10px]" />
         </div>
       </div>
 
@@ -61,7 +61,7 @@ const EventCard = () => {
           </p>
         </div>
 
-        <button className="flex h-[50px] w-[50px] items-center justify-center rounded-lg border-none bg-[#ff5a31] p-[10px] font-outfit">
+        <button className="flex h-[50px] w-[50px] items-center justify-center rounded-lg border-none bg-brand p-[10px] font-outfit">
           <IoMdArrowUp className="h-[80%] w-[80%] rotate-45 text-white/95" />
         </button>
       </div>

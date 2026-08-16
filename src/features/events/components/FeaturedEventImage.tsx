@@ -1,7 +1,7 @@
 const FeaturedEventImage = () => {
   return (
     <div className="relative inline-flex h-full flex-col items-start justify-center gap-3 rounded-2xl border border-black/[0.133] bg-white transition-all duration-300 ease-in-out">
-      <div className="absolute top-[10px] left-[10px] rounded-[5px] bg-[#ff5a31] px-[10px] py-[5px] font-outfit text-[15px] font-semibold text-white uppercase">
+      <div className="absolute top-[10px] left-[10px] rounded-[5px] bg-brand px-[10px] py-[5px] font-outfit text-[15px] font-semibold text-white uppercase">
         Featured
       </div>
 

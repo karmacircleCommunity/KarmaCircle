@@ -22,7 +22,7 @@ const EventsMarqueeCards = ({ event }: EventsMarqueeCardsProps) => {
 
   return (
     <>
-      <div className="flex w-[380px] flex-row cursor-pointer! gap-4 rounded-2xl border border-[#f0efef] bg-white p-[14px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out max-[500px]:w-[90vw] hover:cursor-default hover:border-[#ff5a318a] hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
+      <div className="flex w-[380px] flex-row cursor-pointer! gap-4 rounded-2xl border border-border-subtle bg-white p-[14px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out max-[500px]:w-[90vw] hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
         <img
           src={event?.coverImage}
           alt=""

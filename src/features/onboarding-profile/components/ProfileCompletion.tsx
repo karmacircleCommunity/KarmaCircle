@@ -8,7 +8,7 @@ import { Button } from "@components";
 import type { ProfileCompletionProps } from "../types";
 
 const inputClasses =
-  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-[#00000083] focus:shadow-none focus:outline-none";
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-black/[51%] focus:shadow-none focus:outline-none";
 
 /**
  * Modal: first-time profile completion (also, confusingly, reused for
@@ -105,13 +105,13 @@ const ProfileCompletion = ({
         >
           <div className="relative flex w-full flex-col font-outfit">
             <div className="flex w-full flex-col items-start justify-center">
-              <p className="mb-[3px] text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+              <p className="mb-[3px] text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                 Cover Image
               </p>
 
               <label
                 htmlFor="dropzone_file"
-                className="flex h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] transition-colors duration-300 hover:bg-[#f5f7fd]"
+                className="flex h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-300 hover:bg-surface-hover"
               >
                 {uploadedImage ? (
                   <img
@@ -122,7 +122,7 @@ const ProfileCompletion = ({
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="mb-4 h-8 w-8 text-[#6b7280]"
+                      className="mb-4 h-8 w-8 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -137,11 +137,11 @@ const ProfileCompletion = ({
                       />
                     </svg>
 
-                    <p className="mb-2 text-sm text-[#6b7280]">
+                    <p className="mb-2 text-sm text-gray-500">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-xs text-[#6b7280]">
+                    <p className="text-xs text-gray-500">
                       PNG, JPG up to 10MB (800 X 200)
                     </p>
                   </div>
@@ -161,11 +161,12 @@ const ProfileCompletion = ({
             key={"description"}
           >
             <label>
-              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
-                Organization Description <span className="text-sm text-red-600">*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                Organization Description{" "}
+                <span className="text-sm text-red-600">*</span>
               </div>
 
-              <span className="text-[13px] text-[#6b2615bd]">
+              <span className="text-[13px] text-brand-secondary/[74%]">
                 {credentials["description"]?.length || 0}/500
               </span>
             </label>
@@ -183,9 +184,12 @@ const ProfileCompletion = ({
           </div>
 
           <div className="flex items-center gap-5">
-            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
+            <div
+              className="relative flex w-full flex-col font-outfit"
+              key={"description"}
+            >
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Address Line 1 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -197,9 +201,12 @@ const ProfileCompletion = ({
               />
             </div>
 
-            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
+            <div
+              className="relative flex w-full flex-col font-outfit"
+              key={"description"}
+            >
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Address Line 2 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -213,9 +220,12 @@ const ProfileCompletion = ({
           </div>
 
           <div className="flex items-center gap-5">
-            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
+            <div
+              className="relative flex w-full flex-col font-outfit"
+              key={"description"}
+            >
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   City <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -228,9 +238,12 @@ const ProfileCompletion = ({
               />
             </div>
 
-            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
+            <div
+              className="relative flex w-full flex-col font-outfit"
+              key={"description"}
+            >
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   State/Province <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -245,10 +258,14 @@ const ProfileCompletion = ({
           </div>
 
           <div className="flex items-center gap-5">
-            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
+            <div
+              className="relative flex w-full flex-col font-outfit"
+              key={"description"}
+            >
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
-                  Country of establishment <span className="text-sm text-red-600">*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                  Country of establishment{" "}
+                  <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input
@@ -260,10 +277,14 @@ const ProfileCompletion = ({
               />
             </div>
 
-            <div className="relative flex w-full flex-col font-outfit" key={"description"}>
+            <div
+              className="relative flex w-full flex-col font-outfit"
+              key={"description"}
+            >
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
-                  Pincode / Zipcode <span className="text-sm text-red-600">*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                  Pincode / Zipcode{" "}
+                  <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input

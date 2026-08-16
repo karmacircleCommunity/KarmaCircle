@@ -103,7 +103,7 @@ const SignUp = () => {
                   </label>
                   <input
                     type="text"
-                    className="font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#000000f8] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-[10px]! focus:border-brand focus:shadow-none focus:outline-none"
+                    className="font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-black/[97%] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-[10px]! focus:border-brand focus:shadow-none focus:outline-none"
                     placeholder={
                       credentials.userType?.value === UserType.Individual
                         ? "John Doe"
@@ -128,7 +128,7 @@ const SignUp = () => {
                   <input
                     type="email"
                     value={credentials.email}
-                    className="font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#000000f8] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-[10px]! focus:border-brand focus:shadow-none focus:outline-none"
+                    className="font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-black/[97%] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-[10px]! focus:border-brand focus:shadow-none focus:outline-none"
                     placeholder="john@gmail.com"
                     onChange={(e) => {
                       setCredentials((prev) => {
@@ -150,7 +150,7 @@ const SignUp = () => {
                   </label>
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#000000f8] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-[10px]! focus:border-brand focus:shadow-none focus:outline-none"
+                    className="font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-black/[97%] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-[10px]! focus:border-brand focus:shadow-none focus:outline-none"
                     placeholder="********"
                     value={credentials.password}
                     min={8}

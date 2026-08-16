@@ -9,7 +9,7 @@ import { Button } from "@components";
 import type { CreateEventCredentials } from "../types";
 
 const authInputClasses =
-  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-[#00000083] focus:shadow-none focus:outline-none";
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-[15px] leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[15px]! focus:border-black/[51%] focus:shadow-none focus:outline-none";
 
 interface CreateEventProps {
   setShowCreateModal: (open: boolean) => void;
@@ -60,9 +60,9 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           event.target.value;
       } else {
         // For address fields, update the address object inside the credentials
-        (
-          updatedCredentials.address as unknown as Record<string, string>
-        )[field] = event.target.value;
+        (updatedCredentials.address as unknown as Record<string, string>)[
+          field
+        ] = event.target.value;
       }
 
       setCredentials(updatedCredentials);
@@ -139,7 +139,10 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
     }
 
     // Pincode validation
-    if (credentials.address.pincode && isNaN(Number(credentials.address.pincode))) {
+    if (
+      credentials.address.pincode &&
+      isNaN(Number(credentials.address.pincode))
+    ) {
       newErrors["address.pincode"] = "Pincode must be a valid number.";
     }
 
@@ -204,13 +207,13 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
         <form className="flex w-full flex-col gap-[1.2rem] p-4 font-outfit">
           <div className="relative flex w-full flex-col font-outfit">
             <div className="flex w-full flex-col items-start justify-center">
-              <p className="mb-[3px] text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+              <p className="mb-[3px] text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                 Cover Image
               </p>
 
               <label
                 htmlFor="dropzone_file"
-                className="flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] transition-colors duration-300 hover:bg-[#f5f7fd] h-[200px] cursor-pointer"
+                className="flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors duration-300 hover:bg-surface-hover h-[200px] cursor-pointer"
               >
                 {uploadedImage ? (
                   <img
@@ -221,7 +224,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg
-                      className="mb-4 h-8 w-8 text-[#6b7280]"
+                      className="mb-4 h-8 w-8 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -236,11 +239,11 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
                       />
                     </svg>
 
-                    <p className="mb-2 text-sm text-[#6b7280]">
+                    <p className="mb-2 text-sm text-gray-500">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop
                     </p>
-                    <p className="text-xs text-[#6b7280]">
+                    <p className="text-xs text-gray-500">
                       PNG, JPG up to 10MB (800 X 200)
                     </p>
                   </div>
@@ -258,7 +261,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
 
           <div className="relative mt-10 flex w-full flex-col font-outfit">
             <label>
-              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                 Event Name <span className="text-sm text-red-600">*</span>
               </div>
             </label>
@@ -271,11 +274,12 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           </div>
           <div className={clsx("relative flex w-full flex-col font-outfit")}>
             <label>
-              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
-                Event Description <span className="text-sm text-red-600">*</span>
+              <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                Event Description{" "}
+                <span className="text-sm text-red-600">*</span>
               </div>
 
-              <span className="text-[13px] text-[#6b2615bd]">
+              <span className="text-[13px] text-brand-secondary/[74%]">
                 {credentials["description"]?.length || 0}/500
               </span>
             </label>
@@ -283,7 +287,10 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
               value={credentials["description"]}
               name="description"
               onChange={handleChange("description")}
-              className={clsx(authInputClasses, "h-[100px] max-[500px]:text-[10px]!")}
+              className={clsx(
+                authInputClasses,
+                "h-[100px] max-[500px]:text-[10px]!",
+              )}
               placeholder={`A brief description about your event`}
             />
             {errors["description"] && (
@@ -296,7 +303,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Contact Number <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -310,7 +317,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Contact Email <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -347,7 +354,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
                   readOnly
                   className="peer absolute opacity-0"
                 />
-                <div className="relative box-border flex items-center rounded-[10px] border-2 border-[#e1e2e7] p-[15px] transition-shadow duration-[400ms] after:absolute after:top-5 after:right-5 after:h-2 after:w-2 after:rounded-full after:border-[3px] after:border-white after:bg-[#ff5a3110] after:opacity-0 after:shadow-[0px_0px_0px_2px_#ff5b31] after:content-[''] hover:shadow-[0px_3px_5px_0px_#e8e8e8] peer-checked:border-brand peer-checked:bg-[#ff5a3110] peer-checked:transition-[background-color,border-color] peer-checked:duration-300 peer-checked:after:opacity-100 max-[991px]:after:top-[45%] max-[991px]:after:-translate-x-1/2 max-[540px]:flex-col max-[540px]:items-baseline max-[540px]:p-5 max-[540px]:after:top-5 max-[540px]:after:right-[10px]">
+                <div className="relative box-border flex items-center rounded-[10px] border-2 border-[#e1e2e7] p-[15px] transition-shadow duration-[400ms] after:absolute after:top-5 after:right-5 after:h-2 after:w-2 after:rounded-full after:border-[3px] after:border-white after:bg-brand/[6%] after:opacity-0 after:shadow-[0px_0px_0px_2px_var(--color-brand)] after:content-[''] hover:shadow-[0px_3px_5px_0px_#e8e8e8] peer-checked:border-brand peer-checked:bg-brand/[6%] peer-checked:transition-[background-color,border-color] peer-checked:duration-300 peer-checked:after:opacity-100 max-[991px]:after:top-[45%] max-[991px]:after:-translate-x-1/2 max-[540px]:flex-col max-[540px]:items-baseline max-[540px]:p-5 max-[540px]:after:top-5 max-[540px]:after:right-[10px]">
                   <img
                     loading="lazy"
                     src="https://ismailvtl-images-project.vercel.app/life-saver-img.svg"
@@ -380,7 +387,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
                   name="plan"
                   className="peer absolute opacity-0"
                 />
-                <div className="relative box-border flex items-center rounded-[10px] border-2 border-[#e1e2e7] p-[15px] transition-shadow duration-[400ms] after:absolute after:top-5 after:right-5 after:h-2 after:w-2 after:rounded-full after:border-[3px] after:border-white after:bg-[#ff5a3110] after:opacity-0 after:shadow-[0px_0px_0px_2px_#ff5b31] after:content-[''] hover:shadow-[0px_3px_5px_0px_#e8e8e8] peer-checked:border-brand peer-checked:bg-[#ff5a3110] peer-checked:transition-[background-color,border-color] peer-checked:duration-300 peer-checked:after:opacity-100 max-[991px]:after:top-[45%] max-[991px]:after:-translate-x-1/2 max-[540px]:flex-col max-[540px]:items-baseline max-[540px]:p-5 max-[540px]:after:top-5 max-[540px]:after:right-[10px]">
+                <div className="relative box-border flex items-center rounded-[10px] border-2 border-[#e1e2e7] p-[15px] transition-shadow duration-[400ms] after:absolute after:top-5 after:right-5 after:h-2 after:w-2 after:rounded-full after:border-[3px] after:border-white after:bg-brand/[6%] after:opacity-0 after:shadow-[0px_0px_0px_2px_var(--color-brand)] after:content-[''] hover:shadow-[0px_3px_5px_0px_#e8e8e8] peer-checked:border-brand peer-checked:bg-brand/[6%] peer-checked:transition-[background-color,border-color] peer-checked:duration-300 peer-checked:after:opacity-100 max-[991px]:after:top-[45%] max-[991px]:after:-translate-x-1/2 max-[540px]:flex-col max-[540px]:items-baseline max-[540px]:p-5 max-[540px]:after:top-5 max-[540px]:after:right-[10px]">
                   <img
                     loading="lazy"
                     src="https://ismailvtl-images-project.vercel.app/potted-plant-img.svg"
@@ -404,7 +411,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Address Line 1 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -418,7 +425,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Address Line 2 <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -434,7 +441,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   City <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -448,7 +455,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   State/Province <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
@@ -464,7 +471,7 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
           <div className="flex items-center gap-5">
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
                   Country of establishment{" "}
                   <span className="text-sm text-red-600">*</span>
                 </div>
@@ -479,8 +486,9 @@ const CreateEvent = ({ setShowCreateModal }: CreateEventProps) => {
 
             <div className="relative flex w-full flex-col font-outfit">
               <label>
-                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-[#6b2615] max-[500px]:text-[15px]">
-                  Pincode / Zipcode <span className="text-sm text-red-600">*</span>
+                <div className="mb-[3px] flex items-center justify-between text-[17px] font-normal text-brand-secondary max-[500px]:text-[15px]">
+                  Pincode / Zipcode{" "}
+                  <span className="text-sm text-red-600">*</span>
                 </div>
               </label>
               <input

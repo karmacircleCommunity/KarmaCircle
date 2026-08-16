@@ -4,7 +4,7 @@ import type { ClubCardProps } from "../types";
 
 const ClubCard = ({ club }: ClubCardProps) => {
   return (
-    <div className="relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-[#f0efef] bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-[#ff5a318a] hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
+    <div className="relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
       {/* Top Section */}
       <div className="flex flex-col gap-[10px] max-[500px]:flex-row max-[500px]:gap-[15px]">
         <img

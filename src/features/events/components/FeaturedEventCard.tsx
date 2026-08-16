@@ -13,14 +13,14 @@ const FeaturedEventCard = () => {
           <h1 className="m-0 font-outfit text-xl leading-none font-semibold">
             Food Marathon, 2025
           </h1>
-          <span className="font-outfit text-sm font-normal text-[#000000b4]">
+          <span className="font-outfit text-sm font-normal text-black/70">
             GodLike Club
           </span>
         </div>
 
         <div className="flex items-center gap-[10px]">
-          <RiTwitterXLine className="h-10 w-10 cursor-pointer rounded-[10px] bg-[#f5f7f7] p-[10px]" />
-          <FiLink className="h-10 w-10 cursor-pointer rounded-[10px] bg-[#f5f7f7] p-[10px]" />
+          <RiTwitterXLine className="h-10 w-10 cursor-pointer rounded-[10px] bg-surface-muted p-[10px]" />
+          <FiLink className="h-10 w-10 cursor-pointer rounded-[10px] bg-surface-muted p-[10px]" />
         </div>
       </div>
 
@@ -56,7 +56,7 @@ const FeaturedEventCard = () => {
           </p>
         </div>
 
-        <button className="rounded-lg border-none bg-[#ff5a31] px-5 py-[10px] font-outfit text-[15px] text-white">
+        <button className="rounded-lg border-none bg-brand px-5 py-[10px] font-outfit text-[15px] text-white">
           Register Now
         </button>
       </div>

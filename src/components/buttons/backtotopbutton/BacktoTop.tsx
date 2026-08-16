@@ -44,7 +44,7 @@ const BackToTop = () => {
     <div className="flex items-center justify-center">
       {isVisible && (
         <div
-          className="fixed right-[30px] bottom-[30px] z-999 flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] bg-[#ff5b31] text-black transition-all duration-500 ease-in-out max-[500px]:right-6 max-[500px]:bottom-6 max-[500px]:h-8 max-[500px]:w-8"
+          className="fixed right-[30px] bottom-[30px] z-999 flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] bg-brand text-black transition-all duration-500 ease-in-out max-[500px]:right-6 max-[500px]:bottom-6 max-[500px]:h-8 max-[500px]:w-8"
           onClick={goToBtn}
         >
           <IoIosArrowUp className="font-poppins text-[1.8rem] max-[500px]:text-[1.2rem]" />

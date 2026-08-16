@@ -34,15 +34,15 @@ const Clubs = () => {
             name=""
             id=""
             placeholder="Type to begin search, or use the filters"
-            className="grow rounded-[5px] border border-[#00000041] bg-[#f5f7f7] px-4 py-2 font-outfit text-[15px] outline-none"
+            className="grow rounded-[5px] border border-black/25 bg-surface-muted px-4 py-2 font-outfit text-[15px] outline-none"
           />
-          <button className="flex w-[15%] items-center justify-center gap-[10px] rounded-[5px] border border-[#00000041] bg-[#f5f7f7] px-4 py-2 text-center font-outfit text-[15px] outline-none">
+          <button className="flex w-[15%] items-center justify-center gap-[10px] rounded-[5px] border border-black/25 bg-surface-muted px-4 py-2 text-center font-outfit text-[15px] outline-none">
             Filters <CiFilter className="min-h-[20px] min-w-[20px]" />
           </button>
         </div>
 
         <Button
-          className="flex h-[55px] w-1/5 items-center justify-center rounded-lg border-2 border-[#ff5a317a] bg-[#fba18b55] text-center font-outfit text-[15px] font-semibold whitespace-nowrap text-[#ff5a31f0] outline-none"
+          className="flex h-[55px] w-1/5 items-center justify-center rounded-lg border-2 border-brand/50 bg-[#fba18b55] text-center font-outfit text-[15px] font-semibold whitespace-nowrap text-brand/95 outline-none"
           onClickfunction={() => {
             navigate("/dashboard");
           }}

@@ -28,7 +28,15 @@ All card components are exported from `src/components/index.ts` (or imported dir
 
 Bootstrap (the CDN `<link>`/`<script>` that used to be in `index.html`) has been removed entirely; a `.container` class replicating Bootstrap's centered/max-width behavior lives in `src/styles/index.css` for the handful of files (`Donate.tsx`, `Landing.tsx`, `Milaninfobanner.tsx`) that relied on it and haven't been touched since.
 
-Design tokens (`--color-brand`, `--color-brand-secondary`, `--font-mont`/`--font-poppins`/`--font-outfit`) are declared in an `@theme` block in `src/styles/index.css`, which generates matching Tailwind utilities (`text-brand`, `font-outfit`, etc.). They're deliberately **not** named `primary`/`secondary` — Tailwind would generate `.text-primary`/`.text-secondary` utilities under those names, colliding with identically-named classes from other sources.
+Design tokens are declared in an `@theme` block in `src/styles/index.css`, which generates matching Tailwind utilities (`text-brand`, `font-outfit`, etc.):
+
+- `--color-brand` (`#ff5b31`) / `--color-brand-secondary` (`#6b2615`) — the two brand colors. Deliberately **not** named `primary`/`secondary` — Tailwind would generate `.text-primary`/`.text-secondary` utilities under those names, colliding with identically-named classes from other sources.
+- `--color-ink` (`#212529`), `--color-heading` (`#28183b`) — body/dark text colors that recur across forms and headings.
+- `--color-surface-muted` (`#f5f7f7`), `--color-surface-hover` (`#f5f7fd`) — input/panel backgrounds and their hover state.
+- `--color-border-subtle` (`#f0efef`), `--color-border-muted` (`#e0e0e0`), `--color-input-border` (`#ced4da`) — the three recurring border grays.
+- `--font-mont` / `--font-poppins` / `--font-outfit` — the three brand fonts.
+
+**Prefer a token (or, failing that, Tailwind's default palette — `gray-50`, `gray-300`, `gray-500`, etc.) over a new arbitrary-value hex class** (`bg-[#f5f7f7]`, `text-[#6b7280]`). An arbitrary-value color is only appropriate for a genuinely one-off decorative value that won't repeat — the moment the same hex shows up in a second place, add it to `@theme` instead (or reuse an existing token/default-palette color if it's an exact or near-exact match) so the whole app can be re-themed by editing one block. This app previously had the same brand orange spelled three different ways (`#ff5b31` / `#ff5a31` / `#ff5a30`) and `#6b2615` written as a raw hex almost as often as `text-brand-secondary` — both were consolidated into the tokens above; don't reintroduce that drift. Opacity variants of a token color should use Tailwind's `/` opacity modifier (`text-brand-secondary/75`, `border-black/25`) rather than baking alpha into a new hex literal.
 
 A few things can't be reached by Tailwind's class-scanner (it only sees literal strings in your source) and are hand-written global CSS in `src/styles/index.css` instead:
 - React-select's and MUI's own generated class names (`.css-13cymwt-control`, `.MuiMenuItem-root`, etc.)

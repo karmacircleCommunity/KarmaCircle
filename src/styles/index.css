@@ -6,6 +6,19 @@
   --font-outfit: "Outfit", sans-serif;
   --color-brand-secondary: #6b2615;
   --color-brand: #ff5b31;
+
+  /* Neutral/semantic tokens: repeated non-brand colors pulled out of arbitrary
+     hex values so the palette has a single source of truth. Colors that
+     already match Tailwind's default gray scale exactly (e.g. #f9fafb,
+     #d1d5db, #6b7280) use gray-50/gray-300/gray-500 directly instead of a
+     duplicate token here. */
+  --color-ink: #212529;
+  --color-heading: #28183b;
+  --color-surface-muted: #f5f7f7;
+  --color-surface-hover: #f5f7fd;
+  --color-border-subtle: #f0efef;
+  --color-border-muted: #e0e0e0;
+  --color-input-border: #ced4da;
 }
 
 html {

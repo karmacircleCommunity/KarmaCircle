@@ -28,7 +28,7 @@ const TrackSection = () => {
       </div>
 
       <div className="flex gap-4">
-        <div className="flex w-1/2 flex-col gap-[10px] rounded border border-[#e0e0e0] p-[6px] font-outfit">
+        <div className="flex w-1/2 flex-col gap-[10px] rounded border border-border-muted p-[6px] font-outfit">
           <p className="m-0 flex items-center justify-between text-sm leading-none">
             Impressions
           </p>
@@ -38,7 +38,7 @@ const TrackSection = () => {
           </div>
         </div>
 
-        <div className="flex w-1/2 flex-col gap-[10px] rounded border border-[#e0e0e0] p-[6px] font-outfit">
+        <div className="flex w-1/2 flex-col gap-[10px] rounded border border-border-muted p-[6px] font-outfit">
           <p className="m-0 flex items-center justify-between text-sm leading-none">
             Click Rate
           </p>

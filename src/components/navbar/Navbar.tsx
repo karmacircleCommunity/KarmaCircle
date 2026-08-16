@@ -40,9 +40,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const isLoggedIn = useSelector(
-    (state: RootState) => state.user.isLoggedIn,
-  );
+  const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
   const user = useSelector(selectUser);
   console.log("🚀 ~ Navbar ~ user:", user);
 
@@ -114,7 +112,7 @@ const Navbar = () => {
                     <div
                       className={
                         location.pathname === item?.link
-                          ? "mx-auto w-1/2 border-b-2 border-[#28183b]"
+                          ? "mx-auto w-1/2 border-b-2 border-heading"
                           : ""
                       }
                     ></div>
@@ -136,7 +134,7 @@ const Navbar = () => {
             ) : (
               <Button
                 to="/auth/signup"
-                className="z-3 flex w-auto items-center justify-around gap-[10px] rounded-[5px] border-none px-5 py-2 text-base font-normal not-italic font-outfit hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_#ff5a30,0px_0px_8.191px_0px_#ff5a30,0px_0px_28.084px_0px_#ff5a30] hover:transition-all hover:duration-300 hover:ease-in-out"
+                className="z-3 flex w-auto items-center justify-around gap-[10px] rounded-[5px] border-none px-5 py-2 text-base font-normal not-italic font-outfit hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] hover:transition-all hover:duration-300 hover:ease-in-out"
               >
                 <span>Sign Up</span>
               </Button>
@@ -156,7 +154,7 @@ const Navbar = () => {
             />
           ) : (
             <GiHamburgerMenu
-              className="hidden h-[30px] w-[30px] cursor-pointer text-[#28183b] max-[430px]:block"
+              className="hidden h-[30px] w-[30px] cursor-pointer text-heading max-[430px]:block"
               onClick={() => {
                 toggleNavbar();
               }}
@@ -186,7 +184,7 @@ const Navbar = () => {
                     <div
                       className={
                         location.pathname === item?.link
-                          ? "mx-auto w-1/2 border-b-2 border-[#28183b]"
+                          ? "mx-auto w-1/2 border-b-2 border-heading"
                           : ""
                       }
                     ></div>
@@ -231,7 +229,7 @@ const Navbar = () => {
           </div>
         )}
 
-        <div className="nav_dropdown absolute top-10 right-[71px] z-10 hidden w-[200px] flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_#ff593020,0px_0px_8.191px_0px_#ff593020,0px_0px_28.084px_0px_#ff593020] transition-all duration-1000 ease-in-out">
+        <div className="nav_dropdown absolute top-10 right-[71px] z-10 hidden w-[200px] flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_#ff5b3120,0px_0px_8.191px_0px_#ff5b3120,0px_0px_28.084px_0px_#ff5b3120] transition-all duration-1000 ease-in-out">
           <div className="flex flex-col justify-center">
             <span className="mb-[5px] p-[10px] text-base font-outfit">
               Hello @{user?.userName}
@@ -247,20 +245,20 @@ const Navbar = () => {
                   ? `/user/${user?.userName}`
                   : `/dashboard`
               }
-              className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]"
+              className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-black/[3.5%]"
             >
               {user?.userType === "individual" ? "Your Profile" : "Dashboard"}
             </Link>
             {user?.userType === "club" ? (
               <Link
                 to={"/event/create"}
-                className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]"
+                className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-black/[3.5%]"
               >
                 Your Events
               </Link>
             ) : null}
             {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
-            <Link className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]">
+            <Link className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-black/[3.5%]">
               Settings
             </Link>
           </div>
@@ -271,7 +269,7 @@ const Navbar = () => {
               className="h-px w-full bg-[#e2e5e883]"
             ></div>
             {/* @ts-expect-error — see above. */}
-            <Link className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]">
+            <Link className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-black/[3.5%]">
               Support
             </Link>
             {/* @ts-expect-error — see above. */}
@@ -279,7 +277,7 @@ const Navbar = () => {
               onClick={() => {
                 handleLogout();
               }}
-              className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-[#00000009]"
+              className="flex justify-between rounded-[5px] p-[10px] text-base leading-none font-normal text-brand-secondary no-underline font-outfit hover:bg-black/[3.5%]"
             >
               Logout
             </Link>

@@ -22,7 +22,7 @@ import { Button } from "@components";
 import type { EventFormState } from "../types";
 
 const formInputClasses =
-  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-[#ced4da] bg-white bg-clip-padding px-3 py-[0.375rem] text-base leading-normal font-normal text-[#212529] transition-[border-color,box-shadow] duration-150 ease-in-out max-[500px]:text-sm! focus:border-black focus:shadow-none focus:outline-none";
+  "font-outfit block w-full appearance-none rounded-[0.375rem] border border-input-border bg-white bg-clip-padding px-3 py-[0.375rem] text-base leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out max-[500px]:text-sm! focus:border-black focus:shadow-none focus:outline-none";
 
 interface CreateEventsProps {
   setshowCreateModal: (open: boolean) => void;
@@ -124,7 +124,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             <div>
               <label
                 htmlFor="file-input"
-                className="flex w-fit cursor-pointer items-center gap-4 rounded-[5px] bg-[#21252917] px-[15px] py-[10px] font-outfit text-base max-[430px]:gap-2 max-[430px]:px-[10px] max-[430px]:py-[5px] max-[430px]:text-sm"
+                className="flex w-fit cursor-pointer items-center gap-4 rounded-[5px] bg-ink/9 px-[15px] py-[10px] font-outfit text-base max-[430px]:gap-2 max-[430px]:px-[10px] max-[430px]:py-[5px] max-[430px]:text-sm"
               >
                 <IoCloudUploadOutline />
                 Upload {window.innerWidth > 430 && "Thumbnail"}
@@ -213,7 +213,10 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                 label="Event Mode"
                 className="font-poppins text-[15px]! max-[500px]:text-sm!"
                 onChange={(e) => {
-                  setevent({ ...event, mode: e.target.value as EventFormState["mode"] });
+                  setevent({
+                    ...event,
+                    mode: e.target.value as EventFormState["mode"],
+                  });
                 }}
               >
                 <MenuItem value={"Online"}>Online</MenuItem>
@@ -255,7 +258,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             {event?.mode === "Offline" ? (
               <Accordion
                 defaultExpanded
-                className="my-8 items-center justify-between rounded-[0.375rem] border border-[#ced4da] bg-transparent px-[10px] py-0 shadow-none"
+                className="my-8 items-center justify-between rounded-[0.375rem] border border-input-border bg-transparent px-[10px] py-0 shadow-none"
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
@@ -372,7 +375,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
             ) : (
               <Accordion
                 defaultExpanded
-                className="my-8 items-center justify-between rounded-[0.375rem] border border-[#ced4da] bg-transparent px-[10px] py-0 shadow-none"
+                className="my-8 items-center justify-between rounded-[0.375rem] border border-input-border bg-transparent px-[10px] py-0 shadow-none"
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
@@ -380,9 +383,7 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
                   id="panel1-header"
                   className="p-0"
                 >
-                  <p className="mb-0 font-poppins text-base">
-                    Meeting Details
-                  </p>
+                  <p className="mb-0 font-poppins text-base">Meeting Details</p>
                 </AccordionSummary>
 
                 <FormControl fullWidth className="mt-8 mb-4">

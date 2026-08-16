@@ -49,13 +49,13 @@ const Landing = () => {
           {windowWidth > 430 ? (
             <p className="z-3 mx-auto mt-12 w-[55%] text-center font-poppins text-lg leading-[24.18px] tracking-[1.2px] text-brand-secondary max-[500px]:w-full max-[500px]:text-start max-[500px]:text-[17px]">
               Welcome to <span className="font-semibold">NgoWorld</span>, a
-              platform to connect and support NGOs, charities and you to
-              build a better tomorrow.
+              platform to connect and support NGOs, charities and you to build a
+              better tomorrow.
             </p>
           ) : (
             <p className="z-3 mx-auto mt-12 w-[55%] text-center font-poppins text-lg leading-[24.18px] tracking-[1.2px] text-brand-secondary max-[500px]:w-full max-[500px]:text-start max-[500px]:text-[17px]">
-              A platform for NGOs, charities, clubs and you to collaborate,
-              grow and build a better tomorrow.
+              A platform for NGOs, charities, clubs and you to collaborate, grow
+              and build a better tomorrow.
             </p>
           )}
 
@@ -63,14 +63,14 @@ const Landing = () => {
             {isLoggedIn ? (
               <Button
                 to="/clubs"
-                className="z-3 mx-auto flex w-auto items-center justify-around gap-[10px] rounded-lg border-none px-6 py-[0.7rem] font-poppins text-[17px] font-medium hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_#ff5a30,0px_0px_8.191px_0px_#ff5a30,0px_0px_28.084px_0px_#ff5a30] hover:transition-all hover:duration-300 hover:ease-in-out max-[500px]:mx-0 max-[500px]:w-auto"
+                className="z-3 mx-auto flex w-auto items-center justify-around gap-[10px] rounded-lg border-none px-6 py-[0.7rem] font-poppins text-[17px] font-medium hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] hover:transition-all hover:duration-300 hover:ease-in-out max-[500px]:mx-0 max-[500px]:w-auto"
               >
                 <span className="text-lg">Explore our clubs</span>
               </Button>
             ) : (
               <Button
                 to="/auth/signup"
-                className="z-3 mx-auto flex w-auto items-center justify-around gap-[10px] rounded-lg border-none px-6 py-[0.7rem] font-poppins text-[17px] font-medium hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_#ff5a30,0px_0px_8.191px_0px_#ff5a30,0px_0px_28.084px_0px_#ff5a30] hover:transition-all hover:duration-300 hover:ease-in-out max-[500px]:mx-0 max-[500px]:w-auto"
+                className="z-3 mx-auto flex w-auto items-center justify-around gap-[10px] rounded-lg border-none px-6 py-[0.7rem] font-poppins text-[17px] font-medium hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] hover:transition-all hover:duration-300 hover:ease-in-out max-[500px]:mx-0 max-[500px]:w-auto"
               >
                 <span className="text-lg">Sign up Today !</span>
               </Button>
