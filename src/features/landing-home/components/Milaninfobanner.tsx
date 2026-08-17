@@ -22,7 +22,7 @@ const Milaninfobanner = () => {
   }, []);
 
   return (
-    <div className="container  mib_mainparent">
+    <div className="mib_mainparent  container">
       <div className="mib_collab_parent">
         <div
           className="mib_top_intro mib_collab_top"

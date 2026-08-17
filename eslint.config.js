@@ -3,6 +3,7 @@ const react = require("eslint-plugin-react");
 const cypress = require("eslint-plugin-cypress");
 const globals = require("globals");
 const tseslint = require("typescript-eslint");
+const tailwindcss = require("eslint-plugin-tailwindcss");
 
 const tsRecommended = tseslint.configs.recommended.map((config) => ({
   ...config,
@@ -57,5 +58,24 @@ module.exports = [
   {
     files: ["cypress/**/*.js"],
     ...cypress.configs.recommended,
+  },
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      tailwindcss,
+    },
+    settings: {
+      tailwindcss: {
+        cssConfigPath: "./src/styles/index.css",
+      },
+    },
+    rules: {
+      "tailwindcss/classnames-order": "warn",
+      "tailwindcss/enforces-shorthand": "warn",
+      "tailwindcss/enforces-negative-arbitrary-values": "warn",
+      "tailwindcss/important-modifier-suffix": "warn",
+      "tailwindcss/no-contradicting-classname": "error",
+      "tailwindcss/no-unnecessary-arbitrary-value": "warn",
+    },
   },
 ];

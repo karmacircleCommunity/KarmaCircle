@@ -93,7 +93,7 @@ const Donate = () => {
 
         <div
           id="donatecol_1"
-          className="flex flex-col items-start justify-center mr-12"
+          className="mr-12 flex flex-col items-start justify-center"
         >
           <h1 className="mb-4">Yes, you help live !!</h1>
           <p>

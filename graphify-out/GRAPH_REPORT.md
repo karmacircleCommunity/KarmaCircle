@@ -1,7 +1,7 @@
 # Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-08-16)
 
 ## Corpus Check
-- 106 files · ~456,214 words
+- 106 files · ~456,289 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -242,12 +242,12 @@ Cohesion: 0.6
 Nodes (6): IAmTamal/Milan GitHub repo, Changelog v0.3.3, Changelog v0.3.4, Changelog v0.3.5, Changelog v0.3.6, Changelog v0.3.7
 
 ### Community 15 - "Community 15"
-Cohesion: 0.83
-Nodes (3): getEditableFields(), getMissingElements(), getProfileFields()
-
-### Community 16 - "Community 16"
 Cohesion: 0.5
 Nodes (2): Test(), useValidation()
+
+### Community 16 - "Community 16"
+Cohesion: 0.83
+Nodes (3): getEditableFields(), getMissingElements(), getProfileFields()
 
 ### Community 17 - "Community 17"
 Cohesion: 0.5
@@ -772,15 +772,15 @@ Nodes (1): Four coexisting styling approaches (plain .scss, plain .css, CSS Modu
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 51`** (2 nodes): `ClickAwayListener()`, `ClickAwayListener.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (2 nodes): `Button()`, `Button.tsx`
+- **Thin community `Community 52`** (2 nodes): `ComingSoon()`, `ComingSoon.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 53`** (2 nodes): `Loading()`, `Loading.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (2 nodes): `ComingSoon()`, `ComingSoon.tsx`
+- **Thin community `Community 54`** (2 nodes): `ComponentHelmet()`, `ComponentHelmet.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 55`** (2 nodes): `Modal()`, `Modal.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (2 nodes): `ComponentHelmet()`, `ComponentHelmet.tsx`
+- **Thin community `Community 56`** (2 nodes): `Button()`, `Button.tsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 57`** (2 nodes): `Tamal Das (security contact)`, `Reporting a Vulnerability`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
