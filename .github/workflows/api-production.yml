@@ -1,15 +1,16 @@
-name: 📢 Deploy to Dev
+name: 📢 Deploy to Production (Backend)
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DEV }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - dev
       - main
+    paths:
+      - "apps/api/**"
 
 jobs:
   Deploy-to-Production:
@@ -20,7 +21,7 @@ jobs:
         run: npm install --global vercel@canary
       - name: Pull Vercel Environment Information
         run:
-          vercel pull --yes --environment=development --token=${{
+          vercel pull --yes --environment=production --token=${{
           secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
