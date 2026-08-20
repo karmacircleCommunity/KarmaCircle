@@ -5,14 +5,14 @@ Each file documents one module: what it does, which files implement it, the exac
 These specs describe the code as it exists today, including its rough edges — they are not aspirational.
 When you change a module, update its spec file in the same PR so this map stays trustworthy.
 
-This directory mirrors the structure of the frontend's own `docs/specs/` (see below) on purpose, so an agent working across both repos finds the same shape of map in each.
+This directory mirrors the structure of the frontend's own `docs/specs/` (see below) on purpose, so an agent working across both apps finds the same shape of map in each.
 
 ## What this project is
 
 This is `milan-api`, the Express/TypeScript/MongoDB backend for **Milan** (product name; org name "NgoWorld"), a platform that connects NGOs, charities, clubs, and individual users.
-It has one consumer: [KarmaCircle](../../../KarmaCircle) (checked out as a sibling directory, package name `milan-frontend`), a Vite + React SPA.
+It's one of two apps in this monorepo — its consumer is [apps/web](../../../web) (package name `milan-frontend`), a Vite + React SPA.
 There is no server-rendered UI in this repo — it is a pure JSON API.
-See [../../CLAUDE.md](../../CLAUDE.md) for how the two repos relate and how to read the frontend's own graph/specs when a change touches both sides.
+See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate and how to read the frontend's own graph/specs when a change touches both sides.
 
 ## Tech stack
 
@@ -62,13 +62,13 @@ Every module folder follows the same file-per-concern pattern (not every module 
 
 Unlike the frontend, this backend does **not** use a two-tier "short cross-feature summary here, deep colocated `SPEC.md` inside the folder" split.
 Each module here is small enough (typically under ~150 lines total across its `.controller`/`.service`/`.routes`/`.validation` files) that a single `docs/specs/<module>.md` file already serves as the file-by-file deep reference.
-If a module ever grows past that, add a colocated `src/modules/<name>/SPEC.md` then, mirroring [the frontend's pattern](../../../KarmaCircle/docs/specs/README.md#deeper-colocated-specs), and turn this directory's copy into the short summary.
+If a module ever grows past that, add a colocated `src/modules/<name>/SPEC.md` then, mirroring [the frontend's pattern](../../../../docs/specs/README.md#deeper-colocated-specs), and turn this directory's copy into the short summary.
 
 ## How this relates to the frontend's specs
 
-The frontend (KarmaCircle, sibling directory) has its own `docs/specs/` describing the same product from the client's point of view — see [../../../KarmaCircle/docs/specs/README.md](../../../KarmaCircle/docs/specs/README.md).
-The two directories are **not merged and can drift** — that's exactly what [api-contract.md](./api-contract.md) and [known-issues.md](./known-issues.md) exist to catch and keep visible.
-When a change touches both sides (a new field, a changed status code, a renamed route), update the spec file on **both** sides in the same change, the same way each repo's own "keep the specs honest" rule already asks for within itself.
+The frontend (`apps/web`, this repo's other app) has its own `docs/specs/` at the repo root describing the same product from the client's point of view — see [../../../../docs/specs/README.md](../../../../docs/specs/README.md).
+The two directories are **not automatically kept in sync** — that's exactly what [api-contract.md](./api-contract.md) and [known-issues.md](./known-issues.md) exist to catch and keep visible.
+When a change touches both sides (a new field, a changed status code, a renamed route), update the spec file on **both** sides in the same change, the same way each app's own "keep the specs honest" rule already asks for within itself.
 
 ## How to use this with an AI agent
 

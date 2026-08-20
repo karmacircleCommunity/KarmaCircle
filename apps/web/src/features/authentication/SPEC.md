@@ -14,7 +14,7 @@ If you're asked to fix or centralize logout, you'll be working outside this fold
 
 ## Why it's shaped this way
 
-The backend (a separate repo, [NgoWorld-Backend](https://github.com/ngoworldcommunity/NGOWorld-Backend)) is the actual source of truth for whether credentials are valid; client-side validation here exists purely to reduce round-trips for obviously-bad input (empty fields, malformed email, weak password) and to give inline field-level feedback rather than a single toast.
+The backend ([apps/api](../../../../../apps/api), this repo's other app) is the actual source of truth for whether credentials are valid; client-side validation here exists purely to reduce round-trips for obviously-bad input (empty fields, malformed email, weak password) and to give inline field-level feedback rather than a single toast.
 The codebase evolved two competing designs for that validation — a minimal one wired into the live pages (`useAuth.ts`) and a much fuller one that never got wired in (`useValidation.ts` + `useFormLogic.ts`, see below) — which is the most important thing to understand before touching this folder: **there are two parallel, non-interoperating auth-form systems here, and only one of them runs in production.**
 Do not assume both are exercised by any given change.
 

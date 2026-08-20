@@ -1,8 +1,8 @@
 # API Contract — Backend Routes vs. What the Frontend Actually Calls
 
-Every route this API exposes, cross-referenced against the frontend's endpoint constants (`KarmaCircle/src/services/ApiEndpoints.ts`) and call sites (`KarmaCircle/src/services/MilanApi.ts` and per-feature code). Read this before changing any route's path, method, or request/response shape — and before assuming a frontend call "just works" against this backend.
+Every route this API exposes, cross-referenced against the frontend's endpoint constants (`apps/web/src/services/ApiEndpoints.ts`) and call sites (`apps/web/src/services/MilanApi.ts` and per-feature code). Read this before changing any route's path, method, or request/response shape — and before assuming a frontend call "just works" against this backend.
 
-**Snapshot taken August 2026, from static reading of both repos — not verified by running either app end-to-end.** Treat every "works"/"broken" verdict below as a strong static-analysis claim, not a confirmed-live-tested fact; reproduce with a real request before shipping a fix that assumes one of these is correct.
+**Snapshot taken August 2026, from static reading of both apps — not verified by running either app end-to-end.** Treat every "works"/"broken" verdict below as a strong static-analysis claim, not a confirmed-live-tested fact; reproduce with a real request before shipping a fix that assumes one of these is correct.
 
 **Update:** `GET /user`, `GET /clubs`, `GET /display/users`, `GET /display/clubs`, `GET /events`, and `GET /product/allproducts` (their unfiltered "list everything" branches only) now return `{ data, pagination }` instead of a bare array — see [known-issues.md#pagination](./known-issues.md#pagination) and [architecture.md#pagination](./architecture.md#pagination). This *was* verified live, via a Supertest assertion against a real (in-memory) Mongo, not just read from source — see `tests/events.test.ts`'s `"paginates across multiple pages with skip/limit math"` case.
 
@@ -46,7 +46,7 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 
 ### 1. `POST /user/update` vs. the frontend's `PATCH` call — **fixed**
 
-The frontend's `updateUserProfile()` ([MilanApi.ts](../../../KarmaCircle/src/services/MilanApi.ts)) issues `Axios.patch(userEndpoints.updateProfile, credentials, { withCredentials: true })`. This backend used to register the handler as `router.post("/update", ...)` ([user.routes.ts](../../src/modules/users/user.routes.ts)) — Express only matches the declared method, so a `PATCH` to `/user/update` fell through to `notFoundHandler` (`404`) instead of the intended controller, breaking the live "edit my profile" flow both `ProfileCompletion.tsx` and `ProfileUpdate.tsx` use. **Fixed** by changing the route to `router.patch("/update", ...)` — matches what the frontend already sends, no frontend change needed. The old `POST` registration was removed rather than kept alongside it (nothing else called it).
+The frontend's `updateUserProfile()` ([MilanApi.ts](../../../../apps/web/src/services/MilanApi.ts)) issues `Axios.patch(userEndpoints.updateProfile, credentials, { withCredentials: true })`. This backend used to register the handler as `router.post("/update", ...)` ([user.routes.ts](../../src/modules/users/user.routes.ts)) — Express only matches the declared method, so a `PATCH` to `/user/update` fell through to `notFoundHandler` (`404`) instead of the intended controller, breaking the live "edit my profile" flow both `ProfileCompletion.tsx` and `ProfileUpdate.tsx` use. **Fixed** by changing the route to `router.patch("/update", ...)` — matches what the frontend already sends, no frontend change needed. The old `POST` registration was removed rather than kept alongside it (nothing else called it).
 
 ### 1b. `POST /user/update`'s body shape didn't match the `User.address` schema — **fixed**
 
@@ -62,7 +62,7 @@ See [auth.md](./auth.md#google-oauth-flow) for the full trace. The route's contr
 
 ### 4. `PATCH /user/complete` — **fixed**
 
-The frontend's `completeProfileApiCall()` ([MilanApi.ts](../../../KarmaCircle/src/services/MilanApi.ts)) calls `Axios.patch(userEndpoints.completeProfile, credentials, { withCredentials: true })`, i.e. `PATCH /user/complete` — no route existed for this at all, and `config.hasCompletedProfile` (see [users.md](./users.md#the-user-model-is-shared-by-five-modules)) could never become `true` through any code path in this API. **Fixed** by adding `PATCH /user/complete` (`requireAuth`-gated, same body shape as `PATCH /user/update`), whose service layer accepts the profile fields and always sets `config.hasCompletedProfile: true` server-side on success — independent of whatever the client's body claims about that field.
+The frontend's `completeProfileApiCall()` ([MilanApi.ts](../../../../apps/web/src/services/MilanApi.ts)) calls `Axios.patch(userEndpoints.completeProfile, credentials, { withCredentials: true })`, i.e. `PATCH /user/complete` — no route existed for this at all, and `config.hasCompletedProfile` (see [users.md](./users.md#the-user-model-is-shared-by-five-modules)) could never become `true` through any code path in this API. **Fixed** by adding `PATCH /user/complete` (`requireAuth`-gated, same body shape as `PATCH /user/update`), whose service layer accepts the profile fields and always sets `config.hasCompletedProfile: true` server-side on success — independent of whatever the client's body claims about that field.
 
 ## Endpoints with no frontend caller yet
 

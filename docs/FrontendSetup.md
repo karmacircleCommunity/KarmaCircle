@@ -5,7 +5,7 @@ Follow the below steps to setup the Frontend locally. We are using `npm` as the 
 **If not installed, please read [installation guide](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).**
 ## Installing dependencies ⏳
 
-- Open your terminal and navigate to the `Milan` directory.
+- Open your terminal and navigate to the `KarmaCircle/apps/web` directory (this repo is a monorepo — the frontend lives at `apps/web`, not the repo root).
 - Type `npm install` to install all the dependencies.
 - Once the installation is done, you can start the frontend server by typing `npm run dev`.
 - This should start the frontend server on `http://localhost:3000/`.
@@ -33,7 +33,7 @@ Follow the below steps to setup the Frontend locally. We are using `npm` as the 
 
 ## Setting up the `.env` file
 
-We use a `.env` file using the `dotenv` package inside the root of the directory. You must create a `.env` file similar to [.env.example](../.env.example) file.
+We use a `.env` file using the `dotenv` package inside the root of the directory. You must create a `.env` file similar to [.env.example](../apps/web/.env.example) file.
 
 <br/>
 <br/>
@@ -42,4 +42,4 @@ We use a `.env` file using the `dotenv` package inside the root of the directory
 
 So now you have the the frontend up and running locally. Now you can start working on the issues. You can follow the below steps to get started with the frontend.
 
-- [Setting up the backend locally](https://github.com/ngoworldcommunity/NGOWorld-Backend/blob/main/docs/BackendSetup.md)
+- [Setting up the backend locally](/apps/api/docs/BackendSetup.md)

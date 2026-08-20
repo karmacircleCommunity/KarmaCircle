@@ -1,5 +1,7 @@
 # Handoff — backend hardening backlog, in progress
 
+*Written before the monorepo migration, when this was still the separate `KarmaCircle-BE` repo — kept as-is below for historical accuracy. The code it describes now lives at `apps/api` in the unified `KarmaCircle` repo; see the root [CLAUDE.md](../../../../CLAUDE.md) for the current layout.*
+
 Written for picking this work up in a fresh chat. Repo: `KarmaCircle-BE` (`milan-api`), sibling to the frontend repo `KarmaCircle`. Working directly on `main`, no branching (see `CLAUDE.md`/`AGENTS.md`) — every round below is committed and pushed to `origin/main` already; nothing is pending.
 
 ## How this started

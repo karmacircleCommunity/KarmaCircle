@@ -9,7 +9,7 @@ system.
 
 ## Installing dependencies ⏳
 
-- Open your terminal and navigate to the `Milan-Backend` directory.
+- Open your terminal and navigate to the `KarmaCircle/apps/api` directory (this repo is a monorepo — the backend lives at `apps/api`, not the repo root).
 - Type `npm install` to install all the dependencies.
 - Once the installation is done, you can start the backend server in watch mode
   by typing `npm run dev`.
@@ -103,4 +103,4 @@ To set up the Google Client ID and Client Secret for your application, follow th
 
 So now you have the the frontend up and running locally. Now you can start working on the issues. You can follow the below steps to get started with the frontend.
 
-- [Setting up the frontend locally](https://github.com/MilanCommunity/Milan/blob/main/docs/FrontendSetup.md)
+- [Setting up the frontend locally](/docs/FrontendSetup.md)

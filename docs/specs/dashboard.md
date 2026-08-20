@@ -4,7 +4,7 @@ Routed at `/dashboard`, reachable by URL to any visitor regardless of auth state
 
 ## `Dashboard.tsx`
 
-[src/features/dashboard/pages/Dashboard.tsx](../../src/features/dashboard/pages/Dashboard.tsx).
+[apps/web/src/features/dashboard/pages/Dashboard.tsx](../../apps/web/src/features/dashboard/pages/Dashboard.tsx).
 
 - Fetches the logged-in account's own profile via SWR: `useSWR(userEndpoints.profile, fetcher, { onSuccess, onError })`.
   `onSuccess` dispatches `updateUserData(data?.user)` to Redux on every successful fetch/revalidation, keeping Redux in sync with the server.
@@ -20,21 +20,21 @@ There's a stray `console.log(profileData?.user)` in the "Edit Profile" click han
 
 ## `TrackSection`
 
-[src/features/dashboard/components/TrackSection.tsx](../../src/features/dashboard/components/TrackSection.tsx).
+[apps/web/src/features/dashboard/components/TrackSection.tsx](../../apps/web/src/features/dashboard/components/TrackSection.tsx).
 Purely presentational analytics widget: a 7D/14D/28D tab row (only "7D" is styled active; clicking the others does nothing — no `onClick` handlers), and two static stat boxes ("Impressions: 6,025", "Click Rate: 43%").
 A "See detailed analytics" link points to `/` (home), not a real analytics page.
 Matches the "Coming Soon" framing in `Dashboard.tsx` — this is intentionally a visual placeholder, not wired to `fetchDashboard()` (see below) despite that function existing.
 
 ## `fetchDashboard` (defined, unused)
 
-[MilanApi.ts](../../src/services/MilanApi.ts) exports `fetchDashboard()` (`GET /clubs/dashboard`, via `clubEndpoints.dashboard`).
+[MilanApi.ts](../../apps/web/src/services/MilanApi.ts) exports `fetchDashboard()` (`GET /clubs/dashboard`, via `clubEndpoints.dashboard`).
 No component currently calls it — `Dashboard.tsx` fetches `userEndpoints.profile` instead.
 If you're asked to wire up real dashboard analytics, this is the endpoint that was evidently intended for it.
 
 ## `ProfileSection` (empty stub)
 
-[src/features/dashboard/components/ProfileSection.tsx](../../src/features/dashboard/components/ProfileSection.tsx) is a one-line placeholder (`<div>ProfileSection</div>`) and is not imported by `Dashboard.tsx` or anywhere else.
+[apps/web/src/features/dashboard/components/ProfileSection.tsx](../../apps/web/src/features/dashboard/components/ProfileSection.tsx) is a one-line placeholder (`<div>ProfileSection</div>`) and is not imported by `Dashboard.tsx` or anywhere else.
 
 ## Types
 
-This entire folder is TypeScript. See [dashboard/SPEC.md](../../src/features/dashboard/SPEC.md#types) for the full breakdown, including how the `edit`/`setOpenModal` prop-name mismatch now surfaces as a (suppressed) compile error.
+This entire folder is TypeScript. See [dashboard/SPEC.md](../../apps/web/src/features/dashboard/SPEC.md#types) for the full breakdown, including how the `edit`/`setOpenModal` prop-name mismatch now surfaces as a (suppressed) compile error.
