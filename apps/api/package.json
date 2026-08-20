@@ -12,8 +12,7 @@
     "start": "node dist/src/server.js",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts",
-    "prepare": "husky install"
+    "lint": "eslint . --ext .ts"
   },
   "author": "Tamal Das",
   "license": "ISC",

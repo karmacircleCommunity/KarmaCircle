@@ -25,7 +25,7 @@ See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate a
 - **Razorpay** SDK for payment-order creation — see [payments.md](./payments.md).
 - **Helmet, compression, cors, express-rate-limit, pino/pino-http** for the standard middleware stack — see [architecture.md](./architecture.md).
 - **swagger-jsdoc + swagger-ui-express** — every route file carries `@openapi` JSDoc blocks; the generated spec is served at `/docs`. Treat a route's JSDoc block as documentation of intent, not as a guarantee it matches the Zod schema next to it — cross-check both when in doubt.
-- **Jest + ts-jest + Supertest + mongodb-memory-server** for tests (`tests/*.test.ts`) — an in-memory Mongo instance per test run, no real database needed. Only `auth` and `events` have test files today; every other module is currently untested. See [architecture.md](./architecture.md#testing).
+- **Jest + ts-jest + Supertest + mongodb-memory-server** for tests (`tests/*.test.ts`) — an in-memory Mongo instance per test run, no real database needed. Only `auth`, `events`, `products`, and `users` have test files today; `clubs`, `directory`, `payments`, and `reports` are currently untested. See [architecture.md](./architecture.md#testing).
 - **Vercel serverless** is the production deploy target (`api/index.ts` wraps `createApp()` as a handler, `vercel.json` rewrites everything to it); `npm start` (plain `node dist/src/server.ts` after `npm run build`) is the non-Vercel path. Both boot the exact same `createApp()` from `src/app.ts`. See [architecture.md](./architecture.md).
 
 ## Folder structure

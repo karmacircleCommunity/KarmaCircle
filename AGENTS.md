@@ -5,7 +5,7 @@
 - For anything touching a route path, method, or request/response shape, read [apps/api/docs/specs/api-contract.md](./apps/api/docs/specs/api-contract.md) first — it cross-references every backend route against exactly what the frontend calls, and documents where they currently disagree. Don't assume a route "just works" for the frontend without checking that file.
 - There is no `PRODUCT_SPEC.md`, task-spec template, or Definition-of-Done doc in this repo yet — each app's `docs/specs/` is the closest thing to a source of truth today.
 - There is one graphify knowledge graph at [graphify-out/](./graphify-out/), covering both apps' code (AST) plus `docs/specs/` and the top-level docs. Read `graphify-out/GRAPH_REPORT.md` before answering architecture questions — see the "graphify" section in `CLAUDE.md` for how to query and keep it updated.
-- Test tooling differs per app: `apps/web` has no unit-test runner, only `cypress:run`/`cypress:open` (one minimal e2e spec). `apps/api` has Jest + Supertest (`npm test`), but only the `auth` and `events` modules currently have test files — every other module is untested. Don't claim something is "tested" without running it through the relevant tooling or manually verifying.
+- Test tooling differs per app: `apps/web` has no unit-test runner, only `cypress:run`/`cypress:open` (one minimal e2e spec). `apps/api` has Jest + Supertest (`npm test`), but only the `auth`, `events`, `products`, and `users` modules currently have test files — `clubs`, `directory`, `payments`, and `reports` are untested. Don't claim something is "tested" without running it through the relevant tooling or manually verifying.
 
 ## git / branching
 
