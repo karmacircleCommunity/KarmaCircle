@@ -1,0 +1,57 @@
+filters:
+  - label: "🟣 status: todo"
+    regexs:
+      - /feat/i
+    events: [pull_request]
+    targets: [title]
+    
+  - label: "💡 feature"
+    regexs:
+      - /feat/i
+    events: [pull_request]
+    targets: [title]
+    
+  - label: "hacktoberfest-accepted"
+    regexs:
+      - /feat/i
+    events: [pull_request]
+    targets: [title]
+
+  
+  - label: "🟣 status: todo"
+    regexs:
+      - /docs/i
+    events: [pull_request]
+    targets: [title]
+
+  - label: "📚 docs"
+    regexs:
+      - /docs/i
+    events: [pull_request]
+    targets: [title]
+
+  - label: "hacktoberfest-accepted"
+    regexs:
+      - /docs/i
+    events: [pull_request]
+    targets: [title]
+
+
+  
+  - label: "🟣 status: todo"
+    regexs:
+      - /fix/i
+    events: [pull_request]
+    targets: [title]
+
+  - label: "🐞 bug"
+    regexs:
+      - /fix/i
+    events: [pull_request]
+    targets: [title]
+
+  - label: "hacktoberfest-accepted"
+    regexs:
+      - /fix/i
+    events: [pull_request]
+    targets: [title]

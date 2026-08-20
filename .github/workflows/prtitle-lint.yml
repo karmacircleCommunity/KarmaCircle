@@ -1,0 +1,45 @@
+name: 📢 Lint PR Titles
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+jobs:
+  lint-pr-title:
+    name: Lint PR title
+    runs-on: ubuntu-latest
+    steps:
+      - if:
+          ${{ !contains(fromJson('[ "dependabot[bot]",
+          "dependabot-preview[bot]", "allcontributors"]'), github.actor) }}
+        uses: amannn/action-semantic-pull-request@v5 #version 4.6.0
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}" should start with a lowercase character.
+      - if:
+          ${{ always() && steps.lint_pr_title.outputs.error_message != null &&
+          !contains(fromJson('[ "dependabot[bot]", "dependabot-preview[bot]",
+          "allcontributors"]'), github.actor)}}
+        name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2.5.0
+        with:
+          header: pr-title-lint-error
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+
+            We require all PRs to follow [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/). 
+            More details 👇🏼
+            ```
+             ${{ steps.lint_pr_title.outputs.error_message}}
+            ```
+      - if: ${{ steps.lint_pr_title.outputs.error_message == null }}
+        name: delete the comment
+        uses: marocchino/sticky-pull-request-comment@v2.5.0
+        with:
+          header: pr-title-lint-error
+          delete: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
