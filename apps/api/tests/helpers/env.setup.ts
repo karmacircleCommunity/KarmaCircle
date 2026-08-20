@@ -1,0 +1,13 @@
+process.env.NODE_ENV = "test";
+process.env.MONGO_URI = "mongodb://127.0.0.1:27017/test-placeholder";
+process.env.JWT_SECRET = "test-jwt-secret";
+process.env.SECRET_KEY = "test-secret-key";
+process.env.CLIENT_ID = "test-client-id";
+process.env.CLIENT_SECRET = "test-client-secret";
+process.env.CALLBACK_URL = "http://localhost:5000/auth/google/callback";
+process.env.successURL = "http://localhost:3000/";
+process.env.RAZORPAY_KEY_ID = "test-razorpay-key-id";
+process.env.RAZORPAY_KEY_SECRET = "test-razorpay-key-secret";
+process.env.ORIGIN_URL = "http://localhost:3000";
+process.env.ORIGIN_DOMAIN = "localhost";
+process.env.IGNORE_ORIGINS = "true";

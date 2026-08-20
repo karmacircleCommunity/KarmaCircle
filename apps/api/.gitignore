@@ -1,0 +1,13 @@
+node_modules
+.env
+.vercel
+.env*.local
+dist
+coverage
+
+# Claude Code local runtime state (keep .claude/settings.json, ignore local-only files)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# graphify local interpreter pointer (machine-specific path, regenerated on any graphify run)
+graphify-out/.graphify_python
