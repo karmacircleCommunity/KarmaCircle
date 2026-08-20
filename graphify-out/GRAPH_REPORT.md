@@ -158,7 +158,7 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `getClubs()` --semantically_similar_to--> `GetAllClubs() (MilanApi.js, GET /clubs)`  [INFERRED] [semantically similar]
-  /Users/tamalcodes/Gh/KarmaCircle/src/features/clubs/services/Clubs.ts → docs/specs/donate-shop-trending.md
+  /Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/clubs/services/Clubs.ts → docs/specs/donate-shop-trending.md
 - `milanhub.org (production URL)` --semantically_similar_to--> `Production Release (milanhub.vercel.app)`  [INFERRED] [semantically similar]
   index.html → README.md
 - `manifest.json (PWA manifest)` --semantically_similar_to--> `Service Workers (dev vs prod)`  [INFERRED] [semantically similar]
@@ -800,9 +800,9 @@ Nodes (1): Four coexisting styling approaches (plain .scss, plain .css, CSS Modu
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 65`** (2 nodes): `MilanBuild.svg - 3D illustration of a smartphone styled as a market storefront (candy-striped awning) with a shopping-cart icon on screen being tapped by a hand, flanked by cardboard delivery boxes and a small pink heart doodle accent`, `MilanCollaborate.svg - hand-drawn pink heart doodle/scribble illustration (multiple overlapping sketchy heart strokes with small sparkle marks), minimalist line-art style symbolizing care and community`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (1 nodes): `vite.config.mjs`
+- **Thin community `Community 66`** (1 nodes): `commitlint.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (1 nodes): `commitlint.config.js`
+- **Thin community `Community 67`** (1 nodes): `vite.config.mjs`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 68`** (1 nodes): `eslint.config.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
