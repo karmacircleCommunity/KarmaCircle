@@ -58,6 +58,7 @@ We at KarmaCircle work hard to maintain the structure, and [use conventional Pul
 - [Setting up the Frontend](/docs/FrontendSetup.md)
 - [Setting up the Backend](/apps/api/docs/BackendSetup.md)
 - [Setting up with docker](/docs/DockerSetup.md)
+- [**Full local dev setup (frontend + backend + MongoDB in one go)**](/docs/LocalDevSetup.md) — the fastest path if you just want everything running
 
 ## 2. Contributing guidelines & more
 
