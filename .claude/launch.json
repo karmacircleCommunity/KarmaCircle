@@ -4,7 +4,7 @@
     {
       "name": "karmacircle-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["--prefix", "apps/web", "run", "dev"],
       "port": 3000
     }
   ]
