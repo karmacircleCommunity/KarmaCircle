@@ -22,6 +22,8 @@
 # Contributing Guidelines 
 Please go through the documentation at least once before you start contributing as it will help you understand the project, and how we work better.
 
+This repo is a monorepo: `apps/web` (frontend) and `apps/api` (backend) — see the [README](./README.md#this-is-a-monorepo) for the layout and setup links for each. The guidelines below (commits, issues, PRs) apply repo-wide, to both apps.
+
 ## Commits 👮
 
 Try and make small commits, it will be easier for us to review and merge them and also it will be easier for you to fix any errors if there are any.

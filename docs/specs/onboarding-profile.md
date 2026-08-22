@@ -5,18 +5,18 @@ Covers the post-signup "complete your profile" flow, editing an existing profile
 ## Profile completion flow (new users)
 
 After signup, a club/org account's profile is missing required fields (description, address).
-[checkMissingFields.ts](../../src/features/onboarding-profile/utils/checkMissingFields.ts) checks whether `city`, `state`, `address`, `country`, or `pincode` are `undefined` on the user object, or — for `userType === "club"` — whether `tagLine`/`description` are `undefined`.
+[checkMissingFields.ts](../../apps/web/src/features/onboarding-profile/utils/checkMissingFields.ts) checks whether `city`, `state`, `address`, `country`, or `pincode` are `undefined` on the user object, or — for `userType === "club"` — whether `tagLine`/`description` are `undefined`.
 
 **Trigger sites:**
-- [Profile.tsx](../../src/features/onboarding-profile/pages/Profile.tsx): on mount, sets `showProfileModal = true` if `!Cookies.get("skipProfileCompletion") && checkMissingFields(user) && trueUser` (i.e. you're viewing your own profile) — **but nothing in this file's JSX ever reads `showProfileModal` to render anything.** `Profile.tsx` doesn't import `ProfileCompletion` at all. Corrects an earlier version of this doc (and of `onboarding-profile/SPEC.md`), which described this as showing the completion modal — see SPEC.md for the full finding.
-- [Dashboard.tsx](../../src/features/dashboard/pages/Dashboard.tsx): shows the completion modal whenever `profileData?.user?.config?.hasCompletedProfile === false`, a different (and more explicit) signal than `checkMissingFields`. This is currently the **only** place `ProfileCompletion` is actually rendered — and it does so with a prop-name mismatch (`edit`/`setOpenModal` vs. the component's real `setShowEditModal`/`refreshProfileData`) — see [dashboard/SPEC.md](../../src/features/dashboard/SPEC.md#types).
+- [Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx): on mount, sets `showProfileModal = true` if `!Cookies.get("skipProfileCompletion") && checkMissingFields(user) && trueUser` (i.e. you're viewing your own profile) — **but nothing in this file's JSX ever reads `showProfileModal` to render anything.** `Profile.tsx` doesn't import `ProfileCompletion` at all. Corrects an earlier version of this doc (and of `onboarding-profile/SPEC.md`), which described this as showing the completion modal — see SPEC.md for the full finding.
+- [Dashboard.tsx](../../apps/web/src/features/dashboard/pages/Dashboard.tsx): shows the completion modal whenever `profileData?.user?.config?.hasCompletedProfile === false`, a different (and more explicit) signal than `checkMissingFields`. This is currently the **only** place `ProfileCompletion` is actually rendered — and it does so with a prop-name mismatch (`edit`/`setOpenModal` vs. the component's real `setShowEditModal`/`refreshProfileData`) — see [dashboard/SPEC.md](../../apps/web/src/features/dashboard/SPEC.md#types).
 
 These two entry points use **different conditions** to decide whether to show the same modal — a user could satisfy one and not the other.
 See [known-issues.md](./known-issues.md).
 
 ## `useProfileCompletion` hook
 
-[src/features/onboarding-profile/hooks/useProfileCompletion.ts](../../src/features/onboarding-profile/hooks/useProfileCompletion.ts) owns the completion form's local state: `credentials = { description, coverImage, address: { line1, line2, city, state, country, pincode } }`.
+[apps/web/src/features/onboarding-profile/hooks/useProfileCompletion.ts](../../apps/web/src/features/onboarding-profile/hooks/useProfileCompletion.ts) owns the completion form's local state: `credentials = { description, coverImage, address: { line1, line2, city, state, country, pincode } }`.
 
 - `handleChange(field)` — updates `description` at the top level, or nests into `address` for every other field name.
 - `validateForm(updatedCredentials)` — checks `description` is present and 100–500 characters, all six address subfields are present, and `pincode` is numeric.
@@ -27,7 +27,7 @@ See [known-issues.md](./known-issues.md).
 
 ## `ProfileCompletion` component
 
-[src/features/onboarding-profile/components/ProfileCompletion.tsx](../../src/features/onboarding-profile/components/ProfileCompletion.tsx) renders the modal: a cover-image dropzone (local preview only, via `URL.createObjectURL` — the file itself is never uploaded or attached to the API call), an "Organization Description" textarea with a live `x/500` counter, and address line1/line2/city/state/country/pincode inputs.
+[apps/web/src/features/onboarding-profile/components/ProfileCompletion.tsx](../../apps/web/src/features/onboarding-profile/components/ProfileCompletion.tsx) renders the modal: a cover-image dropzone (local preview only, via `URL.createObjectURL` — the file itself is never uploaded or attached to the API call), an "Organization Description" textarea with a live `x/500` counter, and address line1/line2/city/state/country/pincode inputs.
 
 There are **two Save buttons** wired to two different handlers: the header button calls `completeProfileApiCall(...)` directly and closes the modal + refetches on success; the form's own submit button calls `validateForm(credentials)` from the hook (whose behavior is described above).
 Both are gated on the same `disabled` condition (all required fields non-empty).
@@ -37,18 +37,18 @@ Props: `setShowEditModal`, `refreshProfileData` (an SWR `mutate` function passed
 
 ## `ProfileUpdate` component (editing an existing profile)
 
-[src/features/onboarding-profile/components/ProfileUpdate.tsx](../../src/features/onboarding-profile/components/ProfileUpdate.tsx) is a near-duplicate of `ProfileCompletion`, used for editing an *already-completed* profile.
+[apps/web/src/features/onboarding-profile/components/ProfileUpdate.tsx](../../apps/web/src/features/onboarding-profile/components/ProfileUpdate.tsx) is a near-duplicate of `ProfileCompletion`, used for editing an *already-completed* profile.
 Differences: it also edits `name`, it accepts a `profileData` prop to pre-fill from (instead of a separate `handleSetDefaultValues` call), it has a cover-image *and* a profile-picture dropzone (both preview-only, same caveat — neither file is actually uploaded), and its single Save button calls its own local `validateForm()`, which — like `useProfileCompletion`'s version — calls `updateUserProfile({ credentials })` (`PATCH /user/update`) regardless of validation outcome, for the same reason.
 
 Rendered from `Dashboard.tsx` when `openModal === true` (opened by the dashboard's "Edit Profile" button).
-**Not rendered from `Profile.tsx`'s own "Edit profile" button at all** — that button (`toggleProfileModal`) sets `editProfile = true` and flips `showProfileModal`, but `Profile.tsx` never reads either of those to render `ProfileCompletion`, `ProfileUpdate`, or anything else. Clicking "Edit profile" on `/user/:userName` or `/club/:userName` currently has no visible effect — see [onboarding-profile/SPEC.md](../../src/features/onboarding-profile/SPEC.md#types) for the full finding. (An earlier version of this doc said this button opened `ProfileCompletion`; it doesn't.)
+**Not rendered from `Profile.tsx`'s own "Edit profile" button at all** — that button (`toggleProfileModal`) sets `editProfile = true` and flips `showProfileModal`, but `Profile.tsx` never reads either of those to render `ProfileCompletion`, `ProfileUpdate`, or anything else. Clicking "Edit profile" on `/user/:userName` or `/club/:userName` currently has no visible effect — see [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full finding. (An earlier version of this doc said this button opened `ProfileCompletion`; it doesn't.)
 
 ## Field metadata: `ProfileElements` and `getProfileFields`
 
-[src/features/onboarding-profile/constants/ProfileElements.ts](../../src/features/onboarding-profile/constants/ProfileElements.ts) is a declarative list of profile fields (`name`, `firstName`, `lastName`, `tagLine`, `description`, `city`, `state`, `address`, `country`, `pincode`) with label/placeholder/minimum-length/error-message metadata — intended for driving a generic field renderer.
+[apps/web/src/features/onboarding-profile/constants/ProfileElements.ts](../../apps/web/src/features/onboarding-profile/constants/ProfileElements.ts) is a declarative list of profile fields (`name`, `firstName`, `lastName`, `tagLine`, `description`, `city`, `state`, `address`, `country`, `pincode`) with label/placeholder/minimum-length/error-message metadata — intended for driving a generic field renderer.
 Not currently imported by any component; `ProfileCompletion`/`ProfileUpdate` hardcode their own JSX per field instead.
 
-[src/features/onboarding-profile/utils/getProfileFields.ts](../../src/features/onboarding-profile/utils/getProfileFields.ts) computes which fields are missing (`getMissingElements`) or which are all editable (`getEditableFields`) based on `userType` and whether `tagLine` is set.
+[apps/web/src/features/onboarding-profile/utils/getProfileFields.ts](../../apps/web/src/features/onboarding-profile/utils/getProfileFields.ts) computes which fields are missing (`getMissingElements`) or which are all editable (`getEditableFields`) based on `userType` and whether `tagLine` is set.
 Also not currently imported anywhere.
 Both files look like scaffolding for a future generic/dynamic profile-form component.
 
@@ -57,7 +57,7 @@ Both files look like scaffolding for a future generic/dynamic profile-form compo
 There are **two separate "view a profile" pages** in this feature, though only one is actually routed — see each below:
 
 ### `Profile.tsx` — routed at `/user/:userName` and `/club/:userName`
-[src/features/onboarding-profile/pages/Profile.tsx](../../src/features/onboarding-profile/pages/Profile.tsx).
+[apps/web/src/features/onboarding-profile/pages/Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx).
 Fetches via SWR: `clubEndpoints.details(params.userName)` (`GET /clubs?userName=...`) — used for *both* individual and club profiles, despite the endpoint's "club" naming.
 Renders differently based on `details?.userType === "club"` (name + tagline) vs. individual (firstName + lastName).
 `trueUser = user?.userName === params.userName` decides whether the viewer sees "Edit profile"/"Logout" or "Subscribe"/"Sponsor" (the latter two are static, non-functional buttons — no `onClick`).
@@ -65,7 +65,7 @@ Renders an embedded Google Maps `<iframe>` for clubs only, defaulting to a hardc
 Contains a duplicated block of markup: the `profile_header_ctadiv` (Subscribe/Sponsor/Edit/Logout buttons) is rendered twice in the JSX, once inside `.profile_header_details` and once again directly below it — a copy-paste leftover, not an intentional two-row layout. See [known-issues.md](./known-issues.md).
 
 ### `UserProfile.tsx` — not routed
-[src/features/onboarding-profile/pages/UserProfile.tsx](../../src/features/onboarding-profile/pages/UserProfile.tsx) is a second, more visually developed profile page (profile picture, social icons, an "Events Attending" `Swiper` carousel with 6–8 hardcoded placeholder slides, responsive slide count).
+[apps/web/src/features/onboarding-profile/pages/UserProfile.tsx](../../apps/web/src/features/onboarding-profile/pages/UserProfile.tsx) is a second, more visually developed profile page (profile picture, social icons, an "Events Attending" `Swiper` carousel with 6–8 hardcoded placeholder slides, responsive slide count).
 Fetches via SWR: `userEndpoints.details(params.slug)` (`GET /user?userName=...`).
 **This page is not referenced by `routesConfig.tsx` at all** — there is no route for it, so it is currently unreachable through normal navigation.
 It reads `Cookies.get("userName")`, a cookie that is never set anywhere else in the codebase (compare to `Profile.tsx`'s `trueUser` check, which uses Redux state instead) — so its "is this my own profile" branch can never evaluate true in the current app.
@@ -75,4 +75,4 @@ When asked to add profile features, confirm with whoever's asking whether they m
 
 ## Types
 
-This entire folder is TypeScript. See [onboarding-profile/SPEC.md](../../src/features/onboarding-profile/SPEC.md#types) for the full breakdown, including two more previously-undocumented bugs converting to strict typing surfaced: `ProfileUpdate.tsx`'s reset function drops the `name` field, and `UserProfile.tsx`'s Logout button passes a plain `onClick` the shared `Button` component silently ignores.
+This entire folder is TypeScript. See [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full breakdown, including two more previously-undocumented bugs converting to strict typing surfaced: `ProfileUpdate.tsx`'s reset function drops the `name` field, and `UserProfile.tsx`'s Logout button passes a plain `onClick` the shared `Button` component silently ignores.

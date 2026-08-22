@@ -1,0 +1,13 @@
+node_modules/
+
+#ignore artifacts
+build/
+coverage/
+
+# config files
+cypress.config.js
+jest.config.js
+
+# html files
+*.html
+

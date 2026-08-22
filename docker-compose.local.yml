@@ -1,0 +1,22 @@
+name: karmacircle-local
+
+# Local development infra for the monorepo — currently just MongoDB, so
+# apps/api has something to connect to without needing a MongoDB Atlas
+# account. Not used in CI or production; apps/web and apps/api still run
+# as plain `npm run dev` processes on the host, not in containers here.
+#
+# Usage: docker compose -f docker-compose.local.yml up -d
+# See docs/LocalDevSetup.md for the full walkthrough.
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: karmacircle-local-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - karmacircle-mongo-data:/data/db
+
+volumes:
+  karmacircle-mongo-data:

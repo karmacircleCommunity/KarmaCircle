@@ -8,13 +8,15 @@
 ## Step 1 - Clone the repository
 
 ```
- git clone https://github.com/ngoworldcommunity/NGOWorld.git
+ git clone https://github.com/karmacircleCommunity/KarmaCircle.git
 ```
 
-## Step 2 - Change directory to Milan
+## Step 2 - Change directory to apps/web
+
+This repo is a monorepo; the frontend's `docker-compose.dev.yaml` lives at `apps/web`, not the repo root.
 
 ```
- cd Milan
+ cd KarmaCircle/apps/web
 ```
 
 ## Step 3 - Add env variables
