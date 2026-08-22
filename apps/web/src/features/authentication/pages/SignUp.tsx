@@ -1,4 +1,12 @@
 // Import statements
+import { UserType } from "@/types/user";
+import signupPanelArt from "@assets/pictures/authpages/signup-panel-waves.jpg";
+import { Button } from "@components";
+import { useAuth } from "@features/authentication/hooks/useAuth";
+import type { AuthErrors, Credentials } from "@features/authentication/types";
+import { AuthType } from "@features/authentication/types";
+import { validateEmail } from "@features/authentication/utils/validateEmail";
+import { CheckEmailExists, GoogleAuth } from "@services/MilanApi";
 import {
   authTypeOptions,
   nameRegex,
@@ -6,22 +14,14 @@ import {
   STATUSCODE,
   STATUSMESSAGE,
 } from "@statics/Constants";
-import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { FiAward, FiCalendar, FiUsers } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import signupPanelArt from "@assets/pictures/authpages/signup-panel-waves.jpg";
-import { Button } from "@components";
-import { useAuth } from "@features/authentication/hooks/useAuth";
-import { AuthType } from "@features/authentication/types";
-import type { AuthErrors, Credentials } from "@features/authentication/types";
-import { UserType } from "@/types/user";
-import { CheckEmailExists, GoogleAuth } from "@services/MilanApi";
-import { validateEmail } from "@features/authentication/utils/validateEmail";
 
 // Value props for the left panel — genuine reasons to sign up, not
 // decoration. No numbers/stats here on purpose: this app doesn't have real
@@ -49,7 +49,7 @@ const VALUE_PROPS = [
 ];
 
 const inputClasses =
-  "w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 font-outfit text-[15px] text-ink transition placeholder:text-gray-400 focus:border-[var(--auth-accent)] focus:ring-2 focus:ring-[var(--auth-accent)]/15 focus:outline-none";
+  "w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 font-outfit text-[15px] text-ink transition placeholder:text-[13px] placeholder:text-gray-400 focus:border-[var(--auth-accent)] focus:ring-2 focus:ring-[var(--auth-accent)]/15 focus:outline-none";
 
 type PasswordStrength = "weak" | "medium" | "strong";
 
@@ -254,8 +254,8 @@ const SignUp = () => {
               Bring your cause to people who care.
             </h2>
             <p className="mt-3 font-outfit text-body text-white/70">
-              Join NgoWorld to connect with donors, volunteers, and a
-              community ready to help.
+              Join NgoWorld to connect with donors, volunteers, and a community
+              ready to help.
             </p>
 
             <ul className="mt-10 flex flex-col gap-6">
@@ -402,9 +402,7 @@ const SignUp = () => {
                     className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(138,90,46,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(138,90,46,0.55)] disabled:bg-[var(--auth-accent)]!"
                     isLoading={checkingEmail}
                     disabled={
-                      !credentials.email ||
-                      !isEmailFormatValid ||
-                      checkingEmail
+                      !credentials.email || !isEmailFormatValid || checkingEmail
                     }
                   >
                     Continue
@@ -458,7 +456,9 @@ const SignUp = () => {
                     <input
                       type="text"
                       className={inputClasses}
-                      placeholder={isIndividual ? "John Doe" : "Save Tigers"}
+                      placeholder={
+                        isIndividual ? "John Doe" : "Example Save Tigers"
+                      }
                       value={credentials.name}
                       autoFocus
                       onChange={(e) => {
@@ -492,7 +492,7 @@ const SignUp = () => {
                     </label>
                     <input
                       type={showPassword ? "text" : "password"}
-                      className={`${inputClasses} pr-11`}
+                      className={`${inputClasses} pr-11 leading-none`}
                       placeholder="********"
                       value={credentials.password}
                       minLength={8}
@@ -553,7 +553,9 @@ const SignUp = () => {
                   type="submit"
                   className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(138,90,46,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(138,90,46,0.55)] disabled:bg-[var(--auth-accent)]!"
                   isLoading={loading}
-                  disabled={loading || !credentials.password || !credentials.name}
+                  disabled={
+                    loading || !credentials.password || !credentials.name
+                  }
                 >
                   Sign Up
                 </Button>
