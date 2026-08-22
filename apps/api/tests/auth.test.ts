@@ -55,6 +55,35 @@ describe("Auth", () => {
     expect(res.status).toBe(401);
   });
 
+  describe("GET /auth/check-email", () => {
+    it("reports exists: true for a registered email", async () => {
+      await request(app).post("/auth/signup").send(credentials);
+      const res = await request(app)
+        .get("/auth/check-email")
+        .query({ email: credentials.email });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ exists: true });
+    });
+
+    it("reports exists: false for an unregistered email", async () => {
+      const res = await request(app)
+        .get("/auth/check-email")
+        .query({ email: "nobody@example.com" });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ exists: false });
+    });
+
+    it("rejects a malformed email with 400", async () => {
+      const res = await request(app)
+        .get("/auth/check-email")
+        .query({ email: "not-an-email" });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("password update", () => {
     it("changes the password without wiping the rest of the profile", async () => {
       await request(app)

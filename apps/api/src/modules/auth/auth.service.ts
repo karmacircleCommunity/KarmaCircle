@@ -133,6 +133,11 @@ export async function updatePassword(
   await existingUser.save();
 }
 
+export async function emailExists(email: string): Promise<boolean> {
+  const existingUser = await userService.findByEmail(email);
+  return existingUser !== null;
+}
+
 export async function findOrCreateGoogleUser(params: {
   email: string;
   name?: string;

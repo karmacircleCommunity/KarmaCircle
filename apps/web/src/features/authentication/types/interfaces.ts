@@ -16,10 +16,12 @@ export interface Credentials {
 }
 
 /** `errors` state shape both live pages use — one string per field,
- * populated only by `useAuth`'s `authenticateUser`. */
+ * populated by `useAuth`'s `authenticateUser` (`email`/`password`) and,
+ * on `SignUp` only, its own local name-format check (`name`). */
 export interface AuthErrors {
   email?: string;
   password?: string;
+  name?: string;
 }
 
 export interface UseAuthResult {

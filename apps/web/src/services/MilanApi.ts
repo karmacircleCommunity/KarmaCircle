@@ -36,6 +36,20 @@ export const RegisterUser = async (credentials: unknown) => {
   }
 };
 
+// CHECK IF AN EMAIL ALREADY HAS AN ACCOUNT — used by the sign-up form to
+// steer an existing user to sign-in before they fill out the rest of the
+// form, instead of only finding out via signup's own 409 at the very end.
+export const CheckEmailExists = async (email: string) => {
+  try {
+    const response = await Axios.get(authEndpoints.checkEmail, {
+      params: { email },
+    });
+    return response;
+  } catch (error) {
+    return (error as AxiosError).response;
+  }
+};
+
 // get all clubs
 export const GetAllClubs = async () => {
   try {
@@ -106,9 +120,16 @@ export const updateUserProfile = async ({
 };
 
 // Google Auth screen
-export const GoogleAuth = async () => {
+// `userType` ("individual" | "club") is forwarded as a query param and the
+// backend round-trips it through Google's OAuth `state` param — without it,
+// every Google sign-up (including "Organization") silently lands as an
+// Individual account, since the backend defaults an absent/unknown userType
+// to Individual. Omit it entirely for sign-in, where there's no account
+// type to set.
+export const GoogleAuth = async (userType?: string) => {
   try {
     const response = await Axios.get(authEndpoints.googleLogin, {
+      params: userType ? { userType } : undefined,
       withCredentials: true,
     });
     return response.data.url;

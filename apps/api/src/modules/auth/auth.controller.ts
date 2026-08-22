@@ -11,6 +11,7 @@ import {
   readableCookieOptions,
 } from "./auth.cookies";
 import {
+  CheckEmailInput,
   SigninInput,
   SignupInput,
   UpdatePasswordInput,
@@ -39,6 +40,22 @@ export async function signin(req: Request, res: Response) {
       message: STATUS_MESSAGE.LOGIN_SUCCESS,
       user,
     });
+}
+
+/**
+ * Lets the signup form ask "does this email already have an account" as
+ * soon as the user types it, before they invest time in a name/password,
+ * rather than only finding out via signup's own 409 at the very end.
+ * Deliberately reveals only a boolean, not the account's own data, and
+ * sits behind `authLimiter` like every other route here — the same
+ * "does this email exist" signal is already reachable via signup's 409,
+ * so this doesn't open a new information leak, only surfaces it earlier.
+ */
+export async function checkEmail(req: Request, res: Response) {
+  const { email } = req.query as unknown as CheckEmailInput;
+  const exists = await authService.emailExists(email);
+
+  res.status(STATUS_CODE.OK).json({ exists });
 }
 
 export async function updatePassword(req: Request, res: Response) {

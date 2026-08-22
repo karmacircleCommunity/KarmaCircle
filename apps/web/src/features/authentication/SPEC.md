@@ -28,6 +28,7 @@ Do not assume both are exercised by any given change.
 | `hooks/useAuth.ts` | The validator + submit handler both live pages actually call | ✅ yes |
 | `hooks/useValidation.ts` | Fuller, unused validator (individual + club shapes) | ❌ no |
 | `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`clubInitialFormState` are defined | ❌ no |
+| `utils/validateEmail.ts` | The single email-format check (`validateEmail(email)`) shared by `SignIn.tsx`, `SignUp.tsx`, and `useAuth.ts` — wraps `emailRegex` from `static/Constants.ts` | ✅ yes |
 | `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `SignIn`/`SignUp` in `routesConfig.tsx` | ✅ yes |
 | `components/AuthButton.tsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
 | `components/RenderErrorMessage.tsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
@@ -55,7 +56,7 @@ Default export, function component, no props (rendered directly by the router).
 
 **Render structure:** `<Helmet>` (page title "NgoWorld | Login", meta description, `canonical` pinned to `/` — arguably should be `/auth/signin`) → `<Navbar />` → a two-column `.signup_container` (form on the left, a static banner image `authbanner.png` on the right) → `<form onSubmit>` that calls `e.preventDefault()` then `authenticateUser(credentials, setErrors)`.
 
-**Submit button:** the shared `Button` component (`@components`), `isLoading={loading}` from `useAuth`, `disabled={loading || !credentials.email || !credentials.password}` — this is the only client-side gate other than what `useAuth` itself checks; there is no `minLength`/pattern validation on the raw `<input>` elements themselves.
+**Submit button:** the shared `Button` component (`@components`), `isLoading={loading}` from `useAuth`, `disabled={loading || !credentials.email || !credentials.password || !isEmailFormatValid}` — `isEmailFormatValid` is `validateEmail(credentials.email) === null` (`utils/validateEmail.ts`, the same check `SignUp.tsx` and `useAuth.ts` use), so a non-empty but malformed email (e.g. no `@`, no TLD) disables the button here too, not just on `SignUp`'s step 1. There is still no `minLength`/pattern validation on the raw `<input>` elements themselves — this is all done in JS.
 
 **Google button:** a plain `<button>` (not the shared `Button` component) calling `handleGoogle`, which awaits `GoogleAuth()` (`MilanApi.ts`, `GET /auth/google`) and does a **full-page redirect** — `window.location.href = response` — to whatever URL the backend returns. This is not a SPA navigation; it leaves the React app entirely. See "Google OAuth flow" below.
 
@@ -63,21 +64,24 @@ Default export, function component, no props (rendered directly by the router).
 
 ## `pages/SignUp.tsx`
 
-Structurally the sibling of `SignIn.tsx`, with two additions:
+A two-step wizard, not a single-page sibling of `SignIn.tsx` (the single-page version with two competing `userType` controls this section used to describe is gone — see below).
 
-**Local state:** `credentials` starts as `{ name: "", email: "", password: "", userType: authTypeOptions[1] }` — `authTypeOptions` from `src/statics/Constants.ts` is `[{value:"individual",label:"Individual"}, {value:"club",label:"Organization"}]`, so the form **defaults to "Organization"** (`authTypeOptions[1]`), not "Individual".
+**Local state:** `credentials` starts as `{ name: "", email: "", password: "", userType: authTypeOptions[1] }` — `authTypeOptions` from `src/statics/Constants.ts` is `[{value:"individual",label:"Individual"}, {value:"club",label:"Organization"}]`, so the form **defaults to "Organization"** (`authTypeOptions[1]`), not "Individual". `step` (`1 | 2`) drives which fields are shown. `emailTaken`/`checkingEmail` back the live duplicate-email check (below); neither is part of `credentials`.
 
-**Two different UI controls for the same `userType` state**, shown at different breakpoints via CSS (both exist in the DOM at all times; there is no JS-level breakpoint check choosing between them):
-1. A `react-select` `<Select>` (`auth_element_mobileOnly` — despite the class name, this is the desktop-oriented "Account Type" dropdown per the surrounding CSS) — `onChange` sets `userType: e` (the full `{value, label}` option object) and **also clears `email`, `password`, `name`** back to `""`.
-2. A hand-rolled checkbox-styled toggle (`.status-switch`, `data-unchecked="Organization" data-checked="Individual"`) in the right-hand panel — its `onClick` flips `userType` between `authTypeOptions[0]`/`[1]` based on the *current* value, clears the same three fields, **and additionally clears `errors`** (`setErrors({})`) — the `<Select>` path does not clear `errors`.
+**Single account-type control:** one `role="tablist"` of two buttons, used at every breakpoint (`setUserType`) — the old pair of a `react-select` dropdown and a `.status-switch` checkbox toggle that could fall out of sync and cleared `errors` inconsistently no longer exists. `setUserType` clears `email`/`password`/`name` and `errors` together, every time.
 
-Both controls mutate the same `credentials.userType`, so if a consumer somehow drives both (e.g. a future CSS change that shows both at once), the second one clicked wins with no conflict — but the `errors`-clearing asymmetry means a validation error left over from before a mode switch can persist on screen if the user only touches the `<Select>`, not the checkbox toggle.
+**Step 1 — email + account type.** The "Continue" button is `disabled={!credentials.email || !isEmailFormatValid || checkingEmail}`, where `isEmailFormatValid = validateEmail(credentials.email) === null` (`utils/validateEmail.ts`) — a non-empty but malformed email (e.g. `tamal@semen333`, no TLD) disables the button itself, so there's nothing to click through in the first place, not just an error shown after the fact. On submit (`handleContinue`), as a second layer (covers Enter-key submission and any other path around the button):
+1. `validateEmail(credentials.email)` again — on failure, sets `errors.email` to the returned message and stops.
+2. Otherwise calls `CheckEmailExists(credentials.email)` (`MilanApi.ts`, `GET /auth/check-email`) with `checkingEmail` driving the "Continue" button's loading state. If the response is `{ exists: true }`: sets `errors.email` to the backend's `USER_ALREADY_EXISTS` copy, sets `emailTaken`, and stays on step 1 — the error `<p>` then also renders a "Log in instead" `<Link>` to `/auth/signin` (gated on `emailTaken || errors.email === STATUSMESSAGE.USER_ALREADY_EXISTS`, so the same link appears if step 2's final submit hits the 409 fallback instead — see `useAuth.ts`). If the call fails/errors, this **fails open**: the form advances to step 2 anyway, trusting `signup`'s own 409 as the backstop.
+3. Editing the email field afterward clears both `errors.email` and `emailTaken` immediately, so a stale "already exists" message doesn't linger once the user starts typing a different address.
 
-**Label/placeholder swap:** the name field's label/placeholder read `credentials.userType.value === "individual" ? "Full Name"/"John Doe" : "Organization Name"/"Save Tigers"` — purely cosmetic, does not change which field is actually submitted (`name` either way).
+**Step 2 — name + password.** Label/placeholder still swap on `isIndividual` (`"Full name"`/`"John Doe"` vs `"Organization name"`/`"Save Tigers"`) but only cosmetically — `name` is submitted either way. The name input's `onChange` strips any character that isn't a letter or a space out of the typed (or pasted) value before it ever reaches state — digits/punctuation never actually appear in the field, rather than only being caught on submit. On submit: trims `credentials.name`, tests it against `nameRegex` (`static/Constants.ts` — letters and single interior spaces only); on failure sets `errors.name` (rendered under the name input) and does **not** call `authenticateUser`. On success, calls `authenticateUser({ ...credentials, name: trimmedName }, setErrors)` from `useAuth("signup")` — same as `SignIn.tsx`'s pattern otherwise.
 
-**Submit gate:** `disabled={loading || !credentials.email || !credentials.password || !credentials.name}` — one more required field than `SignIn.tsx` (adds `name`).
+Password strength is still gated entirely by `useAuth.ts`'s `passwordRegex` (8+ chars, upper, lower, digit — exported from `static/Constants.ts` so this page can read the exact same rule rather than a second copy). `SignUp.tsx` layers a live, non-gating strength meter on top: `getPasswordStrength(password)` returns `"weak"` (fails `passwordRegex`), `"medium"` (passes it), or `"strong"` (passes it, 12+ chars, and contains a non-alphanumeric character), rendered as a colored bar + label under the password field on every keystroke. A "Use 8+ characters with an uppercase letter, a lowercase letter, and a number" hint shows under the field while weak and no `errors.password` is set; `errors.password` (from a failed submit) takes over that same slot when present.
 
-**On submit:** same pattern as `SignIn.tsx` — `authenticateUser(credentials, setErrors)` from `useAuth("signup")`.
+**Submit gate:** step 2's `<Button disabled={loading || !credentials.password || !credentials.name}>` — `email` isn't in this gate since it's already been validated (format + live duplicate check) to get here.
+
+A `useEffect` watches `[step, errors.email]` and forces `setStep(1)` whenever `errors.email` becomes truthy while on step 2 — this is what surfaces `useAuth.ts`'s 409-fallback error (a duplicate the live check missed, e.g. a race with another signup for the same email) even though it's set from step 2's submit handler.
 
 ## `hooks/useAuth.ts` — the live validator + submit handler
 
@@ -89,7 +93,7 @@ export function useAuth(authType) // authType: "signin" | "signup"
 `authenticateUser` runs, **in this exact order, each step short-circuiting the rest on failure**:
 
 1. **Connectivity check.** `checkInternetConnection()` (`src/utils/CheckInternetConnection.ts`) — if `navigator.onLine === false`, **the function itself fires a raw `toast.error("Please check your internet connection")` directly** (not via `showErrorToast` — it calls `react-toastify`'s `toast.error` itself) and returns `false`; `authenticateUser` then returns immediately with no field-level `errors` set. So the user does see feedback — a generic connectivity toast — just not anything mentioning email/password, and no field gets an inline error message. Correction to an earlier draft of this doc, which claimed no feedback at all; the important nuance is that **every caller of `checkInternetConnection()` gets this toast for free when offline**, including `showSuccessToast`/`showErrorToast` themselves (they call `checkInternetConnection()` first and return early without adding a second toast of their own) — see [api-integration.md](../../../docs/specs/api-integration.md#toast-conventions).
-2. **Email format.** `emailRegex.test(credentials.email)` using the regex from `src/statics/Constants.ts`: `` /^[a-zA-Z0-9._:$!%-]+@[a-zA-Z0-9.-]+.[a-zA-Z]$/ ``. This regex is looser than it looks — the `.` immediately before the final `[a-zA-Z]` is an **unescaped dot** (matches any character, not literally `.`), and the character class after it requires **exactly one** trailing letter, not 2+. In practice this means malformed strings like `a@bXc` pass, while some legitimately-shaped emails could be rejected depending on TLD length assumptions. **This is the regex actually enforced on real sign-in and sign-up traffic** — coordinate with whoever owns the backend's own email validation before tightening it, since users who signed up under the loose rule may have addresses that would fail a stricter one. On failure: `setErrors(prev => ({...prev, email: "Please enter a valid email address"}))`, then return — no network call is made.
+2. **Email format.** `validateEmail(credentials.email)` (`utils/validateEmail.ts`), which wraps `emailRegex` from `src/statics/Constants.ts`: `` /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ `` — escaped dot before the TLD, 2+ trailing letters required. (An earlier, looser version of this regex had an unescaped dot and only required a single trailing letter, so it accepted malformed strings like `a@bXc`; fixed.) This is the one check both `SignIn.tsx` and `SignUp.tsx` also call directly to drive their own submit buttons' `disabled` state, so a malformed email can't be submitted from either page, not just rejected here. On failure: `setErrors(prev => ({...prev, email: emailError}))`, then return — no network call is made.
 3. **Password strength.** Inline regex (not from `Constants.ts`): `` /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/ `` — requires 8+ characters, at least one digit, one lowercase, one uppercase letter. **This check runs identically on sign-in**, not just sign-up. An existing account whose password predates this rule (or a user who simply mistypes) gets a client-side "password" field error and the request never reaches the backend, even though the backend might have accepted or correctly rejected the actual credentials. On failure: same `setErrors` pattern, field `password`, then return.
 4. **Sets `loading = true`**, then calls exactly one of:
    - `LoginUser(credentials)` (`MilanApi.ts`, `POST /auth/signin`, `withCredentials: true`) when `authType === "signin"`.
@@ -143,8 +147,8 @@ SignIn.tsx / SignUp.tsx (local `credentials`/`errors` state)
         ▼
 useAuth(authType).authenticateUser(credentials, setErrors)
         │  1. connectivity check → silent no-op if offline
-        │  2. emailRegex (Constants.ts) → setErrors + return on fail
-        │  3. inline password regex → setErrors + return on fail
+        │  2. validateEmail() (utils/validateEmail.ts) → setErrors + return on fail
+        │  3. passwordRegex (Constants.ts) → setErrors + return on fail
         ▼
 LoginUser(credentials) / RegisterUser({...credentials, userType: userType.value})   [MilanApi.ts]
         │  POST /auth/signin or /auth/signup, withCredentials: true
@@ -182,9 +186,8 @@ Because completion of Google OAuth is handled by `Home.tsx` (a different feature
 - **Offline feedback is generic, not field-specific** — step 1 of `authenticateUser` shows a connectivity toast (via `checkInternetConnection()`) but never a field-level `email`/`password` error, unlike steps 2–3.
 - **`AuthButton.tsx` links to a nonexistent `/auth/login` route** (should be `/auth/signin`) — latent since the component is unused; fix before wiring it up.
 - **`SignIn.tsx`'s dead `name` field** in local state, unused.
-- **`SignUp.tsx`'s two `userType` toggle controls clear `errors` inconsistently** (checkbox toggle does, `<Select>` doesn't).
 - **`SignUp.tsx` defaults to `userType: "club"`** (`authTypeOptions[1]`, labeled "Organization") rather than "Individual" — confirm this is intentional product behavior before treating it as a bug.
-- The email regex actually enforced on live traffic (`Constants.ts`'s `emailRegex`) is looser/buggier than `useValidation.ts`'s unused one — see [known-issues.md](../../../docs/specs/known-issues.md) for the exact character-class bug.
+- **No server-side format check on `name`** — `signupSchema` (`apps/api`) only validates `email`/`password` and `.passthrough()`-accepts everything else, so `nameRegex` is a client-only gate; a direct API call (curl, a future non-web client) can still write a name containing digits/punctuation. Low risk today since `name` isn't used anywhere security-sensitive, but worth knowing if that changes.
 
 ## If you're asked to...
 

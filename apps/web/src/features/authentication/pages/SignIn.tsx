@@ -9,6 +9,7 @@ import { Button, Navbar } from "@components";
 import { useAuth } from "@features/authentication/hooks/useAuth";
 import { AuthType } from "@features/authentication/types";
 import type { AuthErrors, Credentials } from "@features/authentication/types";
+import { validateEmail } from "@features/authentication/utils/validateEmail";
 import { GoogleAuth } from "@services/MilanApi";
 
 const SignIn = () => {
@@ -21,6 +22,11 @@ const SignIn = () => {
 
   const { authenticateUser, loading } = useAuth(AuthType.SignIn);
   const [showPassword, setshowPassword] = useState(false);
+
+  // Same shared check `SignUp.tsx` and `useAuth.ts` use — drives the
+  // submit button's disabled state so a non-empty but malformed email
+  // can't be submitted, not just an empty one.
+  const isEmailFormatValid = validateEmail(credentials.email) === null;
 
   const handleGoogle = async () => {
     const response = await GoogleAuth();
@@ -90,7 +96,7 @@ const SignIn = () => {
                     className="block w-full appearance-none rounded-md border border-input-border bg-white bg-clip-padding px-3 py-1.5 font-outfit text-body leading-normal font-normal text-black/[97%] transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:font-poppins placeholder:text-caption! focus:border-brand focus:shadow-none focus:outline-none"
                     placeholder="********"
                     value={credentials.password}
-                    min={8}
+                    minLength={8}
                     onChange={(e) => {
                       setCredentials((prev) => {
                         return {
@@ -126,7 +132,10 @@ const SignIn = () => {
                   className="w-full rounded-md font-poppins"
                   isLoading={loading}
                   disabled={
-                    loading || !credentials.email || !credentials.password
+                    loading ||
+                    !credentials.email ||
+                    !credentials.password ||
+                    !isEmailFormatValid
                   }
                 >
                   Sign In
@@ -139,6 +148,7 @@ const SignIn = () => {
                 </div>
 
                 <button
+                  type="button"
                   className="flex w-full cursor-pointer items-center justify-center rounded-md border border-brand bg-transparent text-center font-outfit text-body text-black hover:border-brand"
                   onClick={handleGoogle}
                 >

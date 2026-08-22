@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { emailRegex } from "@statics/Constants";
+import { passwordRegex, STATUSMESSAGE } from "@statics/Constants";
 import { updateUserData } from "@app/store/slices/userSlice";
 import checkInternetConnection from "@utils/CheckInternetConnection";
 import { LoginUser, RegisterUser } from "@services/MilanApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { AuthType } from "../types";
 import type { Credentials, SetAuthErrors, UseAuthResult } from "../types";
+import { validateEmail } from "../utils/validateEmail";
 
 export function useAuth(authType: AuthType): UseAuthResult {
   const navigate = useNavigate();
@@ -22,16 +23,13 @@ export function useAuth(authType: AuthType): UseAuthResult {
       return;
     }
 
-    if (emailRegex.test(credentials.email) === false) {
-      setErrors((prev) => ({
-        ...prev,
-        email: "Please enter a valid email address",
-      }));
+    const emailError = validateEmail(credentials.email);
+    if (emailError) {
+      setErrors((prev) => ({ ...prev, email: emailError }));
       return;
     }
 
     // Passwords needs to be minimum 8 characters long with atleast 1 number, 1 uppercase and 1 lowercase letter
-    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
     if (passwordRegex.test(credentials.password) === false) {
       setErrors((prev) => ({
         ...prev,
@@ -65,6 +63,39 @@ export function useAuth(authType: AuthType): UseAuthResult {
       }, 1000);
     } else {
       showErrorToast(response?.data?.message);
+
+      // The backend's 400 responses (Zod validation failures) include a
+      // per-field `errors: [{ path, message }]` array alongside the
+      // generic `message` above — surface the ones that map to a field
+      // this form actually renders, instead of only ever showing the
+      // generic "Validation failed" toast.
+      const fieldErrors = response?.data?.errors as
+        | Array<{ path: string; message: string }>
+        | undefined;
+      if (Array.isArray(fieldErrors)) {
+        setErrors((prev) => {
+          const next = { ...prev };
+          for (const { path, message } of fieldErrors) {
+            if (path === "email" || path === "password") {
+              next[path] = message;
+            }
+          }
+          return next;
+        });
+      }
+
+      // Signup's 409 "already exists" response isn't Zod-shaped (no
+      // `errors` array, just the plain message above) — map it onto the
+      // `email` field too so the email step gets the inline error (and,
+      // on SignUp, steps back to show it) even if the live check-email
+      // call this form makes before this point somehow missed it.
+      if (
+        authType === AuthType.SignUp &&
+        response?.data?.message === STATUSMESSAGE.USER_ALREADY_EXISTS
+      ) {
+        setErrors((prev) => ({ ...prev, email: response.data.message }));
+      }
+
       setLoading(false);
     }
   }

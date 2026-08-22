@@ -17,6 +17,7 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 | `GET /docs` | app.ts (swagger) | no | — | no |
 | `POST /auth/signup` | auth | no | `authEndpoints.signup` | ✅ `RegisterUser()` |
 | `POST /auth/signin` | auth | no | `authEndpoints.signin` | ✅ `LoginUser()` |
+| `GET /auth/check-email` | auth | no | `authEndpoints.checkEmail` | ✅ `CheckEmailExists()` — called from `SignUp.tsx`'s step-1 "Continue" |
 | `POST /auth/update` | auth | no (email+oldPassword in body) | — | ❌ no frontend constant/call exists for this route at all |
 | `GET /auth/google` | auth | no | `authEndpoints.googleLogin` | ✅ `GoogleAuth()` |
 | `GET /auth/google/callback` | auth | Passport | — | n/a (hit by Google's redirect, not called directly by frontend code) |

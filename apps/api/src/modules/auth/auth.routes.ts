@@ -6,6 +6,7 @@ import { validate } from "../../middleware/validate";
 import { asyncHandler } from "../../utils/async-handler";
 import * as authController from "./auth.controller";
 import {
+  checkEmailSchema,
   signinSchema,
   signupSchema,
   updatePasswordSchema,
@@ -65,6 +66,34 @@ router.post(
   authLimiter,
   validate(signinSchema),
   asyncHandler(authController.signin),
+);
+
+/**
+ * @openapi
+ * /auth/check-email:
+ *   get:
+ *     summary: Check whether an account already exists for an email
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema: { type: string, format: email }
+ *     responses:
+ *       200:
+ *         description: Whether the email is already registered
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 exists: { type: boolean }
+ */
+router.get(
+  "/check-email",
+  authLimiter,
+  validate(checkEmailSchema, "query"),
+  asyncHandler(authController.checkEmail),
 );
 
 /**
