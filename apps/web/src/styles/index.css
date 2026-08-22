@@ -306,3 +306,22 @@ input::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* Auth pages (SignIn.tsx/SignUp.tsx via AuthLayout.tsx, marked with the
+   .auth-page class): neutralize the browser's native autofill styling
+   (a forced light-blue/yellow fill + text color, applied the instant a
+   field is autofilled) so an autofilled input keeps looking like every
+   other input on the form instead of visibly changing color. The
+   long transition-delay is the standard trick to beat Chrome/Brave's
+   internal !important background-color, which -webkit-box-shadow alone
+   can outrun but a plain background-color override cannot. */
+.auth-page input:-webkit-autofill,
+.auth-page input:-webkit-autofill:hover,
+.auth-page input:-webkit-autofill:focus,
+.auth-page input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: var(--color-ink);
+  transition:
+    background-color 9999s ease-in-out 0s,
+    color 9999s ease-in-out 0s;
+}

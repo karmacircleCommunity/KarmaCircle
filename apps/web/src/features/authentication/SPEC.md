@@ -24,12 +24,12 @@ Do not assume both are exercised by any given change.
 |---|---|---|
 | `pages/SignIn.tsx` | Sign-in form UI | ✅ yes — routed |
 | `pages/SignUp.tsx` | Sign-up form UI | ✅ yes — routed |
-| `pages/index.scss` | Shared styles for both pages (plain SCSS, BEM-ish `auth_*`/`signup_*` classes) | ✅ yes |
 | `hooks/useAuth.ts` | The validator + submit handler both live pages actually call | ✅ yes |
 | `hooks/useValidation.ts` | Fuller, unused validator (individual + club shapes) | ❌ no |
 | `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`clubInitialFormState` are defined | ❌ no |
 | `utils/validateEmail.ts` | The single email-format check (`validateEmail(email)`) shared by `SignIn.tsx`, `SignUp.tsx`, and `useAuth.ts` — wraps `emailRegex` from `static/Constants.ts` | ✅ yes |
 | `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `SignIn`/`SignUp` in `routesConfig.tsx` | ✅ yes |
+| `components/AuthLayout.tsx` | Shared page shell for both `SignIn.tsx`/`SignUp.tsx` — the left brand/value-prop panel, the `--auth-accent` CSS vars, and the cream right-panel frame. Each page passes its own form as `children`; this is what keeps the two pages visually identical outside the form itself. Its root `<div>` also carries an `auth-page` class, which `styles/index.css` uses to scope the autofill-background override below. | ✅ yes |
 | `components/AuthButton.tsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
 | `components/RenderErrorMessage.tsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
 | `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (pages inline their own toggle logic instead) |
@@ -54,7 +54,7 @@ Default export, function component, no props (rendered directly by the router).
 - `errors` — `{}`, keyed by field name (`email`, `password`), populated only by `useAuth`'s `authenticateUser`.
 - `showPassword` — boolean, toggles the password `<input>`'s `type` between `"password"`/`"text"` and swaps the `FaEye`/`FaEyeSlash` icon. Implemented inline with `useState`, **not** via `utils/PasswordToggle.ts`.
 
-**Render structure:** `<Helmet>` (page title "NgoWorld | Login", meta description, `canonical` pinned to `/` — arguably should be `/auth/signin`) → `<Navbar />` → a two-column `.signup_container` (form on the left, a static banner image `authbanner.png` on the right) → `<form onSubmit>` that calls `e.preventDefault()` then `authenticateUser(credentials, setErrors)`.
+**Render structure:** `<Helmet>` (page title "NgoWorld | Login", meta description, `canonical` now correctly `/auth/signin`) → `<AuthLayout>` (`components/AuthLayout.tsx` — the same shell `SignUp.tsx` renders: a left value-prop panel hidden below 900px, a cream `#faf8f5` right panel) → heading + `<form onSubmit>` that calls `e.preventDefault()` then `authenticateUser(credentials, setErrors)`. This replaced an older, visually unrelated layout (a `<Navbar />` plus a centered card with a static banner image, `authbanner.png`) that predated `SignUp.tsx`'s redesign and had drifted out of sync with it — the two pages now share one layout component rather than duplicating the shell.
 
 **Submit button:** the shared `Button` component (`@components`), `isLoading={loading}` from `useAuth`, `disabled={loading || !credentials.email || !credentials.password || !isEmailFormatValid}` — `isEmailFormatValid` is `validateEmail(credentials.email) === null` (`utils/validateEmail.ts`, the same check `SignUp.tsx` and `useAuth.ts` use), so a non-empty but malformed email (e.g. no `@`, no TLD) disables the button here too, not just on `SignUp`'s step 1. There is still no `minLength`/pattern validation on the raw `<input>` elements themselves — this is all done in JS.
 
@@ -178,6 +178,20 @@ dispatch(updateUserData(...)) + dispatch(toggleUserLogin())   ← two separate d
 ```
 
 Because completion of Google OAuth is handled by `Home.tsx` (a different feature) rather than anything in this folder, **a Google sign-in only "completes" on the frontend if the user's redirect lands back on `/`** — this feature has no way to finish the OAuth handshake on its own. See [landing-home/SPEC.md](../landing-home/SPEC.md) for the other half of this flow.
+
+## Field metadata: `autoComplete`, `name`, and the required-field asterisk
+
+Every `<input>` on both live pages now carries an explicit `name` and `autoComplete` token, chosen per-field rather than left blank or set to `"off"` (`"off"` is unreliable — Chromium-family browsers largely ignore it on a form they've decided looks like a login):
+
+- `SignIn.tsx`: email → `name="email"` `autoComplete="username"` (the WHATWG-recommended token for a login form's identifier field, even when its `type` is `email`); password → `name="password"` `autoComplete="current-password"`.
+- `SignUp.tsx` step 1: email → `name="email"` `autoComplete="email"`.
+- `SignUp.tsx` step 2: name → `name="name"` `autoComplete={isIndividual ? "name" : "organization"}`; password → `name="new-password"` `autoComplete="new-password"`.
+
+This exists to fix a real bug: without these, browsers/password managers (observed in Brave) would treat the step-2 name field as a login username — because to the browser it's an unlabeled text field sitting directly above a password field — and pop up saved email/password suggestions on it, including on the "Organization name" field. Tagging the password field `new-password` and the name field `name`/`organization` is what signals "this is a signup, not a login" and suppresses that.
+
+Each page also has a small local `RequiredMark` component (`<span className="ml-0.5 align-top text-xs text-red-500" aria-hidden="true">*</span>`, duplicated per page the same way `inputClasses` is) rendered after every label — every field on both forms is mandatory, so this is a presentational cue only, not wired to HTML's own `required` attribute; the actual required/format gating is still whatever `errors` + the submit button's `disabled` expression already do (unchanged by this).
+
+`styles/index.css` also has a `.auth-page input:-webkit-autofill` rule (scoped via `AuthLayout.tsx`'s root `auth-page` class) that forces an autofilled input back to the same white background/ink text color as a normal input — without it, Chromium browsers repaint an autofilled field with a forced light-blue/yellow fill the instant autofill runs, which read as the input silently changing color/style after autofill.
 
 ## Known issues specific to this feature (superset of known-issues.md's auth entries)
 
