@@ -131,7 +131,6 @@ const SignIn = () => {
                 className={`${inputClasses} pr-11`}
                 placeholder="Enter your password"
                 value={credentials.password}
-                minLength={8}
                 onChange={(e) => {
                   setCredentials((prev) => ({
                     ...prev,

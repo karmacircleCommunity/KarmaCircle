@@ -29,8 +29,17 @@ export function useAuth(authType: AuthType): UseAuthResult {
       return;
     }
 
-    // Passwords needs to be minimum 8 characters long with atleast 1 number, 1 uppercase and 1 lowercase letter
-    if (passwordRegex.test(credentials.password) === false) {
+    if (authType === AuthType.SignIn) {
+      // Sign-in only needs a non-empty password — the strength rules
+      // (min length, 1 number, 1 upper/lowercase) are a password-creation
+      // concept and only apply on SignUp below. The actual credential
+      // check happens server-side via LoginUser.
+      if (!credentials.password) {
+        setErrors((prev) => ({ ...prev, password: "Password is required" }));
+        return;
+      }
+    } else if (passwordRegex.test(credentials.password) === false) {
+      // Passwords needs to be minimum 8 characters long with atleast 1 number, 1 uppercase and 1 lowercase letter
       setErrors((prev) => ({
         ...prev,
         password:
