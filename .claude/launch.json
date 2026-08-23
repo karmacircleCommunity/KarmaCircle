@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "apps/web", "run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "karmacircle-api-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "apps/api", "run", "dev"],
+      "port": 5050
     }
   ]
 }
