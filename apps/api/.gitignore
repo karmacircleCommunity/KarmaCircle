@@ -11,3 +11,4 @@ coverage
 
 # graphify local interpreter pointer (machine-specific path, regenerated on any graphify run)
 graphify-out/.graphify_python
+.env*

@@ -1,8 +1,8 @@
-name: 📢 Deploy to Dev (Backend)
+name: 📢 Deploy to Dev (Frontend)
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API_DEV }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB_DEV }}
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
     branches:
       - dev
     paths:
-      - "apps/api/**"
+      - "apps/web/**"
 
 jobs:
   Deploy-to-Dev:
