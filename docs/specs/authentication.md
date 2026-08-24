@@ -73,7 +73,8 @@ There is no shared `useLogout()` hook — consider extracting one if you need to
 ## Route guard: `DonotRenderWhenLoggedIn`
 
 [apps/web/src/features/authentication/components/DonotRenderWhenLoggedIn.tsx](../../apps/web/src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) is a HOC (`DonotRenderWhenLoggedIn(Component)`) applied to `Auth` for both `/auth/signin` and `/auth/signup` in `routesConfig.tsx`.
-It redirects to `/` (`<Navigate to="/" />`) if both `Cookies.get("Token")` and the Redux `isLoggedIn` selector are truthy; otherwise it renders the wrapped component.
+It redirects to `/` (`<Navigate to="/" />`) if the Redux `isLoggedIn` selector is truthy; otherwise it renders the wrapped component.
+Previously also required `Cookies.get("Token")`, dropped August 2026 — that cookie is `httpOnly` for Google OAuth sessions (see `issueOAuthSession` in `apps/api/src/modules/auth/auth.controller.ts`), so it's never visible to client JS and the old condition could never pass for a Google-authenticated user, letting them land back on the sign-in page. See [state-management.md](./state-management.md#is-the-user-logged-in--one-real-check-one-stale-outlier).
 It does not protect any other route — there is currently no equivalent "require login" guard for e.g. `/dashboard`, which is reachable by URL regardless of auth state.
 
 ## Small auth-adjacent utilities

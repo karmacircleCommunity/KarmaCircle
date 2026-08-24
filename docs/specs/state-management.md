@@ -1,7 +1,7 @@
 # State Management
 
 Three separate mechanisms hold state in this app, each for a different purpose.
-There is no single source of truth for "is the user logged in" — that fact is checked three different ways depending on the file (see the "isLoggedIn checks" section below), which is worth knowing before you touch auth-gated UI.
+There is still no single source of truth for "is the user logged in" enforced across the codebase, but `Navbar.tsx` and `DonotRenderWhenLoggedIn.tsx` were fixed (August 2026) to check Redux's `isLoggedIn` alone — see the "isLoggedIn checks" section below for why, and for the one remaining outlier (`Donate.tsx`).
 
 ## 1. Redux (the logged-in user's profile)
 
@@ -31,23 +31,25 @@ There is no Zustand store for user/session data; all of that goes through Redux.
 
 ## 3. Cookies (`js-cookie`)
 
-A `Token` cookie and other flags are read directly with `Cookies.get(...)` in several places, presumably set by the backend as an httpOnly-adjacent or client-visible cookie on login (cookie-setting itself happens server-side; the frontend never calls `Cookies.set` for `Token`).
+Some non-auth flags are read directly with `Cookies.get(...)`; `Token` itself is no longer read client-side (see below).
 Cookies actually read in the frontend:
 
 | Cookie | Read in | Purpose |
 |---|---|---|
-| `Token` | `Navbar.tsx`, `DonotRenderWhenLoggedIn.tsx` | Presence used as a login signal, combined with the Redux `isLoggedIn` flag |
 | `skipProfileCompletion` | `Profile.tsx` | If set, suppresses the profile-completion modal even if fields are missing |
 | `userName` | `UserProfile.tsx` | Compared against the route's `:slug` param to decide if the viewer owns the profile |
 | `isLoggedIn` | `Donate.tsx` | Gate for the (currently unrouted) donate page — see [donate-shop-trending.md](./donate-shop-trending.md) |
-| `OAuthLoginInitiated` | `Home.tsx` | Set presumably by the backend/redirect flow before bouncing back from Google OAuth; its presence triggers `successCallback()` |
+| `OAuthLoginInitiated` | `Home.tsx` | Set by the backend/redirect flow before bouncing back from Google OAuth; its presence triggers `successCallback()` |
 
 `Cookies.remove("skipProfileCompletion")` and `localStorage.clear()` are both called on logout (in `Profile.tsx` and `Navbar.tsx` respectively) alongside `resetUserData()` — three different mechanisms cleaned up in three different places, not one central "logout" utility.
 
-## "Is the user logged in?" — three different checks in the wild
+## "Is the user logged in?" — one real check, one stale outlier
 
-1. `useSelector(selectIsLoggedIn)` — Redux only (used by `DonotRenderWhenLoggedIn`, `Landing.tsx`).
-2. `Cookies.get("Token") && isLoggedIn` — cookie presence *and* Redux flag together (used by `Navbar.tsx`, `DonotRenderWhenLoggedIn`).
-3. `Cookies.get("isLoggedIn")` — a *different* cookie name, unrelated to the `Token` cookie above (used only by the orphaned `Donate.tsx`).
+`Navbar.tsx` and `DonotRenderWhenLoggedIn.tsx` previously gated on `Cookies.get("Token") && isLoggedIn`.
+That's a bug fixed August 2026: the `Token` cookie the *Google OAuth* flow sets (`issueOAuthSession` in `apps/api/src/modules/auth/auth.controller.ts`) is `httpOnly`, so it is never visible to `Cookies.get` — the condition could never be true for a Google-authenticated session, even though the backend session and the Redux `isLoggedIn` flag were both correct.
+(The email/password flow's `Token` cookie is *not* httpOnly, which is why this bug only showed up for Google sign-in — the navbar staying on "Sign Up" after a successful login.)
+Both files now check `useSelector(selectIsLoggedIn)` alone, matching the pattern `Landing.tsx` already used.
 
-When adding new auth-gated UI, match whichever pattern the surrounding file already uses rather than introducing a fourth variant, and prefer pattern 2 (cookie + Redux) since that's what `Navbar` and the route guard use.
+The one remaining outlier is `Cookies.get("isLoggedIn")` in the orphaned, unrouted `Donate.tsx` — a *different* cookie name from the `Token` cookie discussed above, not currently worth chasing since that page isn't reachable (see [donate-shop-trending.md](./donate-shop-trending.md)).
+
+When adding new auth-gated UI, use `useSelector(selectIsLoggedIn)` — it's the only mechanism that's actually correct for both the email/password and Google OAuth login paths.

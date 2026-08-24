@@ -1,5 +1,4 @@
 import profileImage from "@assets/pictures/Navbar/profilePlaceholderImage.png";
-import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { GiHamburgerMenu } from "react-icons/gi";
@@ -42,7 +41,6 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
   const user = useSelector(selectUser);
-  console.log("🚀 ~ Navbar ~ user:", user);
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
@@ -120,7 +118,7 @@ const Navbar = () => {
                 );
               })}
             </div>
-            {Cookies.get("Token") && isLoggedIn ? (
+            {isLoggedIn ? (
               <p
                 onClick={() => {
                   document
@@ -143,7 +141,7 @@ const Navbar = () => {
         )}
 
         {!isNavbarOpen &&
-          (Cookies.get("Token") ? (
+          (isLoggedIn ? (
             <img
               src={(user?.profileImage as string | undefined) || profileImage}
               alt=""

@@ -110,8 +110,8 @@ Also exports `individualInitialFormState` and `clubInitialFormState` — these a
 
 A higher-order component: `DonotRenderWhenLoggedIn(Component) → WrappedComponent`.
 Applied once to `Auth` in [routesConfig.tsx](../../../src/app/routes/routesConfig.tsx), and that one wrapped component is mounted at both `/auth/signup` and `/auth/signin`.
-Guard condition: `Cookies.get("Token") && useSelector(selectIsLoggedIn)` — **both** must be truthy to redirect (`<Navigate to="/" />`); either one alone renders the wrapped page normally.
-This is "pattern 2" of the three "is the user logged in" checks cataloged in [state-management.md](../../../docs/specs/state-management.md).
+Guard condition: `useSelector(selectIsLoggedIn)` alone redirects (`<Navigate to="/" />`).
+Previously also required `Cookies.get("Token")` — dropped August 2026, since that cookie is `httpOnly` for Google OAuth sessions and so can never be read here, meaning a Google-signed-in user would fail this guard and land back on the sign-in page. See [state-management.md](../../../docs/specs/state-management.md#is-the-user-logged-in--one-real-check-one-stale-outlier).
 This HOC protects exactly these two routes; there is no equivalent "require login" guard anywhere in the app.
 
 ## `components/AuthButton.tsx` — unused

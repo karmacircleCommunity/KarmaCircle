@@ -7,7 +7,7 @@ None of these are rendered by a shared layout route — every page imports `<Nav
 
 [apps/web/src/components/Navbar.tsx](../../apps/web/src/components/Navbar.tsx).
 Nav links are a local hardcoded array: Home `/`, Clubs `/clubs`, Trending `/trending`, Events `/events`, Shops `/shop`.
-Responsive behavior is driven by a `window.resize` listener + local `windowWidth` state (breakpoint `900px`), not CSS — above 900px shows the horizontal link row plus either a "Sign Up" CTA or (if `Cookies.get("Token") && isLoggedIn`) a "Profile ▾" dropdown trigger; below 900px shows a hamburger icon (or the user's avatar image if logged in) that opens a full mobile link panel.
+Responsive behavior is driven by a `window.resize` listener + local `windowWidth` state (breakpoint `900px`), not CSS — above 900px shows the horizontal link row plus either a "Sign Up" CTA or (if Redux's `isLoggedIn` is true) a "Profile ▾" dropdown trigger; below 900px shows a hamburger icon (or the user's avatar image if logged in) that opens a full mobile link panel.
 The account dropdown (`.nav_dropdown`) is toggled by directly mutating the DOM (`document.querySelector(".nav_dropdown").classList.toggle(...)`) rather than React state — this only exists once per page since `Navbar` itself is rendered once, so it's safe today but is worth noting if `Navbar` is ever rendered more than once on a page.
 The dropdown links to `/user/:userName` or `/dashboard` depending on `user?.userType`, and (for club users only) a currently-dead `/event/create` link (no such route exists).
 Logout: calls `Logout()`, then `resetUserData()` + `localStorage.clear()` (see [state-management.md](./state-management.md) for how this compares to the other two logout call sites).

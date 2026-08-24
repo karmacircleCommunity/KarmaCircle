@@ -1,25 +1,25 @@
 import type { ComponentType } from "react";
 import { selectIsLoggedIn } from "@app/store/slices/userSlice";
-import Cookies from "js-cookie";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 /**
  * Route guard HOC applied to the unified `Auth` page (both `/auth/signin`
  * and `/auth/signup`) in `routesConfig.tsx`.
- * Guard condition: both the `Token` cookie and Redux's `isLoggedIn` must
- * be truthy to redirect away — either alone renders the wrapped page
- * normally. "Pattern 2" of the three "is the user logged in" checks
- * cataloged in `docs/specs/state-management.md`.
+ * Guard condition: Redux's `isLoggedIn` flag — the single source of truth
+ * for auth state (see `docs/specs/state-management.md`). Previously also
+ * required `Cookies.get("Token")`, which can never be true for a
+ * Google-OAuth session (that `Token` cookie is `httpOnly`, so it's
+ * invisible to client JS by design) — a Google-signed-in user would land
+ * back on this page instead of being redirected to `/`.
  */
 const DonotRenderWhenLoggedIn = <P extends object>(
   Component: ComponentType<P>,
 ) => {
   const WrappedComponent = (props: P) => {
-    const token = Cookies.get("Token");
     const isLoggedIn = useSelector(selectIsLoggedIn);
 
-    if (token && isLoggedIn) {
+    if (isLoggedIn) {
       return <Navigate to={`/`} />;
     }
 
