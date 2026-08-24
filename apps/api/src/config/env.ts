@@ -14,8 +14,12 @@ const envSchema = z.object({
   CALLBACK_URL: z.string().min(1, "CALLBACK_URL is required"),
   successURL: z.string().min(1, "successURL is required"),
 
-  RAZORPAY_KEY_ID: z.string().min(1, "RAZORPAY_KEY_ID is required"),
-  RAZORPAY_KEY_SECRET: z.string().min(1, "RAZORPAY_KEY_SECRET is required"),
+  // Optional, not required, on purpose: Razorpay isn't wired up as a
+  // launch-blocking dependency. payment.service.ts constructs the Razorpay
+  // client lazily and throws a clear AppError if a request actually reaches
+  // it without these set, rather than the whole API refusing to boot.
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
 
   ORIGIN_URL: z.string().min(1, "ORIGIN_URL is required"),
   ORIGIN_DOMAIN: z.string().min(1, "ORIGIN_DOMAIN is required"),
