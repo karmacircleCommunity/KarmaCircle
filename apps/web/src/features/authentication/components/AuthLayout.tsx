@@ -3,11 +3,12 @@ import type { CSSProperties, ReactNode } from "react";
 import { FiAward, FiCalendar, FiUsers } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
-// Shared by SignIn.tsx and SignUp.tsx — the left brand/value-prop panel and
-// the page shell (background, accent color, right-panel frame) are identical
-// between the two flows; only the form content inside the right panel
-// differs, and that's what callers pass as `children`. Don't fork this into
-// two copies again — extend here instead.
+// Shell for the unified auth flow (pages/Auth.tsx) — the left brand/
+// value-prop panel and the page shell (background, accent color,
+// right-panel frame) stay identical across every step; only the form
+// content inside the right panel changes, and that's what the caller
+// passes as `children`. Don't fork this into per-step copies — extend
+// here instead.
 
 // No numbers/stats here on purpose: this app doesn't have real usage data to
 // back a claim like "10,000+ organizations" and this codebase already has a

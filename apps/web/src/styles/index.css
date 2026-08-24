@@ -307,7 +307,7 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Auth pages (SignIn.tsx/SignUp.tsx via AuthLayout.tsx, marked with the
+/* Auth page (Auth.tsx via AuthLayout.tsx, marked with the
    .auth-page class): neutralize the browser's native autofill styling
    (a forced light-blue/yellow fill + text color, applied the instant a
    field is autofilled) so an autofilled input keeps looking like every

@@ -1,8 +1,8 @@
 export { default as Home } from "@features/landing-home/pages/Home";
 
-//Auth Routes
-export { default as Login } from "@features/authentication/pages/SignIn";
-export { default as SignUp } from "@features/authentication/pages/SignUp";
+// Auth routes are not re-exported from here — routesConfig.tsx lazy-loads
+// `Auth` directly so it actually gets code-split (see known-issues.md's
+// now-fixed [INEFFECTIVE_DYNAMIC_IMPORT] entry).
 
 // User Routes
 export { default as UserProfile } from "@features/onboarding-profile/pages/UserProfile";

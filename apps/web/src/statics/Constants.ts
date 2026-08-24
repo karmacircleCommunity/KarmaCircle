@@ -30,7 +30,7 @@ export const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
 
 // Minimum password bar enforced on sign-in and sign-up alike (useAuth.ts):
 // 8+ characters, at least one digit, one lowercase, one uppercase letter.
-// Exported (rather than left inline in useAuth.ts) so SignUp.tsx's live
+// Exported (rather than left inline in useAuth.ts) so Auth.tsx's live
 // strength meter can check against the exact same rule the submit-time
 // validator uses, instead of a second, possibly-drifting copy.
 export const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;

@@ -30,7 +30,7 @@ Nothing in this folder does data fetching for its own content — it's a static 
 
 **`useEffect` (mount only):** `window.scrollTo(0, 0)` (unconditional, every visit to `/`), then `if (Cookies.get("OAuthLoginInitiated")) handleToken();`. **The cookie is never read again or cleared by this component** — clearing it (if it needs clearing at all) must happen server-side or elsewhere; nothing in this repo does it. If the cookie is ever left set indefinitely after a successful OAuth completion, every subsequent visit to `/` would re-trigger `handleToken()` — worth checking backend behavior before assuming a single successful completion is enough.
 
-**Renders:** `<Helmet>` (title "NgoWorld", static meta description, `canonical="/"`, correct for this page unlike `SignIn.tsx`'s canonical), `<Landing />`, `<Footer />`. **Does not render `<MilanInfoBanner />` or `<Navbar />` directly** — `Navbar` is rendered by `Landing.tsx` itself, one level down.
+**Renders:** `<Helmet>` (title "NgoWorld", static meta description, `canonical="/"`), `<Landing />`, `<Footer />`. **Does not render `<MilanInfoBanner />` or `<Navbar />` directly** — `Navbar` is rendered by `Landing.tsx` itself, one level down.
 
 ## `components/Landing.tsx` — the hero
 

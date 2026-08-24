@@ -12,22 +12,22 @@ import {
   nameRegex,
   passwordRegex,
   STATUSCODE,
-  STATUSMESSAGE,
 } from "@statics/Constants";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const inputClasses =
-  "w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 font-outfit text-body text-ink transition placeholder:text-[14px] placeholder:text-gray-500 focus:border-[var(--auth-accent)] focus:ring-2 focus:ring-[var(--auth-accent)]/15 focus:outline-none";
+  "w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 font-outfit text-body text-ink transition placeholder:text-[14px] placeholder:text-gray-500 focus:border-[var(--auth-accent)] focus:ring-2 focus:ring-[var(--auth-accent)]/15 focus:outline-none disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-500";
 
-// Every field on this form is mandatory (there are no optional fields in
-// either step) — this asterisk is purely a visual "required" cue next to
-// each label, not tied to HTML's own `required` attribute/validation,
-// which the form already handles itself via `errors` + the submit gate.
+// Every field a step asks the user to actually fill in is mandatory — this
+// asterisk is purely a visual "required" cue next to the label, not tied to
+// HTML's own `required` attribute/validation, which the form already
+// handles itself via `errors` + each step's submit gate. Never shown next
+// to the disabled, already-answered email field on steps 2/3.
 const RequiredMark = () => (
   <span className="ml-0.5 align-top text-xs text-red-500" aria-hidden="true">
     *
@@ -75,106 +75,90 @@ const PASSWORD_STRENGTH_META: Record<
   },
 };
 
-const SignUp = () => {
+// One flow, three steps, no separate "Sign In"/"Sign Up" pages:
+//   "email"  — pick individual/organization, enter email, Continue.
+//   "signin" — CheckEmailExists found an account: email is locked in,
+//              password only.
+//   "signup" — CheckEmailExists found nothing: email is locked in,
+//              name + password.
+// Which of "signin"/"signup" the user lands on is decided by the live
+// duplicate-email check below, not by which route (/auth/signin vs
+// /auth/signup) they arrived on — both routes mount this same component
+// and both start at "email". See docs/specs/authentication.md.
+type FlowStep = "email" | "signin" | "signup";
+
+const Auth = () => {
+  const location = useLocation();
+
+  const [step, setStep] = useState<FlowStep>("email");
   const [credentials, setCredentials] = useState<Credentials>({
     name: "",
     email: "",
     password: "",
-    userType: authTypeOptions[1],
+    userType: authTypeOptions[0],
   });
   const [errors, setErrors] = useState<AuthErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Two steps: (1) pick account type + email, (2) name + password. A
-  // four-field form doesn't need a full multi-step wizard, but asking for
-  // everything — including a name — in one dense block is what read as
-  // "too much at once". Splitting after email (the same pattern Linear/
-  // Notion/Vercel use) gets people past the biggest commitment point fast
-  // and asks for the name only once they've already started.
-  const [step, setStep] = useState<1 | 2>(1);
-
-  // Auth functions
-  const { authenticateUser, loading } = useAuth(AuthType.SignUp);
-  const [showPassword, setshowPassword] = useState(false);
-
-  // Set true only by handleContinue's live check-email call — distinct
-  // from `errors.email` just being non-empty, since a plain "invalid
-  // format" error shouldn't offer a "Log in instead" link.
-  const [emailTaken, setEmailTaken] = useState(false);
+  // Loading state for the email step's own CheckEmailExists call — kept
+  // separate from useAuth's `loading`, which only covers the final
+  // sign-in/sign-up submit.
   const [checkingEmail, setCheckingEmail] = useState(false);
 
+  // useAuth's branch (password-strength gate vs plain non-empty check, and
+  // which endpoint to hit) follows whichever step we've landed on. Calling
+  // the hook with a value that changes across renders is fine — it's still
+  // called unconditionally, in the same position, on every render.
+  const authType = step === "signup" ? AuthType.SignUp : AuthType.SignIn;
+  const { authenticateUser, loading } = useAuth(authType);
+
   const isIndividual = credentials.userType?.value === UserType.Individual;
-
-  // The final signup submit can also come back with this exact 409
-  // message (useAuth.ts maps it onto `errors.email`) if the live check
-  // above was skipped or raced by another signup for the same email —
-  // treat that the same as `emailTaken` for showing the "Log in" link.
-  const showLoginLink =
-    emailTaken || errors.email === STATUSMESSAGE.USER_ALREADY_EXISTS;
-
+  const isEmailFormatValid = validateEmail(credentials.email) === null;
   const passwordStrength = getPasswordStrength(credentials.password);
 
-  // Same `validateEmail` used everywhere else email is checked in this
-  // feature — drives the "Continue" button's disabled state below so a
-  // malformed email (non-empty, so the plain `!credentials.email` check
-  // alone wouldn't catch it) can't even be submitted, not just rejected
-  // after the fact.
-  const isEmailFormatValid = validateEmail(credentials.email) === null;
-
-  // If the backend comes back with an email-specific error (e.g. "user
-  // already exists") while the user is on step 2, the email field itself
-  // isn't on screen to show it — step back automatically so the error (and
-  // the toast that already fired alongside it) has somewhere to land.
+  // A duplicate the live check below missed (e.g. a race with another
+  // signup for the same email) still surfaces as `errors.email` from the
+  // signup step's final submit (useAuth.ts maps the backend's 409 onto
+  // it) — the email field isn't on screen there, so step back to give it
+  // somewhere to render.
   useEffect(() => {
-    if (step === 2 && errors.email) {
-      setStep(1);
+    if (step === "signup" && errors.email) {
+      setStep("email");
     }
   }, [step, errors.email]);
 
-  // Single account-type control, used at every breakpoint. This replaces
-  // the old pair of controls (a mobile-only react-select dropdown and a
-  // desktop checkbox-styled switch) that wrote to the same state but could
-  // fall out of sync with each other and cleared `errors` inconsistently.
   const setUserType = (option: (typeof authTypeOptions)[number]) => {
-    setCredentials((prev) => ({
-      ...prev,
-      userType: option,
-      email: "",
-      password: "",
-      name: "",
-    }));
-    setErrors({});
+    setCredentials((prev) => ({ ...prev, userType: option }));
   };
 
   const handleContinue = async () => {
     const emailError = validateEmail(credentials.email);
     if (emailError) {
       setErrors((prev) => ({ ...prev, email: emailError }));
-      setEmailTaken(false);
       return;
     }
 
     setErrors({});
-    setEmailTaken(false);
     setCheckingEmail(true);
     const response = await CheckEmailExists(credentials.email);
     setCheckingEmail(false);
 
-    // Fail open on a broken/unreachable check — the final signup submit
-    // still catches a genuine duplicate via its own 409 (see useAuth.ts),
-    // so a flaky check-email call shouldn't be the thing blocking signup.
+    // Fail open on a broken/unreachable check — a genuine duplicate is
+    // still caught by the signup submit's own 409 (useAuth.ts), so a
+    // flaky check-email call shouldn't be what blocks a new signup.
     if (response?.status === STATUSCODE.OK && response.data?.exists) {
-      setErrors((prev) => ({
-        ...prev,
-        email: STATUSMESSAGE.USER_ALREADY_EXISTS,
-      }));
-      setEmailTaken(true);
-      return;
+      setStep("signin");
+    } else {
+      setStep("signup");
     }
-
-    setStep(2);
   };
 
-  // Handlers
+  const handleBack = () => {
+    setStep("email");
+    setCredentials((prev) => ({ ...prev, password: "" }));
+    setErrors({});
+  };
+
   const handleGoogle = async () => {
     const response = await GoogleAuth(credentials.userType?.value);
     window.location.href = response;
@@ -183,33 +167,49 @@ const SignUp = () => {
   return (
     <>
       <Helmet>
-        <title>NgoWorld | SignUp</title>
+        <title>NgoWorld | Sign In</title>
         <meta
           name="description"
-          content="Welcome to the Club's registration page. Provide all the needed credentials and join us."
+          content="Sign in or create your NgoWorld account to support the causes you care about."
         />
-        <link rel="canonical" href="/auth/signup" />
+        <link rel="canonical" href={location.pathname} />
       </Helmet>
 
       <AuthLayout>
-        {step === 1 ? (
+        {step === "email" && (
           <>
             <h1 className="font-poppins text-[26px] leading-tight font-bold text-ink">
-              Create your account
+              Welcome to NgoWorld
             </h1>
             <p className="mt-2 font-outfit text-body text-gray-600">
-              Sign up as an individual, or register your organization.
+              Enter your email to sign in or create an account.
             </p>
           </>
-        ) : (
+        )}
+
+        {step !== "email" && (
+          <button
+            type="button"
+            onClick={handleBack}
+            className="mb-5 inline-flex items-center gap-1.5 font-outfit text-body text-gray-500 transition-colors hover:text-ink"
+          >
+            <span aria-hidden>←</span> Back
+          </button>
+        )}
+
+        {step === "signin" && (
           <>
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="mb-5 inline-flex items-center gap-1.5 font-outfit text-body text-gray-500 transition-colors hover:text-ink"
-            >
-              <span aria-hidden>←</span> Back
-            </button>
+            <h1 className="font-poppins text-[26px] leading-tight font-bold text-ink">
+              Enter your password
+            </h1>
+            <p className="mt-2 font-outfit text-body text-gray-600">
+              Good to see you again — welcome back.
+            </p>
+          </>
+        )}
+
+        {step === "signup" && (
+          <>
             <h1 className="font-poppins text-[26px] leading-tight font-bold text-ink">
               {isIndividual
                 ? "What's your name?"
@@ -221,7 +221,7 @@ const SignUp = () => {
           </>
         )}
 
-        {step === 1 ? (
+        {step === "email" && (
           <form
             className="mt-6 flex flex-col gap-5"
             onSubmit={(e) => {
@@ -270,6 +270,7 @@ const SignUp = () => {
                 value={credentials.email}
                 className={inputClasses}
                 placeholder="john@gmail.com"
+                autoFocus
                 onChange={(e) => {
                   setCredentials((prev) => ({
                     ...prev,
@@ -278,25 +279,11 @@ const SignUp = () => {
                   if (errors.email) {
                     setErrors((prev) => ({ ...prev, email: undefined }));
                   }
-                  if (emailTaken) {
-                    setEmailTaken(false);
-                  }
                 }}
               />
               {errors.email && (
                 <p className="mt-1 font-outfit text-body text-red-500">
                   {errors.email}
-                  {showLoginLink && (
-                    <>
-                      {" "}
-                      <Link
-                        to="/auth/signin"
-                        className="font-medium text-[var(--auth-accent)] underline"
-                      >
-                        Log in instead
-                      </Link>
-                    </>
-                  )}
                 </p>
               )}
             </div>
@@ -331,7 +318,92 @@ const SignUp = () => {
               </button>
             </div>
           </form>
-        ) : (
+        )}
+
+        {step === "signin" && (
+          <form
+            className="mt-6 flex flex-col gap-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              authenticateUser(credentials, setErrors);
+            }}
+          >
+            <div className="relative flex w-full flex-col">
+              <label className="mb-1.5 font-outfit text-body font-medium text-gray-800">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                autoComplete="username"
+                value={credentials.email}
+                disabled
+                className={inputClasses}
+              />
+            </div>
+
+            <div className="relative flex w-full flex-col">
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <label className="font-outfit text-body font-medium text-gray-800">
+                  Password
+                  <RequiredMark />
+                </label>
+                {/* Not a link — there's no forgot-password route in this
+                    app yet. */}
+                <span className="font-outfit text-sm text-gray-400">
+                  Forgot password?
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  autoComplete="current-password"
+                  className={`${inputClasses} pr-11`}
+                  placeholder="Enter your password"
+                  value={credentials.password}
+                  autoFocus
+                  onChange={(e) => {
+                    setCredentials((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }));
+                    if (errors.password) {
+                      setErrors((prev) => ({ ...prev, password: undefined }));
+                    }
+                  }}
+                />
+                {showPassword ? (
+                  <FaEye
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute top-1/2 right-3.5 -translate-y-1/2 cursor-pointer text-gray-400 select-none hover:text-ink"
+                  />
+                ) : (
+                  <FaEyeSlash
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute top-1/2 right-3.5 -translate-y-1/2 cursor-pointer text-gray-400 select-none hover:text-ink"
+                  />
+                )}
+              </div>
+              {errors.password && (
+                <p className="mt-1 font-outfit text-body text-red-500">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(138,90,46,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(138,90,46,0.55)] disabled:bg-[var(--auth-accent)]!"
+              isLoading={loading}
+              disabled={loading || !credentials.password}
+            >
+              Sign In
+            </Button>
+          </form>
+        )}
+
+        {step === "signup" && (
           <form
             className="mt-6 flex flex-col gap-5"
             onSubmit={(e) => {
@@ -350,6 +422,20 @@ const SignUp = () => {
               authenticateUser({ ...credentials, name: trimmedName }, setErrors);
             }}
           >
+            <div className="relative flex w-full flex-col">
+              <label className="mb-1.5 font-outfit text-body font-medium text-gray-800">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                value={credentials.email}
+                disabled
+                className={inputClasses}
+              />
+            </div>
+
             <div className="flex flex-col gap-4">
               <div className="relative flex w-full flex-col">
                 <label className="mb-1.5 font-outfit text-body font-medium text-gray-800">
@@ -400,11 +486,6 @@ const SignUp = () => {
                   Password
                   <RequiredMark />
                 </label>
-                {/* Icon's positioning parent is this wrapper, not the
-                    outer flex column above — keeping it scoped to just
-                    the input means top-1/2 centers it against the
-                    input's own box, regardless of label height/font
-                    size, instead of a fragile hardcoded offset. */}
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -429,12 +510,12 @@ const SignUp = () => {
                   />
                   {showPassword ? (
                     <FaEye
-                      onClick={() => setshowPassword(!showPassword)}
+                      onClick={() => setShowPassword(!showPassword)}
                       className="absolute top-1/2 right-3.5 -translate-y-1/2 cursor-pointer text-gray-400 select-none hover:text-ink"
                     />
                   ) : (
                     <FaEyeSlash
-                      onClick={() => setshowPassword(!showPassword)}
+                      onClick={() => setShowPassword(!showPassword)}
                       className="absolute top-1/2 right-3.5 -translate-y-1/2 cursor-pointer text-gray-400 select-none hover:text-ink"
                     />
                   )}
@@ -478,21 +559,9 @@ const SignUp = () => {
             </Button>
           </form>
         )}
-
-        {step === 1 && (
-          <p className="mt-6 text-center font-outfit text-body text-gray-600">
-            Already have an account?{" "}
-            <Link
-              to={"/auth/signin"}
-              className="font-medium text-[var(--auth-accent)] no-underline hover:underline"
-            >
-              Log in
-            </Link>
-          </p>
-        )}
       </AuthLayout>
     </>
   );
 };
 
-export default SignUp;
+export default Auth;

@@ -5,7 +5,8 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 /**
- * Route guard HOC applied to `SignIn`/`SignUp` in `routesConfig.jsx`.
+ * Route guard HOC applied to the unified `Auth` page (both `/auth/signin`
+ * and `/auth/signup`) in `routesConfig.tsx`.
  * Guard condition: both the `Token` cookie and Redux's `isLoggedIn` must
  * be truthy to redirect away — either alone renders the wrapped page
  * normally. "Pattern 2" of the three "is the user logged in" checks

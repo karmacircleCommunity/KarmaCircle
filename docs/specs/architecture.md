@@ -21,8 +21,8 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | Path | Element | Notes |
 |---|---|---|
 | `/` | `Home` | Landing page + marketing content |
-| `/auth/signup` | `SignUp` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
-| `/auth/signin` | `SignIn` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
+| `/auth/signup` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Same component as `/auth/signin` — one unified sign-in/sign-up flow, see below |
+| `/auth/signin` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
 | `/user/:userName` | `Profile` | Individual-user public profile |
 | `/clubs` | `Clubs` | Club/org directory |
 | `/club/:userName` | `Profile` | Club public profile — reuses the same `Profile` component as `/user/:userName` |
@@ -32,11 +32,11 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | `/trending` | `Trending` | "Coming soon" placeholder |
 | `*` | `Error404` | Catch-all |
 
-`SignIn` and `SignUp` are the only lazily-loaded routes (`lazy(() => import(...))`), and are each wrapped by [DonotRenderWhenLoggedIn](../../apps/web/src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) — a HOC that redirects an already-authenticated user to `/`.
+`Auth` is the only lazily-loaded route (`lazy(() => import(...))`), mounted at both `/auth/signup` and `/auth/signin` and wrapped by [DonotRenderWhenLoggedIn](../../apps/web/src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) — a HOC that redirects an already-authenticated user to `/`.
 See [authentication.md](./authentication.md).
 
-Pages are exported from a barrel file, [apps/web/src/app/routes/route.ts](../../apps/web/src/app/routes/route.ts), and re-exported under friendlier names (`Login` for `SignIn`, etc.).
-`routesConfig.tsx` imports most pages from this barrel but imports `Home` and `Trending` directly — there's no functional difference, just inconsistent style.
+Pages are exported from a barrel file, [apps/web/src/app/routes/route.ts](../../apps/web/src/app/routes/route.ts).
+`routesConfig.tsx` imports most pages from this barrel but imports `Home`, `Trending`, and `Auth` directly — there's no functional difference for the ones that could go through the barrel, just inconsistent style. `Auth` specifically must be imported directly (not re-exported from `route.ts`) for its `lazy()` wrapping to actually code-split it — see [known-issues.md](./known-issues.md)'s former `[INEFFECTIVE_DYNAMIC_IMPORT]` entry, now fixed this way.
 
 There is no `/donate` route registered anywhere, even though `apps/web/src/features/donate-shop-trending/pages/Donate.tsx` exists.
 There is no `/events/:id` (or similar) detail route either, even though `apps/web/src/features/events/pages/DetailedEvent.tsx` exists as a stub.
@@ -73,7 +73,7 @@ apps/web/src/
     routes/                    — routesConfig.tsx (route table), route.ts (page barrel)
     store/                     — Redux Toolkit store + userSlice, Zustand store (useAuth — loading flag only)
   features/
-    authentication/            — SignIn/SignUp pages, AuthButton, DonotRenderWhenLoggedIn, useAuth/useValidation/useFormLogic
+    authentication/            — unified Auth page, AuthButton, DonotRenderWhenLoggedIn, useAuth/useValidation/useFormLogic
     onboarding-profile/        — Profile/UserProfile pages, ProfileCompletion/ProfileUpdate modals, ProfileElements
     dashboard/                 — Dashboard page, ProfileSection, TrackSection
     clubs/                     — Clubs page, ClubCard, Clubs.ts fetcher

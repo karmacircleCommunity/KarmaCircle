@@ -29,7 +29,7 @@ Treat entries here as **things to be aware of**, not necessarily things to fix u
 - **Two "create event" components** (`features/events/components/CreateEvent.tsx` and `features/events/components/CreateEvents.tsx`) with different fields, different validation, and — critically — the shared one calls the *user profile* update endpoint instead of the event-creation endpoint. See [events.md](./events.md).
 - **Two public profile pages** (`features/onboarding-profile/pages/Profile.tsx`, routed; `features/onboarding-profile/pages/UserProfile.tsx`, not routed) covering overlapping functionality, with different "is this my own profile" checks (Redux vs. an unused cookie). See [onboarding-profile.md](./onboarding-profile.md).
 - **Two profile-edit modals** (`ProfileCompletion.tsx`, `ProfileUpdate.tsx`) that are ~80% identical JSX/logic, plus a `ProfileCompletion` component that itself has two Save buttons wired to two different code paths. See [onboarding-profile.md](./onboarding-profile.md).
-- **Two auth submit-button implementations** — `AuthButton.tsx` (unused) vs. inline markup in `SignIn.tsx`/`SignUp.tsx` (live). See [authentication.md](./authentication.md).
+- **Two auth submit-button implementations** — `AuthButton.tsx` (unused) vs. inline markup in `Auth.tsx` (live). See [authentication.md](./authentication.md).
 - **Two validation systems for signup** — the lightweight two-field check inside `useAuth.ts` (live) vs. the much more complete `useValidation.ts` + `useFormLogic.ts` pair (unused by any page). See [authentication.md](./authentication.md).
 - **Three different "is the user logged in" checks** and **three different logout cleanup sequences**, none centralized. See [state-management.md](./state-management.md).
 - **`userEndpoints.update` vs `userEndpoints.updateProfile`** — two endpoint constants pointing at different URLs; only `updateProfile` is actually used. See [api-integration.md](./api-integration.md).
@@ -54,8 +54,8 @@ In practice, the Save buttons are also `disabled` while required fields are empt
 
 These exist, work as isolated units, and appear to be intended for future/finished use — prefer extending or wiring these up over writing new ones that duplicate their purpose:
 - `ProfileElements.ts` + `getProfileFields.ts` — generic profile-field metadata, unused by the (hardcoded-field) `ProfileCompletion`/`ProfileUpdate` forms.
-- `useValidation.ts` + `useFormLogic.ts` — a fuller signup validator/handler pair, unused by the live `SignIn`/`SignUp` pages.
-- `AuthButton.tsx` — unused by the live auth pages.
+- `useValidation.ts` + `useFormLogic.ts` — a fuller signup validator/handler pair, unused by the live `Auth` page.
+- `AuthButton.tsx` — unused by the live auth page.
 - `Modal.tsx` — a generic modal shell, unused; every modal in the app builds its own overlay markup instead.
 - `MilanInfoBanner` — a finished marketing section, unmounted from `Home.tsx`.
 - `Header.tsx` + `HeaderData.ts` — has ready-made "clubs"/"events" copy, but `Clubs.tsx`/`Events.tsx` both build their own inline header instead of using it.
@@ -72,7 +72,6 @@ These exist, work as isolated units, and appear to be intended for future/finish
 - `Dashboard.tsx` has a stray `console.log` in its "Edit Profile" click handler.
 - `useEvent.ts`'s `submitCallback` checks a module-scope `errors` object populated by the *last* `validateEvent()` call rather than re-validating the event being submitted right now — callers must call `validateEvent()` immediately beforehand to keep these in sync (which `CreateEvents.tsx` does today, but it's an easy thing to break).
 - `ApiConnector.ts` has a dead/unreachable status check (`if (response.status === 400) console.error("... status 600 ...")`) — the comment references 600 but the condition checks 400, and axios throws rather than resolving on 4xx by default, so this branch doesn't currently fire in practice.
-- `routesConfig.tsx` lazy-loads `SignIn`/`SignUp` (`lazy(() => import(...))`), but `route.ts` (the page barrel) also statically re-exports them (`Login`/`SignUp`) and is itself statically imported for the other routes. The bundler reports `[INEFFECTIVE_DYNAMIC_IMPORT]` for both at build time — the static re-export pulls `SignIn`/`SignUp` into the main chunk anyway, so the `lazy()` wrapping doesn't actually code-split them. Pre-existing (not introduced by the feature-based restructure, just newly visible in the build log); fix would be to drop `Login`/`SignUp` from `route.ts` since `routesConfig.tsx` doesn't consume them from there.
 
 ## Newly identified while writing per-feature `SPEC.md` files (August 2026)
 
