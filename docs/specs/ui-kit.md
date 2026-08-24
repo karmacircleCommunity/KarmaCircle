@@ -3,7 +3,7 @@
 ## `Button`
 
 [apps/web/src/components/buttons/Button.tsx](../../apps/web/src/components/buttons/Button.tsx), styled with Tailwind utility classes (a `variantClasses` lookup keyed by `variant`).
-This is the one truly shared, widely-adopted primitive in the app — used across auth, profile, clubs, events, dashboard, and error pages.
+This is the one truly shared, widely-adopted primitive in the app — used across auth, profile, organizations, events, dashboard, and error pages.
 
 Props: `type` (default `"button"`), `variant` (default `"solid"`; also `"outline"` is used at call sites — check `Button.tsx`'s `variantClasses` for the full set of variant classes before assuming others exist), `className`, `to`, `disabled`, `isLoading`, `cypressfield` (sets `data-cy`, for Cypress test targeting), `onClickfunction` (the click handler prop — **not** `onClick`; passing a plain `onClick` would be spread onto the element via `...props` and technically still work as a native handler, but `onClickfunction` is the prop this codebase consistently uses at every call site, so use it for consistency).
 
@@ -16,7 +16,7 @@ While `isLoading` is true, `children` are replaced with a `react-spinners` `Clip
 
 ## Card components
 
-- `ClubCard` — see [clubs.md](./clubs.md).
+- `OrganizationCard` — see [organizations.md](./organizations.md).
 - `EventCard`, `EventSlider`, `FeaturedEventCard`, `FeaturedEventImage`, `EventsMarqueeCards` — see [events.md](./events.md).
 
 All card components are exported from `apps/web/src/components/index.ts` (or imported directly by deep path — both patterns appear at different call sites; prefer the barrel for anything already exported there).

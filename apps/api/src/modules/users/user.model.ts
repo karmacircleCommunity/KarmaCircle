@@ -8,7 +8,7 @@ import mongoose, { Document, Schema } from "mongoose";
  * honest while still giving autocomplete/typo-safety for the two known
  * values.
  */
-export type UserType = "individual" | "club";
+export type UserType = "individual" | "organization";
 
 export interface IUser extends Document {
   userType?: UserType | (string & NonNullable<unknown>);
@@ -81,14 +81,15 @@ const userSchema = new Schema<IUser>(
     cart: [{ id: { type: String } }],
     tokenVersion: { type: Number, default: 0 },
   },
-  // Individuals and clubs live in one physical collection (see below) but
-  // are split at the schema level via a Mongoose discriminator keyed on
-  // this already-existing `userType` field, rather than an unconstrained
-  // string every module re-filters on by convention. Neither discriminator
-  // adds fields yet — there's no club-only data today — but this is the
-  // home for that once it exists, instead of it landing loosely on the
-  // shared base schema. See known-issues.md's former "individuals/clubs
-  // share one undiscriminated User collection" entry.
+  // Individuals and organizations live in one physical collection (see
+  // below) but are split at the schema level via a Mongoose discriminator
+  // keyed on this already-existing `userType` field, rather than an
+  // unconstrained string every module re-filters on by convention. Neither
+  // discriminator adds fields yet — there's no organization-only data
+  // today — but this is the home for that once it exists, instead of it
+  // landing loosely on the shared base schema. See known-issues.md's
+  // former "individuals/organizations share one undiscriminated User
+  // collection" entry.
   { discriminatorKey: "userType" },
 );
 
@@ -102,15 +103,18 @@ export const Individual = User.discriminator<IUser>(
   "individual",
   new Schema<IUser>({}),
 );
-export const Club = User.discriminator<IUser>("club", new Schema<IUser>({}));
+export const Organization = User.discriminator<IUser>(
+  "organization",
+  new Schema<IUser>({}),
+);
 
 /**
  * Resolves which model to construct a new user document with. Anything
- * other than exactly "club" defaults to `Individual` — matching the
- * pre-discriminator behavior where an absent/garbage `userType` still
+ * other than exactly "organization" defaults to `Individual` — matching
+ * the pre-discriminator behavior where an absent/garbage `userType` still
  * produced a normal, queryable user, just without a real discriminator
  * schema backing it.
  */
 export function getUserModel(userType?: string): typeof Individual {
-  return userType === "club" ? Club : Individual;
+  return userType === "organization" ? Organization : Individual;
 }

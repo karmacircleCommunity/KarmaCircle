@@ -18,8 +18,8 @@ const Links = [
     link: "/",
   },
   {
-    name: "Clubs",
-    link: "/clubs",
+    name: "Organizations",
+    link: "/organizations",
   },
   {
     name: "Trending",
@@ -247,7 +247,7 @@ const Navbar = () => {
             >
               {user?.userType === "individual" ? "Your Profile" : "Dashboard"}
             </Link>
-            {user?.userType === "club" ? (
+            {user?.userType === "organization" ? (
               <Link
                 to={"/event/create"}
                 className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"

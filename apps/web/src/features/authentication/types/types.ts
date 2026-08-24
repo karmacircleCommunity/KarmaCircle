@@ -4,14 +4,14 @@ import type {
   ValidationError,
   ValidationSuccess,
   IndividualFormState,
-  ClubFormState,
+  OrganizationFormState,
 } from "./interfaces";
 
 export type SetAuthErrors = Dispatch<SetStateAction<AuthErrors>>;
 
 export type ValidationResult = ValidationError[] | ValidationSuccess;
 
-export type SignupFormState = IndividualFormState | ClubFormState;
+export type SignupFormState = IndividualFormState | OrganizationFormState;
 
 export type SubmitCallback = (
   formState: SignupFormState,

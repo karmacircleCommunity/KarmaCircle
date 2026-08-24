@@ -10,7 +10,7 @@ import type { ProfileFieldsInfo } from "../types";
 function getMissingElements(info?: ProfileFieldsInfo): string[] {
   const missing: string[] = [];
 
-  if (info?.userType === "club") {
+  if (info?.userType === "organization") {
     brandingFields.forEach((field) => {
       if (info[field] === undefined) {
         missing.push(field);
@@ -22,7 +22,7 @@ function getMissingElements(info?: ProfileFieldsInfo): string[] {
 }
 
 function getEditableFields(info?: ProfileFieldsInfo): string[] {
-  return info?.userType === "club"
+  return info?.userType === "organization"
     ? [...mandatoryFields, ...brandingFields, ...addressFields]
     : [...mandatoryFields, ...addressFields];
 }
@@ -32,7 +32,7 @@ function getEditableFields(info?: ProfileFieldsInfo): string[] {
  * generic/dynamic profile-form component (see SPEC.md).
  */
 export default function getProfileFields(info?: ProfileFieldsInfo): string[] {
-  return info?.userType === "club" && (info?.tagLine === "" || !info?.tagLine)
+  return info?.userType === "organization" && (info?.tagLine === "" || !info?.tagLine)
     ? getMissingElements(info)
     : getEditableFields(info);
 }

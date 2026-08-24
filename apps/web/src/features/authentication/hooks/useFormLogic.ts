@@ -6,7 +6,7 @@ import useAuthStore from "@app/store/useAuth";
 import { UserType } from "@/types/user";
 import useValidation from "./useValidation";
 import type {
-  ClubFormState,
+  OrganizationFormState,
   IndividualFormState,
   SignupFormState,
   SubmitCallback,
@@ -108,8 +108,8 @@ export const individualInitialFormState: IndividualFormState = {
   lastName: "",
 };
 
-export const clubInitialFormState: ClubFormState = {
-  userType: UserType.Club,
+export const organizationInitialFormState: OrganizationFormState = {
+  userType: UserType.Organization,
   slug: "",
   email: "",
   password: "",

@@ -33,22 +33,22 @@ Two unrelated event-creation UIs were built at different times and never reconci
 
 ## `pages/Events.tsx`
 
-**`ComponentHelmet type="Clubs"`** — passes the wrong `type` string (should be `"Events"` — `ComponentHelmet` has a dedicated `"Events"` branch it never reaches here); see [layout-navigation.md](../../../docs/specs/layout-navigation.md). Likely a copy-paste leftover from `Clubs.tsx`.
+**`ComponentHelmet type="Events"`** — correct `type` string, matching `ComponentHelmet`'s dedicated `"Events"` branch; see [layout-navigation.md](../../../docs/specs/layout-navigation.md). Was previously a copy-paste leftover from `Organizations.tsx` (`type="Organizations"`, wrong for this page) — fixed August 2026 alongside the club → organization rename.
 
 **The `events` array is hardcoded and, worse, shaped like the wrong kind of record:**
 ```js
 const events = Array.from({ length: 20 }, () => ({
   _id: "673ac2814c6e89e58af8ca11",
-  userType: "club", userName: "tamalcodes", name: "God Father Org",
+  userType: "organization", userName: "tamalcodes", name: "God Father Org",
   email: "tamalcodes@gmail.com", password: "$2a$10$90vC9McfHXpXpLlzUOFeuulorPR9dIQ2ns37uIP5sX5ehyO5C.Mmm",
   cart: [], __v: 0,
 }));
 ```
-This is **the exact same fixture object as `Clubs.tsx`'s hardcoded `clubs` array** (a user/club record — `_id`, `userType`, `userName`, `name`, `email`, `password`, `cart`, `__v`), not shaped like an event at all (no `startDate`, `mode`, `coverImage`, etc. — compare to what `EventsMarqueeCards.tsx` or `useEvent.ts`'s `event` state actually expect). This mismatch is currently invisible in the UI only because `EventCard` (below) doesn't read its `event` prop at all — if `EventCard` were ever fixed to use real event fields, this hardcoded array would need to be replaced with actually-event-shaped data, not just "made dynamic."
+This is **the exact same fixture object as `Organizations.tsx`'s hardcoded `organizations` array** (a user/organization record — `_id`, `userType`, `userName`, `name`, `email`, `password`, `cart`, `__v`), not shaped like an event at all (no `startDate`, `mode`, `coverImage`, etc. — compare to what `EventsMarqueeCards.tsx` or `useEvent.ts`'s `event` state actually expect). This mismatch is currently invisible in the UI only because `EventCard` (below) doesn't read its `event` prop at all — if `EventCard` were ever fixed to use real event fields, this hardcoded array would need to be replaced with actually-event-shaped data, not just "made dynamic."
 
-**Chrome:** search input + "Filters" button (both inert, no handlers, same as `Clubs.tsx`), a "Create An Event" button (`onClickfunction={() => setShowCreateModal(true)}`, correctly using the shared `Button` component), `<EventSlider />`, an `<hr>`, the event grid, then `{showCreateModal && <CreateEvent setShowCreateModal={setShowCreateModal} />}`.
+**Chrome:** search input + "Filters" button (both inert, no handlers, same as `Organizations.tsx`), a "Create An Event" button (`onClickfunction={() => setShowCreateModal(true)}`, correctly using the shared `Button` component), `<EventSlider />`, an `<hr>`, the event grid, then `{showCreateModal && <CreateEvent setShowCreateModal={setShowCreateModal} />}`.
 
-**The `Loading` fallback is dead code** for the same reason as `Clubs.tsx` — `events` is always a populated 20-item array.
+**The `Loading` fallback is dead code** for the same reason as `Organizations.tsx` — `events` is always a populated 20-item array.
 
 ## Two different "create event" components — the central thing to get right
 
@@ -127,7 +127,7 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 
 ## Event display components — none read real data except one unused component
 
-- **`EventCard.tsx`** — **declares no parameters at all** (`const EventCard = () => {...}`), so `Events.tsx`'s `event={event}` prop is not even destructured, let alone used. Every visible field ("Food Marathon, 2025", "GodLike Club", the description paragraph, three identical GitHub avatar images, "+300 Participated") is hardcoded JSX, byte-for-byte identical across all 20 rendered cards.
+- **`EventCard.tsx`** — **declares no parameters at all** (`const EventCard = () => {...}`), so `Events.tsx`'s `event={event}` prop is not even destructured, let alone used. Every visible field ("Food Marathon, 2025", "GodLike Organization", the description paragraph, three identical GitHub avatar images, "+300 Participated") is hardcoded JSX, byte-for-byte identical across all 20 rendered cards.
 - **`FeaturedEventCard.tsx`** — same hardcoded content as `EventCard.tsx` (near-identical JSX, different class prefix `featured_eventcard_*`), also takes no props. Its CTA is "Register Now" — a plain `<button>` with no `onClick`.
 - **`FeaturedEventImage.tsx`** — a static "Featured" tag + a single hardcoded Devfolio-hosted image URL, no props.
 - **`EventSlider.tsx`** — builds a fixed 10-item `slides` array (alternating `FeaturedEventImage`/`FeaturedEventCard`, ids 1–10, all rendering identical static content per above), pairs them two-per-slide (`slides.length / 2` = 5 slides), and auto-advances `index` via `setInterval(..., 3000)` with CSS `transform: translateX(-${index*100}%)`. No Swiper/carousel library despite `swiper` CSS being imported at the page level for other components — this is a hand-rolled carousel. No pause-on-hover, no manual nav controls, no accessibility affordances (no `aria-live`, no keyboard control).
@@ -138,13 +138,13 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 Confirmed via direct read: the file is **0 bytes**, no export at all.
 Any `import HostedEvents from "..."` would resolve to `undefined` as the default export — rendering `<HostedEvents />` would throw (`Element type is invalid`).
 Its sibling stylesheet, `HosedEvents.scss` (note the filename itself is missing the "t" in "Hosted" — `Hosed`, not `Hosted`), is also not imported by anything, including the empty component file, so it's doubly dead.
-Given the name, this was likely intended to show a logged-in club's own list of hosted events (a natural companion to `Dashboard.tsx`) — if asked to build that feature, this is the file to fill in, but there's no existing logic here to preserve; it's a truly blank slate, not a stub with a signature to match.
+Given the name, this was likely intended to show a logged-in organization's own list of hosted events (a natural companion to `Dashboard.tsx`) — if asked to build that feature, this is the file to fill in, but there's no existing logic here to preserve; it's a truly blank slate, not a stub with a signature to match.
 
 ## `services/Events.ts` — `getEvents()`, correct, never called
 
-Identical shape to `clubs/services/Clubs.ts`'s `getClubs()` — same `apiConnector`-based Layer B call pattern, same throw-on-non-200 behavior (see [clubs/SPEC.md](../clubs/SPEC.md) for the full explanation of this calling convention, which is the opposite of `MilanApi.ts`'s catch-and-return-response pattern).
-`clubEndpoints.all` → `eventEndpoints.all` is the only substantive difference.
-Even the leftover comment above the function (`// get clubs`) is a copy-paste artifact from `Clubs.ts` — cosmetic, but a good signal of how directly one file was cloned from the other.
+Identical shape to `organizations/services/Organizations.ts`'s `getOrganizations()` — same `apiConnector`-based Layer B call pattern, same throw-on-non-200 behavior (see [organizations/SPEC.md](../organizations/SPEC.md) for the full explanation of this calling convention, which is the opposite of `MilanApi.ts`'s catch-and-return-response pattern).
+`organizationEndpoints.all` → `eventEndpoints.all` is the only substantive difference.
+Even the leftover comment above the function (`// get organizations`) is a copy-paste artifact from `Organizations.ts` — cosmetic, but a good signal of how directly one file was cloned from the other.
 
 ## `utils/convertToBase64.ts`
 
@@ -166,7 +166,7 @@ Only consumer is `EventsMarqueeCards.tsx` (itself unused) — so this function c
 ```
 Events.tsx render
    ▼
-events = 20x identical hardcoded user/club-shaped object   (no network call)
+events = 20x identical hardcoded user/organization-shaped object   (no network call)
    ▼
 events.map(event => <EventCard event={event} />)   ← EventCard takes no params, event is discarded
 ```
@@ -192,7 +192,7 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - **`EventCard.tsx` ignores its `event` prop entirely** — its call site in `Events.tsx` suppresses the resulting excess-property error rather than `EventCard` being given a prop type it doesn't actually read.
 - **`CreateEvent.tsx`'s `htmlFor` attributes on `<div>` elements** (the event-mode picker) aren't valid on a `div` — harmless pre-existing markup, suppressed rather than removed.
 
-`Events.tsx`'s hardcoded `events` array is now explicitly typed as `Club[]` (imported from `@features/clubs/types`) rather than a home-grown `EventRecord[]`, to make the "this is club-shaped, not event-shaped" mismatch the type checker's problem too, not just a documentation note.
+`Events.tsx`'s hardcoded `events` array is now explicitly typed as `Organization[]` (imported from `@features/organizations/types`) rather than a home-grown `EventRecord[]`, to make the "this is organization-shaped, not event-shaped" mismatch the type checker's problem too, not just a documentation note.
 `useEvent.ts`'s `submitCallback` asserts `CreateEvent()`'s (from `MilanApi.ts`) return type at the call site, since that function's own catch block returns the caught error as-is rather than `error.response` — its real inferred type collapses to include `unknown`. `HostedEvents.tsx` stays a genuinely empty (0-byte) file, matching `HostedEvents.tsx` — there was nothing to add types to.
 
 ## Known issues specific to this feature (superset of known-issues.md's events entries, plus new findings)
@@ -204,7 +204,7 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - `validateEvent()`'s mode-specific field checks (address/mapIframe or platformLink) only run if a top-level required field is also missing, letting an event with all top-level fields but no address/platform link pass validation — new finding, refines the existing known-issues.md entry about this hook.
 - `submitCallback`'s reliance on same-render closure identity between `validateEvent()` and `submitCallback()` — already flagged in `known-issues.md`, precise mechanism explained above.
 - `EventCard`, `FeaturedEventCard`, `FeaturedEventImage` all ignore their (or any) props entirely — already in `known-issues.md`.
-- `Events.tsx` passes `type="Clubs"` to `ComponentHelmet` — already in `known-issues.md`.
+- `Events.tsx` passes `type="Organizations"` to `ComponentHelmet` — already in `known-issues.md`.
 - `HostedEvents.tsx` is a 0-byte file; importing it throws — already in `known-issues.md`. Its `.scss` sibling has a typo'd filename (`Hosed` not `Hosted`) — new finding.
 - `convertToBase64.ts`'s `converter` can hang forever on a falsy file (currently unreachable via the guarded call site) — new finding.
 - `getEvents()` is fully correct and unused — already in `known-issues.md`.
@@ -212,7 +212,7 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 ## If you're asked to...
 
 - **"Add event creation" / "fix the create event button"** → clarify which surface: `/events`'s button opens the non-functional `CreateEvent.tsx`. The correct implementation to build from is `CreateEvents.tsx` + `useEvent.ts`, which isn't wired into any page — the fix is very likely swapping `Events.tsx`'s import from `CreateEvent` to `CreateEvents` (checking prop-name compatibility — `CreateEvent` takes `setShowCreateModal`, `CreateEvents` takes `setshowCreateModal`, different casing) rather than patching the broken component in place.
-- **"Make the events page live"** → same shape as the clubs-page fix: wire `useSWR(eventEndpoints.all, getEvents)` into `Events.tsx` in place of the hardcoded array, then fix `EventCard.tsx` to actually accept and render its `event` prop (it currently has no parameter to even destructure from).
-- **"Fix the copy-paste SEO bug on the events page"** → change `<ComponentHelmet type="Clubs" />` to `type="Events"` in `Events.tsx`.
+- **"Make the events page live"** → same shape as the organizations-page fix: wire `useSWR(eventEndpoints.all, getEvents)` into `Events.tsx` in place of the hardcoded array, then fix `EventCard.tsx` to actually accept and render its `event` prop (it currently has no parameter to even destructure from).
+- **"Fix the copy-paste SEO bug on the events page"** → change `<ComponentHelmet type="Organizations" />` to `type="Events"` in `Events.tsx`.
 - **"Build a 'my hosted events' view for the dashboard"** → `HostedEvents.tsx` is the intended file (currently empty) — there's no existing logic to preserve, treat it as new work.
 - **"Show a real event's location/platform info somewhere"** → `EventsMarqueeCards.tsx` already does this correctly and just needs a page to render it from; the commented-out `Marquee` block in `onboarding-profile/pages/Profile.tsx` is the most likely intended destination.

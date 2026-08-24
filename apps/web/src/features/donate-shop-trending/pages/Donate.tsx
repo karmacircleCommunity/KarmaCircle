@@ -1,4 +1,4 @@
-// This is the donate page where we come and select clubs to donate an amount !
+// This is the donate page where we come and select organizations to donate an amount !
 
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
@@ -8,43 +8,43 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // @ts-expect-error — pre-existing broken import, not introduced by this
 // conversion: this path doesn't exist in the current tree (there is no
-// components/Cards/SingleClubEvent anywhere in the repo). Per SPEC.md,
+// components/Cards/SingleOrganizationEvent anywhere in the repo). Per SPEC.md,
 // this file is not routed and would fail to build the moment it's
 // actually reached; kept behavior-identical here rather than fixed,
 // since fixing it is a near-full rewrite out of scope for a types-only
 // pass. See docs/specs/donate-shop-trending.md.
-import SingleClubEvent from "../../components/Cards/SingleClubEvent/SingleClubEvent";
+import SingleOrganizationEvent from "../../components/Cards/SingleOrganizationEvent/SingleOrganizationEvent";
 // @ts-expect-error — same as above: wrong relative depth (this resolves to
 // src/features/components/Loading, not src/components/Loading.tsx, where
 // the real component now lives, exported from the shared @components barrel).
 import Loading from "../../components/Loading";
-import { GetAllClubs } from "@services/MilanApi";
+import { GetAllOrganizations } from "@services/MilanApi";
 import "./Donate.css";
 
 const Donate = () => {
   document.title = "Milan | Donate the needy";
 
-  // `GetAllClubs()`'s real, unverified-from-this-repo response shape
+  // `GetAllOrganizations()`'s real, unverified-from-this-repo response shape
   // (see SPEC.md) — left as `any[]` rather than invented as a typed
-  // `Club[]`, since this fetch path has never actually run.
+  // `Organization[]`, since this fetch path has never actually run.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [clubData, setClubData] = useState<any[]>([]);
+  const [organizationData, setOrganizationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchClubData = async () => {
+    const fetchOrganizationData = async () => {
       setLoading(true);
-      const response = await GetAllClubs();
+      const response = await GetAllOrganizations();
       // @ts-expect-error — pre-existing bug (see SPEC.md/known-issues.md):
       // stores the raw response directly instead of `response.data`, and
       // doesn't check `response.status` first, so a failed request (now
-      // typed as possibly `undefined`) would be stored as `clubData`
+      // typed as possibly `undefined`) would be stored as `organizationData`
       // as-is. Preserved as-is, out of scope for a types-only pass.
-      setClubData(response);
+      setOrganizationData(response);
       setLoading(false);
     };
-    fetchClubData();
+    fetchOrganizationData();
   }, []);
 
   const loadScript = (src: string): Promise<boolean> => {
@@ -101,7 +101,7 @@ const Donate = () => {
             from your end help thousands of unfortunate people live their lives.
           </p>
           <p>
-            Choose any club, donate whatever you want, even 5 rupees helps !
+            Choose any organization, donate whatever you want, even 5 rupees helps !
           </p>
         </div>
       </div>
@@ -114,8 +114,8 @@ const Donate = () => {
             <Loading />
           ) : (
             <>
-              {clubData.map((club) => {
-                return <SingleClubEvent key={club._id} club={club} />;
+              {organizationData.map((organization) => {
+                return <SingleOrganizationEvent key={organization._id} organization={organization} />;
               })}
             </>
           )}

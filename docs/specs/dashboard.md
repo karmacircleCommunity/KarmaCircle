@@ -1,6 +1,6 @@
 # Dashboard
 
-Routed at `/dashboard`, reachable by URL to any visitor regardless of auth state (no route guard — see [authentication.md](./authentication.md)); in practice it only shows meaningful data when the session cookie belongs to a club/org account.
+Routed at `/dashboard`, reachable by URL to any visitor regardless of auth state (no route guard — see [authentication.md](./authentication.md)); in practice it only shows meaningful data when the session cookie belongs to an organization/org account.
 
 ## `Dashboard.tsx`
 
@@ -27,7 +27,7 @@ Matches the "Coming Soon" framing in `Dashboard.tsx` — this is intentionally a
 
 ## `fetchDashboard` (defined, unused)
 
-[MilanApi.ts](../../apps/web/src/services/MilanApi.ts) exports `fetchDashboard()` (`GET /clubs/dashboard`, via `clubEndpoints.dashboard`).
+[MilanApi.ts](../../apps/web/src/services/MilanApi.ts) exports `fetchDashboard()` (`GET /organizations/dashboard`, via `organizationEndpoints.dashboard`).
 No component currently calls it — `Dashboard.tsx` fetches `userEndpoints.profile` instead.
 If you're asked to wire up real dashboard analytics, this is the endpoint that was evidently intended for it.
 

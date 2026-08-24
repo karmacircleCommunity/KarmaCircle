@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { JSX } from "react";
 import Home from "@features/landing-home/pages/Home";
-import { Clubs, Dashboard, Error404, Events, Profile, Shop } from "./route";
+import { Organizations, Dashboard, Error404, Events, Profile, Shop } from "./route";
 import Trending from "@features/donate-shop-trending/pages/Trending";
 import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRenderWhenLoggedIn";
 
@@ -31,8 +31,8 @@ const routesConfig: RouteConfigEntry[] = [
     element: <ProtectedAuth />,
   },
   { path: "/user/:userName", element: <Profile /> },
-  { path: "/clubs", element: <Clubs /> },
-  { path: "/club/:userName", element: <Profile /> },
+  { path: "/organizations", element: <Organizations /> },
+  { path: "/organization/:userName", element: <Profile /> },
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/events", element: <Events /> },
   { path: "/shop", element: <Shop /> },

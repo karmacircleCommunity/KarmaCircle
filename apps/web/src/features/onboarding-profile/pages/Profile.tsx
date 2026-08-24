@@ -10,7 +10,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import useSWR from "swr";
 import { Button, Navbar } from "@components";
-import { clubEndpoints } from "@services/ApiEndpoints";
+import { organizationEndpoints } from "@services/ApiEndpoints";
 import { resetUserData } from "@app/store/slices/userSlice";
 import { Logout } from "@services/MilanApi";
 import fetcher from "@utils/Fetcher";
@@ -20,7 +20,7 @@ import type { LogoutResponse, ProfileDetails } from "../types";
 
 /**
  * The live public profile page, routed at both `/user/:userName` and
- * `/club/:userName`. `showProfileModal`/`setShowProfileModal` is set by
+ * `/organization/:userName`. `showProfileModal`/`setShowProfileModal` is set by
  * `toggleProfileModal()` (wired to the "Edit profile" button) but,
  * despite its name and despite an earlier version of this doc claiming
  * otherwise, **nothing in this file's JSX ever reads it to render
@@ -42,7 +42,7 @@ const Profile = () => {
   );
   const trueUser = user?.userName === params.userName;
   const { data: details } = useSWR<ProfileDetails>(
-    clubEndpoints.details(params.userName),
+    organizationEndpoints.details(params.userName),
     fetcher,
   );
 
@@ -90,7 +90,7 @@ const Profile = () => {
             />
 
             <div className="flex flex-col items-start justify-between">
-              {details?.userType === "club" ? (
+              {details?.userType === "organization" ? (
                 <div>
                   <h1 className="font-mont text-[2.1rem] font-extrabold text-brand-secondary max-430px:font-poppins max-430px:text-[1.4rem] max-430px:font-bold">
                     {details?.name}{" "}
@@ -276,7 +276,7 @@ const Profile = () => {
             </div>
           )}
 
-          {details?.userType === "club" && (
+          {details?.userType === "organization" && (
             <div className="flex flex-col items-start">
               <h1 className="mb-4 font-mont text-[2rem] font-extrabold text-brand-secondary max-430px:font-poppins max-430px:text-2xl max-430px:font-bold">
                 Find us here

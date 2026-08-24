@@ -88,9 +88,9 @@ This intentionally matches the "Real time Analytics — Coming Soon" label wrapp
 
 ## `services/fetchDashboard()` — exists, unused (lives in `src/services/MilanApi.ts`, not this folder)
 
-`fetchDashboard()` (`GET /clubs/dashboard`, via `clubEndpoints.dashboard`) is exported from the shared `MilanApi.ts` but **no component in this feature (or anywhere else) calls it**.
-`Dashboard.tsx` fetches `userEndpoints.profile` instead, which returns the account's own user/club record — not aggregate dashboard analytics.
-If you're ever asked to wire up the real analytics `TrackSection` is a placeholder for, `fetchDashboard()` is the endpoint that was evidently built for exactly that purpose; nothing about its response shape can be verified from this repo (no backend code here) — check the backend repo for what `GET /clubs/dashboard` actually returns before assuming a shape.
+`fetchDashboard()` (`GET /organizations/dashboard`, via `organizationEndpoints.dashboard`) is exported from the shared `MilanApi.ts` but **no component in this feature (or anywhere else) calls it**.
+`Dashboard.tsx` fetches `userEndpoints.profile` instead, which returns the account's own user/organization record — not aggregate dashboard analytics.
+If you're ever asked to wire up the real analytics `TrackSection` is a placeholder for, `fetchDashboard()` is the endpoint that was evidently built for exactly that purpose; nothing about its response shape can be verified from this repo (no backend code here) — check the backend repo for what `GET /organizations/dashboard` actually returns before assuming a shape.
 
 ## `components/ProfileSection.tsx` — dead stub
 

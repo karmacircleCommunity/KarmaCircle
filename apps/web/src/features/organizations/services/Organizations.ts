@@ -1,6 +1,6 @@
 import { apiConnector } from "@services/ApiConnector";
-import { clubEndpoints } from "@services/ApiEndpoints";
-import type { Club } from "../types";
+import { organizationEndpoints } from "@services/ApiEndpoints";
+import type { Organization } from "../types";
 
 /**
  * Fully implemented and correct, but never called from anywhere (see
@@ -10,12 +10,15 @@ import type { Club } from "../types";
  * Response shape is unverified from this repo — the backend is the
  * source of truth.
  */
-export const getClubs = async (): Promise<Club[]> => {
-  const getClubsData = await apiConnector("GET", `${clubEndpoints.all}`);
+export const getOrganizations = async (): Promise<Organization[]> => {
+  const getOrganizationsData = await apiConnector(
+    "GET",
+    `${organizationEndpoints.all}`,
+  );
 
-  if (getClubsData.status !== 200) {
-    throw new Error("Could not get Clubs");
+  if (getOrganizationsData.status !== 200) {
+    throw new Error("Could not get Organizations");
   }
 
-  return getClubsData.data;
+  return getOrganizationsData.data;
 };

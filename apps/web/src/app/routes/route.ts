@@ -7,8 +7,8 @@ export { default as Home } from "@features/landing-home/pages/Home";
 // User Routes
 export { default as UserProfile } from "@features/onboarding-profile/pages/UserProfile";
 
-// Club Routes
-export { default as Clubs } from "@features/clubs/pages/Clubs";
+// Organization Routes
+export { default as Organizations } from "@features/organizations/pages/Organizations";
 export { default as Dashboard } from "@features/dashboard/pages/Dashboard";
 export { default as Events } from "@features/events/pages/Events";
 

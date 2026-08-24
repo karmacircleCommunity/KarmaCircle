@@ -26,8 +26,8 @@ Do not assume both are exercised by any given change.
 |---|---|---|
 | `pages/Auth.tsx` | The single unified sign-in/sign-up flow — three steps (`"email"` → `"signin"` or `"signup"`) driven by local `step` state, not three separate routes/pages | ✅ yes — routed at both `/auth/signin` and `/auth/signup` |
 | `hooks/useAuth.ts` | The validator + submit handler `Auth.tsx` calls for the final `"signin"`/`"signup"` step submit | ✅ yes |
-| `hooks/useValidation.ts` | Fuller, unused validator (individual + club shapes) | ❌ no |
-| `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`clubInitialFormState` are defined | ❌ no |
+| `hooks/useValidation.ts` | Fuller, unused validator (individual + organization shapes) | ❌ no |
+| `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`organizationInitialFormState` are defined | ❌ no |
 | `utils/validateEmail.ts` | The single email-format check (`validateEmail(email)`) shared by `Auth.tsx` and `useAuth.ts` — wraps `emailRegex` from `static/Constants.ts` | ✅ yes |
 | `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `Auth` (both routes) in `routesConfig.tsx` | ✅ yes |
 | `components/AuthLayout.tsx` | Shared page shell for `Auth.tsx` — the left brand/value-prop panel, the `--auth-accent` CSS vars, and the cream right-panel frame. `Auth.tsx` passes whichever step's form is current as `children`. Its root `<div>` also carries an `auth-page` class, which `styles/index.css` uses to scope the autofill-background override below. | ✅ yes |
@@ -37,13 +37,13 @@ Do not assume both are exercised by any given change.
 | `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
 
 Five of the nine non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
-Per [known-issues.md](../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller club-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live page at all today, and this scaffolding is the closest thing to a spec for it.
+Per [known-issues.md](../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller organization-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live page at all today, and this scaffolding is the closest thing to a spec for it.
 
 ## Types
 
-This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+clubs conversion pass — see `tsconfig.json` at the repo root.
-`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), `Auth.tsx`'s `Credentials`/`AuthErrors` shapes, and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`ClubFormState`/`SignupFormState` shapes.
-`UserType` (the `"individual" | "club"` enum) and `AuthTypeOption` (the react-select option shape) live in `src/types/user.ts` instead, since `clubs` needs `UserType` too.
+This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+organizations conversion pass — see `tsconfig.json` at the repo root.
+`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), `Auth.tsx`'s `Credentials`/`AuthErrors` shapes, and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`OrganizationFormState`/`SignupFormState` shapes.
+`UserType` (the `"individual" | "organization"` enum) and `AuthTypeOption` (the react-select option shape) live in `src/types/user.ts` instead, since `organizations` needs `UserType` too.
 This feature's shared dependencies are all typed directly now, following the app shell and shared-layer conversion passes (see `docs/specs/architecture.md#typescript`): `src/statics/Constants.ts` (`authTypeOptions` types as `AuthTypeOption[]`), `src/utils/Toasts.ts`/`CheckInternetConnection.ts`, `src/services/MilanApi.ts`, the shared `Button` component, and the Redux `userSlice.ts`/Zustand `useAuth.ts` store.
 
 ## `pages/Auth.tsx`
@@ -98,13 +98,13 @@ Unchanged by the unified-flow change except for who calls it and how `authType` 
 
 ## `hooks/useValidation.ts` + `hooks/useFormLogic.ts` — the unused, fuller system
 
-These two files are not imported by `Auth.tsx` today, but they are the more complete design and are worth understanding in full if you're ever asked to build out real club-signup fields (tagline, description, address, slug, iframe) that the live page doesn't currently collect at all.
+These two files are not imported by `Auth.tsx` today, but they are the more complete design and are worth understanding in full if you're ever asked to build out real organization-signup fields (tagline, description, address, slug, iframe) that the live page doesn't currently collect at all.
 
-**`useValidation(credentials, userSignup, clubSignup)`** — a plain function (not a hook despite the `use` prefix; called directly, not via the Hooks runtime) that returns either `[]`-shaped array of `{ error: true, message, field }` objects, or `{ error: false, message: "" }` if nothing failed. Always validates `email` (stricter regex than `useAuth.ts`'s: `` /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ `` — properly escaped dot, 2+ char TLD) and `password` (present + 6+ chars — looser than `useAuth.ts`'s 8-char/mixed-case/digit rule) and, if `confirmPassword` is present, that it matches `password`. If `userSignup` is true: validates `firstName`/`lastName` (letters only, 3–30 chars). If `clubSignup` is true: validates `name` (letters+spaces, 3–30), `tagLine` (20–220 chars), `description` (100–1000 chars), and requires `iframe` to be present (no format check beyond truthiness). If either signup flag is true: also validates `website` (optional, but must match a URL regex if provided), `slug` (required, must not start/end with `/`, must be `[a-zA-Z0-9-]` only, 3–30 chars), `city`/`state`/`country` (required, presence only), `address` (20–200 chars), `pincode` (required, must stringify to length 5 or 6).
+**`useValidation(credentials, userSignup, organizationSignup)`** — a plain function (not a hook despite the `use` prefix; called directly, not via the Hooks runtime) that returns either `[]`-shaped array of `{ error: true, message, field }` objects, or `{ error: false, message: "" }` if nothing failed. Always validates `email` (stricter regex than `useAuth.ts`'s: `` /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ `` — properly escaped dot, 2+ char TLD) and `password` (present + 6+ chars — looser than `useAuth.ts`'s 8-char/mixed-case/digit rule) and, if `confirmPassword` is present, that it matches `password`. If `userSignup` is true: validates `firstName`/`lastName` (letters only, 3–30 chars). If `organizationSignup` is true: validates `name` (letters+spaces, 3–30), `tagLine` (20–220 chars), `description` (100–1000 chars), and requires `iframe` to be present (no format check beyond truthiness). If either signup flag is true: also validates `website` (optional, but must match a URL regex if provided), `slug` (required, must not start/end with `/`, must be `[a-zA-Z0-9-]` only, 3–30 chars), `city`/`state`/`country` (required, presence only), `address` (20–200 chars), `pincode` (required, must stringify to length 5 or 6).
 
 **`useFormLogic(initialState, submitCallback, redirectPath, isSignup, userType)`** — a hook wrapping generic form state (`formState`, `handleChange`, `handleSubmit`) around the validator above, driven by the Zustand `isLoading` flag (`useAuthStore`, shared with `AuthButton.tsx`) rather than local `useState` loading. `handleSubmit` calls `useValidation` with `userType === "individual"` ⇒ `(formState, true, false)` or otherwise `(formState, false, true)`. On validation success it awaits `submitCallback(formState)` and handles the response the same 200/201-success shape as `useAuth.ts`, but with a **2000ms** timeout before navigating and does **not** dispatch anything to Redux itself.
 
-Also exports `individualInitialFormState` and `clubInitialFormState` — these are the two form shapes `useValidation` expects, and are the best available reference for "what fields does a complete club/individual signup need" since no live UI collects them all today.
+Also exports `individualInitialFormState` and `organizationInitialFormState` — these are the two form shapes `useValidation` expects, and are the best available reference for "what fields does a complete organization/individual signup need" since no live UI collects them all today.
 
 ## `components/DonotRenderWhenLoggedIn.tsx` — the route guard
 
@@ -208,7 +208,7 @@ Each editable field still has a small local `RequiredMark` component (`<span cla
 ## If you're asked to...
 
 - **"Fix a sign-in/sign-up bug users are hitting"** → almost certainly `hooks/useAuth.ts` or `pages/Auth.tsx`; `useValidation.ts`/`useFormLogic.ts` are not in the live path.
-- **"Add a club-specific signup field" (tagline, description, address, etc.)** → the live `Auth.tsx` collects none of these today. Converge on `useValidation.ts` + `useFormLogic.ts` + `clubInitialFormState` as the target design rather than inventing new field-handling from scratch; you'll need to actually wire `useFormLogic` into `Auth.tsx`'s `"signup"` step (or a new step) to make it live.
+- **"Add an organization-specific signup field" (tagline, description, address, etc.)** → the live `Auth.tsx` collects none of these today. Converge on `useValidation.ts` + `useFormLogic.ts` + `organizationInitialFormState` as the target design rather than inventing new field-handling from scratch; you'll need to actually wire `useFormLogic` into `Auth.tsx`'s `"signup"` step (or a new step) to make it live.
 - **"Standardize the password show/hide toggle"** → adopt `utils/PasswordToggle.ts` instead of leaving `Auth.tsx` with its own inline copy.
 - **"Make the Google button match the shared Button style"** → `Auth.tsx` currently uses a raw `<button className="btn authpage_oauth">`, not the shared `Button` component; ui-kit.md's shared `Button` supports an `onClickfunction` prop pattern to follow if you convert it.
 - **"Centralize logout"** → out of scope for this folder; see `docs/specs/state-management.md` and the three call sites listed there.

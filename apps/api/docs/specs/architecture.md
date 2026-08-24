@@ -53,13 +53,13 @@ Note: `validate()` ([src/middleware/validate.ts](../../src/middleware/validate.t
 
 ## Pagination
 
-[src/utils/pagination.ts](../../src/utils/pagination.ts) is the one shared mechanism every "list everything" endpoint uses — `GET /user` (no `userName`), `GET /clubs` (no `userName`), `GET /display/users`, `GET /display/clubs`, `GET /events` (no `uid`/`slug`), `GET /product/allproducts`. Single-item lookups (`?userName=`, `?uid=`, `/:productSlug`, etc.) don't paginate.
+[src/utils/pagination.ts](../../src/utils/pagination.ts) is the one shared mechanism every "list everything" endpoint uses — `GET /user` (no `userName`), `GET /organizations` (no `userName`), `GET /display/users`, `GET /display/organizations`, `GET /events` (no `uid`/`slug`), `GET /product/allproducts`. Single-item lookups (`?userName=`, `?uid=`, `/:productSlug`, etc.) don't paginate.
 
 - `paginationQuerySchema` (`{ page: number (default 1), limit: number (default 20, max 100) }`, both `z.coerce.number()`) is `.merge()`d into each of those routes' existing query-validation schema, so an invalid value (`page=abc`, `limit=500`) fails through the normal `validate()` → `ZodError` → `400` path with no extra error-handling code.
 - `toSkipLimit({ page, limit })` converts to Mongoose's `.skip()/.limit()` pair.
 - `buildPaginationMeta({ page, limit, total })` returns `{ page, limit, total, totalPages }` for the response envelope.
 - Every affected service function returns `{ data, total }` (a `Promise.all([Model.find(...).skip().limit(), Model.countDocuments()])` pair, not two sequential awaits), and every affected controller responds `{ data, pagination: buildPaginationMeta(...) }` instead of a bare array — this is a deliberate, intentional response-shape change from what these routes used to return (a bare array); see [known-issues.md](./known-issues.md#pagination) for which frontend call sites (if any) need updating for it.
-- `userService.findByType("club", ...)` is shared by both `clubs`' and `directory`'s club-listing routes — fixed once in the service layer, so both paginate identically rather than risking drift between two separate implementations.
+- `userService.findByType("organization", ...)` is shared by both `organizations`' and `directory`'s organization-listing routes — fixed once in the service layer, so both paginate identically rather than risking drift between two separate implementations.
 
 ## Routing table
 
@@ -69,8 +69,8 @@ Note: `validate()` ([src/middleware/validate.ts](../../src/middleware/validate.t
 |---|---|---|
 | `/user` | `users` routes, **then** `reports` routes (both mounted at `/user`) | `GET /user`, `GET /user/profile`, `PATCH /user/update`, `PATCH /user/complete` (users) + `POST /user/report` (reports) — two different modules sharing one path prefix |
 | `/auth` | `auth` routes | signup/signin/update-password/Google OAuth/logout |
-| `/clubs` | `clubs` routes | `GET /clubs`, `GET /clubs/dashboard` |
-| `/display` | `directory` routes | `GET /display/users`, `GET /display/clubs` |
+| `/organizations` | `organizations` routes | `GET /organizations`, `GET /organizations/dashboard` |
+| `/display` | `directory` routes | `GET /display/users`, `GET /display/organizations` |
 | `/payment` | `payments` routes | `POST /payment/razorpay` |
 | `/product` | `products` routes | `POST /product/addproduct`, `GET /product/allproducts`, `POST /product/cart/add`, `GET /product/:productSlug` |
 | `/events` | `events` routes | `GET /events`, `POST /events/create` |
@@ -81,7 +81,7 @@ See [api-contract.md](./api-contract.md) for the full method+path+body+response 
 
 One Mongoose connection (`src/config/database.ts`), opened once at boot, reused by every module — there is no per-request connection or pooling logic to reason about beyond Mongoose's own default pool. [`requireAuth`](../../src/middleware/auth.ts) is the one piece of middleware that reads the DB itself (a minimal `.select("tokenVersion")` lookup, for session revocation — see [auth.md](./auth.md#signtoken-and-session-revocation)); every other middleware in the stack above is purely in-process.
 Four collections exist: `user` (model name `"user"`, [users.md](./users.md)), `Event` ([events.md](./events.md)), `Products` (model name `"Products"`, [products.md](./products.md)), `report` (model name `"report"`, [reports.md](./reports.md)).
-**`clubs`, `directory`, and `auth` own no collection of their own** — all three read/write through `users`' `User` model (`clubs`/`directory` query it filtered by `userType`; `auth` creates/reads/updates it directly). See [users.md](./users.md#the-user-model-is-shared-by-five-modules) for the full list of modules that touch `User` and how.
+**`organizations`, `directory`, and `auth` own no collection of their own** — all three read/write through `users`' `User` model (`organizations`/`directory` query it filtered by `userType`; `auth` creates/reads/updates it directly). See [users.md](./users.md#the-user-model-is-shared-by-five-modules) for the full list of modules that touch `User` and how.
 
 ### Indexes
 
@@ -102,4 +102,4 @@ Every field a service actually filters/looks up by is indexed: `User.email` (`un
 `tests/*.test.ts` (Jest + `ts-jest` + Supertest, config in [jest.config.js](../../jest.config.js)) build the app via `buildTestApp()` ([tests/helpers/test-app.ts](../../tests/helpers/test-app.ts), which just calls `createApp()` — the exact same app the two real entry points build, so tests exercise the real middleware stack) and drive it with `request(app).post(...)`/`.get(...)` from Supertest, no server actually listening on a port.
 [tests/helpers/env.setup.ts](../../tests/helpers/env.setup.ts) (a Jest `setupFiles` entry, runs before the test framework loads) stubs every required env var with a placeholder so `env.ts`'s Zod validation passes in CI without real secrets.
 [tests/helpers/jest.setup.ts](../../tests/helpers/jest.setup.ts) (`setupFilesAfterEnv`) spins up `mongodb-memory-server` once per test file (`beforeAll`), wipes every collection after each test (`afterEach`), and tears the in-memory server down (`afterAll`) — so tests never touch a real MongoDB instance and don't need one running locally.
-**`auth.test.ts`, `events.test.ts`, `products.test.ts`, and `users.test.ts` exist today.** `clubs`, `directory`, `payments`, and `reports` still have zero test coverage — treat changes there as unverified by CI beyond `typecheck`/`lint` until tests are added. If you add tests for another module, follow the existing files' pattern (`buildTestApp()` + Supertest, no mocking of Mongoose — real writes against the in-memory Mongo).
+**`auth.test.ts`, `events.test.ts`, `products.test.ts`, and `users.test.ts` exist today.** `organizations`, `directory`, `payments`, and `reports` still have zero test coverage — treat changes there as unverified by CI beyond `typecheck`/`lint` until tests are added. If you add tests for another module, follow the existing files' pattern (`buildTestApp()` + Supertest, no mocking of Mongoose — real writes against the in-memory Mongo).

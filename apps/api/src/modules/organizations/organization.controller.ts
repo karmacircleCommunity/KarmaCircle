@@ -4,23 +4,23 @@ import { AuthenticatedRequest } from "../../middleware/auth";
 import { AppError } from "../../middleware/error-handler";
 import { buildPaginationMeta, toSkipLimit } from "../../utils/pagination";
 import * as userService from "../users/user.service";
-import { ListClubsQuery } from "./club.validation";
+import { ListOrganizationsQuery } from "./organization.validation";
 
-export async function listClubs(req: Request, res: Response) {
-  const { userName, page, limit } = req.query as unknown as ListClubsQuery;
+export async function listOrganizations(req: Request, res: Response) {
+  const { userName, page, limit } = req.query as unknown as ListOrganizationsQuery;
 
   if (userName) {
-    const club = await userService.findByUsername(userName);
+    const organization = await userService.findByUsername(userName);
 
-    if (!club) {
+    if (!organization) {
       throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.NOT_FOUND);
     }
 
-    return res.status(STATUS_CODE.OK).json(club);
+    return res.status(STATUS_CODE.OK).json(organization);
   }
 
   const { data, total } = await userService.findByType(
-    "club",
+    "organization",
     toSkipLimit({ page, limit }),
   );
   return res

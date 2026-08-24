@@ -7,17 +7,17 @@ import type {
 /**
  * Fuller, unused validator — not wired into `SignIn.jsx`/`SignUp.jsx`
  * today (see `SPEC.md`). A plain function, not a hook despite the `use`
- * prefix; kept as the target design for the richer club-signup flow.
+ * prefix; kept as the target design for the richer organization-signup flow.
  */
 const useValidation = (
   credentials: ValidatableCredentials,
   userSignup: boolean,
-  clubSignup: boolean,
+  organizationSignup: boolean,
 ): ValidationResult => {
   const errors: ValidationError[] = [];
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const nameRegex = /^[a-zA-Z]+$/;
-  const clubnameRegex = /^[a-zA-Z\s]+$/;
+  const organizationNameRegex = /^[a-zA-Z\s]+$/;
   const urlRegex =
     /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-zA-Z0-9]+([a-zA-Z0-9-]+)?(\.[a-zA-Z0-9-]+)+([/?#][a-zA-Z0-9-]+)*$/;
 
@@ -107,23 +107,23 @@ const useValidation = (
     }
   }
 
-  if (clubSignup) {
+  if (organizationSignup) {
     if (!credentials.name) {
       errors.push({
         error: true,
-        message: "Please enter your club name",
+        message: "Please enter your organization name",
         field: "name",
       });
-    } else if (!clubnameRegex.test(credentials.name)) {
+    } else if (!organizationNameRegex.test(credentials.name)) {
       errors.push({
         error: true,
-        message: "Please enter a valid club name",
+        message: "Please enter a valid organization name",
         field: "name",
       });
     } else if (credentials.name.length < 3 || credentials.name.length > 30) {
       errors.push({
         error: true,
-        message: "Club name must be between 3 and 30 characters long",
+        message: "Organization name must be between 3 and 30 characters long",
         field: "name",
       });
     }
@@ -131,7 +131,7 @@ const useValidation = (
     if (!credentials.tagLine) {
       errors.push({
         error: true,
-        message: "Please enter your club tagline",
+        message: "Please enter your organization tagline",
         field: "tagLine",
       });
     } else if (
@@ -140,7 +140,7 @@ const useValidation = (
     ) {
       errors.push({
         error: true,
-        message: "Club tagline must be between 20 and 220 characters long.",
+        message: "Organization tagline must be between 20 and 220 characters long.",
         field: "tagLine",
       });
     }
@@ -148,7 +148,7 @@ const useValidation = (
     if (!credentials.description) {
       errors.push({
         error: true,
-        message: "Please enter your club description",
+        message: "Please enter your organization description",
         field: "description",
       });
     } else if (
@@ -158,7 +158,7 @@ const useValidation = (
       errors.push({
         error: true,
         message:
-          "Club description must be between 100 and 1000 characters long",
+          "Organization description must be between 100 and 1000 characters long",
         field: "description",
       });
     }
@@ -166,7 +166,7 @@ const useValidation = (
     if (!credentials.iframe) {
       errors.push({
         error: true,
-        message: "Please enter your club iframe code",
+        message: "Please enter your organization iframe code",
         field: "iframe",
       });
     }
@@ -179,7 +179,7 @@ const useValidation = (
       field: "website",
     });
   }
-  if (userSignup || clubSignup) {
+  if (userSignup || organizationSignup) {
     if (!credentials.slug) {
       errors.push({
         error: true,

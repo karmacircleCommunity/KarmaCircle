@@ -30,9 +30,9 @@ router.get(
 
 /**
  * @openapi
- * /display/clubs:
+ * /display/organizations:
  *   get:
- *     summary: List all clubs in the public directory (paginated)
+ *     summary: List all organizations in the public directory (paginated)
  *     tags: [Directory]
  *     parameters:
  *       - in: query
@@ -45,9 +45,9 @@ router.get(
  *       200: { description: "{ data, pagination }" }
  */
 router.get(
-  "/clubs",
+  "/organizations",
   validate(listDirectoryQuerySchema, "query"),
-  asyncHandler(directoryController.listClubs),
+  asyncHandler(directoryController.listOrganizations),
 );
 
 export default router;

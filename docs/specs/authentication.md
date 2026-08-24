@@ -52,11 +52,11 @@ Neither this page nor `useAuth.ts` uses [useValidation.ts](../../apps/web/src/fe
 
 ## `useValidation.ts` and `useFormLogic.ts` (currently unused)
 
-[apps/web/src/features/authentication/hooks/useValidation.ts](../../apps/web/src/features/authentication/hooks/useValidation.ts) is a much richer form validator supporting both an "individual" signup shape and a "club" signup shape (name/tagline/description length bounds, slug format rules, address/pincode checks, website URL format).
+[apps/web/src/features/authentication/hooks/useValidation.ts](../../apps/web/src/features/authentication/hooks/useValidation.ts) is a much richer form validator supporting both an "individual" signup shape and a "organization" signup shape (name/tagline/description length bounds, slug format rules, address/pincode checks, website URL format).
 It returns an array of `{ error, message, field }` objects, or `{ error: false, message: "" }` if clean.
-[apps/web/src/features/authentication/hooks/useFormLogic.ts](../../apps/web/src/features/authentication/hooks/useFormLogic.ts) wraps a generic submit handler around this validator, driven by the Zustand `isLoading` flag, and exports two ready-made initial-state shapes: `individualInitialFormState` and `clubInitialFormState`.
-Together these look like the intended, more complete signup flow (with club-specific fields like `tagLine`) — but `Auth.tsx` does not use either of them today.
-Treat this pair as the design to converge toward if you're asked to build out full club-signup fields, not as dead code to delete without checking with the team first.
+[apps/web/src/features/authentication/hooks/useFormLogic.ts](../../apps/web/src/features/authentication/hooks/useFormLogic.ts) wraps a generic submit handler around this validator, driven by the Zustand `isLoading` flag, and exports two ready-made initial-state shapes: `individualInitialFormState` and `organizationInitialFormState`.
+Together these look like the intended, more complete signup flow (with organization-specific fields like `tagLine`) — but `Auth.tsx` does not use either of them today.
+Treat this pair as the design to converge toward if you're asked to build out full organization-signup fields, not as dead code to delete without checking with the team first.
 
 ## Google OAuth
 

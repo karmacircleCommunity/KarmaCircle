@@ -17,11 +17,11 @@ Treat entries here as **things to be aware of**, not necessarily things to fix u
 - **`/events/:id`-equivalent has no route**, even though `apps/web/src/features/events/pages/DetailedEvent.tsx` exists as a one-line stub.
 - **`apps/web/src/features/onboarding-profile/pages/UserProfile.tsx` has no route** despite being a fairly complete page — see [onboarding-profile.md](./onboarding-profile.md).
 - **Footer links to `/terms`, `/privacy`, `/cookies`** — none of these routes exist; clicking them hits the 404 page.
-- **Navbar's account dropdown links to `/event/create`** (club users only) — no such route exists.
+- **Navbar's account dropdown links to `/event/create`** (organization users only) — no such route exists.
 
 ## Broken imports / files that would fail to build if touched
 
-- **`apps/web/src/features/donate-shop-trending/pages/Donate.tsx`** imports `../../components/Cards/SingleClubEvent/SingleClubEvent` and `../../components/Loading`, neither of which exists anymore. Since the page also has no route, this currently doesn't break the app (Vite doesn't bundle unreachable-but-still-source-present files until something imports the chain at build time — verify this is actually true for your Vite/Rollup config before relying on it; if the file is ever wired into a route or otherwise imported, the build will fail immediately).
+- **`apps/web/src/features/donate-shop-trending/pages/Donate.tsx`** imports `../../components/Cards/SingleOrganizationEvent/SingleOrganizationEvent` and `../../components/Loading`, neither of which exists anymore. Since the page also has no route, this currently doesn't break the app (Vite doesn't bundle unreachable-but-still-source-present files until something imports the chain at build time — verify this is actually true for your Vite/Rollup config before relying on it; if the file is ever wired into a route or otherwise imported, the build will fail immediately).
 - **`apps/web/src/features/events/components/HostedEvents.tsx` is a completely empty file** (0 bytes) — importing it fails immediately (no default export).
 
 ## Duplicated / conflicting implementations
@@ -36,13 +36,13 @@ Treat entries here as **things to be aware of**, not necessarily things to fix u
 
 ## Hardcoded/placeholder data standing in for real API data
 
-`Clubs.tsx` and `Events.tsx` both render arrays of 20 hardcoded fake records instead of calling the `getClubs()`/`getEvents()` functions that already exist for exactly this purpose (`apps/web/src/features/clubs/services/Clubs.ts`, `apps/web/src/features/events/services/Events.ts`).
+`Organizations.tsx` and `Events.tsx` both render arrays of 20 hardcoded fake records instead of calling the `getOrganizations()`/`getEvents()` functions that already exist for exactly this purpose (`apps/web/src/features/organizations/services/Organizations.ts`, `apps/web/src/features/events/services/Events.ts`).
 `EventCard`, `FeaturedEventCard`, and `FeaturedEventImage` don't even accept/use props — all content is static JSX.
 `Dashboard.tsx`'s cover photo, profile photo, and follower/event counts are static.
-`ClubCard`'s banner image and follower/event counts are static regardless of the `club` prop.
+`OrganizationCard`'s banner image and follower/event counts are static regardless of the `organization` prop.
 `Landing.tsx`'s "Trusted by 300+ users" avatars are static.
 `TrackSection`'s analytics numbers are static and its tab-switcher isn't wired to anything.
-See the relevant feature spec ([clubs.md](./clubs.md), [events.md](./events.md), [dashboard.md](./dashboard.md), [landing-home.md](./landing-home.md)) for exactly which fields would need to become dynamic.
+See the relevant feature spec ([organizations.md](./organizations.md), [events.md](./events.md), [dashboard.md](./dashboard.md), [landing-home.md](./landing-home.md)) for exactly which fields would need to become dynamic.
 
 ## Validation that doesn't actually block submission
 
@@ -58,14 +58,13 @@ These exist, work as isolated units, and appear to be intended for future/finish
 - `AuthButton.tsx` — unused by the live auth page.
 - `Modal.tsx` — a generic modal shell, unused; every modal in the app builds its own overlay markup instead.
 - `MilanInfoBanner` — a finished marketing section, unmounted from `Home.tsx`.
-- `Header.tsx` + `HeaderData.ts` — has ready-made "clubs"/"events" copy, but `Clubs.tsx`/`Events.tsx` both build their own inline header instead of using it.
+- `Header.tsx` + `HeaderData.ts` — has ready-made "organizations"/"events" copy, but `Organizations.tsx`/`Events.tsx` both build their own inline header instead of using it.
 - `PatchFetcher.ts` — an SWR-style PATCH fetcher, unused (mutations go through direct `MilanApi.ts` calls + `mutate()` instead).
 - `ClickAwayListener.tsx` — unused generic utility.
-- `getEvents()` / `getClubs()` (`apps/web/src/features/events/services/Events.ts`, `apps/web/src/features/clubs/services/Clubs.ts`) — real fetchers for events/clubs, unused because the pages that need them use hardcoded arrays instead.
+- `getEvents()` / `getOrganizations()` (`apps/web/src/features/events/services/Events.ts`, `apps/web/src/features/organizations/services/Organizations.ts`) — real fetchers for events/organizations, unused because the pages that need them use hardcoded arrays instead.
 
 ## Smaller one-off issues
 
-- `Events.tsx` passes `type="Clubs"` to `<ComponentHelmet>` instead of `"Events"` (that component does have an `"Events"` branch).
 - `Profile.tsx` renders its Subscribe/Sponsor/Edit/Logout button block twice in a row (copy-paste duplication, not an intentional repeated layout).
 - `Profile.tsx`'s map `<iframe>` reads `user?.iframe` (the viewer's own Redux state) instead of `details?.iframe` (the profile being viewed).
 - `Dashboard.tsx` has a stray `console.log` in its "Edit Profile" click handler.

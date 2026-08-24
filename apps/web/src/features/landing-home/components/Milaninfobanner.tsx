@@ -64,13 +64,13 @@ const Milaninfobanner = () => {
 
               {window.innerWidth < 800 ? (
                 <p>
-                  You can join us as a Charity, Non profit organisation, or a
-                  club. Collaborate, and build a better tommorow.
+                  You can join us as a Charity, Non profit organisation, or an
+                  Organization. Collaborate, and build a better tommorow.
                 </p>
               ) : (
                 <p>
-                  You can join us as a Charity, Non profit organisation, or a
-                  club. We are open to all. Collaborate, and build a better
+                  You can join us as a Charity, Non profit organisation, or an
+                  Organization. We are open to all. Collaborate, and build a better
                   tommorow.
                 </p>
               )}
@@ -85,7 +85,7 @@ const Milaninfobanner = () => {
                 </p>
               ) : (
                 <p>
-                  As a verified NGO, Club or Charity, you can collaborate with
+                  As a verified NGO, Organization or Charity, you can collaborate with
                   others to create events, raise funds, and promote charity
                   campaigns.
                 </p>
@@ -116,12 +116,12 @@ const Milaninfobanner = () => {
 
             {window.innerWidth < 800 ? (
               <p>
-                Subscribe to your favorite NGOs, Charities,clubs and be a part
+                Subscribe to your favorite NGOs, Charities, organizations and be a part
                 of their impact.
               </p>
             ) : (
               <p>
-                You can subscribe to your favourite NGOs, Charities, and clubs
+                You can subscribe to your favourite NGOs, Charities, and organizations
                 to get updates about their events, campaigns, and more.
               </p>
             )}
@@ -152,11 +152,11 @@ const Milaninfobanner = () => {
               {window.innerWidth < 800 ? (
                 <p>
                   Be a part of the impact, subscribe to your favourite NGOs,
-                  Charities and Clubs.
+                  Charities and Organizations.
                 </p>
               ) : (
                 <p>
-                  Connect with Veified NGOs, charities and other clubs to
+                  Connect with Veified NGOs, charities and other organizations to
                   participate in different campaigns related to environment,
                   education, and more.
                 </p>
@@ -189,7 +189,7 @@ const Milaninfobanner = () => {
             ) : (
               <p>
                 We are building a shop, to make another source of income for the
-                NGOs, Charities, and clubs. We are also building a platform to
+                NGOs, Charities, and organizations. We are also building a platform to
                 connect people with verified professionals to build charities.
               </p>
             )}

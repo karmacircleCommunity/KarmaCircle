@@ -2,16 +2,16 @@ import { CiFilter } from "react-icons/ci";
 import { PiCaretLeftBold } from "react-icons/pi";
 import { useNavigate } from "react-router-dom";
 import { Button, Footer, Loading, Navbar } from "@components";
-import ClubCard from "@features/clubs/components/ClubCard";
+import OrganizationCard from "@features/organizations/components/OrganizationCard";
 import ComponentHelmet from "@components/ComponentHelmet";
 import { UserType } from "@/types/user";
-import type { Club } from "../types";
+import type { Organization } from "../types";
 
-const Clubs = () => {
-  // demo 20 array of clubs
-  const clubs: Club[] = Array.from({ length: 20 }, () => ({
+const Organizations = () => {
+  // demo 20 array of organizations
+  const organizations: Organization[] = Array.from({ length: 20 }, () => ({
     _id: "673ac2814c6e89e58af8ca11",
-    userType: UserType.Club,
+    userType: UserType.Organization,
     userName: "tamalcodes",
     name: "God Father Org",
     email: "tamalcodes@gmail.com",
@@ -24,7 +24,7 @@ const Clubs = () => {
 
   return (
     <>
-      <ComponentHelmet type="Clubs" />
+      <ComponentHelmet type="Organizations" />
       <Navbar />
 
       <div className="mx-12 flex items-center gap-[1.2rem] px-28 py-8 font-outfit">
@@ -52,10 +52,12 @@ const Clubs = () => {
       </div>
 
       <div className="mx-12 grid min-h-screen grid-cols-3 grid-rows-3 gap-8 px-28 py-8 max-[1200px]:grid-cols-2 max-[1200px]:grid-rows-3 max-[1200px]:px-12 max-[1200px]:py-8 max-[800px]:mx-0 max-[800px]:grid-cols-1 max-[800px]:grid-rows-4 max-[800px]:px-8 max-[800px]:py-12">
-        {!clubs || clubs?.length === 0 ? (
+        {!organizations || organizations?.length === 0 ? (
           <Loading />
         ) : (
-          clubs?.map((club, id) => <ClubCard club={club} key={id} />)
+          organizations?.map((organization, id) => (
+            <OrganizationCard organization={organization} key={id} />
+          ))
         )}
       </div>
 
@@ -64,4 +66,4 @@ const Clubs = () => {
   );
 };
 
-export default Clubs;
+export default Organizations;

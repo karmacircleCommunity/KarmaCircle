@@ -5,12 +5,12 @@ interface ComponentHelmetProps {
 }
 
 function ComponentHelmet({ type }: ComponentHelmetProps) {
-  return type == "Clubs" ? (
+  return type == "Organizations" ? (
     <Helmet>
       <title>NgoWorld | {type}</title>
       <meta
         name="description"
-        content="This is the clubs page of NgoWorld, where you can find all the clubs in the community."
+        content="This is the organizations page of NgoWorld, where you can find all the organizations in the community."
       />
       <link rel="canonical" href="/" />
     </Helmet>

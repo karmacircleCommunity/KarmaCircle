@@ -12,7 +12,7 @@ export const footerLinks: {
 } = {
   quickStarts: [
     { name: "Trending Events", path: "/trending" },
-    { name: "NGOs near you", path: "/clubs" },
+    { name: "NGOs near you", path: "/organizations" },
     { name: "Login / Signup", path: "/auth/signin" },
     { name: "Events ", path: "/events" },
   ],

@@ -9,7 +9,7 @@ export const defaults = {
 
 export const authTypeOptions: AuthTypeOption[] = [
   { value: UserType.Individual, label: "Individual" },
-  { value: UserType.Club, label: "Organization" },
+  { value: UserType.Organization, label: "Organization" },
 ];
 
 export const brandingFields = ["tagLine", "description"];

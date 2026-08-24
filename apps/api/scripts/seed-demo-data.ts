@@ -2,7 +2,7 @@
  * One-off demo data seeder.
  *
  * Populates the karmacircle_dev database with a handful of documents in
- * each of the app's real collections (users/individuals+clubs, events,
+ * each of the app's real collections (users/individuals+organizations, events,
  * products, reports) using the actual Mongoose models — not throwaway
  * ad-hoc "tables" — so the shape matches what the app itself would write.
  *
@@ -12,7 +12,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { Individual, Club } from "../src/modules/users/user.model";
+import { Individual, Organization } from "../src/modules/users/user.model";
 import { Event } from "../src/modules/events/event.model";
 import { Product } from "../src/modules/products/product.model";
 import { ReportProblem } from "../src/modules/reports/report.model";
@@ -60,10 +60,10 @@ async function seed() {
     },
   ]);
 
-  // --- Users: clubs ---
-  const clubs = await Club.insertMany([
+  // --- Users: organizations ---
+  const organizations = await Organization.insertMany([
     {
-      userType: "club",
+      userType: "organization",
       userName: "green_earth_ngo",
       name: "Green Earth NGO",
       email: "contact@greenearth.example.com",
@@ -76,7 +76,7 @@ async function seed() {
       tokenVersion: 0,
     },
     {
-      userType: "club",
+      userType: "organization",
       userName: "shiksha_seva",
       name: "Shiksha Seva Foundation",
       email: "hello@shikshaseva.example.com",
@@ -90,7 +90,7 @@ async function seed() {
     },
   ]);
 
-  console.log(`Inserted ${individuals.length} individuals, ${clubs.length} clubs`);
+  console.log(`Inserted ${individuals.length} individuals, ${organizations.length} organizations`);
 
   // --- Events ---
   const now = new Date();

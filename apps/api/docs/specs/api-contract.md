@@ -4,7 +4,7 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 
 **Snapshot taken August 2026, from static reading of both apps — not verified by running either app end-to-end.** Treat every "works"/"broken" verdict below as a strong static-analysis claim, not a confirmed-live-tested fact; reproduce with a real request before shipping a fix that assumes one of these is correct.
 
-**Update:** `GET /user`, `GET /clubs`, `GET /display/users`, `GET /display/clubs`, `GET /events`, and `GET /product/allproducts` (their unfiltered "list everything" branches only) now return `{ data, pagination }` instead of a bare array — see [known-issues.md#pagination](./known-issues.md#pagination) and [architecture.md#pagination](./architecture.md#pagination). This *was* verified live, via a Supertest assertion against a real (in-memory) Mongo, not just read from source — see `tests/events.test.ts`'s `"paginates across multiple pages with skip/limit math"` case.
+**Update:** `GET /user`, `GET /organizations`, `GET /display/users`, `GET /display/organizations`, `GET /events`, and `GET /product/allproducts` (their unfiltered "list everything" branches only) now return `{ data, pagination }` instead of a bare array — see [known-issues.md#pagination](./known-issues.md#pagination) and [architecture.md#pagination](./architecture.md#pagination). This *was* verified live, via a Supertest assertion against a real (in-memory) Mongo, not just read from source — see `tests/events.test.ts`'s `"paginates across multiple pages with skip/limit math"` case.
 
 **Update:** All four contract breaks below are **resolved** — `PATCH /user/update`, `GET /user/profile`, `GET /auth/login/success`, and `PATCH /user/complete` all now work as the frontend already calls them. See [known-issues.md#cross-repo-contract-breaks](./known-issues.md#cross-repo-contract-breaks) and [users.md](./users.md)/[auth.md](./auth.md) for the fix detail; the breakdown below is kept for historical context on what was wrong and why.
 
@@ -30,11 +30,11 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 | — (no route) | — | — | `userEndpoints.update` (`/user/update/profile`) | ❌ dead constant on the frontend side, no matching backend route either — consistent dead code both sides, not a break |
 | `PATCH /user/complete` | users | `requireAuth` | `userEndpoints.completeProfile` | ✅ `useProfileCompletion.ts`/`ProfileCompletion.tsx` — route did not exist, **fixed, see contract break #4** |
 | `POST /user/report` | reports | no | `userEndpoints.report` | ✅ `ReportProblem()` |
-| `GET /clubs` | clubs | no | `clubEndpoints.all`, `clubEndpoints.details(userName)` | ✅ `GetAllClubs()` (only from the unrouted `Donate.tsx` — see the pagination note above), and per frontend spec, `Profile.tsx`'s SWR key (single-item branch, unaffected by pagination) |
-| `GET /clubs/dashboard` | clubs | `requireAuth` | `clubEndpoints.dashboard` | ✅ `fetchDashboard()` |
-| — (no route) | — | — | `clubEndpoints.createEvent` (`/club/createevent`) | ❌ dead constant, no backend route either — consistent dead code both sides |
+| `GET /organizations` | organizations | no | `organizationEndpoints.all`, `organizationEndpoints.details(userName)` | ✅ `GetAllOrganizations()` (only from the unrouted `Donate.tsx` — see the pagination note above), and per frontend spec, `Profile.tsx`'s SWR key (single-item branch, unaffected by pagination) |
+| `GET /organizations/dashboard` | organizations | `requireAuth` | `organizationEndpoints.dashboard` | ✅ `fetchDashboard()` |
+| — (no route) | — | — | `organizationEndpoints.createEvent` (`/organization/createevent`) | ❌ dead constant, no backend route either — consistent dead code both sides |
 | `GET /display/users` | directory | no | — | ❌ no frontend constant exists for this route |
-| `GET /display/clubs` | directory | no | — | ❌ no frontend constant exists for this route |
+| `GET /display/organizations` | directory | no | — | ❌ no frontend constant exists for this route |
 | `GET /events` | events | no | `eventEndpoints.all` | per frontend spec, not currently called by any live SWR/fetch (the fetcher exists — `getEvents()` — but the live `Events.tsx` page renders hardcoded data instead; see the frontend's own `known-issues.md`) |
 | `POST /events/create` | events | `requireAuth` | `eventEndpoints.create` | ✅ `CreateEvent()` — method/path match; **body-shape correctness depends on which of the frontend's two competing "create event" components made the call, see [events.md](./events.md)** |
 | `POST /payment/razorpay` | payments | no | — (no `paymentEndpoints` constant exists in `ApiEndpoints.ts`) | frontend's `PaymentGateway.ts` calls this URL directly, not through the `ApiEndpoints.ts` registry — see the frontend's own `donate-shop-trending.md`/`SPEC.md` for the exact call site and its own separate response-shape bug (`data.currency`/`data.id` vs. this route's actual `{id, currency, amount}` wrapped in axios's `response.data`) |
@@ -55,7 +55,7 @@ The frontend's `updateUserProfile()` ([MilanApi.ts](../../../../apps/web/src/ser
 
 ### 2. `GET /user/profile` — **fixed**
 
-The frontend's `Dashboard.tsx` (per its own `api-integration.md`) calls `useSWR(userEndpoints.profile, fetcher)`, i.e. `GET /user/profile` — no route matched this before, so the call 404d every time. **Fixed** by adding a real `GET /user/profile` route (`requireAuth`-gated, looks the caller up by `req.auth.email`, the same pattern `GET /clubs/dashboard` already used), responding `{ user: <sanitized> }` — the wrapper shape `Dashboard.tsx` already reads (`profileData?.user`), not the bare object `GET /clubs/dashboard` returns. `GET /clubs/dashboard` (`fetchDashboard()`) is unaffected and still works exactly as before — this was an addition, not a redirect of one call site to the other.
+The frontend's `Dashboard.tsx` (per its own `api-integration.md`) calls `useSWR(userEndpoints.profile, fetcher)`, i.e. `GET /user/profile` — no route matched this before, so the call 404d every time. **Fixed** by adding a real `GET /user/profile` route (`requireAuth`-gated, looks the caller up by `req.auth.email`, the same pattern `GET /organizations/dashboard` already used), responding `{ user: <sanitized> }` — the wrapper shape `Dashboard.tsx` already reads (`profileData?.user`), not the bare object `GET /organizations/dashboard` returns. `GET /organizations/dashboard` (`fetchDashboard()`) is unaffected and still works exactly as before — this was an addition, not a redirect of one call site to the other.
 
 ### 3. `GET /auth/login/success` — **fixed**
 
@@ -67,7 +67,7 @@ The frontend's `completeProfileApiCall()` ([MilanApi.ts](../../../../apps/web/sr
 
 ## Endpoints with no frontend caller yet
 
-`GET /display/users`, `GET /display/clubs` (directory module), and the entire `products` module (`/product/*`) have no corresponding call anywhere in the frontend's `ApiEndpoints.ts`/`MilanApi.ts`. This isn't necessarily a bug — the frontend's Shop/Trending pages are explicitly "coming soon" placeholders per its own spec — but it means these routes are currently untested by any real client traffic pattern; if you change their contract, there's no frontend code that would visibly break to catch a regression, only this doc and (for `products`) whatever new frontend work eventually lands.
+`GET /display/users`, `GET /display/organizations` (directory module), and the entire `products` module (`/product/*`) have no corresponding call anywhere in the frontend's `ApiEndpoints.ts`/`MilanApi.ts`. This isn't necessarily a bug — the frontend's Shop/Trending pages are explicitly "coming soon" placeholders per its own spec — but it means these routes are currently untested by any real client traffic pattern; if you change their contract, there's no frontend code that would visibly break to catch a regression, only this doc and (for `products`) whatever new frontend work eventually lands.
 
 ## Keeping this file honest
 

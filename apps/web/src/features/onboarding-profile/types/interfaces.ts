@@ -118,8 +118,8 @@ export interface ProfileFieldElement {
  * pages/Profile.tsx — the live public profile page
  * ------------------------------------------------------------------- */
 
-/** `useSWR(clubEndpoints.details(...), fetcher)`'s data. Covers both the
- * club branch (name/tagLine/description) and the individual branch
+/** `useSWR(organizationEndpoints.details(...), fetcher)`'s data. Covers both the
+ * organization branch (name/tagLine/description) and the individual branch
  * (firstName/lastName) this page renders, per its own `userType` check.
  * Response shape is unverified from this repo — see SPEC.md. */
 export interface ProfileDetails {

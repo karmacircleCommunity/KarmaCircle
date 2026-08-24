@@ -6,7 +6,7 @@ import type { AxiosError } from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import {
   authEndpoints,
-  clubEndpoints,
+  organizationEndpoints,
   eventEndpoints,
   userEndpoints,
 } from "./ApiEndpoints";
@@ -50,11 +50,11 @@ export const CheckEmailExists = async (email: string) => {
   }
 };
 
-// get all clubs
-export const GetAllClubs = async () => {
+// get all organizations
+export const GetAllOrganizations = async () => {
   try {
-    const clubs = await Axios.get(clubEndpoints.all);
-    return clubs;
+    const organizations = await Axios.get(organizationEndpoints.all);
+    return organizations;
   } catch (error) {
     return (error as AxiosError).response;
   }
@@ -120,7 +120,7 @@ export const updateUserProfile = async ({
 };
 
 // Google Auth screen
-// `userType` ("individual" | "club") is forwarded as a query param and the
+// `userType` ("individual" | "organization") is forwarded as a query param and the
 // backend round-trips it through Google's OAuth `state` param — without it,
 // every Google sign-up (including "Organization") silently lands as an
 // Individual account, since the backend defaults an absent/unknown userType
@@ -184,7 +184,7 @@ export const CreateEvent = async (event: unknown) => {
 
 export const fetchDashboard = async () => {
   try {
-    const response = await Axios.get(clubEndpoints.dashboard, {
+    const response = await Axios.get(organizationEndpoints.dashboard, {
       withCredentials: true,
     });
 

@@ -36,10 +36,10 @@ describe("Navigation to other pages", () => {
     cy.url().should("include", "/");
   });
 
-  // it("Checking Navigation to Clubs", () => {
+  // it("Checking Navigation to Organizations", () => {
   //   cy.visit("/");
-  //   cy.get("nav").contains("Clubs").click();
-  //   cy.url().should("include", "/clubs");
+  //   cy.get("nav").contains("Organizations").click();
+  //   cy.url().should("include", "/organizations");
   // });
 
   // it("Checking Navigation to Events", () => {

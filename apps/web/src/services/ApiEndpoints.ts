@@ -9,11 +9,11 @@ const userEndpoints = {
   updateProfile: `${API}/user/update`,
 };
 
-const clubEndpoints = {
-  all: `${API}/clubs`,
-  details: (userName?: string) => `${API}/clubs?userName=${userName}`,
-  createEvent: `${API}/club/createevent`,
-  dashboard: `${API}/clubs/dashboard`,
+const organizationEndpoints = {
+  all: `${API}/organizations`,
+  details: (userName?: string) => `${API}/organizations?userName=${userName}`,
+  createEvent: `${API}/organization/createevent`,
+  dashboard: `${API}/organizations/dashboard`,
 };
 
 const eventEndpoints = {
@@ -30,4 +30,4 @@ const authEndpoints = {
   logout: `${API}/auth/logout`,
 };
 
-export { authEndpoints, clubEndpoints, eventEndpoints, userEndpoints };
+export { authEndpoints, organizationEndpoints, eventEndpoints, userEndpoints };

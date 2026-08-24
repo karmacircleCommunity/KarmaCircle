@@ -54,7 +54,7 @@ const Landing = () => {
             </p>
           ) : (
             <p className="leading-6.045 z-3 mx-auto mt-12 w-[55%] text-center font-poppins text-lg tracking-[1.2px] text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-body-lg">
-              A platform for NGOs, charities, clubs and you to collaborate, grow
+              A platform for NGOs, charities, organizations and you to collaborate, grow
               and build a better tomorrow.
             </p>
           )}
@@ -62,10 +62,10 @@ const Landing = () => {
           <div className="mt-16 flex items-center justify-center gap-[0.8rem] max-500px:w-full max-500px:flex-col-reverse max-500px:items-start max-500px:justify-start">
             {isLoggedIn ? (
               <Button
-                to="/clubs"
+                to="/organizations"
                 className="z-3 mx-auto flex w-auto items-center justify-around gap-2.5 rounded-lg border-none px-6 py-[0.7rem] font-poppins text-body-lg font-medium hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] hover:transition-all hover:duration-300 hover:ease-in-out max-500px:mx-0 max-500px:w-auto"
               >
-                <span className="text-lg">Explore our clubs</span>
+                <span className="text-lg">Explore our organizations</span>
               </Button>
             ) : (
               <Button

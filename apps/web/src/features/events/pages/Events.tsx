@@ -6,7 +6,7 @@ import ComponentHelmet from "@components/ComponentHelmet";
 import { useState } from "react";
 import { CiFilter } from "react-icons/ci";
 import { FaPlus } from "react-icons/fa6";
-import type { Club } from "@features/clubs/types";
+import type { Organization } from "@features/organizations/types";
 import { UserType } from "@/types/user";
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -16,13 +16,13 @@ import "swiper/css/pagination";
 const Events = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Hardcoded and, per SPEC.md, shaped like a club/user record rather
-  // than an event — typed as `Club` (not a real `EventRecord`) to make
-  // that mismatch explicit rather than inventing event-shaped fixture
-  // data that doesn't match what's actually here.
-  const events: Club[] = Array.from({ length: 20 }, () => ({
+  // Hardcoded and, per SPEC.md, shaped like an organization/user record
+  // rather than an event — typed as `Organization` (not a real
+  // `EventRecord`) to make that mismatch explicit rather than inventing
+  // event-shaped fixture data that doesn't match what's actually here.
+  const events: Organization[] = Array.from({ length: 20 }, () => ({
     _id: "673ac2814c6e89e58af8ca11",
-    userType: UserType.Club,
+    userType: UserType.Organization,
     userName: "tamalcodes",
     name: "God Father Org",
     email: "tamalcodes@gmail.com",
@@ -33,7 +33,7 @@ const Events = () => {
 
   return (
     <>
-      <ComponentHelmet type="Clubs" />
+      <ComponentHelmet type="Events" />
       <Navbar />
 
       <div className="mx-12 flex items-center gap-[1.2rem] px-28 py-8 font-outfit">

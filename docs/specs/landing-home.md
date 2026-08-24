@@ -12,7 +12,7 @@ Does **not** render `<MilanInfoBanner />` — that component exists in `features
 ## `Landing.tsx`
 
 [apps/web/src/features/landing-home/components/Landing.tsx](../../apps/web/src/features/landing-home/components/Landing.tsx).
-The hero section: `<Navbar />`, a headline that changes copy/wrapping at the `430px` breakpoint (tracked via a `window.resize` listener and local `windowWidth` state, not CSS media queries), and a CTA button that reads `isLoggedIn` from Redux (`selectIsLoggedIn`) to decide between "Sign up Today!" (`/auth/signup`) and "Explore our clubs" (`/clubs`).
+The hero section: `<Navbar />`, a headline that changes copy/wrapping at the `430px` breakpoint (tracked via a `window.resize` listener and local `windowWidth` state, not CSS media queries), and a CTA button that reads `isLoggedIn` from Redux (`selectIsLoggedIn`) to decide between "Sign up Today!" (`/auth/signup`) and "Explore our organizations" (`/organizations`).
 Below the CTA, a static "Trusted by 300+ users" block with four hardcoded GitHub avatar images — not derived from any real user/follower data.
 
 ## `MilanInfoBanner` (built but not mounted)

@@ -162,15 +162,15 @@ const UserProfile = () => {
               className="mySwiper carousel"
             >
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -178,15 +178,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -194,15 +194,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -210,15 +210,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -226,15 +226,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -242,15 +242,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -272,15 +272,15 @@ const UserProfile = () => {
               className="mySwiper"
             >
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -288,15 +288,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -304,15 +304,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -320,15 +320,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -336,15 +336,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -352,15 +352,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>
@@ -368,15 +368,15 @@ const UserProfile = () => {
                 </div>
               </SwiperSlide>
               <SwiperSlide>
-                <div className="clubdetails_eventcard">
+                <div className="organizationdetails_eventcard">
                   <img
                     src="https://149695847.v2.pressablecdn.com/wp-content/uploads/2018/11/data-analysis-ngo.jpg"
                     alt=""
                   />
 
-                  <div className="clubdetails_eventcard_body">
+                  <div className="organizationdetails_eventcard_body">
                     <h1>ISB Alumni Social Impact SIG Initiative</h1>
-                    <div className="clubdetails_eventcard_body_date">
+                    <div className="organizationdetails_eventcard_body_date">
                       <p>01</p>
                       <p>OCT</p>
                     </div>

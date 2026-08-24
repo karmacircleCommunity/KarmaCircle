@@ -7,7 +7,7 @@ When you change a feature, update its spec file in the same PR so this map stays
 
 ## What this project is
 
-NgoWorld (product name "Milan", package name `milan-frontend`) is the React frontend for a platform that connects NGOs, charities, clubs, and individual users.
+NgoWorld (product name "Milan", package name `milan-frontend`) is the React frontend for a platform that connects NGOs, charities, organizations, and individual users.
 It talks to the backend at [apps/api](../../apps/api), this repo's other workspace, over a REST API — see [apps/api/docs/specs/README.md](../../apps/api/docs/specs/README.md) for the backend's own map.
 This directory (`docs/specs/`) covers `apps/web` only; there is no server-side code here — it is a Vite + React SPA.
 
@@ -54,7 +54,7 @@ Both styles coexist; prefer the alias style in new code.
 ## TypeScript
 
 The repo was converted to TypeScript feature by feature (not all at once) — see [architecture.md](./architecture.md#typescript) for the setup.
-Every file under `apps/web/src/` is now `.ts`/`.tsx`: the app shell (`apps/web/src/app/`), every feature (`authentication`, `clubs`, `dashboard`, `donate-shop-trending`, `error-handling`, `events`, `landing-home`, `onboarding-profile`), and the shared layer (`apps/web/src/components/`, `apps/web/src/services/`, `apps/web/src/statics/`, `apps/web/src/utils/`).
+Every file under `apps/web/src/` is now `.ts`/`.tsx`: the app shell (`apps/web/src/app/`), every feature (`authentication`, `organizations`, `dashboard`, `donate-shop-trending`, `error-handling`, `events`, `landing-home`, `onboarding-profile`), and the shared layer (`apps/web/src/components/`, `apps/web/src/services/`, `apps/web/src/statics/`, `apps/web/src/utils/`).
 `tsconfig.json` still has `allowJs: true` (harmless now that no `.js`/`.jsx` files remain under `apps/web/src/`) and `checkJs: false`.
 The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, `Toasts.d.ts`, `Button.d.ts`) is gone — those files got real types directly once their own conversion pass landed, and the bridges were deleted.
 
@@ -67,8 +67,8 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [api-integration.md](./api-integration.md) | Every way the frontend talks to the backend: `MilanApi.ts`, `integrations/*`, `ApiConnector`, SWR fetchers |
 | [authentication.md](./authentication.md) | Sign in, sign up, Google OAuth, logout, route guarding, password/email validation |
 | [onboarding-profile.md](./onboarding-profile.md) | Post-signup profile completion, profile editing, the public Profile/UserProfile pages |
-| [dashboard.md](./dashboard.md) | The logged-in club/org dashboard |
-| [clubs.md](./clubs.md) | The Clubs directory page and `ClubCard` |
+| [dashboard.md](./dashboard.md) | The logged-in organization/org dashboard |
+| [organizations.md](./organizations.md) | The Organizations directory page and `OrganizationCard` |
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero, `MilanInfoBanner` |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, BackToTop, page `<Helmet>` usage |

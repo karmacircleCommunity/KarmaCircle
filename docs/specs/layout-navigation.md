@@ -6,10 +6,10 @@ None of these are rendered by a shared layout route — every page imports `<Nav
 ## `Navbar`
 
 [apps/web/src/components/Navbar.tsx](../../apps/web/src/components/Navbar.tsx).
-Nav links are a local hardcoded array: Home `/`, Clubs `/clubs`, Trending `/trending`, Events `/events`, Shops `/shop`.
+Nav links are a local hardcoded array: Home `/`, Organizations `/organizations`, Trending `/trending`, Events `/events`, Shops `/shop`.
 Responsive behavior is driven by a `window.resize` listener + local `windowWidth` state (breakpoint `900px`), not CSS — above 900px shows the horizontal link row plus either a "Sign Up" CTA or (if Redux's `isLoggedIn` is true) a "Profile ▾" dropdown trigger; below 900px shows a hamburger icon (or the user's avatar image if logged in) that opens a full mobile link panel.
 The account dropdown (`.nav_dropdown`) is toggled by directly mutating the DOM (`document.querySelector(".nav_dropdown").classList.toggle(...)`) rather than React state — this only exists once per page since `Navbar` itself is rendered once, so it's safe today but is worth noting if `Navbar` is ever rendered more than once on a page.
-The dropdown links to `/user/:userName` or `/dashboard` depending on `user?.userType`, and (for club users only) a currently-dead `/event/create` link (no such route exists).
+The dropdown links to `/user/:userName` or `/dashboard` depending on `user?.userType`, and (for organization users only) a currently-dead `/event/create` link (no such route exists).
 Logout: calls `Logout()`, then `resetUserData()` + `localStorage.clear()` (see [state-management.md](./state-management.md) for how this compares to the other two logout call sites).
 Has a stray `console.log("🚀 ~ Navbar ~ user:", user)` on every render — remove if touching this file.
 
@@ -21,9 +21,9 @@ Purely data-driven from [apps/web/src/components/footer/footerLinksConfig.ts](..
 ## `Header`
 
 [apps/web/src/components/header/Header.tsx](../../apps/web/src/components/header/Header.tsx) + [HeaderData.ts](../../apps/web/src/components/header/HeaderData.ts).
-A page-banner component taking a `type` prop (`"clubs"` or `"events"`) and looking up copy from `HeaderData.ts`; falls back to generic "Default Header"/"Default Description" text if `type` doesn't match an entry.
+A page-banner component taking a `type` prop (`"organizations"` or `"events"`) and looking up copy from `HeaderData.ts`; falls back to generic "Default Header"/"Default Description" text if `type` doesn't match an entry.
 Swaps between a long and short description at the `800px` breakpoint (read once at render time via `window.innerWidth`, not tracked in state — same non-reactive pattern as `MilanInfoBanner`).
-**Not currently rendered by `Clubs.tsx` or `Events.jsx`** — both of those pages build their own inline header markup instead of using this component, despite `HeaderData.ts` having entries specifically for `"clubs"` and `"events"`. Likely intended to be used there.
+**Not currently rendered by `Organizations.tsx` or `Events.jsx`** — both of those pages build their own inline header markup instead of using this component, despite `HeaderData.ts` having entries specifically for `"organizations"` and `"events"`. Likely intended to be used there.
 
 ## `Modal`
 
@@ -35,7 +35,7 @@ Not currently used anywhere — `ProfileCompletion`, `ProfileUpdate`, and `Creat
 
 [apps/web/src/components/Loading.tsx](../../apps/web/src/components/Loading.tsx).
 A spinning-ring loading indicator, styled with Tailwind (`animate-spin` + a transparent-right-border trick to mimic Bootstrap's old spinner look, plus `sr-only` for the "Loading..." text). Bootstrap itself has been fully removed from the app (was previously loaded via a `<link>`/`<script>` CDN pair in `index.html`) — this component no longer depends on it.
-Used as the "no data yet" fallback in `Clubs.tsx` and `Events.jsx` (though, per [clubs.md](./clubs.md)/[events.md](./events.md), those arrays are currently always populated with hardcoded data, so the fallback branch is effectively unreachable today), and in `Donate.tsx` (unrouted — see [donate-shop-trending.md](./donate-shop-trending.md)).
+Used as the "no data yet" fallback in `Organizations.tsx` and `Events.jsx` (though, per [organizations.md](./organizations.md)/[events.md](./events.md), those arrays are currently always populated with hardcoded data, so the fallback branch is effectively unreachable today), and in `Donate.tsx` (unrouted — see [donate-shop-trending.md](./donate-shop-trending.md)).
 
 ## `BacktoTop`
 
@@ -51,6 +51,6 @@ A generic wrapper that calls `onClickAway()` on any `mousedown` outside a `.clic
 ## `ComponentHelmet` (per-page SEO)
 
 [apps/web/src/components/ComponentHelmet.tsx](../../apps/web/src/components/ComponentHelmet.tsx).
-A `type`-keyed `<Helmet>` wrapper supporting `"Clubs"` and `"Events"` (exact string match, case-sensitive); returns `null` for anything else.
-Used by `Clubs.tsx` (`type="Clubs"`, correct) and `Events.jsx` (`type="Clubs"` — likely should be `"Events"`; see [events.md](./events.md)).
-Most other pages (`Home`, `Auth`, `Donate`) instead inline their own `<Helmet>` block directly rather than extending this component — if you add a new page needing SEO tags, either extend `ComponentHelmet` with a new `type` branch (consistent with `Clubs`/`Events`) or follow the inline-`<Helmet>` pattern (consistent with `Home`/`Auth`); both exist today, no single convention has won yet.
+A `type`-keyed `<Helmet>` wrapper supporting `"Organizations"` and `"Events"` (exact string match, case-sensitive); returns `null` for anything else.
+Used by `Organizations.tsx` (`type="Organizations"`, correct) and `Events.jsx` (`type="Events"`, correct — fixed August 2026, was previously `type="Organizations"`; see [events.md](./events.md)).
+Most other pages (`Home`, `Auth`, `Donate`) instead inline their own `<Helmet>` block directly rather than extending this component — if you add a new page needing SEO tags, either extend `ComponentHelmet` with a new `type` branch (consistent with `Organizations`/`Events`) or follow the inline-`<Helmet>` pattern (consistent with `Home`/`Auth`); both exist today, no single convention has won yet.

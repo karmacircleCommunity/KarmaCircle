@@ -4,8 +4,8 @@ Covers the post-signup "complete your profile" flow, editing an existing profile
 
 ## Profile completion flow (new users)
 
-After signup, a club/org account's profile is missing required fields (description, address).
-[checkMissingFields.ts](../../apps/web/src/features/onboarding-profile/utils/checkMissingFields.ts) checks whether `city`, `state`, `address`, `country`, or `pincode` are `undefined` on the user object, or — for `userType === "club"` — whether `tagLine`/`description` are `undefined`.
+After signup, an organization/org account's profile is missing required fields (description, address).
+[checkMissingFields.ts](../../apps/web/src/features/onboarding-profile/utils/checkMissingFields.ts) checks whether `city`, `state`, `address`, `country`, or `pincode` are `undefined` on the user object, or — for `userType === "organization"` — whether `tagLine`/`description` are `undefined`.
 
 **Trigger sites:**
 - [Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx): on mount, sets `showProfileModal = true` if `!Cookies.get("skipProfileCompletion") && checkMissingFields(user) && trueUser` (i.e. you're viewing your own profile) — **but nothing in this file's JSX ever reads `showProfileModal` to render anything.** `Profile.tsx` doesn't import `ProfileCompletion` at all. Corrects an earlier version of this doc (and of `onboarding-profile/SPEC.md`), which described this as showing the completion modal — see SPEC.md for the full finding.
@@ -41,7 +41,7 @@ Props: `setShowEditModal`, `refreshProfileData` (an SWR `mutate` function passed
 Differences: it also edits `name`, it accepts a `profileData` prop to pre-fill from (instead of a separate `handleSetDefaultValues` call), it has a cover-image *and* a profile-picture dropzone (both preview-only, same caveat — neither file is actually uploaded), and its single Save button calls its own local `validateForm()`, which — like `useProfileCompletion`'s version — calls `updateUserProfile({ credentials })` (`PATCH /user/update`) regardless of validation outcome, for the same reason.
 
 Rendered from `Dashboard.tsx` when `openModal === true` (opened by the dashboard's "Edit Profile" button).
-**Not rendered from `Profile.tsx`'s own "Edit profile" button at all** — that button (`toggleProfileModal`) sets `editProfile = true` and flips `showProfileModal`, but `Profile.tsx` never reads either of those to render `ProfileCompletion`, `ProfileUpdate`, or anything else. Clicking "Edit profile" on `/user/:userName` or `/club/:userName` currently has no visible effect — see [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full finding. (An earlier version of this doc said this button opened `ProfileCompletion`; it doesn't.)
+**Not rendered from `Profile.tsx`'s own "Edit profile" button at all** — that button (`toggleProfileModal`) sets `editProfile = true` and flips `showProfileModal`, but `Profile.tsx` never reads either of those to render `ProfileCompletion`, `ProfileUpdate`, or anything else. Clicking "Edit profile" on `/user/:userName` or `/organization/:userName` currently has no visible effect — see [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full finding. (An earlier version of this doc said this button opened `ProfileCompletion`; it doesn't.)
 
 ## Field metadata: `ProfileElements` and `getProfileFields`
 
@@ -56,12 +56,12 @@ Both files look like scaffolding for a future generic/dynamic profile-form compo
 
 There are **two separate "view a profile" pages** in this feature, though only one is actually routed — see each below:
 
-### `Profile.tsx` — routed at `/user/:userName` and `/club/:userName`
+### `Profile.tsx` — routed at `/user/:userName` and `/organization/:userName`
 [apps/web/src/features/onboarding-profile/pages/Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx).
-Fetches via SWR: `clubEndpoints.details(params.userName)` (`GET /clubs?userName=...`) — used for *both* individual and club profiles, despite the endpoint's "club" naming.
-Renders differently based on `details?.userType === "club"` (name + tagline) vs. individual (firstName + lastName).
+Fetches via SWR: `organizationEndpoints.details(params.userName)` (`GET /organizations?userName=...`) — used for *both* individual and organization profiles, despite the endpoint's "organization" naming.
+Renders differently based on `details?.userType === "organization"` (name + tagline) vs. individual (firstName + lastName).
 `trueUser = user?.userName === params.userName` decides whether the viewer sees "Edit profile"/"Logout" or "Subscribe"/"Sponsor" (the latter two are static, non-functional buttons — no `onClick`).
-Renders an embedded Google Maps `<iframe>` for clubs only, defaulting to a hardcoded Kolkata location if `user?.iframe` is unset (note: reads `user?.iframe`, i.e. the *viewer's* Redux state, not `details?.iframe` — likely should read from the fetched `details`).
+Renders an embedded Google Maps `<iframe>` for organizations only, defaulting to a hardcoded Kolkata location if `user?.iframe` is unset (note: reads `user?.iframe`, i.e. the *viewer's* Redux state, not `details?.iframe` — likely should read from the fetched `details`).
 Contains a duplicated block of markup: the `profile_header_ctadiv` (Subscribe/Sponsor/Edit/Logout buttons) is rendered twice in the JSX, once inside `.profile_header_details` and once again directly below it — a copy-paste leftover, not an intentional two-row layout. See [known-issues.md](./known-issues.md).
 
 ### `UserProfile.tsx` — not routed

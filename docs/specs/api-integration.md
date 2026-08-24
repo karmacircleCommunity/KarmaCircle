@@ -12,17 +12,17 @@ This is the single most important thing to know before adding a new API call: th
 
 Plain `axios` calls (imported directly as `Axios`, not through `ApiConnector`).
 Each function catches errors and returns `error.response` (or `error` itself in a couple of functions) instead of throwing — callers must check `response?.status` rather than using `try/catch`.
-Functions exported: `LoginUser`, `RegisterUser`, `GetAllClubs`, `ReportProblem`, `completeProfileApiCall`, `updateUserProfile`, `GoogleAuth`, `successCallback`, `Logout`, `CreateEvent`, `fetchDashboard`.
-Most POST/PATCH calls pass `{ withCredentials: true }` so the backend's session/auth cookie is sent; a few reads (`GetAllClubs`) don't.
+Functions exported: `LoginUser`, `RegisterUser`, `GetAllOrganizations`, `ReportProblem`, `completeProfileApiCall`, `updateUserProfile`, `GoogleAuth`, `successCallback`, `Logout`, `CreateEvent`, `fetchDashboard`.
+Most POST/PATCH calls pass `{ withCredentials: true }` so the backend's session/auth cookie is sent; a few reads (`GetAllOrganizations`) don't.
 
-### Layer B — feature-level `services/` fetchers (only used for read-only club/event listing helpers)
+### Layer B — feature-level `services/` fetchers (only used for read-only organization/event listing helpers)
 
 Goes through [ApiConnector.ts](../../apps/web/src/services/ApiConnector.ts), a thin wrapper around a separate `axios.create({})` instance (`axiosInstance`), exposing `apiConnector(method, url, bodyData, headers, params)`.
-Only two consumers exist: `getClubs()` in [Clubs.ts](../../apps/web/src/features/clubs/services/Clubs.ts) and `getEvents()` in [Events.ts](../../apps/web/src/features/events/services/Events.ts) — and neither of those two functions is actually called anywhere in the app; `Clubs.tsx` and `Events.tsx` (the pages) both currently render hardcoded demo arrays instead.
+Only two consumers exist: `getOrganizations()` in [Organizations.ts](../../apps/web/src/features/organizations/services/Organizations.ts) and `getEvents()` in [Events.ts](../../apps/web/src/features/events/services/Events.ts) — and neither of those two functions is actually called anywhere in the app; `Organizations.tsx` and `Events.tsx` (the pages) both currently render hardcoded demo arrays instead.
 See [known-issues.md](./known-issues.md).
 `ApiConnector`'s dead status-600 check (`if (response.status === 400) console.error("Logout triggered due to status 600 response")`) is unreachable — `response.status === 400` never equals `600`, and axios throws (doesn't return) on 4xx/5xx by default anyway, so this branch is unreachable through the normal success path.
 
-**When adding a new call, follow Layer A's pattern** (`MilanApi.ts` + direct `axios`) unless you're specifically building on top of the existing `getClubs`/`getEvents` read helpers.
+**When adding a new call, follow Layer A's pattern** (`MilanApi.ts` + direct `axios`) unless you're specifically building on top of the existing `getOrganizations`/`getEvents` read helpers.
 
 ## Endpoint registry — `apps/web/src/services/ApiEndpoints.ts`
 
@@ -30,13 +30,13 @@ All endpoint URL strings/builders live here, grouped by domain, and are imported
 
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
-clubEndpoints:  all, details(userName), createEvent, dashboard
+organizationEndpoints:  all, details(userName), createEvent, dashboard
 eventEndpoints: all, create
 authEndpoints:  signin, signup, googleLogin, googleLoginSuccess, logout
 ```
 
 Note `userEndpoints.update` and `userEndpoints.updateProfile` both exist and point to different URLs (`/user/update/profile` vs `/user/update`) — only `updateProfile` is actually referenced (`ProfileUpdate.tsx`/`useValidation`-adjacent flows).
-`clubEndpoints.details(userName)` is queried with `?userName=` but is used for both individual users and clubs (see [onboarding-profile.md](./onboarding-profile.md) — `Profile.tsx` calls `clubEndpoints.details` even on the `/user/:userName` route).
+`organizationEndpoints.details(userName)` is queried with `?userName=` but is used for both individual users and organizations (see [onboarding-profile.md](./onboarding-profile.md) — `Profile.tsx` calls `organizationEndpoints.details` even on the `/user/:userName` route).
 
 ## SWR usage (data fetching in components)
 
@@ -48,8 +48,8 @@ Two fetcher functions exist:
 SWR call sites:
 | Component | Key | Purpose |
 |---|---|---|
-| `Dashboard.tsx` | `userEndpoints.profile` | Loads the logged-in club/org's own profile; `onSuccess` re-syncs Redux |
-| `Profile.tsx` | `clubEndpoints.details(userName)` | Loads a public profile by username, for both `/user/:userName` and `/club/:userName` |
+| `Dashboard.tsx` | `userEndpoints.profile` | Loads the logged-in organization/org's own profile; `onSuccess` re-syncs Redux |
+| `Profile.tsx` | `organizationEndpoints.details(userName)` | Loads a public profile by username, for both `/user/:userName` and `/organization/:userName` |
 | `UserProfile.tsx` | `userEndpoints.details(slug)` | Loads a public profile by slug (a second, mostly-unused profile page — see [onboarding-profile.md](./onboarding-profile.md)) |
 
 `useEvent.ts`'s `submitCallback` calls `mutate(eventEndpoints.all)` from `useSWRConfig()` after a successful event creation, to invalidate any cached `eventEndpoints.all` SWR key — but no component currently fetches `eventEndpoints.all` via SWR, so this revalidation currently has no listener.

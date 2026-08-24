@@ -48,9 +48,9 @@ export interface ValidationSuccess {
 }
 
 /** Every field any of `useValidation`'s branches (plain, individual-signup,
- * club-signup) may look at. Everything is optional since which fields are
- * actually required depends on the `userSignup`/`clubSignup` flags passed
- * in at the call site, not on this type. */
+ * organization-signup) may look at. Everything is optional since which fields
+ * are actually required depends on the `userSignup`/`organizationSignup` flags
+ * passed in at the call site, not on this type. */
 export interface ValidatableCredentials {
   email?: string;
   password?: string;
@@ -96,8 +96,8 @@ export interface IndividualFormState extends FormStateBase {
   lastName: string;
 }
 
-export interface ClubFormState extends FormStateBase {
-  userType: UserType.Club;
+export interface OrganizationFormState extends FormStateBase {
+  userType: UserType.Organization;
   name: string;
   tagLine: string;
   description: string;

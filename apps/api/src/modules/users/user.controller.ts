@@ -48,7 +48,7 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response) {
 
 /**
  * GET /user/profile — the authenticated caller's own profile record.
- * Wrapped as `{ user }` (not returned bare, unlike GET /clubs/dashboard's
+ * Wrapped as `{ user }` (not returned bare, unlike GET /organizations/dashboard's
  * `sanitize(user)`) because that's the shape Dashboard.tsx's SWR hook on
  * the frontend already reads (`profileData?.user`) — see api-contract.md's
  * former "GET /user/profile doesn't exist" entry.

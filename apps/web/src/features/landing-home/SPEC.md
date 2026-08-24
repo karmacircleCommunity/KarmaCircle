@@ -37,9 +37,9 @@ Nothing in this folder does data fetching for its own content — it's a static 
 **`windowWidth` state**, synced via a `resize` listener (cleaned up on unmount) — this is the one file in this feature that *does* track viewport width reactively in state, rather than reading `window.innerWidth` once per render (contrast with `Milaninfobanner.tsx` below).
 Breakpoint: **430px**. Above it: two-line headline ("We connect NGOs," / "Charities and *you*.") and a longer paragraph. At or below it: a single-line headline and a shorter paragraph. Both variants are fully separate JSX blocks (not a single template with conditional line breaks), so if you're asked to tweak the copy, check both branches.
 
-**CTA button:** reads `isLoggedIn` via `useSelector(selectIsLoggedIn)` (the Redux selector — "pattern 1" of the three login checks cataloged in [state-management.md](../../../docs/specs/state-management.md)) to decide between `to="/clubs"` ("Explore our clubs") for a logged-in visitor and `to="/auth/signup"` ("Sign up Today!") for an anonymous one. Uses the shared `Button` component's `to` prop correctly.
+**CTA button:** reads `isLoggedIn` via `useSelector(selectIsLoggedIn)` (the Redux selector — "pattern 1" of the three login checks cataloged in [state-management.md](../../../docs/specs/state-management.md)) to decide between `to="/organizations"` ("Explore our organizations") for a logged-in visitor and `to="/auth/signup"` ("Sign up Today!") for an anonymous one. Uses the shared `Button` component's `to` prop correctly.
 
-**"Trusted by 300+ users" block:** four hardcoded GitHub avatar image URLs (real GitHub user avatars, not generated/placeholder images — presumably early contributors' own avatars) and a static `"Trusted by 300+ users."` caption — **not derived from any real user/follower count**; there's no API call anywhere in this component. If asked to make this dynamic, there's no existing endpoint in `MilanApi.ts`/`ApiEndpoints.ts` that would supply a "total users" count — this would need a new backend endpoint, not just a frontend wiring fix (contrast with `Clubs.tsx`'s hardcoded list, which has a real fetcher — `getClubs()` — already waiting to be wired in).
+**"Trusted by 300+ users" block:** four hardcoded GitHub avatar image URLs (real GitHub user avatars, not generated/placeholder images — presumably early contributors' own avatars) and a static `"Trusted by 300+ users."` caption — **not derived from any real user/follower count**; there's no API call anywhere in this component. If asked to make this dynamic, there's no existing endpoint in `MilanApi.ts`/`ApiEndpoints.ts` that would supply a "total users" count — this would need a new backend endpoint, not just a frontend wiring fix (contrast with `Organizations.tsx`'s hardcoded list, which has a real fetcher — `getOrganizations()` — already waiting to be wired in).
 
 ## `components/Milaninfobanner.tsx` — built, not mounted
 
@@ -81,7 +81,7 @@ Added `@types/aos` as a dev dependency, since the `aos` package ships no types o
 - `MilanInfoBanner`'s breakpoint checks don't react to window resize (no `resize` listener, unlike `Landing.tsx`) — new finding.
 - `toggleUserLogin()` (a flip, not a set) could produce the wrong `isLoggedIn` value if `handleToken()` ever ran while already logged in — new finding, currently believed unreachable given how the OAuth cookie flow works today.
 - `target="blank"` (missing underscore) on the GitHub Sponsors link inside `MilanInfoBanner` — new finding.
-- The "Trusted by 300+ users" avatar block and count are fully static, with no backend endpoint currently available to make them real — already flagged generally in `known-issues.md`; this spec adds that there's no ready-made fetcher waiting for this one, unlike the clubs/events hardcoded-data cases.
+- The "Trusted by 300+ users" avatar block and count are fully static, with no backend endpoint currently available to make them real — already flagged generally in `known-issues.md`; this spec adds that there's no ready-made fetcher waiting for this one, unlike the organizations/events hardcoded-data cases.
 
 ## If you're asked to...
 

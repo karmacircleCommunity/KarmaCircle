@@ -8,8 +8,8 @@ Read [docs/specs/state-management.md](../../../docs/specs/state-management.md) (
 
 Two related jobs that share components and a similar data shape but are triggered differently:
 
-1. **Getting a club/org account's profile from "just signed up" to "publicly presentable."** A club account is created with only `email`/`password`/`name`/`userType` (see [authentication/SPEC.md](../authentication/SPEC.md)) — no description, no address. This feature is what collects the rest.
-2. **Showing and editing a profile once it exists** — both the owner's "edit my profile" flow and a visitor's "view someone else's profile" flow, for both individual users and club/org accounts.
+1. **Getting an organization/org account's profile from "just signed up" to "publicly presentable."** An organization account is created with only `email`/`password`/`name`/`userType` (see [authentication/SPEC.md](../authentication/SPEC.md)) — no description, no address. This feature is what collects the rest.
+2. **Showing and editing a profile once it exists** — both the owner's "edit my profile" flow and a visitor's "view someone else's profile" flow, for both individual users and organization/org accounts.
 
 ## Why it's shaped this way — the core thing to understand first
 
@@ -26,7 +26,7 @@ Always confirm which of the two components/pages a request means, per the projec
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Profile.tsx` | Public profile view/edit-trigger, routed at `/user/:userName` and `/club/:userName` | ✅ yes |
+| `pages/Profile.tsx` | Public profile view/edit-trigger, routed at `/user/:userName` and `/organization/:userName` | ✅ yes |
 | `pages/UserProfile.tsx` | A second, more visually developed public profile page | ❌ not routed anywhere |
 | `components/ProfileCompletion.tsx` | Modal: first-time profile completion (also, confusingly, reused for edits triggered from `Profile.tsx`) | ✅ yes |
 | `components/ProfileUpdate.tsx` | Modal: profile editing, triggered from `Dashboard.tsx` | ✅ yes |
@@ -38,9 +38,9 @@ Always confirm which of the two components/pages a request means, per the projec
 
 ## `pages/Profile.tsx` — the live public profile page
 
-Routed at both `/user/:userName` and `/club/:userName` (see `routesConfig.tsx`) — **the same component handles both individual and club profiles**, branching on `details?.userType === "club"` inside the JSX rather than being two separate route components.
+Routed at both `/user/:userName` and `/organization/:userName` (see `routesConfig.tsx`) — **the same component handles both individual and organization profiles**, branching on `details?.userType === "organization"` inside the JSX rather than being two separate route components.
 
-**Data source:** `useSWR(clubEndpoints.details(params.userName), fetcher)` — note this always calls the **club** endpoint (`GET /clubs?userName=...`) even when rendering an individual user's profile via `/user/:userName`. This works today because the backend's `/clubs` endpoint apparently also resolves individual-user records by `userName` (unverified from this repo — the backend repo is the source of truth), but it means there is no `userEndpoints.details`-based fetch anywhere in this component despite that endpoint existing in `ApiEndpoints.ts` specifically for users.
+**Data source:** `useSWR(organizationEndpoints.details(params.userName), fetcher)` — note this always calls the **organization** endpoint (`GET /organizations?userName=...`) even when rendering an individual user's profile via `/user/:userName`. This works today because the backend's `/organizations` endpoint apparently also resolves individual-user records by `userName` (unverified from this repo — the backend repo is the source of truth), but it means there is no `userEndpoints.details`-based fetch anywhere in this component despite that endpoint existing in `ApiEndpoints.ts` specifically for users.
 
 **Local state:**
 - `showProfileModal` — despite the name, **this is never read anywhere in this file's JSX to render anything.** `Profile.tsx` does not import `ProfileCompletion` (or `ProfileUpdate`) at all. This corrects an earlier version of this spec, which claimed `showProfileModal` controlled whether `ProfileCompletion` was rendered from this page — it doesn't; `ProfileCompletion` is only ever rendered from `Dashboard.tsx` (see [dashboard/SPEC.md](../dashboard/SPEC.md#types)). Converting this file to TypeScript is what surfaced this: nothing about the type system forced a fix, it's just that writing this file's actual behavior down accurately (required to type it) made the discrepancy impossible to miss.
@@ -67,7 +67,7 @@ This is a copy-paste leftover, not an intentional two-row layout; if you're edit
 
 **`handleLogout()`** — calls `Logout()` (`MilanApi.ts`), and on `status === 200`: success toast, then after a **1500ms** `setTimeout`, `navigate("/")`, `dispatch(resetUserData())`, `Cookies.remove("skipProfileCompletion")` — this is one of three differently-sequenced logout call sites in the app; see [state-management.md](../../../docs/specs/state-management.md).
 
-**Map iframe:** rendered only when `details?.userType === "club"`. `src={user?.iframe || <hardcoded Kolkata Google Maps embed URL>}` — reads `user?.iframe`, i.e. the **viewer's own** Redux state, not `details?.iframe` (the fetched data for the profile actually being viewed). Unless you are viewing your own club profile, this will never show that club's real map — either the viewer's own `iframe` value (if they happen to have one, from an unrelated club) or the hardcoded Kolkata fallback. Fix, if asked, is to change `user?.iframe` → `details?.iframe`.
+**Map iframe:** rendered only when `details?.userType === "organization"`. `src={user?.iframe || <hardcoded Kolkata Google Maps embed URL>}` — reads `user?.iframe`, i.e. the **viewer's own** Redux state, not `details?.iframe` (the fetched data for the profile actually being viewed). Unless you are viewing your own organization profile, this will never show that organization's real map — either the viewer's own `iframe` value (if they happen to have one, from an unrelated organization) or the hardcoded Kolkata fallback. Fix, if asked, is to change `user?.iframe` → `details?.iframe`.
 
 **Commented-out code:** a `profile_events` block (a `Marquee` of `EventsCard`) is present but commented out — matches the "recent events" concept `EventsMarqueeCards.tsx` in the events feature seems designed for; see [events/SPEC.md](../events/SPEC.md).
 
@@ -164,11 +164,11 @@ Clicking the **form's own submit** button runs full validation (still non-blocki
 
 | Entry point | Opens | Endpoint hit | Can edit `name`? |
 |---|---|---|---|
-| `Profile.tsx`'s "Edit profile" button (`/user/:userName`, `/club/:userName`) | Nothing — dead click, see above | — | — |
+| `Profile.tsx`'s "Edit profile" button (`/user/:userName`, `/organization/:userName`) | Nothing — dead click, see above | — | — |
 | `Dashboard.tsx`'s "Edit Profile" button (`/dashboard`), when the fetched profile is complete (`hasCompletedProfile !== false`) | `ProfileUpdate` only | `PATCH /user/update` | ✅ yes |
 | `Dashboard.tsx`, when the fetched profile is incomplete (`hasCompletedProfile === false`) *and* "Edit Profile" is clicked | **Both** `ProfileCompletion` and `ProfileUpdate` mount simultaneously (see [dashboard/SPEC.md](../dashboard/SPEC.md#known-issues-specific-to-this-feature)) | `PATCH /user/update`, and `PATCH /user/complete` if the `ProfileCompletion` instance is submitted | `ProfileUpdate`: ✅, `ProfileCompletion`: ❌ |
 
-`ProfileCompletion` is currently unreachable from anywhere except the incomplete-profile case on `/dashboard` above; there is no path to it from `/user/:userName` or `/club/:userName`.
+`ProfileCompletion` is currently unreachable from anywhere except the incomplete-profile case on `/dashboard` above; there is no path to it from `/user/:userName` or `/organization/:userName`.
 If a request asks to "let users rename their organization from their profile page," the live building blocks are `Dashboard.tsx`'s `ProfileUpdate` flow (which already supports renaming) — wiring an equivalent edit entry point into `Profile.tsx` is new work, not a rename of an existing broken path, since `Profile.tsx` doesn't currently reach either modal.
 
 ## `constants/ProfileElements.ts` + `constants/index.ts` — unused scaffolding
@@ -181,17 +181,17 @@ Not imported by `ProfileCompletion.tsx` or `ProfileUpdate.tsx` — both hardcode
 ## `utils/checkMissingFields.ts`
 
 `checkMissingFields(info)` — a plain boolean predicate, **not a hook** despite living next to hook-like files.
-Returns `true` (needs completion) if any of `city`/`state`/`address`/`country`/`pincode` is `=== undefined` on `info`, **or**, additionally for `userType === "club"`, if `tagLine` or `description` is `=== undefined`.
+Returns `true` (needs completion) if any of `city`/`state`/`address`/`country`/`pincode` is `=== undefined` on `info`, **or**, additionally for `userType === "organization"`, if `tagLine` or `description` is `=== undefined`.
 Uses strict `=== undefined` — an empty string `""` (as opposed to a genuinely absent key) does **not** count as missing by this function, which matters if a backend response ever sends `city: ""` instead of omitting the key entirely; this function would then report the profile as complete when it visually isn't.
 Called only from `Profile.tsx`, against the Redux `user` object (see the "Profile-completion trigger comparison" table above).
 
 ## `utils/getProfileFields.ts`
 
 Default export `getProfileFields(info)`, wrapping two module-private (not separately exported) helpers:
-- `getMissingElements(info)` — for `userType === "club"` only, returns which of `brandingFields` (`["tagLine", "description"]`, from `statics/Constants.ts`) are `undefined` on `info`. Returns `[]` unconditionally for non-club users (note: unlike `checkMissingFields.ts`, this function does **not** check `addressFields` at all — it's narrower in scope, branding-only).
-- `getEditableFields(info)` — returns `[...mandatoryFields, ...brandingFields, ...addressFields]` for clubs, or `[...mandatoryFields, ...addressFields]` for individuals (`mandatoryFields = ["name", "username"]`, `addressFields = ["city","state","address","country","pincode"]`, both from `statics/Constants.ts`).
+- `getMissingElements(info)` — for `userType === "organization"` only, returns which of `brandingFields` (`["tagLine", "description"]`, from `statics/Constants.ts`) are `undefined` on `info`. Returns `[]` unconditionally for non-organization users (note: unlike `checkMissingFields.ts`, this function does **not** check `addressFields` at all — it's narrower in scope, branding-only).
+- `getEditableFields(info)` — returns `[...mandatoryFields, ...brandingFields, ...addressFields]` for organizations, or `[...mandatoryFields, ...addressFields]` for individuals (`mandatoryFields = ["name", "username"]`, `addressFields = ["city","state","address","country","pincode"]`, both from `statics/Constants.ts`).
 
-`getProfileFields(info)` itself picks between the two: if `userType === "club"` **and** `tagLine` is falsy/empty, returns `getMissingElements(info)` (i.e. "what's still missing"); otherwise returns `getEditableFields(info)` (i.e. "everything this user type can edit").
+`getProfileFields(info)` itself picks between the two: if `userType === "organization"` **and** `tagLine` is falsy/empty, returns `getMissingElements(info)` (i.e. "what's still missing"); otherwise returns `getEditableFields(info)` (i.e. "everything this user type can edit").
 **Correction to the centralized docs/specs/onboarding-profile.md**, which describes `getMissingElements`/`getEditableFields` as though they're independently importable — they are not exported from this file at all; only the `getProfileFields` default export is reachable from outside.
 Not imported by any component today, same status as `ProfileElements.ts` — both look like scaffolding for a single future generic/dynamic profile-form component that was never built.
 

@@ -17,10 +17,10 @@ export async function listAllUsers(req: Request, res: Response) {
     .json({ data, pagination: buildPaginationMeta({ page, limit, total }) });
 }
 
-export async function listClubs(req: Request, res: Response) {
+export async function listOrganizations(req: Request, res: Response) {
   const { page, limit } = req.query as unknown as PaginationQuery;
   const { data, total } = await userService.findByType(
-    "club",
+    "organization",
     toSkipLimit({ page, limit }),
   );
   res

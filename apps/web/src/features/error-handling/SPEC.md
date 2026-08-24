@@ -1,7 +1,7 @@
 # Error Handling & Misc Pages — Feature Spec
 
 Colocated, implementation-level companion to [docs/specs/error-handling.md](../../../docs/specs/error-handling.md).
-The smallest feature folder besides `clubs` — two page components, no hooks, no services — but the app-wide error/offline conventions it touches are used by every other feature, so this spec doubles as the reference for those shared conventions.
+The smallest feature folder besides `organizations` — two page components, no hooks, no services — but the app-wide error/offline conventions it touches are used by every other feature, so this spec doubles as the reference for those shared conventions.
 
 ## What this feature is responsible for
 
@@ -26,7 +26,7 @@ Matched by the `*` catch-all route in `routesConfig.tsx` — the last entry in t
 
 **Entire implementation:** a static SVG illustration (`error404Svg`, imported from `@assets/pictures/error404.svg`) and a single `<Button to="/">Back to Home</Button>` using the shared `Button` component's `to` prop (a correct, working navigation link).
 
-**No `<Helmet>`/SEO tags** — every other top-level page in the app sets a `<title>`/meta description via either `<Helmet>` directly (`Home.tsx`, `Auth.tsx`, the broken `Donate.tsx`) or `ComponentHelmet` (`Clubs.tsx`, `Events.tsx`); this page has neither, so a visitor landing on any unmatched URL sees whatever `<title>` was last set by the page they navigated *from* (or the default `index.html` title, on a fresh load) rather than something like "NgoWorld | Page Not Found." Worth adding if you touch this file, to match the convention documented in [layout-navigation.md](../../../docs/specs/layout-navigation.md#componenthelmet-per-page-seo).
+**No `<Helmet>`/SEO tags** — every other top-level page in the app sets a `<title>`/meta description via either `<Helmet>` directly (`Home.tsx`, `Auth.tsx`, the broken `Donate.tsx`) or `ComponentHelmet` (`Organizations.tsx`, `Events.tsx`); this page has neither, so a visitor landing on any unmatched URL sees whatever `<title>` was last set by the page they navigated *from* (or the default `index.html` title, on a fresh load) rather than something like "NgoWorld | Page Not Found." Worth adding if you touch this file, to match the convention documented in [layout-navigation.md](../../../docs/specs/layout-navigation.md#componenthelmet-per-page-seo).
 
 **No `<Navbar />` or `<Footer />` either** — every other page in the app renders at least `<Navbar />`; this one renders neither, so a 404 visitor has no site chrome to navigate away with other than the single "Back to Home" button. This may well be intentional (a stripped-down error page is a defensible design choice), but it's worth confirming with whoever's asking before assuming it's a bug to fix.
 

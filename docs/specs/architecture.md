@@ -24,9 +24,9 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | `/auth/signup` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Same component as `/auth/signin` — one unified sign-in/sign-up flow, see below |
 | `/auth/signin` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
 | `/user/:userName` | `Profile` | Individual-user public profile |
-| `/clubs` | `Clubs` | Club/org directory |
-| `/club/:userName` | `Profile` | Club public profile — reuses the same `Profile` component as `/user/:userName` |
-| `/dashboard` | `Dashboard` | Logged-in club/org's own dashboard |
+| `/organizations` | `Organizations` | Organization/org directory |
+| `/organization/:userName` | `Profile` | Organization public profile — reuses the same `Profile` component as `/user/:userName` |
+| `/dashboard` | `Dashboard` | Logged-in organization/org's own dashboard |
 | `/events` | `Events` | Event directory |
 | `/shop` | `Shop` | "Coming soon" placeholder |
 | `/trending` | `Trending` | "Coming soon" placeholder |
@@ -76,7 +76,7 @@ apps/web/src/
     authentication/            — unified Auth page, AuthButton, DonotRenderWhenLoggedIn, useAuth/useValidation/useFormLogic
     onboarding-profile/        — Profile/UserProfile pages, ProfileCompletion/ProfileUpdate modals, ProfileElements
     dashboard/                 — Dashboard page, ProfileSection, TrackSection
-    clubs/                     — Clubs page, ClubCard, Clubs.ts fetcher
+    organizations/                     — Organizations page, OrganizationCard, Organizations.ts fetcher
     events/                    — Events/DetailedEvent pages, event cards, CreateEvent(s), useEvent
     landing-home/               — Home page, Landing hero, MilanInfoBanner
     donate-shop-trending/      — Donate, Shop, Trending pages, PaymentGateway.ts (Razorpay)
@@ -89,8 +89,8 @@ apps/web/src/
   assets/                      — images, SVGs
 ```
 
-Inside a feature folder, only the needed subfolders exist — e.g. `clubs/` has no `hooks/`, `donate-shop-trending/` has no `components/`.
+Inside a feature folder, only the needed subfolders exist — e.g. `organizations/` has no `hooks/`, `donate-shop-trending/` has no `components/`.
 A file only lives at the top level (`components/`, `services/`, `utils/`) when more than one feature actually imports it; single-consumer helpers moved into that consumer's feature folder even if they were previously top-level.
 
-Two backend-call layers coexist: `apps/web/src/services/MilanApi.ts` (raw `axios`, most calls) and the feature-level `services/Clubs.js` / `services/Events.js` fetchers under `apps/web/src/features/clubs/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`, only used by `getClubs`/`getEvents`).
+Two backend-call layers coexist: `apps/web/src/services/MilanApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.js` / `services/Events.js` fetchers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`, only used by `getOrganizations`/`getEvents`).
 See [api-integration.md](./api-integration.md) for which one each feature actually uses.

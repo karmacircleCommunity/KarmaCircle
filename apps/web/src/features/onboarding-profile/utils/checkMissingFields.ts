@@ -16,8 +16,8 @@ export function checkMissingFields(info?: CheckableProfileInfo): boolean {
   ) {
     return true;
   } else if (
-    (info?.userType === "club" && info?.tagLine === undefined) ||
-    (info?.userType === "club" && info?.description === undefined)
+    (info?.userType === "organization" && info?.tagLine === undefined) ||
+    (info?.userType === "organization" && info?.description === undefined)
   ) {
     return true;
   } else {

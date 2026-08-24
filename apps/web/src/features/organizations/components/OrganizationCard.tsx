@@ -1,26 +1,26 @@
 import { Link } from "react-router-dom";
-import clubBanner from "@assets/pictures/Banner/clubbanner.jpg";
-import type { ClubCardProps } from "../types";
+import organizationBanner from "@assets/pictures/Banner/organizationbanner.jpg";
+import type { OrganizationCardProps } from "../types";
 
-const ClubCard = ({ club }: ClubCardProps) => {
+const OrganizationCard = ({ organization }: OrganizationCardProps) => {
   return (
     <div className="relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
       {/* Top Section */}
       <div className="flex flex-col gap-2.5 max-500px:flex-row max-500px:gap-3.75">
         <img
-          src={clubBanner}
-          alt={`${club?.name || "Club"} banner`}
+          src={organizationBanner}
+          alt={`${organization?.name || "Organization"} banner`}
           className="h-37.5 max-w-full self-stretch rounded-10px object-cover max-500px:size-27.5"
         />
         <div className="flex flex-col gap-2.5">
           <h1 className="font-outfit text-xl leading-none font-semibold">
-            {club?.name || "The Monk community"}
+            {organization?.name || "The Monk community"}
           </h1>
           <p
-            title={club?.description}
+            title={organization?.description}
             className="line-clamp-2 font-outfit text-sm max-500px:line-clamp-3"
           >
-            {club?.description ||
+            {organization?.description ||
               "Organizing @Hack4Bengal, Engineering @Edilitics • Worked w/ 5+ startups • Building OSS product with 200+ users • Open to Frontend Roles"}
           </p>
         </div>
@@ -39,8 +39,8 @@ const ClubCard = ({ club }: ClubCardProps) => {
         </div>
 
         <Link
-          to={`/club/${club?.userName}`}
-          aria-label={`Visit ${club?.name || "club"} page`}
+          to={`/organization/${organization?.userName}`}
+          aria-label={`Visit ${organization?.name || "organization"} page`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -62,4 +62,4 @@ const ClubCard = ({ club }: ClubCardProps) => {
   );
 };
 
-export default ClubCard;
+export default OrganizationCard;

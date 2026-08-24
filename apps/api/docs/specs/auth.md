@@ -35,7 +35,7 @@ There are two distinct ways a client ends up authenticated, and they set **diffe
 ## Google OAuth flow
 
 ```
-Frontend  GET /auth/google?userType=<individual|club>
+Frontend  GET /auth/google?userType=<individual|organization>
               │  googleInitiate: builds a Google OAuth URL, `state=<userType>`, returns { url } (201 — unusual for a GET, see known-issues.md)
               ▼
 Frontend redirects the browser to that Google URL (full page nav, out of this API's control)
@@ -91,7 +91,7 @@ The payload's nested shape (`{ User: { id: <email> }, tokenVersion }`) is decode
 
 **This is now the one DB read on every authenticated request** — a deliberate architecture trade-off (a few ms of latency per protected call) chosen specifically to get real, on-demand revocation instead of only a time-boxed token; see [known-issues.md](./known-issues.md#auth) for the reasoning. The projection (`.select("tokenVersion")`) keeps the read minimal — just `_id` + `tokenVersion`, not the full document.
 
-Protected routes using it: `GET /user/profile`, `PATCH /user/update`, `PATCH /user/complete` ([users.md](./users.md)), `GET /clubs/dashboard` ([clubs.md](./clubs.md)), `POST /events/create` ([events.md](./events.md)), and — as of the `GET /auth/login/success` fix above — that route itself. Everything else in `auth` remains unauthenticated by design (you can't require a token to sign in).
+Protected routes using it: `GET /user/profile`, `PATCH /user/update`, `PATCH /user/complete` ([users.md](./users.md)), `GET /organizations/dashboard` ([organizations.md](./organizations.md)), `POST /events/create` ([events.md](./events.md)), and — as of the `GET /auth/login/success` fix above — that route itself. Everything else in `auth` remains unauthenticated by design (you can't require a token to sign in).
 
 ## `GET /auth/logout`
 

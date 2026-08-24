@@ -5,9 +5,9 @@ Covers the events directory page, the (two, redundant) event-creation modals, an
 ## `Events.tsx` — routed at `/events`
 
 [apps/web/src/features/events/pages/Events.tsx](../../apps/web/src/features/events/pages/Events.tsx).
-Renders `<ComponentHelmet type="Clubs" />` (note: passes `"Clubs"`, not `"Events"`, so it shows the Clubs SEO copy — likely a copy-paste bug; `ComponentHelmet` does have an `"Events"` branch, see [layout-navigation.md](./layout-navigation.md)), `<Navbar />`, a search input + non-functional "Filters" button, a "Create An Event" button that opens the creation modal, `<EventSlider />` (featured events carousel), a grid of `<EventCard />`, and `<Footer />`.
+Renders `<ComponentHelmet type="Events" />` (fixed August 2026 — previously passed `"Organizations"`, a copy-paste leftover that showed the Organizations SEO copy instead of the `"Events"` branch `ComponentHelmet` already had; see [layout-navigation.md](./layout-navigation.md)), `<Navbar />`, a search input + non-functional "Filters" button, a "Create An Event" button that opens the creation modal, `<EventSlider />` (featured events carousel), a grid of `<EventCard />`, and `<Footer />`.
 
-**The event list is hardcoded**, same pattern as `Clubs.tsx`: 20 identical fake objects (which are actually shaped like *user/club* records, not event records — `{ _id, userType, userName, name, email, password, cart, __v }` — copy-pasted from the `Clubs.tsx` demo data and not updated).
+**The event list is hardcoded**, same pattern as `Organizations.tsx`: 20 identical fake objects (which are actually shaped like *user/organization* records, not event records — `{ _id, userType, userName, name, email, password, cart, __v }` — copy-pasted from the `Organizations.tsx` demo data and not updated).
 `EventCard` doesn't even read the `event` prop it's passed (see below), so this mismatch is currently invisible.
 The real fetcher, `getEvents()` in [apps/web/src/features/events/services/Events.ts](../../apps/web/src/features/events/services/Events.ts) (`GET /events` via `eventEndpoints.all`), exists but is never called here.
 
@@ -44,7 +44,7 @@ On success (`response.status === 201`): success toast, closes the modal, and cal
 ## Event display components
 
 - [EventsMarqueeCards.tsx](../../apps/web/src/features/events/components/EventsMarqueeCards.tsx) — takes an `event` prop, renders cover image, name, and either a location (Offline) or a platform icon+name (Online), plus a formatted start date/time (via [getFormattedDate.ts](../../apps/web/src/features/events/utils/getFormattedDate.ts)). Responsive text truncation at `window.innerWidth <= 500`. Not currently rendered by any page — looks intended for a "recent events" marquee (there's a commented-out `<Marquee>` block in `Profile.tsx` that would have used something like this).
-- [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) — the card rendered in the `Events.tsx` grid. **Does not use its data at all**: no props are accepted or destructured; every field (title "Food Marathon, 2025", club name, description, avatar images, "+300 Participated") is hardcoded JSX. `Events.tsx` passes `event={event}` to it, but the prop is ignored.
+- [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) — the card rendered in the `Events.tsx` grid. **Does not use its data at all**: no props are accepted or destructured; every field (title "Food Marathon, 2025", organization name, description, avatar images, "+300 Participated") is hardcoded JSX. `Events.tsx` passes `event={event}` to it, but the prop is ignored.
 - [EventSlider.tsx](../../apps/web/src/features/events/components/EventSlider.tsx) — a custom (non-Swiper) auto-advancing carousel over a hardcoded array alternating `FeaturedEventImage`/`FeaturedEventCard`, paired two-per-slide. Advances every 3s via `setInterval`.
 - [FeaturedEventCard.tsx](../../apps/web/src/features/events/components/FeaturedEventCard.tsx) / [FeaturedEventImage.tsx](../../apps/web/src/features/events/components/FeaturedEventImage.tsx) — also fully static/hardcoded, no props.
 

@@ -153,7 +153,7 @@ describe("Auth", () => {
       const cookie = signupRes.headers["set-cookie"][0];
 
       const before = await request(app)
-        .get("/clubs/dashboard")
+        .get("/organizations/dashboard")
         .set("Cookie", cookie);
       expect(before.status).toBe(200);
 
@@ -164,7 +164,7 @@ describe("Auth", () => {
       });
 
       const after = await request(app)
-        .get("/clubs/dashboard")
+        .get("/organizations/dashboard")
         .set("Cookie", cookie);
       expect(after.status).toBe(401);
     });
@@ -176,7 +176,7 @@ describe("Auth", () => {
       const cookie = signupRes.headers["set-cookie"][0];
 
       const before = await request(app)
-        .get("/clubs/dashboard")
+        .get("/organizations/dashboard")
         .set("Cookie", cookie);
       expect(before.status).toBe(200);
 
@@ -186,7 +186,7 @@ describe("Auth", () => {
       expect(logoutRes.status).toBe(200);
 
       const after = await request(app)
-        .get("/clubs/dashboard")
+        .get("/organizations/dashboard")
         .set("Cookie", cookie);
       expect(after.status).toBe(401);
     });
@@ -225,24 +225,24 @@ describe("Auth", () => {
   });
 
   describe("userType discriminator", () => {
-    it("signing up with userType 'club' is queryable via GET /clubs, not GET /user", async () => {
-      const club = {
-        email: "club@example.com",
+    it("signing up with userType 'organization' is queryable via GET /organizations, not GET /user", async () => {
+      const organization = {
+        email: "organization@example.com",
         password: "hunter2",
-        userType: "club",
+        userType: "organization",
       };
-      const signupRes = await request(app).post("/auth/signup").send(club);
+      const signupRes = await request(app).post("/auth/signup").send(organization);
       expect(signupRes.status).toBe(201);
 
-      const clubList = await request(app).get("/clubs");
+      const organizationList = await request(app).get("/organizations");
       expect(
-        clubList.body.data.map((c: { email: string }) => c.email),
-      ).toContain(club.email);
+        organizationList.body.data.map((o: { email: string }) => o.email),
+      ).toContain(organization.email);
 
       const individualList = await request(app).get("/user");
       expect(
         individualList.body.data.map((u: { email: string }) => u.email),
-      ).not.toContain(club.email);
+      ).not.toContain(organization.email);
     });
 
     it("signing up with no userType defaults to an individual, listed via GET /user", async () => {
