@@ -58,7 +58,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
     >
       {/* Left panel — value proposition, not decoration. Hidden below
           900px, where the form takes the full width instead. */}
-      <div className="relative hidden w-[46%] shrink-0 flex-col justify-center overflow-hidden bg-[#0e0906] px-14 py-12 min-[900px]:flex">
+      <div className="relative hidden w-[46%] shrink-0 flex-col justify-center overflow-hidden bg-surface-dark px-14 py-12 min-[900px]:flex">
         <img
           src={signupPanelArt}
           alt=""

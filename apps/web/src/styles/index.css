@@ -64,6 +64,12 @@
   --color-heading: #28183b;
   --color-surface-muted: #f5f7f7;
   --color-surface-hover: #f5f7fd;
+  /* A warm near-black, distinct from --color-brand-secondary (the lighter
+     clay-brown used for text/buttons) — for full-bleed dark surfaces
+     (AuthLayout's value-prop panel, Footer). Pulled out of AuthLayout's own
+     one-off `bg-[#0e0906]` once Footer needed the identical color, per this
+     file's own "second occurrence -> tokenize it" rule below. */
+  --color-surface-dark: #0e0906;
   --color-border-subtle: #f0efef;
   --color-border-muted: #e0e0e0;
   --color-input-border: #ced4da;
