@@ -1,11 +1,11 @@
 # Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-08-25)
 
 ## Corpus Check
-- 172 files · ~532,012 words
+- 172 files · ~534,600 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 629 nodes · 611 edges · 180 communities detected
+- 632 nodes · 616 edges · 180 communities detected
 - Extraction: 80% EXTRACTED · 19% INFERRED · 1% AMBIGUOUS · INFERRED: 117 edges (avg confidence: 0.77)
 - Token cost: 0 input · 0 output
 
@@ -301,56 +301,56 @@ Cohesion: 0.5
 Nodes (2): HeroScene(), prefersReducedMotion()
 
 ### Community 18 - "Community 18"
-Cohesion: 0.4
-Nodes (1): AppError
+Cohesion: 0.6
+Nodes (3): prefersCoarsePointer(), prefersReducedMotion(), SmoothScroll()
 
 ### Community 19 - "Community 19"
 Cohesion: 0.4
-Nodes (2): createReport(), hasReportedRecently()
+Nodes (1): AppError
 
 ### Community 20 - "Community 20"
+Cohesion: 0.4
+Nodes (2): createReport(), hasReportedRecently()
+
+### Community 21 - "Community 21"
 Cohesion: 0.83
 Nodes (3): getEditableFields(), getMissingElements(), getProfileFields()
 
-### Community 21 - "Community 21"
+### Community 22 - "Community 22"
 Cohesion: 0.5
 Nodes (0): 
 
-### Community 22 - "Community 22"
+### Community 23 - "Community 23"
 Cohesion: 0.67
 Nodes (4): Commit Message Format, ESLint & Prettier, Pre-commit Hooks (husky/lint-staged), Frontend Coding Standards
 
-### Community 23 - "Community 23"
+### Community 24 - "Community 24"
 Cohesion: 0.5
 Nodes (4): showSuccessToast / showErrorToast (src/utils/Toasts.js), src/utils/CheckInternetConnection.js (suppresses toasts when offline), No React error boundary anywhere in the app, Rationale: suppress toasts offline on assumption an offline banner would be more useful (none exists)
 
-### Community 24 - "Community 24"
+### Community 25 - "Community 25"
 Cohesion: 0.67
 Nodes (4): ComingSoon shared component, Rationale: Shop/Trending deliberately left as ComingSoon placeholders, no feature built yet, Shop.jsx (/shop, ComingSoon placeholder), Trending.jsx (/trending, ComingSoon placeholder)
 
-### Community 25 - "Community 25"
+### Community 26 - "Community 26"
 Cohesion: 0.5
 Nodes (4): Bell notification icon (SVG, 'Bell_On' group): a ringing/active bell glyph rendered via currentColor stroke+fill for a UI notifications button, App icon (512x512): two open hands cradling a red heart, line-art style with beige/cream hand fill and coral heart, on transparent background — depicts care, giving, and solidarity as the KarmaCircle app/PWA icon, Default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image, Solidarity illustration: two open hands cradling a red heart, same line-art style as the app icon, used to convey community support/karma/charity concept in the app UI
 
-### Community 26 - "Community 26"
+### Community 27 - "Community 27"
 Cohesion: 0.67
 Nodes (4): comingsoon.svg - Coming Soon illustration, error404.svg - 404 Not Found illustration, MilanNavBrand.svg - Milan/KarmaCircle navbar brand logo, profilePlaceholderImage.png - default avatar placeholder
 
-### Community 27 - "Community 27"
+### Community 28 - "Community 28"
 Cohesion: 0.5
 Nodes (4): clubbanner.jpg - real photograph of a volunteer woman sitting outdoors with a large group of smiling children in red-checked school uniforms under blue tarp shelters, MilanConnect.svg - flat-illustration graphic of two people holding cardboard 'DONATION' boxes and two people video-calling/handshaking through phone screens with a heart icon, in an orange/pink/coral palette, MilanSEO.svg - bold comic-style Open Graph/social-share banner reading 'CONNECTING CHARITIES, N[GOs], HELP & YO[U]' with speech-bubble bursts in teal, coral and pink, Vector.png - decorative dark graph-paper/grid pattern background asset (black background with thin white and orange gridlines)
 
-### Community 28 - "Community 28"
+### Community 29 - "Community 29"
 Cohesion: 0.67
 Nodes (0): 
-
-### Community 29 - "Community 29"
-Cohesion: 1.0
-Nodes (2): converter(), convertToBase64()
 
 ### Community 30 - "Community 30"
-Cohesion: 0.67
-Nodes (0): 
+Cohesion: 1.0
+Nodes (2): converter(), convertToBase64()
 
 ### Community 31 - "Community 31"
 Cohesion: 0.67
@@ -530,19 +530,19 @@ Nodes (2): Tamal Das (security contact), Reporting a Vulnerability
 
 ### Community 75 - "Community 75"
 Cohesion: 1.0
-Nodes (2): Cloning Guide, Docker Setup: Clone Repository
+Nodes (2): Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*), Razorpay API Docs
 
 ### Community 76 - "Community 76"
 Cohesion: 1.0
-Nodes (2): Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*), Razorpay API Docs
+Nodes (2): Cloning Guide, Docker Setup: Clone Repository
 
 ### Community 77 - "Community 77"
 Cohesion: 1.0
-Nodes (2): src/pages/events/detailed/DetailedEvent.jsx (unrouted stub), Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub
+Nodes (2): .env.example (documents stale VITE_MILANAPI), Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL
 
 ### Community 78 - "Community 78"
 Cohesion: 1.0
-Nodes (2): .env.example (documents stale VITE_MILANAPI), Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL
+Nodes (2): src/pages/events/detailed/DetailedEvent.jsx (unrouted stub), Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub
 
 ### Community 79 - "Community 79"
 Cohesion: 1.0
@@ -1041,13 +1041,13 @@ Nodes (1): Four coexisting styling approaches (plain .scss, plain .css, CSS Modu
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 74`** (2 nodes): `Tamal Das (security contact)`, `Reporting a Vulnerability`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (2 nodes): `Cloning Guide`, `Docker Setup: Clone Repository`
+- **Thin community `Community 75`** (2 nodes): `Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*)`, `Razorpay API Docs`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (2 nodes): `Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*)`, `Razorpay API Docs`
+- **Thin community `Community 76`** (2 nodes): `Cloning Guide`, `Docker Setup: Clone Repository`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (2 nodes): `src/pages/events/detailed/DetailedEvent.jsx (unrouted stub)`, `Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub`
+- **Thin community `Community 77`** (2 nodes): `.env.example (documents stale VITE_MILANAPI)`, `Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (2 nodes): `.env.example (documents stale VITE_MILANAPI)`, `Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL`
+- **Thin community `Community 78`** (2 nodes): `src/pages/events/detailed/DetailedEvent.jsx (unrouted stub)`, `Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 79`** (2 nodes): `getProfileFields.js (unused getMissingElements/getEditableFields)`, `ProfileElements.js (unused declarative field metadata)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -1264,8 +1264,8 @@ _Questions this graph is uniquely positioned to answer:_
 - **What is the exact relationship between `Bell notification icon (SVG, 'Bell_On' group): a ringing/active bell glyph rendered via currentColor stroke+fill for a UI notifications button` and `Default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **Why does `Known Issues & Inconsistencies` connect `Community 2` to `Community 1`, `Community 3`, `Community 7`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `Frontend Tech Stack` connect `Community 2` to `Community 5`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `logout()` connect `Community 0` to `Community 4`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Are the 9 inferred relationships involving `findByEmail()` (e.g. with `dashboard()` and `loginSuccess()`) actually correct?**
   _`findByEmail()` has 9 INFERRED edges - model-reasoned connections that need verification._
