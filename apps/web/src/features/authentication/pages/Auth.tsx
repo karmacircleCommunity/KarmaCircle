@@ -291,7 +291,7 @@ const Auth = () => {
             <div className="mt-1 flex flex-col gap-3">
               <Button
                 type="submit"
-                className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(138,90,46,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(138,90,46,0.55)] disabled:bg-[var(--auth-accent)]!"
+                className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(168,98,62,0.55)] disabled:bg-[var(--auth-accent)]!"
                 isLoading={checkingEmail}
                 disabled={
                   !credentials.email || !isEmailFormatValid || checkingEmail
@@ -394,7 +394,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(138,90,46,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(138,90,46,0.55)] disabled:bg-[var(--auth-accent)]!"
+              className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(168,98,62,0.55)] disabled:bg-[var(--auth-accent)]!"
               isLoading={loading}
               disabled={loading || !credentials.password}
             >
@@ -419,7 +419,10 @@ const Auth = () => {
                 return;
               }
               setErrors((prev) => ({ ...prev, name: undefined }));
-              authenticateUser({ ...credentials, name: trimmedName }, setErrors);
+              authenticateUser(
+                { ...credentials, name: trimmedName },
+                setErrors,
+              );
             }}
           >
             <div className="relative flex w-full flex-col">
@@ -461,10 +464,7 @@ const Auth = () => {
                     // it's typed, rather than only rejecting it on
                     // submit — so digits/symbols never actually land
                     // in the field (this also sanitizes pasted text).
-                    const sanitized = e.target.value.replace(
-                      /[^A-Za-z ]/g,
-                      "",
-                    );
+                    const sanitized = e.target.value.replace(/[^A-Za-z ]/g, "");
                     setCredentials((prev) => ({
                       ...prev,
                       name: sanitized,
@@ -541,8 +541,8 @@ const Auth = () => {
                 ) : (
                   passwordStrength === "weak" && (
                     <p className="mt-1 font-outfit text-body text-gray-500">
-                      Use 8+ characters with an uppercase letter, a
-                      lowercase letter, and a number.
+                      Use 8+ characters with an uppercase letter, a lowercase
+                      letter, and a number.
                     </p>
                   )
                 )}
@@ -551,7 +551,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(138,90,46,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(138,90,46,0.55)] disabled:bg-[var(--auth-accent)]!"
+              className="w-full rounded-lg bg-[var(--auth-accent)]! px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5 hover:bg-[var(--auth-accent-hover)]! hover:shadow-[0_10px_26px_-6px_rgba(168,98,62,0.55)] disabled:bg-[var(--auth-accent)]!"
               isLoading={loading}
               disabled={loading || !credentials.password || !credentials.name}
             >

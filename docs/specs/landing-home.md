@@ -13,7 +13,9 @@ Does **not** render `<MilanInfoBanner />` — that component exists in `features
 
 [apps/web/src/features/landing-home/components/Landing.tsx](../../apps/web/src/features/landing-home/components/Landing.tsx).
 The hero section: `<Navbar />`, a headline that changes copy/wrapping at the `430px` breakpoint (tracked via a `window.resize` listener and local `windowWidth` state, not CSS media queries), and a CTA button that reads `isLoggedIn` from Redux (`selectIsLoggedIn`) to decide between "Sign up Today!" (`/auth/signup`) and "Explore our organizations" (`/organizations`).
-Below the CTA, a static "Trusted by 300+ users" block with four hardcoded GitHub avatar images — not derived from any real user/follower data.
+Below the CTA, a static "Trusted by 300+ users" block with four hardcoded GitHub-avatar images (now bundled local assets under `apps/web/src/assets/avatars/`, not hotlinked to `avatars.githubusercontent.com`) — not derived from any real user/follower data.
+
+Redesigned August 2026 (lighter typography, the site's new muted-clay brand color — see [ui-kit.md](./ui-kit.md) — and the app's new Lenis/GSAP/three.js animation infra, also documented there): the old static `Vector.png` background is gone, replaced by `HeroScene.tsx`, a lazy-loaded three.js/`@react-three/fiber` static line grid (a same-day iteration replaced an initial random-particle-field version — see the feature's own `SPEC.md`). The heading/paragraph/CTA fade in on mount and the whole hero block parallaxes on scroll, both via `@gsap/react`'s `useGSAP` + `ScrollTrigger`, skipped under `prefers-reduced-motion`. The `--landing-accent`/`--auth-accent`-style local color override this page used to carry is gone too — it now just uses the site-wide `--color-brand` tokens directly, since they're no longer the orange it was scoped away from.
 
 ## `MilanInfoBanner` (built but not mounted)
 

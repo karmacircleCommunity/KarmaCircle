@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { BacktoTop } from "@components";
+import { BacktoTop, SmoothScroll } from "@components";
 import "@styles/App.css";
 import routesConfig from "@app/routes/routesConfig";
 
@@ -14,23 +14,25 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <div className="app">
-          <ToastContainer />
-          <Suspense fallback={"Loading . . ."}>
-            <Router>
-              <Routes>
-                {routesConfig.map((route, index) => (
-                  <Route
-                    key={index}
-                    path={route.path}
-                    element={route.element}
-                  />
-                ))}
-              </Routes>
-            </Router>
-          </Suspense>
-          <BacktoTop />
-        </div>
+        <SmoothScroll>
+          <div className="app">
+            <ToastContainer />
+            <Suspense fallback={"Loading . . ."}>
+              <Router>
+                <Routes>
+                  {routesConfig.map((route, index) => (
+                    <Route
+                      key={index}
+                      path={route.path}
+                      element={route.element}
+                    />
+                  ))}
+                </Routes>
+              </Router>
+            </Suspense>
+            <BacktoTop />
+          </div>
+        </SmoothScroll>
       </LocalizationProvider>
     </QueryClientProvider>
   );

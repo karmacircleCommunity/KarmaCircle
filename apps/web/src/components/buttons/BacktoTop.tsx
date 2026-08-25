@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import { IoIosArrowUp } from "react-icons/io";
+import { useLenis } from "lenis/react";
 
 const BackToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
+  // SmoothScroll.tsx mounts the root Lenis instance app-wide; useLenis()
+  // reaches it from anywhere without needing to sit inside that provider.
+  // Undefined under prefers-reduced-motion (SmoothScroll skips Lenis
+  // entirely there) — falls back to native smooth scroll in that case.
+  const lenis = useLenis();
 
   const goToBtn = () => {
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    if (lenis) {
+      lenis.scrollTo(0);
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
     return () => window.removeEventListener("scroll", listenToScroll);
   };
 

@@ -44,15 +44,15 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
       className="auth-page flex min-h-screen w-full"
       style={
         {
-          // Scoped to this page only — a deliberate accent shift away
-          // from the site-wide orange brand color for the auth flow,
-          // not a global rebrand. Picked to match the generated panel
-          // image's dominant warm amber tone instead of clashing with
-          // it. If this should become the site-wide brand color, that's
-          // a separate decision — say so and we'll change the actual
-          // --color-brand token in styles/index.css instead.
-          "--auth-accent": "#8a5a2e",
-          "--auth-accent-hover": "#744a24",
+          // Was a deliberate one-off shift away from the old orange
+          // --color-brand, kept local to this page. Now that the site
+          // rebranded to this same muted-clay family (styles/index.css),
+          // this just points at the real tokens instead of carrying its
+          // own duplicate hex — still a local var because Auth.tsx reads
+          // it as `--auth-accent` throughout, not because the color
+          // itself needs to differ from the rest of the app anymore.
+          "--auth-accent": "var(--color-brand)",
+          "--auth-accent-hover": "var(--color-brand-hover)",
         } as CSSProperties
       }
     >

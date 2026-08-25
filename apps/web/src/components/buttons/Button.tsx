@@ -5,13 +5,15 @@ import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 
 const variantClasses: Record<string, string> = {
   solid:
-    "bg-brand text-white transition-all duration-200 ease-in-out hover:bg-[#ff5a31d1] disabled:cursor-not-allowed disabled:bg-brand disabled:text-white disabled:pointer-events-none disabled:opacity-50",
+    "bg-brand text-white transition-all duration-200 ease-in-out hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand disabled:text-white disabled:pointer-events-none disabled:opacity-50",
   outline:
-    "rounded-xl border border-heading bg-white transition-all duration-200 ease-in-out hover:border-[#ff5a31d1] focus:border-[#ff5a31d1] active:border-[#ff5a31d1] disabled:cursor-not-allowed disabled:border-black disabled:bg-heading disabled:text-black disabled:opacity-50",
+    "rounded-xl border border-heading bg-white transition-all duration-200 ease-in-out hover:border-brand-hover focus:border-brand-hover active:border-brand-hover disabled:cursor-not-allowed disabled:border-black disabled:bg-heading disabled:text-black disabled:opacity-50",
 };
 
-export interface ButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
+export interface ButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "onClick"
+> {
   children?: ReactNode;
   variant?: string;
   to?: string;

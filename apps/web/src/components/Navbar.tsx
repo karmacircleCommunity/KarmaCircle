@@ -4,19 +4,17 @@ import { FaChevronRight } from "react-icons/fa6";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { RxCaretDown, RxCross2 } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import navbarbrand from "@assets/pictures/Navbar/MilanNavBrand.svg";
+import { Link, useNavigate } from "react-router-dom";
 import { resetUserData, selectUser } from "@app/store/slices/userSlice";
 import type { RootState } from "@app/store/store";
 import { Logout } from "@services/MilanApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import Button from "@components/buttons/Button";
 
+// No "Home" entry — the logo already links there (standard marketing-site
+// convention: a persistent top nav lists the *other* destinations, not the
+// page the logo itself points to).
 const Links = [
-  {
-    name: "Home",
-    link: "/",
-  },
   {
     name: "Organizations",
     link: "/organizations",
@@ -35,8 +33,16 @@ const Links = [
   },
 ];
 
-const Navbar = () => {
-  const location = useLocation();
+type NavbarProps = {
+  // Hides the navbar's own "Sign Up" while a bigger, redundant CTA
+  // elsewhere on the page is on screen (Landing.tsx passes this, driven by
+  // its own ScrollTrigger — see that file). Every other page renders
+  // `<Navbar />` with no props, so this defaults to `false` (always show)
+  // there, which is the correct behavior on pages with no such CTA.
+  hideSignUpForHeroCta?: boolean;
+};
+
+const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
@@ -86,37 +92,32 @@ const Navbar = () => {
   return (
     <nav>
       <div className="sticky z-99 mx-8 flex items-center justify-between px-28 py-[0.8rem] max-430px:px-6">
-        <Link to={"/"}>
-          <img
-            src={navbarbrand}
-            alt="Milan-logo"
-            className="z-9999999999999999999999 w-37.5 cursor-pointer max-430px:z-10 max-430px:w-32.5"
+        <Link to={"/"} className="z-10 flex items-center gap-2 no-underline">
+          <span
+            aria-hidden="true"
+            className="inline-block size-2 rounded-full bg-brand"
           />
+          <span className="font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary">
+            NgoWorld
+          </span>
         </Link>
 
         {windowWidth > 900 && (
-          <div className="flex items-center gap-6.25">
-            <div className="z-1 flex items-center gap-6.25">
-              {Links.map((item, index) => {
-                return (
-                  <div key={index}>
-                    <Link
-                      key={index}
-                      className="font-outfit text-body-lg leading-none font-medium text-[#8c321b] no-underline"
-                      to={item.link}
-                    >
-                      {item.name}
-                    </Link>
-                    <div
-                      className={
-                        location.pathname === item?.link
-                          ? "mx-auto w-1/2 border-b-2 border-heading"
-                          : ""
-                      }
-                    ></div>
-                  </div>
-                );
-              })}
+          <div className="flex items-center gap-8">
+            {/* No active-route underline: that's an app-internal-tab
+                pattern, not a marketing-nav one — a visitor already knows
+                which page they're on from the page itself. A plain color
+                shift on hover is the whole "state" this nav needs. */}
+            <div className="z-1 flex items-center gap-7">
+              {Links.map((item, index) => (
+                <Link
+                  key={index}
+                  className="font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+                  to={item.link}
+                >
+                  {item.name}
+                </Link>
+              ))}
             </div>
             {isLoggedIn ? (
               <p
@@ -125,14 +126,14 @@ const Navbar = () => {
                     .querySelector(".nav_dropdown")
                     ?.classList.toggle("nav_dropdown_visible");
                 }}
-                className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-[#8c321b] no-underline"
+                className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
               >
                 Profile <RxCaretDown className="size-6.25" />
               </p>
             ) : (
               <Button
                 to="/auth/signup"
-                className="z-3 flex w-auto items-center justify-around gap-2.5 rounded-5px border-none px-5 py-2 font-outfit text-base font-normal not-italic hover:bg-brand hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] hover:transition-all hover:duration-300 hover:ease-in-out"
+                className={`z-3 flex w-auto items-center justify-around gap-2.5 rounded-5px border-none px-5 py-2 font-outfit text-base font-normal not-italic transition-all duration-300 ease-in-out hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] ${hideSignUpForHeroCta ? "pointer-events-none opacity-0" : "opacity-100"}`}
               >
                 <span>Sign Up</span>
               </Button>
@@ -169,26 +170,15 @@ const Navbar = () => {
                 }}
               />
 
-              {Links.map((item, index) => {
-                return (
-                  <div key={index}>
-                    <Link
-                      key={index}
-                      className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                      to={item.link}
-                    >
-                      {item.name}
-                    </Link>
-                    <div
-                      className={
-                        location.pathname === item?.link
-                          ? "mx-auto w-1/2 border-b-2 border-heading"
-                          : ""
-                      }
-                    ></div>
-                  </div>
-                );
-              })}
+              {Links.map((item, index) => (
+                <Link
+                  key={index}
+                  className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink no-underline"
+                  to={item.link}
+                >
+                  {item.name}
+                </Link>
+              ))}
 
               {isLoggedIn ? (
                 <>
@@ -227,7 +217,7 @@ const Navbar = () => {
           </div>
         )}
 
-        <div className="nav_dropdown absolute top-10 right-17.75 z-10 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_#ff5b3120,0px_0px_8.191px_0px_#ff5b3120,0px_0px_28.084px_0px_#ff5b3120] transition-all duration-1000 ease-in-out">
+        <div className="nav_dropdown absolute top-10 right-17.75 z-10 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
           <div className="flex flex-col justify-center">
             <span className="mb-1.25 p-2.5 font-outfit text-base">
               Hello @{user?.userName}

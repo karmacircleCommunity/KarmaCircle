@@ -29,8 +29,15 @@
   --font-mont: "Montserrat", sans-serif;
   --font-poppins: "Poppins", sans-serif;
   --font-outfit: "Outfit", sans-serif;
-  --color-brand-secondary: #6b2615;
-  --color-brand: #ff5b31;
+  /* Muted clay/terracotta over a warm near-black — replaces the old
+     saturated orange (#ff5b31) and red-brown (#6b2615). Both checked
+     against WCAG AA (>=4.5:1) for white text on --color-brand and for
+     --color-brand-secondary on the #fffcf7 body background. This is the
+     one place to edit to retheme the whole app — every text-brand/
+     bg-brand/border-brand(-secondary) utility picks it up automatically. */
+  --color-brand-secondary: #382c24;
+  --color-brand: #a8623e;
+  --color-brand-hover: #8f5236;
 
   /* Font-size tokens for the three sizes repeated across the app as
      arbitrary values (text-[15px]/[17px]/[10px]) — named here so they're
@@ -111,8 +118,8 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 @media screen and (max-width: 430px) {

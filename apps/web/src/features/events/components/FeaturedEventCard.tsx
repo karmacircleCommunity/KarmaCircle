@@ -1,5 +1,6 @@
 import { FiLink } from "react-icons/fi";
 import { RiTwitterXLine } from "react-icons/ri";
+import participantAvatar from "@assets/avatars/gh-72851613.jpg";
 
 /**
  * Fully static — no props, hardcoded content, same "Register Now"
@@ -36,17 +37,17 @@ const FeaturedEventCard = () => {
         <div className="flex items-center gap-1.75">
           <div className="flex">
             <img
-              src="https://avatars.githubusercontent.com/u/72851613?v=4"
+              src={participantAvatar}
               alt=""
               className="size-8.5 max-h-8.5 max-w-8.5 overflow-hidden rounded-full border-2 border-white bg-none outline-none"
             />
             <img
-              src="https://avatars.githubusercontent.com/u/72851613?v=4"
+              src={participantAvatar}
               alt=""
               className="-ml-3.25 size-8.5 max-h-8.5 max-w-8.5 overflow-hidden rounded-full border-2 border-white bg-none outline-none"
             />
             <img
-              src="https://avatars.githubusercontent.com/u/72851613?v=4"
+              src={participantAvatar}
               alt=""
               className="-ml-3.25 size-8.5 max-h-8.5 max-w-8.5 overflow-hidden rounded-full border-2 border-white bg-none outline-none"
             />
