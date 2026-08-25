@@ -31,6 +31,27 @@ Work and commit directly on whatever branch is currently checked out — `main` 
 Only branch off if Tamal explicitly tells you to (e.g. "make a branch for this," "branch off main").
 This overrides any general instinct to branch before committing on a default branch.
 
+## Responsive design — mandatory for every component
+
+Every new or changed UI component (`apps/web`, either framework in use) must work cleanly across the full screen-size range, from small mobiles (~320px) up through large desktop and 4K/5K monitors.
+This applies regardless of which agent or model is building it — Claude, OpenAI, or anyone else working in this repo.
+Design and build mobile-first, then verify the desktop/wide breakpoints, not the other way around: shrinking a desktop layout down tends to hide the cases that only show up at 320-375px (columns that no longer fit side by side, padding that reads as cramped, text that wraps badly).
+For very large screens, cap content width with a centered container (`mx-auto` + a `max-w-*`) rather than letting text/line-lengths stretch edge to edge — that alone covers 4K/5K without extra breakpoints in most cases.
+
+**Alignment on mobile:** default to left-aligned text and controls on mobile, not centered.
+This matches how most major sites (GitHub, Stripe, Vercel, Airbnb, Apple) actually handle mobile body/footer/list content — centered text is harder to scan since the eye has to re-find the start of each ragged line, and centering is normally reserved for short hero/marketing taglines, not for footers, forms, or lists.
+Left-aligned content sits flush against the container edge with no auto-margin illusion of breathing room, so give it real horizontal padding — don't reuse a padding value that was only ever tuned for a centered layout.
+The mobile horizontal padding standard across `apps/web` is `px-9` (36px) — that's what `Landing.tsx`'s hero and `Footer.tsx` both use as of August 2026 (briefly `px-10`/40px, brought down a notch on direct feedback that it read as too much); match it in new sections rather than picking a fresh value, so different parts of the same page don't visibly disagree on their left/right margin (exactly the bug those two had before being aligned to each other).
+
+**Verify the padding you asked for is the padding you got — a Tailwind utility can silently lose.** A CSS rule written outside any `@layer` block always outranks a rule inside one (e.g. `@layer utilities`, where all of Tailwind's own utility classes live), regardless of selector specificity or source order. `apps/web/src/styles/index.css` had exactly this bug: a hand-written `.container` class (a Bootstrap replica, unlayered) was silently overriding a `px-*` utility placed right next to it in the same `className` — the utility was in the JSX and doing nothing. If you add hand-written global CSS (`index.css` or similar) that shares a class with anything Tailwind-generated, wrap it in `@layer base` (or `components`), or verify the computed style in a real browser rather than trusting the className alone.
+
+**Watch for scroll-linked/transform effects (parallax, GSAP ScrollTrigger, etc.) on short mobile viewports.**
+The same `yPercent`/translate value covers a much bigger share of a much shorter viewport than it does on desktop, and can visibly eat into padding or margins as the page scrolls — see `Footer.tsx`'s parallax, gated to `lg:` and up for exactly this reason ([layout-navigation.md](./docs/specs/layout-navigation.md#footer)).
+Either gate the effect to larger breakpoints or verify its extremes (0% and 100% scroll progress) don't collide with nearby content on a small viewport.
+
+**Length and hierarchy on mobile:** stacking every section vertically on a narrow screen can turn a component that reads fine on desktop into something long and undifferentiated.
+Tighten vertical padding/gaps at the mobile breakpoint rather than reusing desktop spacing values, and use a divider, spacing, or typographic weight to group related content so a long mobile stack still has visible structure.
+
 ## Read this first
 
 Before making any change, read the spec map for the app you're touching: [docs/specs/README.md](./docs/specs/README.md) for `apps/web`, or [apps/api/docs/specs/README.md](./apps/api/docs/specs/README.md) for `apps/api` — each is the map of every feature/module in that app and how it actually works today, including what's broken, unused, or half-wired.

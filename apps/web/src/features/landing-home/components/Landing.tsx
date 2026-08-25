@@ -111,24 +111,37 @@ const Landing = () => {
       <Navbar hideSignUpForHeroCta={heroCtaVisible} />
       <div
         ref={heroRef}
-        className="relative container flex flex-1 flex-col items-center justify-center overflow-hidden max-500px:px-4 max-500px:pt-0"
+        className="relative container flex flex-1 flex-col items-center justify-center overflow-hidden max-500px:items-start max-500px:px-9 max-500px:pt-0"
       >
         <Suspense fallback={null}>
           <HeroScene className="pointer-events-none [mask-image:radial-gradient(ellipse_70%_70%_at_50%_40%,black_55%,transparent_100%)]" />
         </Suspense>
 
-        <div className="z-1 flex flex-col items-center justify-center">
+        {/* items-center centers each child as its own box on desktop
+            (by design - the h1 lines are shorter than the 55%-wide
+            paragraph, and centering each independently is what makes
+            them read as a stacked, centered block rather than a
+            block-left-aligned-inside-a-centered-column). On mobile that
+            same behavior was the bug: text flipped to text-start, but
+            the h1 (no w-full) still shrank to its own content width and
+            got centered as a box, while the paragraph/CTA row (both
+            w-full) sat flush against the true left edge - two different
+            left edges on screen. max-500px:items-start fixes the layout
+            itself instead of just the text-align, and w-full below on
+            the h1 makes it span the same width as everything else so
+            text-start actually means "the same left edge". */}
+        <div className="z-1 flex flex-col items-center justify-center max-500px:items-start">
           {windowWidth > 430 ? (
             <>
               <h1
                 data-hero-reveal
-                className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:text-start max-500px:text-[2.7rem]"
+                className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
               >
                 We connect NGOs,
               </h1>
               <h1
                 data-hero-reveal
-                className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:text-start max-500px:text-[2.7rem]"
+                className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
               >
                 Charities and <span className="text-brand">you.</span>
               </h1>
@@ -136,7 +149,7 @@ const Landing = () => {
           ) : (
             <h1
               data-hero-reveal
-              className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:text-start max-500px:text-[2.7rem]"
+              className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
             >
               We connect NGOs, charities and{" "}
               <span className="text-brand">you.</span>

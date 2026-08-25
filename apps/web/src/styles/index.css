@@ -181,37 +181,55 @@ code {
 
 /* Bootstrap's .container, replicated for the handful of non-SCSS files
    (Donate.tsx, Landing.tsx, Milaninfobanner.tsx) that still rely on it
-   now that Bootstrap itself has been removed */
-.container {
-  width: 100%;
-  margin-right: auto;
-  margin-left: auto;
-  padding-right: 0.75rem;
-  padding-left: 0.75rem;
-}
-@media (min-width: 576px) {
+   now that Bootstrap itself has been removed.
+
+   Wrapped in `@layer base` (fixed August 2026): `@import "tailwindcss"`
+   implicitly declares `@layer theme, base, components, utilities;`, and a
+   later-declared layer always wins over an earlier one, regardless of
+   selector specificity or source order. A rule written outside of any
+   `@layer` block sits *above* all of those - higher priority than even
+   `utilities` - so this class's own `padding-left/right: 0.75rem` was
+   silently beating any Tailwind padding utility applied alongside it
+   (`.container p-*`/`px-*`), utility class or not. That's exactly what
+   Landing.tsx's `max-500px:px-4`/`max-500px:px-10` was fighting and
+   losing to - the hero's real mobile padding stayed pinned at 12px no
+   matter what utility the component asked for. Filing this under `base`
+   restores the normal expectation ("a Tailwind utility on the element
+   wins"), matching how `.container` behaves everywhere else that doesn't
+   pair it with a conflicting utility (Donate.tsx, Milaninfobanner.tsx),
+   so their rendering is unaffected by this change. */
+@layer base {
   .container {
-    max-width: 540px;
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
   }
-}
-@media (min-width: 768px) {
-  .container {
-    max-width: 720px;
+  @media (min-width: 576px) {
+    .container {
+      max-width: 540px;
+    }
   }
-}
-@media (min-width: 992px) {
-  .container {
-    max-width: 960px;
+  @media (min-width: 768px) {
+    .container {
+      max-width: 720px;
+    }
   }
-}
-@media (min-width: 1200px) {
-  .container {
-    max-width: 1140px;
+  @media (min-width: 992px) {
+    .container {
+      max-width: 960px;
+    }
   }
-}
-@media (min-width: 1400px) {
-  .container {
-    max-width: 1320px;
+  @media (min-width: 1200px) {
+    .container {
+      max-width: 1140px;
+    }
+  }
+  @media (min-width: 1400px) {
+    .container {
+      max-width: 1320px;
+    }
   }
 }
 
