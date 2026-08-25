@@ -38,10 +38,10 @@ const Home = () => {
   return (
     <>
       <Helmet>
-        <title>NgoWorld</title>
+        <title>KarmaCircle</title>
         <meta
           name="description"
-          content="Welcome to the homepage of NgoWorld, a hub for Users to collaborate with NGOs, Charities and more."
+          content="Welcome to the homepage of KarmaCircle, a hub for Users to collaborate with NGOs, Charities and more."
         />
         <link rel="canonical" href="/" />
       </Helmet>

@@ -7,19 +7,19 @@ interface ComponentHelmetProps {
 function ComponentHelmet({ type }: ComponentHelmetProps) {
   return type == "Organizations" ? (
     <Helmet>
-      <title>NgoWorld | {type}</title>
+      <title>KarmaCircle | {type}</title>
       <meta
         name="description"
-        content="This is the organizations page of NgoWorld, where you can find all the organizations in the community."
+        content="This is the organizations page of KarmaCircle, where you can find all the organizations in the community."
       />
       <link rel="canonical" href="/" />
     </Helmet>
   ) : type == "Events" ? (
     <Helmet>
-      <title>NgoWorld | Events </title>
+      <title>KarmaCircle | Events </title>
       <meta
         name="description"
-        content="This is the events page of NgoWorld, where you can find all the events happening in the community."
+        content="This is the events page of KarmaCircle, where you can find all the events happening in the community."
       />
       <link rel="canonical" href="/" />
     </Helmet>

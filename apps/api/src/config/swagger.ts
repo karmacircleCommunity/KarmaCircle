@@ -8,9 +8,9 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Milan API",
+      title: "KarmaCircle API",
       version: "1.0.0",
-      description: "API documentation for the Milan (NGOWorld) backend.",
+      description: "API documentation for the KarmaCircle backend.",
     },
     components: {
       securitySchemes: {

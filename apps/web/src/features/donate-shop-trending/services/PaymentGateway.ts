@@ -27,7 +27,7 @@ export default async function displayRazorpay(money: number) {
     // under `.data`).
     currency: data.currency,
     amount: data.data.amount,
-    name: "Milan",
+    name: "KarmaCircle",
     description: "A hub for NGOs",
     image: "https://i.ibb.co/JC4g0ZD/favicon.png",
     // @ts-expect-error — same bug as `currency` above; should be `data.data.id`.

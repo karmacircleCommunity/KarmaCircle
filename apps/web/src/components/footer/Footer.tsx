@@ -166,7 +166,7 @@ const Footer = () => {
               className="inline-block size-2 rounded-full bg-brand"
             />
             <span className="font-outfit text-lg leading-none font-medium tracking-tight text-white sm:text-xl">
-              NgoWorld
+              KarmaCircle
             </span>
           </Link>
           <p className="font-poppins text-xs text-white/50 sm:text-body">
@@ -259,7 +259,7 @@ const Footer = () => {
 
       <div className="border-t border-white/10 px-9 py-8 sm:py-10 lg:p-12">
         <p className="mx-auto max-w-6xl text-center font-poppins text-caption text-white/35">
-          © {new Date().getFullYear()} NgoWorld. All rights reserved.
+          © {new Date().getFullYear()} KarmaCircle. All rights reserved.
         </p>
       </div>
     </footer>

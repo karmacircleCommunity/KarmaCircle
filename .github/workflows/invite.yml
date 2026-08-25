@@ -11,7 +11,7 @@ jobs:
       - name: Invite on label
         uses: vj-abigo/invite-on-label@v1.4
         with:
-          organization: MilanCommunity
+          organization: karmacircleCommunity
           label: invite me to the organisation
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           comment:
@@ -21,6 +21,6 @@ jobs:
             appears on your GitHub profile for everyone else to see. You can do
             this by finding your name in the GitHub organisation list and change
             the dropdown to public
-            https://github.com/orgs/MilanCommunity/people<br>"
+            https://github.com/orgs/karmacircleCommunity/people<br>"
         env:
           INVITE_TOKEN: ${{ secrets.INVITE_TOKEN }}

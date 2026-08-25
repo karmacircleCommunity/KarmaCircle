@@ -1,4 +1,4 @@
-# NgoWorld (Milan) Frontend — Feature Specs
+# KarmaCircle Frontend — Feature Specs
 
 This directory is a map of the codebase for AI coding agents and new contributors.
 Each file documents one feature area: what it does, which files implement it, how data flows through it, and any known gaps or inconsistencies.
@@ -7,7 +7,7 @@ When you change a feature, update its spec file in the same PR so this map stays
 
 ## What this project is
 
-NgoWorld (product name "Milan", package name `milan-frontend`) is the React frontend for a platform that connects NGOs, charities, organizations, and individual users.
+KarmaCircle (package name `milan-frontend`, a holdover from the app's former "NgoWorld"/"Milan" branding) is the React frontend for a platform that connects NGOs, charities, organizations, and individual users.
 It talks to the backend at [apps/api](../../apps/api), this repo's other workspace, over a REST API — see [apps/api/docs/specs/README.md](../../apps/api/docs/specs/README.md) for the backend's own map.
 This directory (`docs/specs/`) covers `apps/web` only; there is no server-side code here — it is a Vite + React SPA.
 

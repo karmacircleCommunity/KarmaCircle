@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       selfDestroying: true,
       manifest: {
-        short_name: "NgoWorld",
-        name: "NgoWorld",
+        short_name: "KarmaCircle",
+        name: "KarmaCircle",
         start_url: ".",
         display: "standalone",
         theme_color: "#000000",

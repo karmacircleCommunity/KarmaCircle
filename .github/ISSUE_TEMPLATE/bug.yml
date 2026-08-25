@@ -48,12 +48,12 @@ body:
       options:
         - label:
             "I checked and didn't find similar
-            [issue](https://github.com/ngoworldcommunity/NGOWorld/issues)"
+            [issue](https://github.com/karmacircleCommunity/KarmaCircle/issues)"
           required: true
 
         - label:
             "I have read the [Contributing
-            Guidelines](https://github.com/ngoworldcommunity/NGOWorld/blob/main/CONTRIBUTING.md)"
+            Guidelines](https://github.com/karmacircleCommunity/KarmaCircle/blob/main/CONTRIBUTING.md)"
           required: true
 
         - label: "I am participating in JWOC"

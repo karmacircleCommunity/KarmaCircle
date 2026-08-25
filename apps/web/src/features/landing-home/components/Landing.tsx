@@ -161,7 +161,7 @@ const Landing = () => {
               data-hero-reveal
               className="z-3 mx-auto mt-8 w-[55%] text-center font-poppins text-lg leading-7 tracking-[0.2px] text-ink/70 max-500px:w-full max-500px:text-start max-500px:text-body-lg"
             >
-              Welcome to <span className="font-medium">NgoWorld</span>, a
+              Welcome to <span className="font-medium">KarmaCircle</span>, a
               platform to connect and support NGOs, charities and you to build a
               better tomorrow.
             </p>

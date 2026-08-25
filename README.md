@@ -2,15 +2,15 @@
 
 # What is KarmaCircle ?
 
-KarmaCircle (product name "Milan") is a hub to **connect** NGOs, Charities, and the world to **collaborate** and **build** a better tomorrow. Sign up as an organization/user and be a cause for change. Don't forget to drop a star ⭐.
+KarmaCircle is a hub to **connect** NGOs, Charities, and the world to **collaborate** and **build** a better tomorrow. Sign up as an organization/user and be a cause for change. Don't forget to drop a star ⭐.
 
 <br/>
 
 <div align="center">
 
 <div align="center">
-<a href="https://milanhub.vercel.app/"><img alt="Frontend" src="https://img.shields.io/badge/Frontend-07C160?style=for-the-badge&logo=vercel&logoColor=white"></a>
-<a href="https://api.ngoworld.org/"><img alt="Backend" src="https://img.shields.io/badge/Backend-07C160?style=for-the-badge&logo=vercel&logoColor=white"></a>
+<a href="https://www.karmacircle.org/"><img alt="Frontend" src="https://img.shields.io/badge/Frontend-07C160?style=for-the-badge&logo=vercel&logoColor=white"></a>
+<a href="https://api.karmacircle.org/"><img alt="Backend" src="https://img.shields.io/badge/Backend-07C160?style=for-the-badge&logo=vercel&logoColor=white"></a>
 <a href="https://github.com/sponsors/tamalCodes"><img alt="Sponsor Tamal" src="https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#white"></a>
 
 </div>
@@ -63,7 +63,7 @@ We at KarmaCircle work hard to maintain the structure, and [use conventional Pul
 ## 2. Contributing guidelines & more
 
 - [Contributing Guidelines](/CONTRIBUTING.md) to be followed.
-- [Proper API documentation](https://api.ngoworld.org/docs) for developers.
+- [Proper API documentation](https://api.karmacircle.org/docs) for developers.
 
 # License 👮
 

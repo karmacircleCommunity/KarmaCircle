@@ -1,4 +1,4 @@
-# Milan Backend — Feature Specs
+# KarmaCircle Backend — Feature Specs
 
 This directory is a map of the codebase for AI coding agents and new contributors.
 Each file documents one module: what it does, which files implement it, the exact request/response shapes, and any known gaps or inconsistencies.
@@ -9,7 +9,7 @@ This directory mirrors the structure of the frontend's own `docs/specs/` (see be
 
 ## What this project is
 
-This is `milan-api`, the Express/TypeScript/MongoDB backend for **Milan** (product name; org name "NgoWorld"), a platform that connects NGOs, charities, organizations, and individual users.
+This is `milan-api` (package name, a holdover from the app's former "NgoWorld"/"Milan" branding), the Express/TypeScript/MongoDB backend for **KarmaCircle**, a platform that connects NGOs, charities, organizations, and individual users.
 It's one of two apps in this monorepo — its consumer is [apps/web](../../../web) (package name `milan-frontend`), a Vite + React SPA.
 There is no server-rendered UI in this repo — it is a pure JSON API.
 See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate and how to read the frontend's own graph/specs when a change touches both sides.

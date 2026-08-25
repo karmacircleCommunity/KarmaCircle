@@ -7,7 +7,7 @@ Cypress.env("CI", false);
 
 describe("Checking if the backend is working properly or not", () => {
   it("GET request for users", () => {
-    cy.request("https://api.ngoworld.org/display/users").then((response) => {
+    cy.request("https://api.karmacircle.org/display/users").then((response) => {
       expect(response.body.length).to.be.greaterThan(100);
     });
   });

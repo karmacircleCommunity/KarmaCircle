@@ -78,7 +78,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           className="absolute top-10 left-14 flex items-center gap-2 font-outfit text-sm font-medium text-white/90 no-underline"
         >
           <span className="inline-block size-1.5 rounded-full bg-[var(--auth-accent)]" />
-          NgoWorld
+          KarmaCircle
         </Link>
 
         <div className="relative z-10 max-w-md">
@@ -86,7 +86,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
             Bring your cause to people who care.
           </h2>
           <p className="mt-3 font-outfit text-body text-white/70">
-            Join NgoWorld to connect with donors, volunteers, and a community
+            Join KarmaCircle to connect with donors, volunteers, and a community
             ready to help.
           </p>
 
@@ -119,7 +119,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           className="mb-8 flex items-center gap-2 self-start font-outfit text-sm font-medium text-ink no-underline min-[900px]:hidden"
         >
           <span className="inline-block size-1.5 rounded-full bg-[var(--auth-accent)]" />
-          NgoWorld
+          KarmaCircle
         </Link>
 
         <div className="w-full max-w-sm">{children}</div>

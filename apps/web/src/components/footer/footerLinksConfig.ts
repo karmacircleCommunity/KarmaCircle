@@ -17,18 +17,18 @@ export const footerLinks: {
     { name: "Events ", path: "/events" },
   ],
   resources: [
-    { name: "GitHub", path: "https://github.com/ngoworldcommunity/NGOWorld" },
+    { name: "GitHub", path: "https://github.com/karmacircleCommunity/KarmaCircle" },
     {
       name: "Setup Frontend",
-      path: "https://github.com/ngoworldcommunity/NGOWorld/blob/main/docs/FrontendSetup.md",
+      path: "https://github.com/karmacircleCommunity/KarmaCircle/blob/main/docs/FrontendSetup.md",
     },
     {
       name: "Setup Backend",
-      path: "https://github.com/ngoworldcommunity/NGOWorld-Backend/blob/main/docs/BackendSetup.md",
+      path: "https://github.com/karmacircleCommunity/KarmaCircle/blob/main/apps/api/docs/BackendSetup.md",
     },
     {
       name: "Docker Resources",
-      path: "https://github.com/ngoworldcommunity/NGOWorld/blob/main/docs/DockerSetup.md",
+      path: "https://github.com/karmacircleCommunity/KarmaCircle/blob/main/docs/DockerSetup.md",
     },
   ],
   policies: [
@@ -49,7 +49,7 @@ export const footerLinks: {
     },
     {
       name: "GitHub",
-      path: "https://github.com/ngoworldcommunity",
+      path: "https://github.com/karmacircleCommunity",
       icon: "FaGithub",
     },
   ],

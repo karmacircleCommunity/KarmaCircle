@@ -167,10 +167,10 @@ const Auth = () => {
   return (
     <>
       <Helmet>
-        <title>NgoWorld | Sign In</title>
+        <title>KarmaCircle | Sign In</title>
         <meta
           name="description"
-          content="Sign in or create your NgoWorld account to support the causes you care about."
+          content="Sign in or create your KarmaCircle account to support the causes you care about."
         />
         <link rel="canonical" href={location.pathname} />
       </Helmet>
@@ -179,7 +179,7 @@ const Auth = () => {
         {step === "email" && (
           <>
             <h1 className="font-poppins text-[26px] leading-tight font-bold text-ink">
-              Welcome to NgoWorld
+              Welcome to KarmaCircle
             </h1>
             <p className="mt-2 font-outfit text-body text-gray-600">
               Enter your email to sign in or create an account.

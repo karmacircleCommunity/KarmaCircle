@@ -1,7 +1,7 @@
 {
   "name": "karmacircle",
   "private": true,
-  "description": "Monorepo for the KarmaCircle (Milan) platform: apps/web (frontend) and apps/api (backend).",
+  "description": "Monorepo for the KarmaCircle platform: apps/web (frontend) and apps/api (backend).",
   "license": "MIT",
   "packageManager": "pnpm@11.22.0",
   "scripts": {

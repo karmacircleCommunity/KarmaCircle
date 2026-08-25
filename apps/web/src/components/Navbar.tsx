@@ -98,7 +98,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
             className="inline-block size-2 rounded-full bg-brand"
           />
           <span className="font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary">
-            NgoWorld
+            KarmaCircle
           </span>
         </Link>
 

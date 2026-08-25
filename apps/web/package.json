@@ -6,21 +6,21 @@
     "name": "Tamal Das",
     "email": "tamalcodes@gmail.com"
   },
-  "description": "The frontend for NgoWorld webapp.",
+  "description": "The frontend for KarmaCircle webapp.",
   "license": "MIT",
-  "homepage": "https://milanhub.vercel.app/",
+  "homepage": "https://www.karmacircle.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ngoworldcommunity/NGOWorld"
+    "url": "https://github.com/karmacircleCommunity/KarmaCircle"
   },
   "keywords": [
-    "milan",
-    "milanhub",
-    "milan community",
-    "milan community app",
-    "milan community webapp",
-    "milan community frontend",
-    "milan community frontend app"
+    "karmacircle",
+    "karma circle",
+    "karmacircle community",
+    "karmacircle community app",
+    "karmacircle community webapp",
+    "karmacircle community frontend",
+    "karmacircle community frontend app"
   ],
   "dependencies": {
     "@commitlint/cli": "^21.2.1",

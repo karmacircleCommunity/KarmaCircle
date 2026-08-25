@@ -22,7 +22,7 @@ import { GetAllOrganizations } from "@services/MilanApi";
 import "./Donate.css";
 
 const Donate = () => {
-  document.title = "Milan | Donate the needy";
+  document.title = "KarmaCircle | Donate the needy";
 
   // `GetAllOrganizations()`'s real, unverified-from-this-repo response shape
   // (see SPEC.md) — left as `any[]` rather than invented as a typed
@@ -78,7 +78,7 @@ const Donate = () => {
   return (
     <>
       <Helmet>
-        <title>NgoWorld | Donations</title>
+        <title>KarmaCircle | Donations</title>
         <meta
           name="description"
           content="Welcome to the donations page, even a small amount can help folks struggling out there."
