@@ -1,7 +1,15 @@
 import { lazy } from "react";
 import type { JSX } from "react";
 import Home from "@features/landing-home/pages/Home";
-import { Organizations, Dashboard, Error404, Events, Profile, Shop } from "./route";
+import {
+  Organizations,
+  OrganizationProfile,
+  Dashboard,
+  Error404,
+  Events,
+  Profile,
+  Shop,
+} from "./route";
 import Trending from "@features/donate-shop-trending/pages/Trending";
 import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRenderWhenLoggedIn";
 
@@ -32,7 +40,12 @@ const routesConfig: RouteConfigEntry[] = [
   },
   { path: "/user/:userName", element: <Profile /> },
   { path: "/organizations", element: <Organizations /> },
-  { path: "/organization/:userName", element: <Profile /> },
+  // The *public* organization profile a visitor reaches from a directory
+  // card. `Profile.tsx` (which still owns /user/:userName above) is the account
+  // view — it renders the signed-in owner's edit/logout controls and, for a
+  // visitor, an all-but-empty page. See features/organizations/pages/
+  // OrganizationProfile.tsx.
+  { path: "/organization/:userName", element: <OrganizationProfile /> },
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/events", element: <Events /> },
   { path: "/shop", element: <Shop /> },

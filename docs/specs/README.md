@@ -68,7 +68,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [authentication.md](./authentication.md) | Sign in, sign up, Google OAuth, logout, route guarding, password/email validation |
 | [onboarding-profile.md](./onboarding-profile.md) | Post-signup profile completion, profile editing, the public Profile/UserProfile pages |
 | [dashboard.md](./dashboard.md) | The logged-in organization/org dashboard |
-| [organizations.md](./organizations.md) | The Organizations directory page and `OrganizationCard` |
+| [organizations.md](./organizations.md) | The Organizations directory, `OrganizationCard`, and the public organization profile at `/organization/:userName` |
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero, `MilanInfoBanner` |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |

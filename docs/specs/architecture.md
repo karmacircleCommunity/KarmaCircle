@@ -25,7 +25,7 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | `/auth/signin` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
 | `/user/:userName` | `Profile` | Individual-user public profile |
 | `/organizations` | `Organizations` | Organization/org directory |
-| `/organization/:userName` | `Profile` | Organization public profile — reuses the same `Profile` component as `/user/:userName` |
+| `/organization/:userName` | `OrganizationProfile` | The public organization profile (`features/organizations`), reached from a directory card. Until August 2026 this route rendered `Profile` — the account view — which is now `/user/:userName` only |
 | `/dashboard` | `Dashboard` | Logged-in organization/org's own dashboard |
 | `/events` | `Events` | Event directory |
 | `/shop` | `Shop` | "Coming soon" placeholder |

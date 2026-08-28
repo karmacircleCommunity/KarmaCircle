@@ -49,7 +49,7 @@ SWR call sites:
 | Component | Key | Purpose |
 |---|---|---|
 | `Dashboard.tsx` | `userEndpoints.profile` | Loads the logged-in organization/org's own profile; `onSuccess` re-syncs Redux |
-| `Profile.tsx` | `organizationEndpoints.details(userName)` | Loads a public profile by username, for both `/user/:userName` and `/organization/:userName` |
+| `Profile.tsx` | `organizationEndpoints.details(userName)` | Loads a profile by username for `/user/:userName` (`/organization/:userName` moved to `features/organizations` in August 2026 and fetches nothing yet) |
 | `UserProfile.tsx` | `userEndpoints.details(slug)` | Loads a public profile by slug (a second, mostly-unused profile page — see [onboarding-profile.md](./onboarding-profile.md)) |
 
 `useEvent.ts`'s `submitCallback` calls `mutate(eventEndpoints.all)` from `useSWRConfig()` after a successful event creation, to invalidate any cached `eventEndpoints.all` SWR key — but no component currently fetches `eventEndpoints.all` via SWR, so this revalidation currently has no listener.

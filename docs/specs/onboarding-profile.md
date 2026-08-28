@@ -41,7 +41,7 @@ Props: `setShowEditModal`, `refreshProfileData` (an SWR `mutate` function passed
 Differences: it also edits `name`, it accepts a `profileData` prop to pre-fill from (instead of a separate `handleSetDefaultValues` call), it has a cover-image *and* a profile-picture dropzone (both preview-only, same caveat — neither file is actually uploaded), and its single Save button calls its own local `validateForm()`, which — like `useProfileCompletion`'s version — calls `updateUserProfile({ credentials })` (`PATCH /user/update`) regardless of validation outcome, for the same reason.
 
 Rendered from `Dashboard.tsx` when `openModal === true` (opened by the dashboard's "Edit Profile" button).
-**Not rendered from `Profile.tsx`'s own "Edit profile" button at all** — that button (`toggleProfileModal`) sets `editProfile = true` and flips `showProfileModal`, but `Profile.tsx` never reads either of those to render `ProfileCompletion`, `ProfileUpdate`, or anything else. Clicking "Edit profile" on `/user/:userName` or `/organization/:userName` currently has no visible effect — see [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full finding. (An earlier version of this doc said this button opened `ProfileCompletion`; it doesn't.)
+**Not rendered from `Profile.tsx`'s own "Edit profile" button at all** — that button (`toggleProfileModal`) sets `editProfile = true` and flips `showProfileModal`, but `Profile.tsx` never reads either of those to render `ProfileCompletion`, `ProfileUpdate`, or anything else. Clicking "Edit profile" on `/user/:userName` currently has no visible effect — see [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full finding. (An earlier version of this doc said this button opened `ProfileCompletion`; it doesn't.)
 
 ## Field metadata: `ProfileElements` and `getProfileFields`
 
@@ -56,9 +56,11 @@ Both files look like scaffolding for a future generic/dynamic profile-form compo
 
 There are **two separate "view a profile" pages** in this feature, though only one is actually routed — see each below:
 
-### `Profile.tsx` — routed at `/user/:userName` and `/organization/:userName`
+### `Profile.tsx` — routed at `/user/:userName`
+
+**As of August 2026 this component no longer serves `/organization/:userName`.** That route now renders `features/organizations/pages/OrganizationProfile.tsx`, the public directory profile — see [organizations.md](./organizations.md). `Profile.tsx` is the *account* view: it renders the signed-in owner's Edit/Logout controls, and for a visitor it rendered a stock logo and two dead buttons on an otherwise empty page, which is why the organization route was moved off it. Everything below still applies to `/user/:userName`.
 [apps/web/src/features/onboarding-profile/pages/Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx).
-Fetches via SWR: `organizationEndpoints.details(params.userName)` (`GET /organizations?userName=...`) — used for *both* individual and organization profiles, despite the endpoint's "organization" naming.
+Fetches via SWR: `organizationEndpoints.details(params.userName)` (`GET /organizations?userName=...`) — despite the endpoint's "organization" naming, this is the individual-account path today.
 Renders differently based on `details?.userType === "organization"` (name + tagline) vs. individual (firstName + lastName).
 `trueUser = user?.userName === params.userName` decides whether the viewer sees "Edit profile"/"Logout" or "Subscribe"/"Sponsor" (the latter two are static, non-functional buttons — no `onClick`).
 Renders an embedded Google Maps `<iframe>` for organizations only, defaulting to a hardcoded Kolkata location if `user?.iframe` is unset (note: reads `user?.iframe`, i.e. the *viewer's* Redux state, not `details?.iframe` — likely should read from the fetched `details`).

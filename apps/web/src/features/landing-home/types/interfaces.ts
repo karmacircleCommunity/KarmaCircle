@@ -49,6 +49,15 @@ export interface SampleDrive {
   organizer: string;
   location: string;
   summary: string;
+  /**
+   * Cover photo, imported from `assets/pictures/drives/` so Vite fingerprints
+   * it. Placeholder imagery standing in for what an organization would upload
+   * with its own drive - the card clamps the title to one line and the summary
+   * to two, so a cover is what actually distinguishes one card from the next.
+   */
+  cover: string;
+  /** Describes the photo itself; the drive's own text is already in the card. */
+  coverAlt: string;
   raised: string;
   goal: string;
   percent: number;

@@ -1,67 +1,114 @@
+import { FiArrowUpRight, FiMapPin } from "react-icons/fi";
+import { GoVerified } from "react-icons/go";
 import { Link } from "react-router-dom";
-import organizationBanner from "@assets/pictures/Banner/organizationbanner.jpg";
+import { formatCount } from "../constants/organizationDirectory";
 import type { OrganizationCardProps } from "../types";
 
-const OrganizationCard = ({ organization }: OrganizationCardProps) => {
-  return (
-    <div
-      data-reveal
-      className="group relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1">
-      {/* Top Section */}
-      <div className="flex flex-col gap-2.5 max-500px:flex-row max-500px:gap-3.75">
-        <img
-          src={organizationBanner}
-          alt={`${organization?.name || "Organization"} banner`}
-          className="h-37.5 max-w-full self-stretch rounded-10px object-cover max-500px:size-27.5"
-        />
-        <div className="flex flex-col gap-2.5">
-          <h1 className="font-outfit text-xl leading-none font-semibold">
-            {organization?.name || "The Monk community"}
-          </h1>
-          <p
-            title={organization?.description}
-            className="line-clamp-2 font-outfit text-sm max-500px:line-clamp-3"
-          >
-            {organization?.description ||
-              "Organizing @Hack4Bengal, Engineering @Edilitics • Worked w/ 5+ startups • Building OSS product with 200+ users • Open to Frontend Roles"}
-          </p>
-        </div>
-      </div>
-
-      {/* Call to Action Section */}
-      <div className="flex w-full items-center justify-between">
-        <div className="flex items-center gap-4 font-outfit">
-          <p className="m-0 text-sm leading-none">
-            <span className="font-semibold">1.25k</span> Followers
-          </p>
-
-          <p className="m-0 text-sm leading-none">
-            <span className="font-semibold">231</span> Events
-          </p>
-        </div>
-
-        <Link
-          to={`/organization/${organization?.userName}`}
-          aria-label={`Visit ${organization?.name || "organization"} page`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="21"
-            height="21"
-            viewBox="0 0 29 29"
-            fill="none"
-            className="flex size-8.25 -rotate-90 items-center justify-center gap-2 rounded-full bg-brand object-contain p-1.75 text-body font-normal tracking-[0.4px] transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
-            role="img"
-          >
-            <path
-              d="M22.6379 1.68188C23.2552 1.68226 23.8472 1.92766 24.2837 2.36418C24.7202 2.80069 24.9656 3.39262 24.966 4.00994L24.966 22.6784C24.9656 23.2957 24.7202 23.8877 24.2837 24.3242C23.8472 24.7607 23.2552 25.0061 22.6379 25.0065L3.96944 25.0065C3.36618 24.9848 2.7948 24.7302 2.3754 24.296C1.956 23.8619 1.72123 23.2821 1.72043 22.6784C1.72123 22.0748 1.956 21.4949 2.3754 21.0608C2.79481 20.6266 3.36618 20.372 3.96943 20.3503L17.0154 20.3503L0.675002 4.00994C0.238132 3.57307 -0.00729571 2.98055 -0.00729703 2.36273C-0.00729566 1.7449 0.238133 1.15238 0.675002 0.715508C1.11187 0.278639 1.7044 0.0332108 2.32222 0.0332088C2.94005 0.0332095 3.53257 0.278639 3.96944 0.715508L20.3098 17.0559L20.3098 4.00994C20.3102 3.39262 20.5556 2.80069 20.9921 2.36418C21.4286 1.92766 22.0206 1.68226 22.6379 1.68188Z"
-              fill="white"
-            />
-          </svg>
-        </Link>
-      </div>
+/**
+ * One organization in the `/organizations` directory.
+ *
+ * ## Shape
+ *
+ * The same card as `landing-home`'s `DrivesRail.tsx`, deliberately: a 16:9
+ * cover photo with the cause riding on it, then a one-line name, a
+ * two-line tagline, the meta row and the stat rule. Both surfaces show the
+ * same kind of record, so they should not be two different card designs.
+ *
+ * The cover is a real per-organization photo (`cover`/`coverAlt`, files in
+ * `assets/pictures/organizations/`), standing in for the image a real
+ * organization would upload. It replaced a gradient-and-monogram band that
+ * existed only because the app used to ship a single shared banner asset -
+ * see `docs/specs/organizations.md`. The monogram went with it: over a
+ * photo it read as clutter, and it survives on the profile header where a
+ * profile picture belongs.
+ *
+ * The **whole card is one link**, not a card with an arrow button inside it
+ * - a 300px target beats a 32px one, and it removes the old markup's
+ * nested-interactive smell. The arrow beside the name is decorative
+ * (`aria-hidden`) and animates on `group-hover`.
+ *
+ * Carries `data-reveal` for the grid's `useSectionReveal` scope, and the
+ * app-standard card hover (lift + brand-token glow) - see
+ * `docs/specs/ui-kit.md#card-components`.
+ */
+const OrganizationCard = ({ organization }: OrganizationCardProps) => (
+  <Link
+    data-reveal
+    to={`/organization/${organization.userName}`}
+    aria-label={`${organization.name} — ${organization.cause} in ${organization.city}, ${organization.country}`}
+    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-brand-secondary/8 bg-white text-inherit no-underline shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-safe:hover:-translate-y-1"
+  >
+    <div className="relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10">
+      <img
+        src={organization.cover}
+        alt={organization.coverAlt}
+        loading="lazy"
+        decoding="async"
+        className="size-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105"
+      />
+      {/* Scrim: the cause label has to stay legible over a light photo. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent"
+      />
+      <span className="absolute bottom-2.5 left-4 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
+        {organization.cause}
+      </span>
     </div>
-  );
-};
+
+    <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex items-center gap-1.5">
+        {/* One line, always. `min-w-0` is what lets the name truncate
+            instead of pushing the tick and the arrow out of the card. */}
+        <h2 className="min-w-0 truncate font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:text-lg">
+          {organization.name}
+        </h2>
+        {organization.verified && (
+          <GoVerified
+            className="size-3.5 shrink-0 text-brand"
+            role="img"
+            aria-label="Verified organization"
+          />
+        )}
+        <FiArrowUpRight
+          aria-hidden="true"
+          className="ml-auto size-5 shrink-0 text-brand-secondary/35 transition-all duration-300 ease-out group-hover:text-brand motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5"
+        />
+      </div>
+
+      {/* Two lines maximum, on a fixed box so the stat rule below lines up
+          across a row of cards whose taglines wrap differently. */}
+      <p className="mt-2 line-clamp-2 min-h-11 font-poppins text-body leading-[1.375rem] text-ink/70">
+        {organization.tagLine}
+      </p>
+
+      <p className="mt-2.5 inline-flex items-center gap-1.5 font-poppins text-caption tracking-wide text-ink/55">
+        <FiMapPin aria-hidden="true" className="size-3.5 shrink-0" />
+        {organization.city}, {organization.country}
+        <span aria-hidden="true" className="text-ink/25">
+          •
+        </span>
+        Since {organization.founded}
+      </p>
+
+      <dl className="mt-auto grid grid-cols-3 gap-2 border-t border-border-subtle pt-3.5 font-outfit">
+        {[
+          { label: "Followers", value: formatCount(organization.followers) },
+          { label: "Drives", value: String(organization.drives) },
+          { label: "Volunteers", value: formatCount(organization.volunteers) },
+        ].map((stat) => (
+          <div key={stat.label}>
+            <dt className="font-poppins text-caption tracking-wide text-ink/50 uppercase">
+              {stat.label}
+            </dt>
+            <dd className="m-0 mt-0.5 text-body font-semibold text-brand-secondary">
+              {stat.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </Link>
+);
 
 export default OrganizationCard;

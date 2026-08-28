@@ -1,61 +1,72 @@
 # Organizations — Feature Spec
 
 Colocated, implementation-level companion to [docs/specs/organizations.md](../../../docs/specs/organizations.md).
-This is the smallest feature folder in the app — three logic files plus a `types/index.ts` — and the simplest to bring to life if asked, since the fetcher already exists and just isn't called.
+Small feature: a directory page, a public profile page, one card component, one sample-data file, the (still un-called) fetcher, and types.
 
 ## What this feature is responsible for
 
-The `/organizations` directory page: a grid of organization/org cards, each linking to that organization's public profile (`/organization/:userName`, handled by `Profile.tsx` in `onboarding-profile` — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md)).
+Two routes:
+- `/organizations` — the directory, a filterable grid of organization cards.
+- `/organization/:userName` — the **public** organization profile a card links to (`pages/OrganizationProfile.tsx`, August 2026). This route previously rendered `Profile.tsx` from `onboarding-profile`, the *account* page shared with `/user/:userName`; that page is unchanged and still owns `/user/:userName` — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md). When a request says "the organization page", check which of the two is meant.
 
 ## Why it's shaped this way
 
-This page and `Events.jsx` (the `events` feature) are the two clearest examples in the codebase of "the read path was built with a working fetcher, but the fetcher was never actually plugged into the page" — see [api-integration.md](../../../docs/specs/api-integration.md) for why two separate call layers exist (`MilanApi.ts` vs. `ApiConnector`-based `services/*.js` fetchers) and which one this feature uses.
+The read path was built with a working fetcher that was never plugged into the page — see [api-integration.md](../../../docs/specs/api-integration.md) for why two separate call layers exist (`MilanApi.ts` vs. `ApiConnector`-based `services/*.ts` fetchers) and which one this feature uses.
+That is still true: both pages render from `constants/organizationDirectory.ts`, a **sample** dataset, and both say so on screen rather than passing it off as live (the same convention `landing-home`'s `DrivesRail` follows).
 
 ## File manifest
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Organizations.tsx` | The `/organizations` page | ✅ routed, but renders **hardcoded data** |
-| `pages/Organizations.scss` | Styles | ✅ |
+| `pages/Organizations.tsx` | The `/organizations` directory | ✅ routed; renders **sample data**, with real client-side search/filter |
+| `pages/OrganizationProfile.tsx` | The `/organization/:userName` public profile | ✅ routed; renders **sample data** |
 | `components/OrganizationCard.tsx` | Presentational card for one organization | ✅ used by `Organizations.tsx` |
-| `components/OrganizationCard.scss` | Styles | ✅ |
+| `constants/organizationDirectory.ts` | The twelve sample organizations, the accent palette, `CAUSES`, `findOrganization()`, `formatCount()` | ✅ the content source for both pages |
 | `services/Organizations.ts` | `getOrganizations()` — the real fetcher | ❌ **defined, never called from anywhere** |
-| `types/index.ts` | `Organization`/`OrganizationCardProps` interfaces — see "Types" below | ✅ yes — imported by every other file in this folder |
+| `types/interfaces.ts` / `types/types.ts` / `types/index.ts` | Interfaces and type aliases, split by kind — see "Types" below | ✅ imported by every other file in this folder |
+
+## `constants/organizationDirectory.ts`
+
+Twelve `DirectoryOrganization` records, deliberately varied (different causes, countries, sizes, verified and not), plus:
+- `ORGANIZATION_ACCENTS` — six warm gradient/monogram palettes, indexed via each record's `accent`. **Not palette tokens and must not become any.** They used to identify the cards; since every record carries its own `cover` photo they only tint the monogram on the profile header.
+- `CAUSES` — the closed cause taxonomy the filter chips are generated from.
+- `findOrganization(userName)` — the `:userName` route lookup.
+- `formatCount(value)` — `Intl.NumberFormat`'s compact notation ("12.4k"), not a hand-rolled divide-and-round.
+
+This replaced the twenty byte-for-byte identical `"God Father Org"` objects that used to be declared inline in `Organizations.tsx` — every card looked the same and every card linked to `/organization/tamalcodes`.
+That fixture also carried a real-looking bcrypt `password` field; the replacement records don't, and new demo data shouldn't either.
 
 ## `pages/Organizations.tsx`
 
-**The entire `organizations` array is hardcoded, not fetched:**
-```js
-const organizations = Array.from({ length: 20 }, () => ({
-  _id: "673ac2814c6e89e58af8ca11",
-  userType: "organization",
-  userName: "tamalcodes",
-  name: "God Father Org",
-  email: "tamalcodes@gmail.com",
-  password: "$2a$10$90vC9McfHXpXpLlzUOFeuulorPR9dIQ2ns37uIP5sX5ehyO5C.Mmm",
-  cart: [],
-  __v: 0,
-}));
-```
-20 **byte-for-byte identical** objects (the arrow function passed to `Array.from`'s second argument takes no index and returns the same literal every time — there's no `id`/`index` variation at all, not even the `_id`).
-Every one of the 20 rendered `OrganizationCard`s links to the exact same `/organization/tamalcodes` URL.
-Note this demo object includes a `password` field (a real-looking bcrypt hash) — harmless since it's fake data and never sent anywhere, but worth being aware of if this file is ever used as a template for other hardcoded-data pages; don't copy a real-looking password hash into new demo data without thinking about why that's an odd thing for a frontend fixture to contain in the first place.
+**Rendered chrome:** `<ComponentHelmet type="Organizations" />` (see [layout-navigation.md](../../../docs/specs/layout-navigation.md)), `<Navbar />`, a heading block, the search + filter row, the results grid, `<Footer />`.
 
-**Rendered chrome:** `<ComponentHelmet type="Organizations" />` (correct type string, matching `Events.tsx`'s own `<ComponentHelmet type="Events" />`; see [layout-navigation.md](../../../docs/specs/layout-navigation.md)), `<Navbar />`, a header row with a search `<input>` and a "Filters" `<button>` — **neither has an `onChange`/`onClick` handler**, both are inert — plus a "Your Dashboard" button (`navigate("/dashboard")`, using the shared `Button` component correctly with `onClickfunction`), then the card grid, then `<Footer />`.
+**Search and filters are real.** The previous version's `<input>` had no `onChange` and its "Filters" `<button>` had no `onClick`. Today a `useMemo` filter runs over the directory array on `query` (matched against name, tagline, cause, city and country) and `cause` (chips generated from `CAUSES` plus an `"All"` pseudo-option). Both are pure client-side work over whatever array they're handed, so wiring a real fetch in later doesn't touch them.
 
-**The `Loading` fallback can never trigger today:** `{!organizations || organizations?.length === 0 ? <Loading /> : organizations.map(...)}` — since `organizations` is always a populated 20-item array (never `undefined`/`null`/empty), the `Loading` branch is dead code under the current implementation, not a real loading state tied to a fetch.
+The dead `Loading` branch is gone — with real filters there is now a reachable **empty state** ("Nothing matches that yet" + a reset-filters button) where the unreachable loading fallback used to be. A real loading/error state comes with the real fetch.
 
-**No pagination, no empty state, no error state** — none of these exist yet because there's no real fetch to have loading/empty/error states *for*.
+The grid (`1 / 2 / 3` columns at base / `sm` / `xl`, inside `max-w-7xl` with `px-9` mobile padding) is scoped by `useSectionReveal(gridRef, [results.length, cause])` — the dependency array matters: without it, cards revealed by a filter change stay at the hook's starting opacity.
+
+Still no pagination.
+
+## `pages/OrganizationProfile.tsx`
+
+Looks up `findOrganization(useParams().userName)`; an unknown name renders a dedicated not-found panel (with a link back to the directory) rather than a blank page.
+
+Sections: header card (cover photo + monogram + name/verified/tagline/meta + Follow and website actions + a four-up stat strip), then a two-column body from `lg` — "About us", "Drives running now" (progress bar, raised-of-goal, supporters, days left), "Track record" (milestone timeline reusing `HowItWorks`' rail-and-bead treatment) — and a `lg:sticky` sidebar holding a dark `bg-surface-dark` support card and a contact card.
+
+The Follow button is **local `useState` only**: there is no follow/subscribe endpoint in `MilanApi.ts`/`ApiEndpoints.ts`. It's a plain `<button>` rather than the shared `Button` because it has two visually distinct states, and a `variant` class plus a state-dependent `className` would be two equal-specificity utilities fighting over the same properties with no reliable winner (the cascade decides by stylesheet order, not by className order).
 
 ## `components/OrganizationCard.tsx`
 
-**Props:** `organization` (a single organization object, shaped like the hardcoded fixture above, or eventually like whatever `getOrganizations()`'s real response looks like — see caveat below).
+**Props:** `organization: DirectoryOrganization` (required, no longer optional-with-fallback-text).
 
-**What actually uses the `organization` prop:** `organization?.name` (with fallback `"The Monk community"`), `organization?.description` (with fallback lorem-ipsum-style bio text, also set as the `title` attribute for a native tooltip on truncated text), and `organization?.userName` (used to build the `/organization/${organization?.userName}` link).
+Everything it renders comes from that prop. The old card hardcoded the banner image, the follower count and the event count regardless of what was passed in.
 
-**What's hardcoded regardless of the `organization` prop:** the banner image (always the same static `organizationbanner.jpg` asset — there is no per-organization image field consumed at all, so even if `organization.bannerImage` existed on a real record, this component has nowhere to plug it in without a code change) and the follower/event counts (`1.25k` Followers / `231` Events — static JSX, not derived from `organization`).
+**One cover photo per organization:** `cover`/`coverAlt` on each record, files in `assets/pictures/organizations/`, rendered as a 16:9 crop with the cause label over a scrim - the same card `landing-home`'s `DrivesRail.tsx` uses. It replaced a gradient band plus monogram that only existed because the app used to ship a single shared banner the old card put on all twenty records. Keep the one-image-per-organization rule whatever the data source becomes.
 
-**Not exported from the shared barrel** `src/components/index.ts` — despite an earlier version of this doc claiming otherwise, `OrganizationCard` is only ever imported directly (`@features/organizations/components/OrganizationCard`) by `Organizations.tsx`; the barrel has no `OrganizationCard` entry.
+**The whole card is one `<Link>`** to `/organization/{userName}` — a card-sized target rather than the old 32px arrow button, and no nested interactive elements inside a clickable card. The corner arrow is `aria-hidden` decoration.
+
+**Not exported from the shared barrel** `src/components/index.ts` — only ever imported directly by `Organizations.tsx`.
 
 ## `services/Organizations.ts` — `getOrganizations()`, defined and correct, never called
 
@@ -80,45 +91,49 @@ Unlike `MilanApi.ts`'s functions, `getOrganizations()` **throws** on a non-200 s
 
 **Today:**
 ```
-Organizations.tsx render
+Organizations.tsx render                    OrganizationProfile.tsx render
+   ▼                                           ▼
+organizationDirectory (12 sample records)   findOrganization(params.userName)
+   ▼   (no network call)                       ▼   (no network call)
+useMemo filter on query + cause             the matched record, or a not-found panel
    ▼
-organizations = 20x identical hardcoded object   (no network call)
-   ▼
-organizations.map(organization => <OrganizationCard organization={organization} />)
-   ▼
-OrganizationCard reads organization.name / organization.description / organization.userName only
+results.map(org => <OrganizationCard organization={org} />)
 ```
 
-**If wired up** (the shape this page's own imports suggest it was heading toward):
+**If wired up:**
 ```
 Organizations.tsx
    ▼
-useSWR(organizationEndpoints.all, () => getOrganizations())   or a fetcher passed through swr's default fetcher slot
-   │   getOrganizations() throws on non-200 — SWR's error state would populate from that
+useSWR(organizationEndpoints.all, () => getOrganizations())
+   │   getOrganizations() throws on non-200 — SWR's error state populates from that
    ▼
-organizations = response.data   (shape TBD — verify against backend)
+organizations = response   (shape TBD — verify against apps/api)
    ▼
-{!organizations ? <Loading /> : organizations.map(...)}   ← this ternary already exists; just needs a real `organizations` value
+the same useMemo filter, unchanged, then the same grid
 ```
+The filtering, the card and the profile layout are all written against the record shape, so this should be a fetch swap plus a mapping function — not a re-layout.
 
 ## Types
 
-This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+organizations conversion pass — see `tsconfig.json` at the repo root.
-`types/index.ts` holds `Organization` (the shape `OrganizationCard.tsx` and the hardcoded fixture in `Organizations.tsx` both read — deliberately loose with an open index signature, since the real `/organizations` response shape is unverified from this repo, see above) and `OrganizationCardProps`.
-`UserType` (used for `Organization.userType`) lives in `src/types/user.ts` instead, since `authentication` needs it too.
+This folder is fully TypeScript, and `types/` is split by declaration kind per [CLAUDE.md](../../../../../CLAUDE.md):
+- `interfaces.ts` — `Organization` (still deliberately loose, with an open index signature, since the real `/organizations` response shape is unverified from this repo), `DirectoryOrganization` (extends it with everything the card and profile render), `OrganizationStat`, `OrganizationDrive`, `OrganizationMilestone`, `OrganizationAccent`, `OrganizationCardProps`.
+- `types.ts` — `Cause` (the closed cause union) and `CauseFilter` (`Cause | "All"`).
+- `index.ts` — re-exports both.
+
+`OrganizationDrive` is intentionally the same shape as `landing-home`'s `SampleDrive` minus the organizer field, so the two can converge on one type when a real drives endpoint exists.
+`UserType` (used for `Organization.userType`) lives in `src/types/user/` instead, since `authentication` needs it too.
 `services/Organizations.ts` types `getOrganizations()` as returning `Promise<Organization[]>` — tighten or loosen that once the real backend shape is confirmed.
 
 ## Known issues specific to this feature
 
-- The entire organization list is hardcoded — already in `known-issues.md`.
-- `getOrganizations()` is fully implemented and correct but never called — already in `known-issues.md`.
-- Search input and Filters button are inert (no handlers) — not previously called out explicitly; both would need real state + either client-side filtering or query params passed to `getOrganizations()`/a new paginated endpoint.
-- `OrganizationCard`'s banner image and follower/event counts ignore the `organization` prop entirely — already in `known-issues.md`.
-- `Loading` fallback is currently unreachable dead code given the hardcoded array.
+- Both pages render sample data; `getOrganizations()` is fully implemented and correct but never called — already in `known-issues.md`.
+- The Follow button on `OrganizationProfile.tsx` is local state with no endpoint behind it (stated on the page as a preview profile).
+- No pagination on the directory — fine at twelve records, a problem at four hundred.
 
 ## If you're asked to...
 
-- **"Make the organizations page live"** → replace the hardcoded `organizations` array with `useSWR(organizationEndpoints.all, getOrganizations)` (or a small wrapper fetcher — `getOrganizations` throws rather than resolving, see above) in `Organizations.tsx`. This is the single highest-value, most self-contained fix available in this feature — the card component, the loading fallback, and the fetcher are all already correct and just need connecting.
-- **"Add search/filtering to the organizations page"** → both UI elements exist but are unwired; decide client-side filtering (over whatever `getOrganizations()` returns) vs. server-side (passing params through `apiConnector`'s `params` argument, which `getOrganizations()` doesn't currently forward — you'd extend its signature) before starting.
-- **"Show real follower/event counts on organization cards"** → needs those fields added to whatever the backend's `/organizations` response includes, then read them in `OrganizationCard.tsx` in place of the hardcoded `1.25k`/`231`.
-- **"Make each organization card show its own banner image"** → same as above — `OrganizationCard.tsx` has no prop path for a per-organization image today; you'd add one and fall back to `organizationbanner.jpg` when absent, matching the existing fallback pattern already used for `name`/`description`.
+- **"Make the organizations page live"** → replace `organizationDirectory` with `useSWR(organizationEndpoints.all, () => getOrganizations())` in `Organizations.tsx`, keep the `useMemo` filter as-is, and add a real loading/error branch alongside the existing empty state. `getOrganizations()` **throws** on non-200 (unlike every `MilanApi.ts` function, which catch-and-return) — that shape is SWR-idiomatic, so don't rewrite it to match `MilanApi.ts`.
+- **"Make the organization profile live"** → same fetch, plus `organizationEndpoints.details(userName)` for the single record; the not-found panel already covers the "no such organization" case.
+- **"Move filtering to the server"** → `getOrganizations()` doesn't forward params to `apiConnector` today; extend its signature rather than building a second fetch path.
+- **"Swap the placeholder covers for real ones"** → replace the files in `assets/pictures/organizations/` (or point `cover` at a URL from the API). Keep a per-record image and don't reintroduce a single shared banner across every card — that's the bug this card was redesigned to fix.
+- **"Add more sample organizations"** → keep them varied (cause, country, size, verified/not). A directory where every row looks alike is what `constants/organizationDirectory.ts` exists to prevent.

@@ -26,7 +26,7 @@ Always confirm which of the two components/pages a request means, per the projec
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Profile.tsx` | Public profile view/edit-trigger, routed at `/user/:userName` and `/organization/:userName` | ✅ yes |
+| `pages/Profile.tsx` | Account profile view/edit-trigger, routed at `/user/:userName` | ✅ yes |
 | `pages/UserProfile.tsx` | A second, more visually developed public profile page | ❌ not routed anywhere |
 | `components/ProfileCompletion.tsx` | Modal: first-time profile completion (also, confusingly, reused for edits triggered from `Profile.tsx`) | ✅ yes |
 | `components/ProfileUpdate.tsx` | Modal: profile editing, triggered from `Dashboard.tsx` | ✅ yes |
@@ -38,7 +38,7 @@ Always confirm which of the two components/pages a request means, per the projec
 
 ## `pages/Profile.tsx` — the live public profile page
 
-Routed at both `/user/:userName` and `/organization/:userName` (see `routesConfig.tsx`) — **the same component handles both individual and organization profiles**, branching on `details?.userType === "organization"` inside the JSX rather than being two separate route components.
+Routed at `/user/:userName` (see `routesConfig.tsx`). It used to serve `/organization/:userName` too; that route moved to `features/organizations/pages/OrganizationProfile.tsx` in August 2026 (see [organizations/SPEC.md](../organizations/SPEC.md)). The `details?.userType === "organization"` branch inside the JSX is still here and still works — it's just no longer the page an organization link lands on.
 
 **Data source:** `useSWR(organizationEndpoints.details(params.userName), fetcher)` — note this always calls the **organization** endpoint (`GET /organizations?userName=...`) even when rendering an individual user's profile via `/user/:userName`. This works today because the backend's `/organizations` endpoint apparently also resolves individual-user records by `userName` (unverified from this repo — the backend repo is the source of truth), but it means there is no `userEndpoints.details`-based fetch anywhere in this component despite that endpoint existing in `ApiEndpoints.ts` specifically for users.
 
@@ -164,11 +164,11 @@ Clicking the **form's own submit** button runs full validation (still non-blocki
 
 | Entry point | Opens | Endpoint hit | Can edit `name`? |
 |---|---|---|---|
-| `Profile.tsx`'s "Edit profile" button (`/user/:userName`, `/organization/:userName`) | Nothing — dead click, see above | — | — |
+| `Profile.tsx`'s "Edit profile" button (`/user/:userName`) | Nothing — dead click, see above | — | — |
 | `Dashboard.tsx`'s "Edit Profile" button (`/dashboard`), when the fetched profile is complete (`hasCompletedProfile !== false`) | `ProfileUpdate` only | `PATCH /user/update` | ✅ yes |
 | `Dashboard.tsx`, when the fetched profile is incomplete (`hasCompletedProfile === false`) *and* "Edit Profile" is clicked | **Both** `ProfileCompletion` and `ProfileUpdate` mount simultaneously (see [dashboard/SPEC.md](../dashboard/SPEC.md#known-issues-specific-to-this-feature)) | `PATCH /user/update`, and `PATCH /user/complete` if the `ProfileCompletion` instance is submitted | `ProfileUpdate`: ✅, `ProfileCompletion`: ❌ |
 
-`ProfileCompletion` is currently unreachable from anywhere except the incomplete-profile case on `/dashboard` above; there is no path to it from `/user/:userName` or `/organization/:userName`.
+`ProfileCompletion` is currently unreachable from anywhere except the incomplete-profile case on `/dashboard` above; there is no path to it from `/user/:userName`.
 If a request asks to "let users rename their organization from their profile page," the live building blocks are `Dashboard.tsx`'s `ProfileUpdate` flow (which already supports renaming) — wiring an equivalent edit entry point into `Profile.tsx` is new work, not a rename of an existing broken path, since `Profile.tsx` doesn't currently reach either modal.
 
 ## `constants/ProfileElements.ts` + `constants/index.ts` — unused scaffolding

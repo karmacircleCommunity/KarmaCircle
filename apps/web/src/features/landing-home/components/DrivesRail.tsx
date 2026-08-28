@@ -50,44 +50,55 @@ const DriveCard = ({
   loopStart = false,
 }: {
   drive: SampleDrive;
-  /** Marks the first card of the duplicated set — the drift measures its
+  /** Marks the first card of the duplicated set - the drift measures its
    *  loop distance from this element, see `measureLoop()` below. */
   loopStart?: boolean;
 }) => (
   <li
     data-drive-card
     data-loop-start={loopStart || undefined}
-    className="flex w-[78vw] max-w-xs shrink-0 flex-col overflow-hidden rounded-15px border border-brand-secondary/8 bg-surface shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_16px_34px_-18px_var(--color-brand)] motion-safe:hover:-translate-y-1.5 sm:w-80"
+    className="group flex w-[78vw] max-w-76 shrink-0 flex-col overflow-hidden rounded-15px border border-brand-secondary/8 bg-surface shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_16px_34px_-18px_var(--color-brand)] motion-safe:hover:-translate-y-1.5 sm:w-76"
   >
-    {/* Graph-paper band, echoing the hero's three.js line grid so the two
-        sections read as the same design language. Pure CSS gradients: a
-        decorative strip isn't worth an image request or a second canvas. */}
-    <div
-      aria-hidden="true"
-      className="relative h-24 bg-gradient-to-br from-brand/18 via-brand/8 to-brand-secondary/10"
-      style={{
-        backgroundImage:
-          "linear-gradient(to right, rgba(56,44,36,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(56,44,36,0.07) 1px, transparent 1px)",
-        backgroundSize: "26px 26px",
-      }}
-    >
-      <span className="absolute bottom-3 left-5 rounded-full bg-surface/85 px-3 py-1 font-outfit text-caption font-medium tracking-widest text-brand-secondary uppercase backdrop-blur-sm">
+    {/* Cover photo, the way a post reads on any social feed: the picture is
+        the thing you recognize a drive by, and it costs less vertical space
+        than the three-line summary the card used to lead with. Sample
+        imagery for now - a real drive would carry the organization's own
+        upload in this slot. */}
+    <div className="relative aspect-16/9 overflow-hidden bg-brand-secondary/10">
+      <img
+        src={drive.cover}
+        alt={drive.coverAlt}
+        loading="lazy"
+        decoding="async"
+        className="size-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105"
+      />
+      {/* Category rides on the photo rather than taking its own row, and the
+          scrim under it is what keeps it legible over a light cover. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent"
+      />
+      <span className="absolute bottom-2.5 left-3.5 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
         {drive.category}
       </span>
     </div>
 
-    <div className="flex flex-1 flex-col p-5 sm:p-6">
-      <h3 className="font-outfit text-lg leading-snug font-semibold tracking-tight text-brand-secondary sm:text-xl">
+    <div className="flex flex-1 flex-col p-4 sm:p-5">
+      {/* One line, always: the titles are written to fit, and `truncate` is
+          the guard for the ones that won't on the narrowest cards. */}
+      <h3 className="truncate font-outfit text-body-lg leading-snug font-semibold tracking-tight text-brand-secondary sm:text-lg">
         {drive.title}
       </h3>
-      <p className="mt-2 font-poppins text-caption tracking-wide text-ink/55 uppercase">
+      <p className="mt-1 truncate font-poppins text-caption tracking-wide text-ink/55 uppercase">
         {drive.organizer}
       </p>
-      <p className="mt-3 flex-1 font-poppins text-body leading-6 text-ink/70">
+      {/* Two lines maximum. Every card is then the same height whatever the
+          copy does, which is what stops the rail from looking ragged. */}
+      <p className="mt-2 line-clamp-2 min-h-11 font-poppins text-body leading-[1.375rem] text-ink/70">
         {drive.summary}
       </p>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-poppins text-caption text-ink/55">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-poppins text-caption text-ink/55">
         <span className="inline-flex items-center gap-1.5">
           <FiMapPin aria-hidden="true" className="size-3.5" />
           {drive.location}
@@ -99,7 +110,7 @@ const DriveCard = ({
       </div>
 
       <div
-        className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-brand-secondary/10"
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-brand-secondary/10"
         role="progressbar"
         aria-valuenow={drive.percent}
         aria-valuemin={0}
@@ -113,14 +124,14 @@ const DriveCard = ({
         />
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between gap-3">
-        <p className="font-outfit text-body-lg font-semibold text-brand-secondary">
+      <div className="mt-2.5 flex items-baseline justify-between gap-3">
+        <p className="font-outfit text-body font-semibold text-brand-secondary">
           {drive.raised}
           <span className="ml-1.5 font-poppins text-caption font-normal text-ink/50">
             of {drive.goal}
           </span>
         </p>
-        <p className="font-poppins text-caption text-ink/50">
+        <p className="shrink-0 font-poppins text-caption text-ink/50">
           {drive.supporters} supporters
         </p>
       </div>

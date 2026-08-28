@@ -6,6 +6,11 @@ import {
   FiPenTool,
   FiStar,
 } from "react-icons/fi";
+import monsoonHealthCampCover from "@assets/pictures/drives/monsoon-health-camp.jpg";
+import schoolLibraryCover from "@assets/pictures/drives/school-library.jpg";
+import solarLampsCover from "@assets/pictures/drives/solar-lamps.jpg";
+import streetDogVanCover from "@assets/pictures/drives/street-dog-van.jpg";
+import winterBlanketsCover from "@assets/pictures/drives/winter-blankets.jpg";
 import type { ContributeWay, DriveStep, SampleDrive } from "../types";
 
 /**
@@ -61,7 +66,9 @@ export const sampleDrives: SampleDrive[] = [
     organizer: "Sunrise Youth Club",
     location: "Kolkata, India",
     summary:
-      "200 blankets and two weeks of evening meals for families sleeping rough along the Sealdah corridor.",
+      "200 blankets and two weeks of evening meals for families sleeping rough.",
+    cover: winterBlanketsCover,
+    coverAlt: "A stack of folded wool blankets and scarves",
     raised: "₹3,42,000",
     goal: "₹5,00,000",
     percent: 68,
@@ -75,7 +82,9 @@ export const sampleDrives: SampleDrive[] = [
     organizer: "Ubuntu Learning Trust",
     location: "Kajiado, Kenya",
     summary:
-      "Shelving, 1,200 books, and a solar reading lamp for a primary school that lost its roof in the March storms.",
+      "Shelving, 1,200 books, and a solar reading lamp for a school that lost its roof.",
+    cover: schoolLibraryCover,
+    coverAlt: "Two people browsing between full library shelves",
     raised: "$4,180",
     goal: "$10,000",
     percent: 41,
@@ -89,7 +98,9 @@ export const sampleDrives: SampleDrive[] = [
     organizer: "Aarogya Volunteers",
     location: "Dhaka, Bangladesh",
     summary:
-      "Three days of free check-ups, oral rehydration kits, and mosquito nets across four flood-hit wards.",
+      "Three days of free check-ups and mosquito nets across four flood-hit wards.",
+    cover: monsoonHealthCampCover,
+    coverAlt: "A doctor and a nurse with a patient at a consultation desk",
     raised: "৳7,60,000",
     goal: "৳8,75,000",
     percent: 87,
@@ -99,11 +110,13 @@ export const sampleDrives: SampleDrive[] = [
   {
     id: "street-dog-van",
     category: "Animal welfare",
-    title: "A rescue van that actually starts",
+    title: "A rescue van that starts",
     organizer: "Pawsitive Pune",
     location: "Pune, India",
     summary:
-      "One second-hand van, kitted out for emergency pickups, so injured strays stop waiting on a borrowed rickshaw.",
+      "One second-hand van kitted out for emergency pickups of injured strays.",
+    cover: streetDogVanCover,
+    coverAlt: "A street dog asleep on a pavement beside a yellow wall",
     raised: "₹2,10,000",
     goal: "₹6,40,000",
     percent: 33,
@@ -117,7 +130,9 @@ export const sampleDrives: SampleDrive[] = [
     organizer: "Himal Light Collective",
     location: "Sindhupalchok, Nepal",
     summary:
-      "Replacing kerosene with rechargeable solar lamps in three hill villages that go dark at 6pm.",
+      "Rechargeable solar lamps for three hill villages that go dark at 6pm.",
+    cover: solarLampsCover,
+    coverAlt: "A row of solar panels in a field below green hills",
     raised: "$9,050",
     goal: "$16,500",
     percent: 55,

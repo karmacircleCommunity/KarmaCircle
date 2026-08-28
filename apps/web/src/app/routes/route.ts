@@ -9,6 +9,7 @@ export { default as UserProfile } from "@features/onboarding-profile/pages/UserP
 
 // Organization Routes
 export { default as Organizations } from "@features/organizations/pages/Organizations";
+export { default as OrganizationProfile } from "@features/organizations/pages/OrganizationProfile";
 export { default as Dashboard } from "@features/dashboard/pages/Dashboard";
 export { default as Events } from "@features/events/pages/Events";
 

@@ -1,128 +1,121 @@
-/* eslint-disable react/no-unknown-property */
-// react-three-fiber elements (`points`, `bufferGeometry`, `bufferAttribute`,
-// `pointsMaterial`, ...) aren't real DOM elements, so `react/no-unknown-property`
-// (which only knows the real DOM prop set) flags every one of their props —
-// same reason Button.tsx disables a different rule for a different prop.
-import { useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
 
-// World-space extent of the grid, well past the visible frustum at the
-// camera settings below so the fade-to-transparent mask (applied via CSS on
-// the canvas itself, see HeroScene's className) never reveals a hard edge.
-const GRID_HALF_WIDTH = 9;
-const GRID_HALF_HEIGHT = 5;
-const GRID_SPACING = 1;
+// Cell size of the graph-paper grid, in CSS pixels. Deliberately larger than
+// DrivesRail.tsx's 26px card band: that grid decorates a 96px-tall strip,
+// this one is full-bleed behind the hero, and at 26px across a whole viewport
+// the lines stop reading as paper and start reading as a screen door.
+const CELL_PX = 72;
 
-const prefersReducedMotion = () =>
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Line color/alpha. `rgba(56,44,36,...)` is `--color-brand-secondary`, the
+// same ink DrivesRail's band uses. On the alpha, see the note in SPEC.md:
+// this is a *crisp, full-CSS-pixel* line, so it is not comparable to the
+// number the old WebGL version needed — 0.04 here reads roughly like the
+// hairline 0.16 did, which is the level asked for (texture you notice only
+// if you look for it, not a visible feature).
+const LINE = "rgba(56,44,36,0.04)";
 
-/**
- * A static, axis-aligned line grid behind the hero copy — a graph-paper
- * texture, not a particle effect. Replaces an earlier random drifting
- * "particle field" version of this component: scattered points read as a
- * generic stock effect, where a grid reads as structure/precision, closer
- * to what the pre-redesign static background (`Vector.png`, a literal grid
- * image) was already doing right. Deliberately not animated — a grid
- * rotating or drifting stops looking like graph paper and starts looking
- * like a mistake — the "premium 3D" touch instead comes from the very
- * subtle pointer-parallax on the camera below, not from moving the grid.
- */
-const Grid = () => {
-  const geometry = useMemo(() => {
-    const points: number[] = [];
-    for (let x = -GRID_HALF_WIDTH; x <= GRID_HALF_WIDTH; x += GRID_SPACING) {
-      points.push(x, -GRID_HALF_HEIGHT, 0, x, GRID_HALF_HEIGHT, 0);
-    }
-    for (let y = -GRID_HALF_HEIGHT; y <= GRID_HALF_HEIGHT; y += GRID_SPACING) {
-      points.push(-GRID_HALF_WIDTH, y, 0, GRID_HALF_WIDTH, y, 0);
-    }
-    return new Float32Array(points);
-  }, []);
-
-  return (
-    <lineSegments>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[geometry, 3]} />
-      </bufferGeometry>
-      {/* 0.16, not the 0.08 this shipped with. Two things stack up against
-          a WebGL grid that don't apply to a CSS one: `lineBasicMaterial`
-          draws exactly one *device* pixel (`linewidth` is a no-op in every
-          browser on ANGLE/Metal), so on a 2x display this is a half-CSS-pixel
-          hairline, and the `dpr` cap below means it's then resampled up to
-          the real display, softening it further. At 0.08 the result over the
-          `#fffcf7` page was about a 6% luminance difference on a sub-pixel
-          line — reported, correctly, as "not at all visible". 0.16 lands it
-          roughly where DrivesRail.tsx's CSS card grid (a crisp full-pixel
-          line at 0.07 alpha) actually reads. Still graph paper, not decor:
-          if it starts reading as a *feature* rather than as texture, it's
-          gone too far the other way. */}
-      <lineBasicMaterial color="#382c24" transparent opacity={0.16} />
-    </lineSegments>
-  );
-};
-
-/**
- * The one piece of actual motion in this scene: the camera eases toward
- * wherever the pointer is (R3F's `state.pointer`, already normalized to
- * -1..1) instead of snapping to it, so the grid gains a faint sense of
- * depth as the visitor moves their mouse — the thing an actual 3D scene
- * can do that a flat CSS background can't, kept small enough that it reads
- * as depth rather than as the grid itself moving.
- */
-const PointerParallax = () => {
-  const reduced = useMemo(prefersReducedMotion, []);
-
-  useFrame((state) => {
-    if (reduced) {
-      return;
-    }
-    state.camera.position.x +=
-      (state.pointer.x * 0.4 - state.camera.position.x) * 0.03;
-    state.camera.position.y +=
-      (state.pointer.y * 0.25 - state.camera.position.y) * 0.03;
-    state.camera.lookAt(0, 0, 0);
-  });
-
-  return null;
-};
+// How far (px) the layer drifts toward the pointer at the extremes, and how
+// hard it eases there per frame. Small on purpose: this should register as
+// depth, not as the grid sliding around.
+const PARALLAX_PX = 10;
+const EASE = 0.06;
 
 type HeroSceneProps = {
   className?: string;
 };
 
 /**
- * Mounted by `Landing.tsx` as an absolutely-positioned layer behind the
- * hero copy, in place of the old static `Vector.png`. `frameloop="demand"`
- * under `prefers-reduced-motion` renders exactly one frame and then stops
- * (no animation loop at all) rather than a "smoothed" motion a
- * motion-sensitive visitor didn't ask for.
+ * A static, axis-aligned line grid behind the hero copy — graph-paper
+ * texture whose only job is to keep the hero from reading as empty space.
  *
- * The `style` prop (not `className`) is what actually has to carry
- * `position: absolute` here: `@react-three/fiber`'s `<Canvas>` renders its
- * own wrapper `<div>` with a hardcoded inline `style={{ position:
- * 'relative', width: '100%', height: '100%', ... }}`, and only spreads a
- * caller's own `style` object on top of that — inline styles always beat a
- * class-based `position-absolute` utility regardless of specificity, so
- * passing "absolute inset-0" via `className` silently no-ops. Without this,
- * the canvas stays `position: relative` and — since it's the first DOM
- * child of the hero's flex column — becomes a real flex item that pushes
- * the actual hero copy down instead of sitting behind it.
+ * **This used to be a three.js/`@react-three/fiber` canvas, and should not
+ * go back to being one.** Two things went wrong with the WebGL version,
+ * both of which a CSS background simply cannot have:
+ *
+ * 1. *It didn't paint on load.* The grid only appeared after scrolling down
+ *    and back up. A WebGL canvas that is also the element carrying a
+ *    `mask-image` gets promoted to its own composited layer, and the first
+ *    composite could land before/without the canvas' first frame; scrolling
+ *    forced the recomposite that revealed it. Nothing about that is
+ *    controllable from React — the fix is to not draw the grid on a canvas.
+ * 2. *It was impossible to tune.* `lineBasicMaterial` draws exactly one
+ *    **device** pixel (`linewidth` is a no-op on ANGLE/Metal), so every line
+ *    was a sub-CSS-pixel hairline resampled by the `dpr` cap — which is why
+ *    it swung from "not at all visible" at 0.08 straight to "way too
+ *    prominent" at 0.16 with nothing usable in between. A `background-image`
+ *    gradient line is a real, crisp pixel at whatever alpha you ask for.
+ *
+ * Removing it also drops three.js (~230KB gzipped, the heaviest dependency
+ * of the August 2026 redesign) from the bundle entirely — it had no other
+ * consumer. `Landing.tsx` still `React.lazy()`s this file; that's now just
+ * cheap, but it keeps the decorative layer off the critical path.
  */
 const HeroScene = ({ className = "" }: HeroSceneProps) => {
-  const reduced = prefersReducedMotion();
+  const layerRef = useRef<HTMLDivElement>(null);
+
+  // The one piece of motion: the grid eases toward the pointer, replacing
+  // the old scene's camera parallax. Driven imperatively on a rAF loop
+  // rather than through React state — this runs every frame and must never
+  // re-render the hero. Skipped entirely under prefers-reduced-motion and on
+  // coarse pointers (a phone has no hover position to follow, so the loop
+  // would just burn battery holding the grid still).
+  useEffect(() => {
+    const layer = layerRef.current;
+    const inert = window.matchMedia(
+      "(prefers-reduced-motion: reduce), (hover: none)",
+    ).matches;
+
+    if (!layer || inert) {
+      return;
+    }
+
+    let targetX = 0;
+    let targetY = 0;
+    let x = 0;
+    let y = 0;
+    let frame = 0;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      targetX = (event.clientX / window.innerWidth - 0.5) * 2 * PARALLAX_PX;
+      targetY = (event.clientY / window.innerHeight - 0.5) * 2 * PARALLAX_PX;
+    };
+
+    const tick = () => {
+      x += (targetX - x) * EASE;
+      y += (targetY - y) * EASE;
+      layer.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+      frame = window.requestAnimationFrame(tick);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
+    frame = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
-    <Canvas
-      className={className}
-      style={{ position: "absolute", inset: 0 }}
-      camera={{ position: [0, 0, 6], fov: 45 }}
-      gl={{ alpha: true, antialias: true }}
-      dpr={[1, 1.5]}
-      frameloop={reduced ? "demand" : "always"}
+    // Two elements, not one: the outer div is what the caller masks and
+    // clips, the inner one is what moves. Overscanning the inner layer by
+    // more than PARALLAX_PX on every side means the drift can never pull a
+    // hard edge of the grid into view.
+    <div
+      aria-hidden="true"
+      className={`absolute inset-0 overflow-hidden ${className}`}
     >
-      <Grid />
-      <PointerParallax />
-    </Canvas>
+      <div
+        ref={layerRef}
+        className="absolute -inset-16 will-change-transform"
+        style={{
+          backgroundImage: `linear-gradient(to right, ${LINE} 1px, transparent 1px), linear-gradient(to bottom, ${LINE} 1px, transparent 1px)`,
+          backgroundSize: `${CELL_PX}px ${CELL_PX}px`,
+        }}
+      />
+    </div>
   );
 };
 

@@ -10,12 +10,13 @@ import avatar94097778 from "@assets/avatars/gh-94097778.jpg";
 import avatar72697074 from "@assets/avatars/gh-72697074.jpg";
 import { Button, Navbar } from "@components";
 
-// three.js + @react-three/fiber are the heaviest of this redesign's new
-// dependencies and only ever used here — routesConfig.tsx doesn't
-// route-split most pages (only Auth.tsx does), so without this every other
-// route (dashboard, events, organizations, ...) would pay for them too.
-// Suspense fallback is `null`: the scene is a purely decorative background
-// layer, so "briefly absent" is the correct loading state, not a spinner.
+// Still lazy, though it no longer has to be: HeroScene used to be a
+// three.js/@react-three/fiber canvas (~230KB gzipped, and routesConfig.tsx
+// doesn't route-split most pages, so an eager import put that on every
+// route). It's pure CSS now — see HeroScene.tsx for why the canvas had to
+// go — so this is just a small decorative layer kept off the critical path.
+// Suspense fallback is `null`: the layer is purely decorative, so "briefly
+// absent" is the correct loading state, not a spinner.
 const HeroScene = lazy(() => import("./HeroScene"));
 
 /** The marketing hero rendered by `Home.tsx`. See SPEC.md. */
