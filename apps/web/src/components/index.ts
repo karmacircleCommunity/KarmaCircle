@@ -6,4 +6,5 @@ export { default as Header } from "./header/Header";
 export { default as Loading } from "./Loading";
 export { default as Modal } from "./Modal";
 export { default as Navbar } from "./Navbar";
+export { default as ScrollProgress } from "./ScrollProgress";
 export { default as SmoothScroll } from "./SmoothScroll";

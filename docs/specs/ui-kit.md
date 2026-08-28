@@ -10,6 +10,8 @@ Props: `type` (default `"button"`), `variant` (default `"solid"`; also `"outline
 Behavior: if `to` is set **and** `navigator.onLine === true`, renders a `react-router-dom` `<Link>` instead of a `<button>` — an offline visitor passing `to` would silently get a plain, non-navigating `<button>` element instead (this is presumably intentional, to avoid dead navigation while offline, but it means `onClickfunction` also won't fire in that case since the button has no handler wired either way unless one was passed via `...props`).
 While `isLoading` is true, `children` are replaced with a `react-spinners` `ClipLoader`.
 
+Both variants carry `motion-safe:active:scale-97` (added August 2026) — the app-wide press acknowledgement, so a click reads as registered before the network does anything. `motion-safe:` drops it under `prefers-reduced-motion`. It is a *class-based* transform, so it is silently inert on any button also driven by `useMagnetic`, which writes an inline one (see [Motion](#motion)); express press/hover feedback in colour on those.
+
 ## `AuthButton`
 
 [apps/web/src/features/authentication/components/AuthButton.tsx](../../apps/web/src/features/authentication/components/AuthButton.tsx) — see [authentication.md](./authentication.md). Built on top of `Button`, currently unused by the live auth pages.
@@ -20,6 +22,8 @@ While `isLoading` is true, `children` are replaced with a `react-spinners` `Clip
 - `EventCard`, `EventSlider`, `FeaturedEventCard`, `FeaturedEventImage`, `EventsMarqueeCards` — see [events.md](./events.md).
 
 All card components are exported from `apps/web/src/components/index.ts` (or imported directly by deep path — both patterns appear at different call sites; prefer the barrel for anything already exported there).
+
+**Card hover, standardised August 2026.** `OrganizationCard`, `EventCard` and `EventsMarqueeCards` all shared a hardcoded `rgba(226,105,89,0.32)` hover glow — the pre-rebrand saturated orange, a colour that no longer exists anywhere in the palette. All three now use `hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)]` plus `motion-safe:hover:-translate-y-1`, so the glow follows a retheme and the card lifts rather than only glowing. The duplicated `hover:transition-all hover:duration-300 hover:ease-in-out` trio they each carried alongside an identical unprefixed one was dropped in the same pass — it never did anything. `OrganizationCard` and `EventCard` also carry `data-reveal`, which is inert unless an ancestor scopes `useSectionReveal` (their two index pages do — see [Motion](#motion)).
 
 ## Styling conventions
 
@@ -49,6 +53,17 @@ There's no CSS-in-JS despite `styled-components` and `@emotion/styled`/`@mui/sty
 
 [apps/web/src/styles/App.css](../../apps/web/src/styles/App.css) holds a small `::selection` rule, imported once from `App.tsx`.
 [apps/web/src/styles/index.css](../../apps/web/src/styles/index.css) — Tailwind's entry point, the `@theme` tokens, and the hand-written global CSS above — is imported once, from `index.tsx`.
+
+## Motion
+
+The reusable layer added August 2026 so "make it feel alive" doesn't mean a fourth hand-rolled `useGSAP` block per component. All of it lives in `apps/web/src/hooks/` and is exported from the `@hooks` barrel.
+
+- **`useSectionReveal(scope, deps?)`** — the app's one scroll entrance: everything tagged `data-reveal` inside `scope` fades and rises in, in source order, in batches, once. Started life in `features/landing-home/hooks/` and moved to `src/hooks/` when it stopped being a landing-page concern; `HowItWorks`, `DrivesRail` and `OpenSource` use it, and `Organizations.tsx`/`Events.tsx` scope it to their card grids. Two details that must survive any edit: it queries `scope.current.querySelectorAll`, **not** `gsap.utils.toArray` (which searches the whole document and would make each scope animate every other scope's elements — they all share one attribute), and `once: true` (re-playing an entrance on every scroll-back reads as jitter and fights ScrollTrigger's refresh on resize).
+- **`useMagnetic({ strength, max })`** — returns a ref; the element leans toward the cursor while hovered and springs back on leave. Gated to `(hover: hover) and (pointer: fine)` and off under reduced motion — on a phone, `pointermove` fires from a tap and would leave the element permanently offset. Writes through `gsap.quickTo` (no React state at pointer-event frequency). **It owns the element's `transform`**: an inline transform beats a class, so a magnetic element must not also carry `hover:-translate-*`/`active:scale-*`, which would silently do nothing. Used by `OpenSource.tsx`'s primary CTA.
+- **`useReducedMotion()`** — reactive `prefers-reduced-motion` as state, for components that have to *render* differently rather than branch inside a `useGSAP` body.
+- **`ScrollProgress`** (`apps/web/src/components/ScrollProgress.tsx`) — a 2px brand rule across the top of the window that fills as the page scrolls, mounted once in `App.tsx` outside the router so it survives navigation. Driven by a `ScrollTrigger` on `document.documentElement` rather than a `window.scrollY` listener, because the app's real scroll position is Lenis's eased one — a raw listener visibly runs ahead of the page it describes. `scrub: 0.2` gives it a slight trailing ease. Decorative, so it simply never animates under reduced motion rather than being parked at a static fill that would describe a scroll position nobody is at.
+- **Motion tokens in `index.css`'s `@theme`** — `--animate-pop-in` (used by the mobile nav sheet) and `--animate-rise-in` (used by `ComingSoon`). Tailwind v4 reads the `@keyframes` for an `--animate-*` token out of the same `@theme` block, so both halves have to live together; a keyframes rule outside `@theme` is not picked up. Apply them through `motion-safe:` (`motion-safe:animate-pop-in`). Everything here is an **entrance, never a loop** — the only looping animation in the app is Tailwind's own `animate-ping` on the 6px "Open source" dot in `OpenSource.tsx`.
+- **Hover/press conventions applied across the app** in the same pass: nav links get a directional underline wipe (`origin-right` at rest, `origin-left` on hover, so it sweeps through rather than rubber-banding back), the navbar logo's brand dot scales with the wordmark, cards lift, and every `Button` presses (see above). All transform-based ones are `motion-safe:`-prefixed.
 
 ## Animation & scroll infra
 

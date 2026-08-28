@@ -13,7 +13,9 @@ import participantAvatar from "@assets/avatars/gh-72851613.jpg";
  */
 const EventCard = () => {
   return (
-    <div className="relative inline-flex flex-col justify-between gap-3 rounded-10px bg-white p-5 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
+    <div
+      data-reveal
+      className="relative inline-flex flex-col justify-between gap-3 rounded-10px bg-white p-5 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1">
       <div className="flex justify-between gap-2.5 max-500px:flex-row max-500px:gap-3.75">
         <div>
           <h1 className="m-0 font-outfit text-xl leading-none font-semibold">
@@ -62,7 +64,7 @@ const EventCard = () => {
           </p>
         </div>
 
-        <button className="flex size-12.5 items-center justify-center rounded-lg border-none bg-brand p-2.5 font-outfit">
+        <button className="flex size-12.5 cursor-pointer items-center justify-center rounded-lg border-none bg-brand p-2.5 font-outfit transition-all duration-300 ease-out hover:bg-brand-hover motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-95">
           <IoMdArrowUp className="size-[80%] rotate-45 text-white/95" />
         </button>
       </div>

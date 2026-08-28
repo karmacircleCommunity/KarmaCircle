@@ -92,12 +92,19 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
   return (
     <nav>
       <div className="sticky z-99 mx-8 flex items-center justify-between px-28 py-[0.8rem] max-430px:px-6">
-        <Link to={"/"} className="z-10 flex items-center gap-2 no-underline">
+        <Link
+          to={"/"}
+          className="group z-10 flex items-center gap-2 no-underline"
+        >
+          {/* The dot is the app's one recurring mark (it reappears in
+              OpenSource.tsx's "Open source" badge). It grows on hover of the
+              whole logo, not of itself — a 8px hit target isn't a hover
+              affordance, the wordmark next to it is. */}
           <span
             aria-hidden="true"
-            className="inline-block size-2 rounded-full bg-brand"
+            className="inline-block size-2 rounded-full bg-brand transition-transform duration-300 ease-out group-hover:scale-125 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
           />
-          <span className="font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary">
+          <span className="font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary transition-colors duration-300 group-hover:text-brand">
             KarmaCircle
           </span>
         </Link>
@@ -106,13 +113,17 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
           <div className="flex items-center gap-8">
             {/* No active-route underline: that's an app-internal-tab
                 pattern, not a marketing-nav one — a visitor already knows
-                which page they're on from the page itself. A plain color
-                shift on hover is the whole "state" this nav needs. */}
+                which page they're on from the page itself. Hover gets a
+                colour shift plus a rule that wipes in from the left and, on
+                leaving, continues out to the right (`origin-left` on hover,
+                `origin-right` at rest) rather than retracting the way it
+                came — the directional version reads as a swipe instead of a
+                rubber band. */}
             <div className="z-1 flex items-center gap-7">
               {Links.map((item, index) => (
                 <Link
                   key={index}
-                  className="font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+                  className="relative font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:text-brand-secondary hover:after:origin-left hover:after:scale-x-100 motion-reduce:after:transition-none"
                   to={item.link}
                 >
                   {item.name}
@@ -126,14 +137,15 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
                     .querySelector(".nav_dropdown")
                     ?.classList.toggle("nav_dropdown_visible");
                 }}
-                className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+                className="group m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
               >
-                Profile <RxCaretDown className="size-6.25" />
+                Profile{" "}
+                <RxCaretDown className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none" />
               </p>
             ) : (
               <Button
                 to="/auth/signup"
-                className={`z-3 flex w-auto items-center justify-around gap-2.5 rounded-5px border-none px-5 py-2 font-outfit text-base font-normal not-italic transition-all duration-300 ease-in-out hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] ${hideSignUpForHeroCta ? "pointer-events-none opacity-0" : "opacity-100"}`}
+                className={`z-3 flex w-auto items-center justify-around gap-2.5 rounded-5px border-none px-5 py-2 font-outfit text-base font-normal not-italic transition-all duration-300 ease-in-out hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] motion-safe:hover:-translate-y-0.5 ${hideSignUpForHeroCta ? "pointer-events-none opacity-0" : "opacity-100"}`}
               >
                 <span>Sign Up</span>
               </Button>
@@ -162,7 +174,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
 
         {isNavbarOpen && (
           <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/[0.867] transition-all duration-300 ease-in-out">
-            <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)]">
+            <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in">
               <RxCross2
                 className="absolute top-2.5 right-2.5 cursor-pointer"
                 onClick={() => {
@@ -173,7 +185,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
               {Links.map((item, index) => (
                 <Link
                   key={index}
-                  className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink no-underline"
+                  className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink no-underline transition-colors duration-200 hover:text-brand motion-safe:active:scale-97"
                   to={item.link}
                 >
                   {item.name}

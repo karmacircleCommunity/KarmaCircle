@@ -55,11 +55,57 @@
   --radius-10px: 0.625rem; /* 10px */
   --radius-15px: 0.9375rem; /* 15px */
 
+  /* Motion tokens. Tailwind v4 generates an `animate-<name>` utility from
+     each `--animate-*` here, and reads the `@keyframes` it references out
+     of this same block — a keyframes rule declared outside `@theme` is not
+     picked up, so both halves have to live together.
+
+     Everything here is an *entrance*, never a loop: a permanently animating
+     element on a page someone is trying to read is the difference between
+     a site that feels alive and one that feels like a slot machine. The one
+     looping animation in the app is Tailwind's own `animate-ping` on the
+     "Open source" dot (OpenSource.tsx), which is 6px across.
+
+     Apply these through the `motion-safe:` variant (e.g.
+     `motion-safe:animate-pop-in`) so `prefers-reduced-motion` drops them. */
+  --animate-pop-in: pop-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-rise-in: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.94) translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Neutral/semantic tokens: repeated non-brand colors pulled out of arbitrary
      hex values so the palette has a single source of truth. Colors that
      already match Tailwind's default gray scale exactly (e.g. #f9fafb,
      #d1d5db, #6b7280) use gray-50/gray-300/gray-500 directly instead of a
      duplicate token here. */
+  /* The page background itself, and a slightly deeper warm tint of it for
+     banded sections. Tokenized because the literal #fffcf7 had started
+     appearing in components (a badge that has to sit on the page ground
+     and punch a hole in a rule behind it), and because a cool gray band
+     (--color-surface-muted, #f5f7f7) reads as a different site next to
+     this warm cream — landing sections need a warm neutral, not a gray. */
+  --color-surface: #fffcf7;
+  --color-surface-warm: #faf4ec;
   --color-ink: #212529;
   --color-heading: #28183b;
   --color-surface-muted: #f5f7f7;
@@ -97,7 +143,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fffcf7;
+  background-color: var(--color-surface);
   overflow-x: hidden;
 }
 

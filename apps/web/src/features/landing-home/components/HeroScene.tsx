@@ -44,7 +44,19 @@ const Grid = () => {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[geometry, 3]} />
       </bufferGeometry>
-      <lineBasicMaterial color="#382c24" transparent opacity={0.08} />
+      {/* 0.16, not the 0.08 this shipped with. Two things stack up against
+          a WebGL grid that don't apply to a CSS one: `lineBasicMaterial`
+          draws exactly one *device* pixel (`linewidth` is a no-op in every
+          browser on ANGLE/Metal), so on a 2x display this is a half-CSS-pixel
+          hairline, and the `dpr` cap below means it's then resampled up to
+          the real display, softening it further. At 0.08 the result over the
+          `#fffcf7` page was about a 6% luminance difference on a sub-pixel
+          line — reported, correctly, as "not at all visible". 0.16 lands it
+          roughly where DrivesRail.tsx's CSS card grid (a crisp full-pixel
+          line at 0.07 alpha) actually reads. Still graph paper, not decor:
+          if it starts reading as a *feature* rather than as texture, it's
+          gone too far the other way. */}
+      <lineBasicMaterial color="#382c24" transparent opacity={0.16} />
     </lineSegments>
   );
 };

@@ -20,6 +20,8 @@ Presentational card: banner image (always the same static `organizationbanner.jp
 
 Not exported from the shared barrel (`apps/web/src/components/index.ts`) — only imported directly by `Organizations.tsx`.
 
+**Motion (August 2026):** the grid is scoped by `useSectionReveal` (`@hooks`), so cards fade and rise in as you scroll to them rather than all being painted at once; the cards themselves carry the `data-reveal` attribute that hook looks for, plus the standardised card hover (lift + brand-token glow, replacing the pre-rebrand hardcoded orange). See [ui-kit.md](./ui-kit.md#motion).
+
 ## Types
 
 Both files, plus `services/Organizations.ts`, are TypeScript; `types/index.ts` in this folder defines `Organization`/`OrganizationCardProps`. See [organizations/SPEC.md](../../apps/web/src/features/organizations/SPEC.md#types) for the full breakdown, including how `UserType` is shared with `authentication`.

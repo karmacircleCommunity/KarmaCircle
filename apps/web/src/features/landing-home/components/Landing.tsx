@@ -114,7 +114,7 @@ const Landing = () => {
         className="relative container flex flex-1 flex-col items-center justify-center overflow-hidden max-500px:items-start max-500px:px-9 max-500px:pt-0"
       >
         <Suspense fallback={null}>
-          <HeroScene className="pointer-events-none [mask-image:radial-gradient(ellipse_70%_70%_at_50%_40%,black_55%,transparent_100%)]" />
+          <HeroScene className="pointer-events-none [mask-image:radial-gradient(ellipse_80%_75%_at_50%_40%,black_60%,transparent_100%)]" />
         </Suspense>
 
         {/* items-center centers each child as its own box on desktop

@@ -3,11 +3,21 @@ import { Link } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 
+// `motion-safe:active:scale-97` is the app-wide press feedback: every
+// button dips very slightly under the pointer and springs back on release,
+// which is what makes a click feel acknowledged before the network does
+// anything. Two caveats it carries:
+// - `motion-safe:` so it's absent under `prefers-reduced-motion`.
+// - It writes a class-based `transform`, so it is silently overridden on any
+//   button also driven by `useMagnetic` (which sets an inline transform —
+//   see that hook). Those buttons express press/hover in colour instead.
+const PRESS = "motion-safe:active:scale-97";
+
 const variantClasses: Record<string, string> = {
   solid:
-    "bg-brand text-white transition-all duration-200 ease-in-out hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand disabled:text-white disabled:pointer-events-none disabled:opacity-50",
+    `bg-brand text-white transition-all duration-200 ease-in-out hover:bg-brand-hover ${PRESS} disabled:cursor-not-allowed disabled:bg-brand disabled:text-white disabled:pointer-events-none disabled:opacity-50`,
   outline:
-    "rounded-xl border border-heading bg-white transition-all duration-200 ease-in-out hover:border-brand-hover focus:border-brand-hover active:border-brand-hover disabled:cursor-not-allowed disabled:border-black disabled:bg-heading disabled:text-black disabled:opacity-50",
+    `rounded-xl border border-heading bg-white transition-all duration-200 ease-in-out hover:border-brand-hover ${PRESS} focus:border-brand-hover active:border-brand-hover disabled:cursor-not-allowed disabled:border-black disabled:bg-heading disabled:text-black disabled:opacity-50`,
 };
 
 export interface ButtonProps extends Omit<

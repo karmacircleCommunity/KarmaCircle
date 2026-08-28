@@ -4,7 +4,9 @@ import type { OrganizationCardProps } from "../types";
 
 const OrganizationCard = ({ organization }: OrganizationCardProps) => {
   return (
-    <div className="relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0px_0px_20px_7px_rgba(226,105,89,0.32)] hover:transition-all hover:duration-300 hover:ease-in-out">
+    <div
+      data-reveal
+      className="group relative inline-flex flex-col items-start justify-center gap-3 rounded-2xl border border-border-subtle bg-white p-3 shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out hover:cursor-default hover:border-brand/55 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1">
       {/* Top Section */}
       <div className="flex flex-col gap-2.5 max-500px:flex-row max-500px:gap-3.75">
         <img
@@ -48,7 +50,7 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => {
             height="21"
             viewBox="0 0 29 29"
             fill="none"
-            className="flex size-8.25 -rotate-90 items-center justify-center gap-2 rounded-full bg-brand object-contain p-1.75 text-body font-normal tracking-[0.4px]"
+            className="flex size-8.25 -rotate-90 items-center justify-center gap-2 rounded-full bg-brand object-contain p-1.75 text-body font-normal tracking-[0.4px] transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
             role="img"
           >
             <path

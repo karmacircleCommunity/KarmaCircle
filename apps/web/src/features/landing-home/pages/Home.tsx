@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch } from "react-redux";
 import Landing from "@features/landing-home/components/Landing";
+import HowItWorks from "@features/landing-home/components/HowItWorks";
+import DrivesRail from "@features/landing-home/components/DrivesRail";
+import OpenSource from "@features/landing-home/components/OpenSource";
 import { Footer } from "@components";
 import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice";
 import { successCallback } from "@services/MilanApi";
@@ -47,6 +50,12 @@ const Home = () => {
       </Helmet>
 
       <Landing />
+
+      <HowItWorks />
+
+      <DrivesRail />
+
+      <OpenSource />
 
       <Footer />
     </>

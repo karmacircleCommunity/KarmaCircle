@@ -36,6 +36,7 @@ Treat entries here as **things to be aware of**, not necessarily things to fix u
 
 ## Hardcoded/placeholder data standing in for real API data
 
+The landing page's `DrivesRail.tsx` has the same shape of problem (its drive cards are sample records from `constants/landingContent.ts`), though there it's stated on the page rather than passed off as live.
 `Organizations.tsx` and `Events.tsx` both render arrays of 20 hardcoded fake records instead of calling the `getOrganizations()`/`getEvents()` functions that already exist for exactly this purpose (`apps/web/src/features/organizations/services/Organizations.ts`, `apps/web/src/features/events/services/Events.ts`).
 `EventCard`, `FeaturedEventCard`, and `FeaturedEventImage` don't even accept/use props — all content is static JSX.
 `Dashboard.tsx`'s cover photo, profile photo, and follower/event counts are static.
@@ -57,7 +58,7 @@ These exist, work as isolated units, and appear to be intended for future/finish
 - `useValidation.ts` + `useFormLogic.ts` — a fuller signup validator/handler pair, unused by the live `Auth` page.
 - `AuthButton.tsx` — unused by the live auth page.
 - `Modal.tsx` — a generic modal shell, unused; every modal in the app builds its own overlay markup instead.
-- `MilanInfoBanner` — a finished marketing section, unmounted from `Home.tsx`.
+- `MilanInfoBanner` — a finished marketing section, unmounted from `Home.tsx`. As of the August 2026 landing build-out, `HowItWorks`/`DrivesRail`/`OpenSource` occupy that slot and cover the same ground, so re-mounting it would duplicate content rather than fill a gap.
 - `Header.tsx` + `HeaderData.ts` — has ready-made "organizations"/"events" copy, but `Organizations.tsx`/`Events.tsx` both build their own inline header instead of using it.
 - `PatchFetcher.ts` — an SWR-style PATCH fetcher, unused (mutations go through direct `MilanApi.ts` calls + `mutate()` instead).
 - `ClickAwayListener.tsx` — unused generic utility.

@@ -3,10 +3,11 @@ import EventCard from "@features/events/components/EventCard";
 import EventSlider from "@features/events/components/EventSlider";
 import CreateEvent from "@features/events/components/CreateEvent";
 import ComponentHelmet from "@components/ComponentHelmet";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CiFilter } from "react-icons/ci";
 import { FaPlus } from "react-icons/fa6";
 import type { Organization } from "@features/organizations/types";
+import { useSectionReveal } from "@hooks";
 import { UserType } from "@/types/user";
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -15,6 +16,11 @@ import "swiper/css/pagination";
 
 const Events = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // Scoped to the grid, so the always-visible slider above keeps its own
+  // behaviour and only the scrolled-to cards animate in.
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useSectionReveal(gridRef);
 
   // Hardcoded and, per SPEC.md, shaped like an organization/user record
   // rather than an event — typed as `Organization` (not a real
@@ -43,9 +49,9 @@ const Events = () => {
             name=""
             id=""
             placeholder="Type to begin search, or use the filters"
-            className="grow rounded-5px border border-black/25 bg-surface-muted px-4 py-2 font-outfit text-body outline-none"
+            className="grow rounded-5px border border-black/25 bg-surface-muted px-4 py-2 font-outfit text-body transition-colors duration-200 outline-none placeholder:text-ink/45 focus:border-brand"
           />
-          <button className="flex w-[15%] items-center justify-center gap-2.5 rounded-5px border border-black/25 bg-surface-muted px-4 py-2 text-center font-outfit text-body outline-none">
+          <button className="flex w-[15%] cursor-pointer items-center justify-center gap-2.5 rounded-5px border border-black/25 bg-surface-muted px-4 py-2 text-center font-outfit text-body transition-colors duration-200 outline-none hover:border-brand hover:text-brand motion-safe:active:scale-97">
             Filters <CiFilter className="min-h-5 min-w-5" />
           </button>
         </div>
@@ -64,7 +70,9 @@ const Events = () => {
 
       <hr className="mx-44 my-4 h-px justify-center border-none bg-black/25" />
 
-      <div className="mx-12 grid min-h-screen grid-cols-2 grid-rows-2 gap-8 px-28 py-8 max-[1200px]:grid-cols-2 max-[1200px]:grid-rows-3 max-[1200px]:px-12 max-[1200px]:py-8 max-[800px]:mx-0 max-[800px]:grid-cols-1 max-[800px]:grid-rows-4 max-[800px]:px-8 max-[800px]:py-12">
+      <div
+        ref={gridRef}
+        className="mx-12 grid min-h-screen grid-cols-2 grid-rows-2 gap-8 px-28 py-8 max-[1200px]:grid-cols-2 max-[1200px]:grid-rows-3 max-[1200px]:px-12 max-[1200px]:py-8 max-[800px]:mx-0 max-[800px]:grid-cols-1 max-[800px]:grid-rows-4 max-[800px]:px-8 max-[800px]:py-12">
         {!events || events?.length === 0 ? (
           <Loading />
         ) : (

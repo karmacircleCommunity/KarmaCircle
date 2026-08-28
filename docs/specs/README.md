@@ -71,7 +71,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [organizations.md](./organizations.md) | The Organizations directory page and `OrganizationCard` |
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero, `MilanInfoBanner` |
-| [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, BackToTop, page `<Helmet>` usage |
+| [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |
 | [ui-kit.md](./ui-kit.md) | Shared `Button`, `AuthButton`, card components, and the styling conventions behind them |
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay), Shop and Trending "coming soon" placeholders |
 | [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.tsx` |

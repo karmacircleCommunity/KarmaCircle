@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { SmoothScroll } from "@components";
+import { ScrollProgress, SmoothScroll } from "@components";
 import "@styles/App.css";
 import routesConfig from "@app/routes/routesConfig";
 
@@ -16,6 +16,7 @@ const App = () => {
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <SmoothScroll>
           <div className="app">
+            <ScrollProgress />
             <ToastContainer />
             <Suspense fallback={"Loading . . ."}>
               <Router>

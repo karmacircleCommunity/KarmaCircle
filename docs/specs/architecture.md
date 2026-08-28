@@ -8,7 +8,7 @@ It mounts `<App />` inside, from outermost to innermost: Redux `<Provider>`, `<H
 It also sets a `--vh` CSS custom property from `window.innerHeight` on load, a common mobile-viewport-height workaround; it is not recalculated on resize.
 
 [apps/web/src/app/App.tsx](../../apps/web/src/app/App.tsx) wraps the router in `<QueryClientProvider>` (from `@tanstack/react-query`) and MUI's `<LocalizationProvider>` (needed for the date/time pickers used in event creation).
-It renders a global `<ToastContainer />` (react-toastify) and a global `<BacktoTop />` button outside the `<Routes>`, so both appear on every page.
+It renders a global `<ToastContainer />` (react-toastify) and a global `<ScrollProgress />` bar outside the `<Routes>`, so both appear on every page. (It used to say `<BacktoTop />` here too — that button was unmounted in August 2026 and is still unmounted; see [layout-navigation.md](./layout-navigation.md).)
 Route content is wrapped in `<Suspense fallback={"Loading . . ."}>` to support the two lazy-loaded auth pages (see below).
 
 Note: `QueryClientProvider` is set up but no component in the codebase currently calls `useQuery`/`useMutation` — all server-state fetching goes through SWR or plain `axios` instead.
@@ -81,7 +81,8 @@ apps/web/src/
     landing-home/               — Home page, Landing hero, MilanInfoBanner
     donate-shop-trending/      — Donate, Shop, Trending pages, PaymentGateway.ts (Razorpay)
     error-handling/            — Error404, Test pages
-  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, BacktoTop, ComingSoon, ComponentHelmet, ClickAwayListener
+  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, ScrollProgress, BacktoTop, ComingSoon, ComponentHelmet, ClickAwayListener
+  hooks/                       — cross-cutting hooks used by 2+ features (useSectionReveal, useMagnetic, useReducedMotion — the shared motion layer, see ui-kit.md#motion)
   services/                    — MilanApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
   statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts)
   utils/                       — cross-cutting helpers used by 2+ features (toasts, fetcher, connectivity check)
