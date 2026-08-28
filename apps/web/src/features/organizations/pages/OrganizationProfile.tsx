@@ -10,7 +10,7 @@ import {
   FiMapPin,
   FiUsers,
 } from "react-icons/fi";
-import { GoVerified } from "react-icons/go";
+import { MdVerified } from "react-icons/md";
 import { Link, useParams } from "react-router-dom";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
@@ -143,7 +143,11 @@ const OrganizationProfileView = ({
             </div>
 
             <div className="px-6 pb-6 sm:px-8 sm:pb-8">
-              <div className="-mt-12 flex flex-wrap items-end justify-between gap-4 sm:-mt-14">
+              {/* `relative` is load-bearing: the cover above is a positioned
+                  element, so a static monogram would paint *underneath* the
+                  photo it is supposed to overlap, however negative its
+                  margin. */}
+              <div className="relative -mt-12 flex flex-wrap items-end gap-4 sm:-mt-14">
                 <span
                   aria-hidden="true"
                   className="flex size-24 items-center justify-center rounded-3xl border-4 border-white font-outfit text-3xl font-semibold shadow-[0_10px_24px_-16px_var(--color-brand-secondary)] sm:size-28 sm:text-4xl"
@@ -153,10 +157,6 @@ const OrganizationProfileView = ({
                   }}
                 >
                   {monogram(organization.name)}
-                </span>
-
-                <span className="mb-1 rounded-full border border-brand-secondary/12 bg-surface-warm px-3 py-1.5 font-outfit text-caption font-medium tracking-[0.14em] text-ink/55 uppercase">
-                  Preview profile
                 </span>
               </div>
 
@@ -169,11 +169,16 @@ const OrganizationProfileView = ({
                     >
                       {organization.name}
                     </h1>
+                    {/* The badge alone, sized to the name and in the brand
+                        ink - the convention every social profile uses, and
+                        quieter than the uppercase "VERIFIED" pill this
+                        replaced. */}
                     {organization.verified && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 font-outfit text-caption font-medium tracking-wide text-brand uppercase">
-                        <GoVerified aria-hidden="true" className="size-3" />
-                        Verified
-                      </span>
+                      <MdVerified
+                        role="img"
+                        aria-label="Verified organization"
+                        className="size-6 shrink-0 text-brand sm:size-7"
+                      />
                     )}
                   </div>
 

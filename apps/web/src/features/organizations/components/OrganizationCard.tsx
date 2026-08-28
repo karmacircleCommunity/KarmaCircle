@@ -1,5 +1,5 @@
 import { FiArrowUpRight, FiMapPin } from "react-icons/fi";
-import { GoVerified } from "react-icons/go";
+import { MdVerified } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { formatCount } from "../constants/organizationDirectory";
 import type { OrganizationCardProps } from "../types";
@@ -64,8 +64,8 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => (
           {organization.name}
         </h2>
         {organization.verified && (
-          <GoVerified
-            className="size-3.5 shrink-0 text-brand"
+          <MdVerified
+            className="size-4 shrink-0 text-brand"
             role="img"
             aria-label="Verified organization"
           />

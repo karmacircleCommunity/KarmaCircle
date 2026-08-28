@@ -127,7 +127,7 @@ This folder is fully TypeScript, and `types/` is split by declaration kind per [
 ## Known issues specific to this feature
 
 - Both pages render sample data; `getOrganizations()` is fully implemented and correct but never called — already in `known-issues.md`.
-- The Follow button on `OrganizationProfile.tsx` is local state with no endpoint behind it (stated on the page as a preview profile).
+- The Follow button on `OrganizationProfile.tsx` is local state with no endpoint behind it, and since the "Preview profile" chip was removed nothing on the page says so.
 - No pagination on the directory — fine at twelve records, a problem at four hundred.
 
 ## If you're asked to...
