@@ -16,14 +16,13 @@ Two unrelated event-creation UIs were built at different times and never reconci
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Events.tsx` | The `/events` page | ✅ routed, renders **hardcoded data** |
+| `pages/Events.tsx` | The `/events` page | ✅ routed, renders **sample data** from `constants/eventDirectory.ts` |
 | `pages/DetailedEvent.tsx` | One-line stub (`<div>DetailedEvent</div>`) | ❌ not routed |
 | `components/CreateEvent.tsx` | "Create event" modal opened from `Events.tsx` | ✅ reachable, but **non-functional** (see below) |
 | `components/CreateEvents.tsx` | The other, MUI-based, actually-correct "create event" modal | ❌ not rendered from any page |
 | `hooks/useEvent.ts` | Validator + submit handler paired with `CreateEvents` | ✅ used by `CreateEvents` only |
-| `components/EventCard.tsx` | Card rendered in the `/events` grid | ✅ rendered, but **ignores all data** |
-| `components/EventSlider.tsx` | Featured-events carousel above the grid | ✅ rendered, fully static |
-| `components/FeaturedEventCard.tsx` / `FeaturedEventImage.tsx` | Slides inside `EventSlider` | ✅ rendered, fully static |
+| `components/EventCard.tsx` | Card rendered in the `/events` grid | ✅ rendered, renders entirely from its `event` prop |
+| `constants/eventDirectory.ts` | The twelve sample events + the two date formatters the card uses | ✅ read by `Events.tsx` |
 | `components/EventsMarqueeCards.tsx` | Data-driven event card (correctly reads an `event` prop) | ❌ not rendered anywhere |
 | `components/HostedEvents.tsx` | **Completely empty file (0 bytes)** | ❌ importing this throws — no default export |
 | `components/HosedEvents.scss` | Orphaned stylesheet — note the filename typo ("Hosed" not "Hosted"); not imported by anything, including the (empty) `HostedEvents.tsx` | ❌ dead file |
@@ -35,20 +34,15 @@ Two unrelated event-creation UIs were built at different times and never reconci
 
 **`ComponentHelmet type="Events"`** — correct `type` string, matching `ComponentHelmet`'s dedicated `"Events"` branch; see [layout-navigation.md](../../../docs/specs/layout-navigation.md). Was previously a copy-paste leftover from `Organizations.tsx` (`type="Organizations"`, wrong for this page) — fixed August 2026 alongside the club → organization rename.
 
-**The `events` array is hardcoded and, worse, shaped like the wrong kind of record:**
-```js
-const events = Array.from({ length: 20 }, () => ({
-  _id: "673ac2814c6e89e58af8ca11",
-  userType: "organization", userName: "tamalcodes", name: "God Father Org",
-  email: "tamalcodes@gmail.com", password: "$2a$10$90vC9McfHXpXpLlzUOFeuulorPR9dIQ2ns37uIP5sX5ehyO5C.Mmm",
-  cart: [], __v: 0,
-}));
-```
-This is **the exact same fixture object as `Organizations.tsx`'s hardcoded `organizations` array** (a user/organization record — `_id`, `userType`, `userName`, `name`, `email`, `password`, `cart`, `__v`), not shaped like an event at all (no `startDate`, `mode`, `coverImage`, etc. — compare to what `EventsMarqueeCards.tsx` or `useEvent.ts`'s `event` state actually expect). This mismatch is currently invisible in the UI only because `EventCard` (below) doesn't read its `event` prop at all — if `EventCard` were ever fixed to use real event fields, this hardcoded array would need to be replaced with actually-event-shaped data, not just "made dynamic."
+**The event list is sample content** (`constants/eventDirectory.ts`), not live data: twelve distinct events, one per organization in `organizationDirectory.ts`, each carrying its own cover photo. `services/Events.ts`'s `getEvents()` is still the un-called real fetch - wiring it up is a `useSWR` swap plus a mapping function into `DirectoryEvent`, keeping the client-side filtering as it is.
 
-**Chrome:** search input + "Filters" button (both inert, no handlers, same as `Organizations.tsx`), a "Create An Event" button (`onClickfunction={() => setShowCreateModal(true)}`, correctly using the shared `Button` component), `<EventSlider />`, an `<hr>`, the event grid, then `{showCreateModal && <CreateEvent setShowCreateModal={setShowCreateModal} />}`.
+Until August 2026 this array was **twenty copies of one object shaped like the wrong kind of record** - `{ _id, userType, userName, name, email, password, cart, __v }`, a user/organization record copy-pasted from `Organizations.tsx`, with no `startDate`, `mode` or `coverImage` anywhere in it. That was invisible on screen only because `EventCard` read no props at all. Both halves of that are gone; if a future change reintroduces fixture data here, it has to be event-shaped.
 
-**The `Loading` fallback is dead code** for the same reason as `Organizations.tsx` — `events` is always a populated 20-item array.
+**Chrome: deliberately the same page as `/organizations`** - heading, a search field that actually filters (title, organizer, summary, cause, city, country, platform, mode), the same cause chips over the same `CAUSES` taxonomy, a live result count, then the card grid with an empty state. The two directories list the same kind of thing for the same visitor; the previous version had them looking like two different products.
+
+Gone with that rewrite: the inert "Filters" button (it never had a handler), the `<EventSlider />` carousel and its `FeaturedEventCard`/`FeaturedEventImage` slides (all hardcoded, nothing else imported them - files deleted), the `<hr>`, the unused `swiper/css` imports, and the `Loading` fallback that could never render.
+
+The "Create An Event" button survives, restyled to match `/organizations`' primary button. It still opens `CreateEvent.tsx`, which patches the user's profile instead of creating an event (below) - so it cannot yet put a card in this grid.
 
 ## Two different "create event" components — the central thing to get right
 
@@ -125,12 +119,12 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 - On any other status: `showErrorToast(response.response.data.message)` — note the doubled `.response.response` — this only works if `CreateEvent()` (the `MilanApi.ts` function) returned a raw Axios error object with `.response.data.message` rather than the `error.response` shape `MilanApi.ts`'s other functions typically return; check `CreateEvent`'s own catch block in `MilanApi.ts` before assuming this path is exercised correctly (it returns the caught `error` object as-is, not `error.response`, unlike most other `MilanApi.ts` functions — so `response` here actually holds the full Axios error, and `response.response.data.message` is consistent with that, if unusual compared to sibling functions).
 - If `errors` is non-empty: a single generic toast, "Please fill all the required fields" — no per-field detail in the toast (per-field detail is shown inline via `errors.name`/`errors.uid`/etc. in the form itself).
 
-## Event display components — none read real data except one unused component
+## Event display components
 
-- **`EventCard.tsx`** — **declares no parameters at all** (`const EventCard = () => {...}`), so `Events.tsx`'s `event={event}` prop is not even destructured, let alone used. Every visible field ("Food Marathon, 2025", "GodLike Organization", the description paragraph, three identical GitHub avatar images, "+300 Participated") is hardcoded JSX, byte-for-byte identical across all 20 rendered cards.
-- **`FeaturedEventCard.tsx`** — same hardcoded content as `EventCard.tsx` (near-identical JSX, different class prefix `featured_eventcard_*`), also takes no props. Its CTA is "Register Now" — a plain `<button>` with no `onClick`.
-- **`FeaturedEventImage.tsx`** — a static "Featured" tag + a single hardcoded Devfolio-hosted image URL, no props.
-- **`EventSlider.tsx`** — builds a fixed 10-item `slides` array (alternating `FeaturedEventImage`/`FeaturedEventCard`, ids 1–10, all rendering identical static content per above), pairs them two-per-slide (`slides.length / 2` = 5 slides), and auto-advances `index` via `setInterval(..., 3000)` with CSS `transform: translateX(-${index*100}%)`. No Swiper/carousel library despite `swiper` CSS being imported at the page level for other components — this is a hand-rolled carousel. No pause-on-hover, no manual nav controls, no accessibility affordances (no `aria-live`, no keyboard control).
+- **`EventCard.tsx`** — renders entirely from its `event: DirectoryEvent` prop. Same card as `organizations/OrganizationCard.tsx` and `landing-home/DrivesRail.tsx` (16:9 cover photo, cause label on a scrim, one-line `truncate` title, two-line `line-clamp-2` summary on a `min-h-11` box), plus the two things an event needs and those don't: a date badge on the cover, and a "N going / N spots left" rule at the bottom (`Full` rather than `0 spots left`, since a zero reads as a data bug).
+  **The card is not a link** — there is no event detail route yet (`DetailedEvent.tsx` is a one-line stub, unregistered), so only the organizer name links out, to the organization profile that does exist. Give the card a link the moment a detail page exists; the hover lift already implies one.
+  Until August 2026 this component **declared no parameters at all**: every field ("Food Marathon, 2025", "GodLike Organization", three identical GitHub avatars, "+300 Participated") was hardcoded, identical across all twenty cards, while `Events.tsx` passed it an `event` prop it never read.
+(`FeaturedEventCard.tsx`, `FeaturedEventImage.tsx`, `EventSlider.tsx` and `Slider.css` were deleted in the August 2026 directory rewrite - a hand-rolled 3s carousel over ten slides of identical hardcoded content, with no pause-on-hover, no manual controls and no accessibility affordances. Nothing outside itself imported them.)
 - **`EventsMarqueeCards.tsx`** — **the one component in this feature that actually reads and correctly uses an `event` prop**: cover image, name, either a location (`CiLocationOn` + `event.address`, when `mode === "Offline"`) or a platform icon+name (`mode !== "Offline"`, icon URL chosen via a nested ternary keyed on `event.platform` — falls back to a generic "other" icon for any platform not literally `"Zoom Meeting"`/`"Google Meet"`/`"Microsoft Teams"`), and a formatted start date/time via `getFormattedDate(event?.startDate)` + `event?.startTime` rendered with responsive truncation (`window.innerWidth <= 500` shows an abbreviated date). **Not rendered by any page.** Given `Profile.tsx` (onboarding-profile feature) has a commented-out `Marquee` block referencing an `EventsCard`, this component looks like the intended content for that commented-out section — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md).
 
 ## `components/HostedEvents.tsx` — literally empty
@@ -203,7 +197,7 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - `CreateEvent.tsx`'s event-mode radio UI doesn't visually reflect the actual selected mode after a click — new finding.
 - `validateEvent()`'s mode-specific field checks (address/mapIframe or platformLink) only run if a top-level required field is also missing, letting an event with all top-level fields but no address/platform link pass validation — new finding, refines the existing known-issues.md entry about this hook.
 - `submitCallback`'s reliance on same-render closure identity between `validateEvent()` and `submitCallback()` — already flagged in `known-issues.md`, precise mechanism explained above.
-- `EventCard`, `FeaturedEventCard`, `FeaturedEventImage` all ignore their (or any) props entirely — already in `known-issues.md`.
+- `EventsMarqueeCards.tsx` still isn't rendered anywhere, and `getFormattedDate.ts` exists only for it. `eventDirectory.ts` has its own `formatEventDate`/`formatEventBadge` because the fixtures carry a real ISO timestamp while `getFormattedDate` takes the API's `{ date, time }` string pair - whichever shape the API actually returns should collapse the two.
 - `Events.tsx` passes `type="Organizations"` to `ComponentHelmet` — already in `known-issues.md`.
 - `HostedEvents.tsx` is a 0-byte file; importing it throws — already in `known-issues.md`. Its `.scss` sibling has a typo'd filename (`Hosed` not `Hosted`) — new finding.
 - `convertToBase64.ts`'s `converter` can hang forever on a falsy file (currently unreachable via the guarded call site) — new finding.

@@ -19,11 +19,11 @@ Both variants carry `motion-safe:active:scale-97` (added August 2026) — the ap
 ## Card components
 
 - `OrganizationCard` — see [organizations.md](./organizations.md).
-- `EventCard`, `EventSlider`, `FeaturedEventCard`, `FeaturedEventImage`, `EventsMarqueeCards` — see [events.md](./events.md).
+- `EventCard`, `EventsMarqueeCards` — see [events.md](./events.md). (`EventSlider`/`FeaturedEventCard`/`FeaturedEventImage` were deleted in the August 2026 events-directory rewrite.)
 
 All card components are exported from `apps/web/src/components/index.ts` (or imported directly by deep path — both patterns appear at different call sites; prefer the barrel for anything already exported there).
 
-`OrganizationCard` was rebuilt (August 2026) as a full-card `<Link>` with a per-organization gradient cover and a monogram instead of the one shared banner photo every card used to carry — see [organizations.md](./organizations.md#organizationcard) before reusing it as a template for another card.
+**One card, three surfaces.** `DrivesRail`'s drive card (landing), `OrganizationCard` and `EventCard` are deliberately the same design — a 16:9 cover photo with a small uppercase label over a bottom scrim, a one-line `truncate` title, and a `line-clamp-2` body on a `min-h-11` box so every card in a row is the same height whatever the copy does. Each adds only what its own record needs (organizations: a stat row; events: a date badge and a going/spots rule). They were rebuilt this way in August 2026, replacing three unrelated designs — read [organizations.md](./organizations.md#organizationcard) before reusing any of them as a template for a fourth.
 
 **Card hover, standardised August 2026.** `OrganizationCard`, `EventCard` and `EventsMarqueeCards` all shared a hardcoded `rgba(226,105,89,0.32)` hover glow — the pre-rebrand saturated orange, a colour that no longer exists anywhere in the palette. All three now use `hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)]` plus `motion-safe:hover:-translate-y-1`, so the glow follows a retheme and the card lifts rather than only glowing. The duplicated `hover:transition-all hover:duration-300 hover:ease-in-out` trio they each carried alongside an identical unprefixed one was dropped in the same pass — it never did anything. `OrganizationCard` and `EventCard` also carry `data-reveal`, which is inert unless an ancestor scopes `useSectionReveal` (their two index pages do — see [Motion](#motion)).
 

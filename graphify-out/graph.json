@@ -464,7 +464,7 @@
       "label": "formatCount()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
-      "source_location": "L461",
+      "source_location": "L466",
       "id": "organizationprofile_formatcount",
       "community": 15,
       "norm_label": "formatcount()"
@@ -7245,8 +7245,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
       "source_location": "L51",
       "weight": 1.0,
-      "_src": "organizationprofile_organizationprofile",
-      "_tgt": "organizationdirectory_findorganization",
+      "_src": "organizationdirectory_findorganization",
+      "_tgt": "organizationprofile_organizationprofile",
       "source": "organizationdirectory_findorganization",
       "target": "organizationprofile_organizationprofile"
     },
@@ -7278,7 +7278,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
-      "source_location": "L461",
+      "source_location": "L466",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_pages_organizationprofile_tsx",
       "_tgt": "organizationprofile_formatcount",
