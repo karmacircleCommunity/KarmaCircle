@@ -16,6 +16,7 @@ import {
 import { validateEmail } from "@features/authentication/utils/validateEmail";
 import { CheckEmailExists, GoogleAuth } from "@services/KarmaCircleApi";
 import { authTypeOptions, nameRegex, STATUSCODE } from "@statics/Constants";
+import { showErrorToast } from "@utils/Toasts";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { FaEye } from "react-icons/fa";
@@ -91,14 +92,20 @@ const Auth = () => {
     const response = await CheckEmailExists(credentials.email);
     setCheckingEmail(false);
 
-    // Fail open on a broken/unreachable check — a genuine duplicate is
-    // still caught by the signup submit's own 409 (useAuth.ts), so a
-    // flaky check-email call shouldn't be what blocks a new signup.
-    if (response?.status === STATUSCODE.OK && response.data?.exists) {
-      setStep("signin");
-    } else {
-      setStep("signup");
+    // Only a clean, well-formed answer gets to decide the step. A broken
+    // or unreachable check (bad status, missing/non-boolean `exists`) used
+    // to fail open into "signup" — which silently sent existing users
+    // through account creation instead of surfacing the problem. Now it
+    // stays put and lets the user retry.
+    if (
+      response?.status !== STATUSCODE.OK ||
+      typeof response.data?.exists !== "boolean"
+    ) {
+      showErrorToast("Couldn't verify that email. Please try again.");
+      return;
     }
+
+    setStep(response.data.exists ? "signin" : "signup");
   };
 
   const handleBack = () => {
