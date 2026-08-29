@@ -139,4 +139,4 @@ That base derives its values from the environment rather than hardcoding them:
 
 ## What's known-broken here
 
-See [known-issues.md](./known-issues.md#auth) for the full list. JWT expiry and session revocation, and `GET /auth/login/success`'s reachability, are **fixed** (see above). The frontend's profile-completion and profile-update calls now have matching backend routes too — see [users.md](./users.md) and [api-contract.md](./api-contract.md).
+See [known-issues.md](./known-issues.md#auth) for the full list. JWT expiry and session revocation, and `GET /auth/login/success`'s reachability, are **fixed** (see above), as are the `Token` cookie's split `httpOnly` behaviour and the hardcoded `Secure`/`SameSite=None` flags that made local cookie testing impossible. The frontend's profile-completion and profile-update calls now have matching backend routes too, see [users.md](./users.md) and [api-contract.md](./api-contract.md).
