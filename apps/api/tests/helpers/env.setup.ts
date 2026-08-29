@@ -11,5 +11,6 @@ process.env.RAZORPAY_KEY_SECRET = "test-razorpay-key-secret";
 process.env.RESEND_API_KEY = "test-resend-key";
 process.env.RESEND_FROM_EMAIL = "test@example.com";
 process.env.ORIGIN_URL = "http://localhost:3000";
-process.env.ORIGIN_DOMAIN = "localhost";
-process.env.IGNORE_ORIGINS = "true";
+// Empty, matching local dev: cookies are host-only, with no Domain attribute.
+process.env.ORIGIN_DOMAIN = "";
+process.env.CORS_ORIGINS = "";

@@ -57,7 +57,7 @@ Edit `apps/api/.env`:
 | `JWT_SECRET` | Any random string — the example file's default is fine |
 | `SECRET_KEY`, `CLIENT_ID`, `CLIENT_SECRET` | **Must be non-empty** even if you're not testing Google OAuth — any placeholder string works, e.g. `"local-dev-placeholder"`. The example file ships these as `""`, which fails startup validation — see [Known gotchas](#known-gotchas). |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Same — must be non-empty, placeholder is fine unless testing payments |
-| Everything else (`ORIGIN_URL`, `ORIGIN_DOMAIN`, `IGNORE_ORIGINS`, `successURL`) | Leave as the example file's defaults |
+| Everything else (`ORIGIN_URL`, `ORIGIN_DOMAIN`, `CORS_ORIGINS`, `successURL`) | Leave as the example file's defaults. `ORIGIN_DOMAIN` in particular must stay **empty** locally, or the browser will reject the auth cookies |
 
 ## 3. Set up the frontend (`apps/web`)
 

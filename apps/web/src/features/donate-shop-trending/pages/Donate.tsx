@@ -1,8 +1,8 @@
 // This is the donate page where we come and select organizations to donate an amount !
 
-import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -18,6 +18,7 @@ import SingleOrganizationEvent from "../../components/Cards/SingleOrganizationEv
 // src/features/components/Loading, not src/components/Loading.tsx, where
 // the real component now lives, exported from the shared @components barrel).
 import Loading from "../../components/Loading";
+import { selectIsLoggedIn } from "@app/store/slices/userSlice";
 import { GetAllOrganizations } from "@services/KarmaCircleApi";
 import "./Donate.css";
 
@@ -31,6 +32,10 @@ const Donate = () => {
   const [organizationData, setOrganizationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  // Redux, not a cookie: the session token is httpOnly and the readable
+  // `isLoggedIn` cookie this used to read no longer exists (see
+  // apps/api auth.cookies.ts). Redux is what the rest of the app checks.
+  const isLoggedIn = useSelector(selectIsLoggedIn);
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
@@ -67,13 +72,13 @@ const Donate = () => {
 
   // Redirect user to login page if they are not logged in
   useEffect(() => {
-    if (!Cookies.get("isLoggedIn")) {
+    if (!isLoggedIn) {
       toast.error("Please log in before donating");
-      navigate("/user/login");
+      navigate("/auth/signin");
     }
-  }, []);
+  }, [isLoggedIn, navigate]);
 
-  if (!Cookies.get("isLoggedIn")) return null;
+  if (!isLoggedIn) return null;
 
   return (
     <>

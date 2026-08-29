@@ -24,7 +24,7 @@ export async function signup(req: Request, res: Response) {
 
   res
     .status(STATUS_CODE.CREATED)
-    .cookie("Token", token, readableCookieOptions())
+    .cookie("Token", token, httpOnlyCookieOptions())
     .json({
       message: STATUS_MESSAGE.SIGNUP_SUCCESS,
       user,
@@ -37,7 +37,7 @@ export async function signin(req: Request, res: Response) {
 
   res
     .status(STATUS_CODE.OK)
-    .cookie("Token", token, readableCookieOptions())
+    .cookie("Token", token, httpOnlyCookieOptions())
     .json({
       message: STATUS_MESSAGE.LOGIN_SUCCESS,
       user,
@@ -108,20 +108,17 @@ export function googleInitiate(req: Request, res: Response) {
 }
 
 /**
- * Sets the actual session cookies (Token + the readable userName/
- * isLoggedIn/userType trio the frontend reads directly) for a
- * successfully-authenticated Google user. Called from `googleCallback`
- * — the *only* request in this handshake that ever has a real `req.user`
- * from Passport, since `session: false` means nothing carries it forward
- * to the later `/auth/login/success` request. See `loginSuccess` below.
+ * Sets the httpOnly Token cookie for a successfully-authenticated Google
+ * user. The frontend gets its user data from /auth/login/success rather
+ * than from readable cookies, so the session token is the only thing set
+ * here. Called from `googleCallback`, the *only* request in this handshake
+ * that ever has a real `req.user` from Passport, since `session: false`
+ * means nothing carries it forward to the later `/auth/login/success`
+ * request. See `loginSuccess` below.
  */
 function issueOAuthSession(res: Response, user: IUser): Response {
   const token = authService.signToken(user.email, user.tokenVersion);
-  return res
-    .cookie("Token", token, httpOnlyCookieOptions())
-    .cookie("userName", user.userName, readableCookieOptions())
-    .cookie("isLoggedIn", true, readableCookieOptions())
-    .cookie("userType", "user", readableCookieOptions());
+  return res.cookie("Token", token, httpOnlyCookieOptions());
 }
 
 export function googleCallback(req: Request, res: Response): void {
@@ -134,11 +131,8 @@ export function googleCallback(req: Request, res: Response): void {
 
   issueOAuthSession(res, req.user as IUser)
     .cookie("OAuthLoginInitiated", true, {
+      ...readableCookieOptions(),
       expires: new Date(Date.now() + 5 * 60 * 1000),
-      httpOnly: false,
-      secure: true,
-      sameSite: "none",
-      domain: env.ORIGIN_DOMAIN,
     })
     .redirect(env.successURL);
 }

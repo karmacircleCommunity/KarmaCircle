@@ -4,6 +4,7 @@ import { BiEdit, BiLinkExternal, BiLogoGmail, BiLogOut } from "react-icons/bi";
 import { BsLinkedin } from "react-icons/bs";
 import { RiTwitterXFill } from "react-icons/ri";
 
+import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -16,8 +17,8 @@ import { Logout } from "@services/KarmaCircleApi";
 import fetcher from "@utils/Fetcher";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 
-import Cookies from "js-cookie";
 import { Button, Footer, Navbar } from "@components";
+import { selectUser } from "@app/store/slices/userSlice";
 import { userEndpoints } from "@services/ApiEndpoints";
 import useAuthStore from "@app/store/useAuth";
 import type { LogoutResponse, UserProfileDetails } from "../types";
@@ -25,13 +26,14 @@ import type { LogoutResponse, UserProfileDetails } from "../types";
 /**
  * A second, more visually developed public profile page — not routed
  * anywhere in `routesConfig.jsx`, unreachable through any navigation.
- * See SPEC.md, including the always-false `Cookies.get("userName")`
- * own-profile check and the placeholder text concatenated onto (not
- * replaced by) real fetched data.
+ * See SPEC.md. The own-profile check now reads the signed-in user from
+ * Redux; it used to read a `userName` cookie that the API no longer sets
+ * (the session token is httpOnly), so it could never be true.
  */
 const UserProfile = () => {
   const navigate = useNavigate();
   const params = useParams();
+  const currentUser = useSelector(selectUser);
 
   const { toggleLoading, isLoading } = useAuthStore((state) => ({
     toggleLoading: state.toggleLoading,
@@ -108,7 +110,7 @@ const UserProfile = () => {
               </p>
 
               <div className="cta_buttonsdiv">
-                {Cookies.get("userName") === params.slug ? (
+                {currentUser?.userName === params.slug ? (
                   <>
                     <Button type="button" variant="solid" disabled={isLoading}>
                       <BiEdit /> <p>Edit Profile</p>

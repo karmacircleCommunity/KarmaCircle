@@ -21,13 +21,28 @@ export function createApp(): Express {
   app.use(compression());
   app.use(pinoHttp({ logger }));
 
+  /**
+   * An explicit allowlist, echoing back the caller's own origin only when it
+   * is on the list. The previous version always answered with the single
+   * configured ORIGIN_URL regardless of who asked, so the moment a second
+   * legitimate origin existed (localhost alongside a deployed frontend) it
+   * was blocked, and its IGNORE_ORIGINS escape hatch fixed that locally by
+   * allowing *every* origin instead. `credentials: true` means a wildcard is
+   * never an option here, so the list has to be real.
+   *
+   * Requests with no Origin header at all (curl, server-to-server, same-origin
+   * navigations) are allowed through: CORS is a browser mechanism and there is
+   * nothing to protect when no browser origin is involved.
+   */
+  const allowedOrigins = new Set([env.ORIGIN_URL, ...env.CORS_ORIGINS]);
+
   app.use(
     cors({
-      origin: (_origin, callback) => {
-        if (env.IGNORE_ORIGINS) {
-          callback(null, true);
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.has(origin)) {
+          callback(null, origin ?? true);
         } else {
-          callback(null, env.ORIGIN_URL);
+          callback(null, false);
         }
       },
       credentials: true,

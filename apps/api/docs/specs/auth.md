@@ -5,12 +5,17 @@ This module owns no Mongoose model of its own — it reads/writes through `users
 
 ## Two parallel login mechanisms, one resulting cookie shape
 
-There are two distinct ways a client ends up authenticated, and they set **different cookie sets**:
+There are two distinct ways a client ends up authenticated, and as of August 2026 they set the **same** cookie:
 
-1. **Email/password** (`signup`/`signin`) sets **only** `Token` (via `readableCookieOptions()` — `httpOnly: false`).
-2. **Google OAuth** (`googleInitiate` → Google → `googleCallback` → `loginSuccess`) sets **four** cookies: `Token` (via `httpOnlyCookieOptions()` — `httpOnly: true`, different flags than path 1's `Token` cookie), plus `userName`, `isLoggedIn`, `userType` (all `readableCookieOptions()`, all readable by JS).
+1. **Email/password** (`signup`/`signin`) sets only `Token`, via `httpOnlyCookieOptions()`.
+2. **Google OAuth** (`googleInitiate` -> Google -> `googleCallback` -> `loginSuccess`) sets the same `Token` via `httpOnlyCookieOptions()`, plus a short-lived, deliberately readable `OAuthLoginInitiated` flag that tells the frontend it has just come back from Google.
 
-**The `Token` cookie's `httpOnly` flag is inconsistent depending on which login path issued it** — `false` from `signup`/`signin`, `true` from OAuth's `loginSuccess`. Every route that checks auth (`requireAuth`) only cares that the cookie is present and valid, not how it was set, so this doesn't break auth itself — but any frontend code that reads `document.cookie` for `Token` directly (rather than relying on the browser to attach it automatically) will only ever see it after an email/password login, never after Google OAuth. Confirm with the frontend's own auth spec whether anything actually depends on this before assuming it's harmless.
+Both paths return the user object in the response body, so nothing needs to read a cookie to learn who is signed in.
+
+**Previously these disagreed**, and it was a real vulnerability rather than a curiosity: `signup`/`signin` issued `Token` through `readableCookieOptions()` (`httpOnly: false`), so for every email/password user the session JWT was readable by any script on the page, while the same token from OAuth was protected.
+OAuth additionally set readable `userName`/`isLoggedIn`/`userType` cookies.
+All of that is gone: `Token` is `httpOnly` on both paths, and the three readable cookies were dropped as redundant because the same data already arrives in the JSON body.
+`logout` still clears the three legacy names so sessions predating the change get cleaned up rather than leaving stale cookies behind.
 
 ## `POST /auth/signup`
 
@@ -18,7 +23,7 @@ There are two distinct ways a client ends up authenticated, and they set **diffe
 
 `signupSchema` (`z.object({ email, password }).passthrough()`) only *requires* `email` (valid format) and `password` (non-empty — **no length/strength check server-side**, unlike the frontend's client-side 8-char/mixed-case/digit regex; nothing stops a 1-character password from reaching this endpoint directly, e.g. via curl or a future non-web client). `.passthrough()` means **any additional body fields survive validation untouched** and get spread into the new `User` document by `authService.signup` (`{ ...data, userName, email, password: hashedPassword }`) — so a signup request can set `userType`, `name`, `phone`, etc. in the same call, but only fields that exist on the `User` schema actually persist (Mongoose's own `strict: true` default silently drops anything else at `.save()` time — see [users.md](./users.md#the-user-model-is-shared-by-five-modules)).
 
-`authService.signup`: reject with `409 USER_ALREADY_EXISTS` if `email` is already taken (`userService.findByEmail`) → `bcrypt.hash(password, 10)` → `userService.generateUniqueUsername(email)` (see [users.md](./users.md)) → save → respond `201` with `{ message: SIGNUP_SUCCESS, user: <sanitized> }` and a `Token` cookie (readable, 30-day expiry, `SameSite=None; Secure`, scoped to `env.ORIGIN_DOMAIN`).
+`authService.signup`: reject with `409 USER_ALREADY_EXISTS` if `email` is already taken (`userService.findByEmail`) → `bcrypt.hash(password, 10)` → `userService.generateUniqueUsername(email)` (see [users.md](./users.md)) → save → respond `201` with `{ message: SIGNUP_SUCCESS, user: <sanitized> }` and a `Token` cookie (`httpOnly`, 30-day expiry, `SameSite=Lax`, `Secure` off localhost, scoped to `env.ORIGIN_DOMAIN` when that is set).
 
 ## `POST /auth/signin`
 
@@ -70,8 +75,8 @@ Google redirects to  GET /auth/google/callback?code=...&state=<userType>
               │          else: create one via getUserModel(userType) (see users.md), with a random unusable
               │            bcrypt-hashed password (crypto.randomBytes(20))
               ▼
-googleCallback: issueOAuthSession(res, req.user) signs the REAL Token (httpOnly) and sets userName/isLoggedIn/userType,
-              │  THEN sets `OAuthLoginInitiated=true` (5-min expiry, NOT httpOnly, Secure, SameSite=None), redirects (302) to env.successURL
+googleCallback: issueOAuthSession(res, req.user) signs the REAL Token (httpOnly),
+              │  THEN sets `OAuthLoginInitiated=true` (5-min expiry, NOT httpOnly, SameSite=Lax), redirects (302) to env.successURL
               ▼
 Frontend's landing page (per its own spec) detects OAuthLoginInitiated on mount, calls  GET /auth/login/success
               │  loginSuccess is now requireAuth-gated: the Token cookie googleCallback just set on the redirect response
@@ -115,11 +120,22 @@ Protected routes using it: `GET /user/profile`, `PATCH /user/update`, `PATCH /us
 
 ## `GET /auth/logout`
 
-No auth check required, no body — but now `async` and does real work: `authService.verifyTokenLoosely(req.cookies?.Token)` tries to decode the cookie (swallowing any failure — missing, expired, malformed, all treated the same as "nothing to revoke"); if it decodes to a real email, `authService.bumpTokenVersion(email)` runs **before** the cookies are cleared, so that account's `tokenVersion` moves and every outstanding token for it (including the one just used to call logout) stops passing `requireAuth`. Then, same as before: overwrites `Token`/`userName`/`isLoggedIn`/`userType` with `clearedCookieOptions(...)` (`expires: new Date(0)`) — `Token` cleared `httpOnly: true`, the other three `httpOnly: false`, matching how OAuth's `loginSuccess` originally set them. **A `Token` cookie set by the email/password path (`httpOnly: false`) is cleared here with `httpOnly: true`** — browsers key cookie deletion on name + path + domain, not `httpOnly`, so this still clears it correctly in practice; noted only because it's another spot where the two login paths' cookie flags don't quite line up. Always `200`, regardless of whether the caller was actually logged in — logout never fails, it just has nothing to revoke server-side if the cookie was already garbage or absent.
+No auth check required, no body — but now `async` and does real work: `authService.verifyTokenLoosely(req.cookies?.Token)` tries to decode the cookie (swallowing any failure — missing, expired, malformed, all treated the same as "nothing to revoke"); if it decodes to a real email, `authService.bumpTokenVersion(email)` runs **before** the cookies are cleared, so that account's `tokenVersion` moves and every outstanding token for it (including the one just used to call logout) stops passing `requireAuth`. Then, same as before: overwrites `Token`/`userName`/`isLoggedIn`/`userType` with `clearedCookieOptions(...)` (`expires: new Date(0)`) — `Token` cleared `httpOnly: true`, the other three `httpOnly: false`, matching how OAuth's `loginSuccess` originally set them. It clears `userName`/`isLoggedIn`/`userType` even though no login path sets them any more, which is deliberate: it cleans up sessions that predate those cookies being dropped. Always `200`, regardless of whether the caller was actually logged in — logout never fails, it just has nothing to revoke server-side if the cookie was already garbage or absent.
 
 ## Cookie option builders (`auth.cookies.ts`)
 
-All three (`httpOnlyCookieOptions`, `readableCookieOptions`, `clearedCookieOptions`) hardcode `secure: true` and `sameSite: "none"` — this means **every cookie this API sets requires HTTPS**, including in local dev. If you're testing against `http://localhost` end-to-end (not just hitting the API directly), the browser will silently refuse to store any of these cookies (`Secure` cookies are dropped over plain HTTP by every modern browser) — this is a common source of "login works but nothing persists" confusion locally; use HTTPS (e.g. a local proxy/tunnel) or a browser flag to test the real cookie-based flow.
+All three (`httpOnlyCookieOptions`, `readableCookieOptions`, `clearedCookieOptions`) build on one `baseCookieOptions()` so their flags cannot drift apart again.
+That base derives its values from the environment rather than hardcoding them:
+
+- `sameSite: "lax"` everywhere, **not** `"none"`.
+  The frontend and this API share one registrable domain in every environment (`www`/`api` under `karmacircle.org`, `dev`/`api.dev` under it too, and `localhost:3000`/`localhost:5050`, where differing ports do not make requests cross-site).
+  Same-site requests carry `Lax` cookies normally, and `Lax` keeps the CSRF protection that `"none"` switches off.
+  The Google OAuth callback still works, because `Lax` cookies may be *set* on a top-level navigation and every later call is a same-site XHR.
+- `secure` follows `ORIGIN_URL`'s scheme, so it is on for every deployment and off for plain-HTTP localhost.
+  This removes the old "login works but nothing persists" trap where `Secure` cookies were silently dropped over `http://localhost`.
+- `domain` is set from `env.ORIGIN_DOMAIN` and **omitted entirely when that is empty**, producing a host-only cookie.
+  Local dev must leave `ORIGIN_DOMAIN` empty: Chrome rejects an explicit `Domain=localhost`.
+  Deployments set it to the shared registrable domain (`.karmacircle.org`) so one cookie covers the frontend and API subdomains.
 
 ## What's known-broken here
 

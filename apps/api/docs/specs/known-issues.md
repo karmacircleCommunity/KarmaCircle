@@ -76,7 +76,6 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 ## Build / config
 
-- `env.IGNORE_ORIGINS` is read as the literal string `"true"` (not a real boolean) before being transformed — a `.env` value of anything else (including an actual unquoted `false`, or `1`) evaluates to `false` after the transform; only the exact string `"true"` enables it.
 - Swagger's `@openapi` JSDoc blocks are hand-maintained next to each route and are not derived from (or checked against) the Zod validation schemas sitting right next to them in the same module — the two can silently drift; don't treat the `/docs` UI as authoritative over actually reading a module's `.validation.ts` file.
 
 ## Test coverage

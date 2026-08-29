@@ -31,12 +31,33 @@ const envSchema = z.object({
   // sending address. See config/mailer.ts.
   RESEND_FROM_EMAIL: z.string().optional(),
 
+  // The canonical frontend URL: used for the password-reset link
+  // (auth.service.ts) and as the OAuth success redirect. Exactly one value,
+  // because a redirect can only have one destination. CORS is a separate
+  // concern, see CORS_ORIGINS below.
   ORIGIN_URL: z.string().min(1, "ORIGIN_URL is required"),
-  ORIGIN_DOMAIN: z.string().min(1, "ORIGIN_DOMAIN is required"),
-  IGNORE_ORIGINS: z
+
+  // Every browser origin allowed to make credentialed requests, as a
+  // comma-separated list. ORIGIN_URL is always allowed implicitly, so this
+  // only needs the *extra* origins (e.g. http://localhost:3000 alongside a
+  // deployed frontend). Replaces the old IGNORE_ORIGINS allow-everything
+  // escape hatch, which turned local dev into a wildcard CORS policy.
+  CORS_ORIGINS: z
     .string()
     .optional()
-    .transform((value) => value === "true"),
+    .transform((value) =>
+      (value ?? "")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    ),
+
+  // The `Domain` attribute for auth cookies. Set it to the registrable
+  // domain shared by the frontend and this API (".karmacircle.org") so one
+  // cookie covers www/dev/api. Leave it UNSET for localhost: an explicit
+  // `Domain=localhost` is rejected by Chrome, and a host-only cookie is
+  // what local dev actually wants. See auth.cookies.ts.
+  ORIGIN_DOMAIN: z.string().optional(),
 });
 
 function loadEnv() {

@@ -78,7 +78,10 @@ Confirm with whoever's asking before investing effort here; treat it as an alter
 
 **Data source:** `useSWR(userEndpoints.details(params.slug), fetcher)` — this is the endpoint `Profile.tsx` does *not* use (`GET /user?userName=...`), so if this page is ever wired up, it would be exercising a currently-untested-in-production code path on the frontend.
 
-**"Own profile" check:** `Cookies.get("userName") === params.slug` — the `userName` cookie is **never set anywhere else in this codebase** (confirmed via full-repo read — no `Cookies.set("userName", ...)` call exists), so this branch can never evaluate `true` today; the "Edit Profile"/"Logout" buttons are permanently unreachable and every visitor sees the "Drop me a mail" button instead, even the profile's own owner.
+**"Own profile" check:** `currentUser?.userName === params.slug`, reading the signed-in user from Redux (`selectUser`).
+This previously read a `userName` cookie, which could never be `true`: the API set that cookie only on the Google OAuth path, scoped to the API's own host, so page JavaScript on the frontend origin could not read it.
+The "Edit Profile"/"Logout" buttons were therefore permanently unreachable, even for the profile's own owner.
+The API no longer sets readable identity cookies at all (see [apps/api auth.md](../../../../../apps/api/docs/specs/auth.md)), so Redux is now the only source for this.
 
 **Placeholder content mixed with real data (not previously documented) — this page is further from finished than the existing docs suggest:**
 - `userdetails_about` renders a hardcoded Lorem Ipsum paragraph with `{userdetails?.about}` **concatenated directly onto the end of it** — `"Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam nihil repellat quam eum facilis eaque soluta magnam aut minima provident dolores illo cum eos molestias, nemo praesentium{userdetails?.about}"` — so even with real data flowing in, the placeholder text is still shown, immediately followed by (not replaced by) the real `about` field.
