@@ -23,9 +23,12 @@ Renders `<ComponentHelmet type="Organizations" />` (SEO title/meta — see [layo
 **Search and filters actually work now.**
 The previous version had an input with no `onChange` and a "Filters" button with no `onClick`.
 Today:
-- a pill search field (icon, clear button, `focus-within` brand ring) filtering on name, tagline, cause, city and country, so "kolkata" or "water" both find something;
-- a row of cause chips generated from `CAUSES` (plus an `"All"` pseudo-option), horizontally scrollable below `sm` so eight chips don't wrap into four rows above the fold;
+- a search field filtering on name, tagline, cause, city and country, so "kolkata" or "water" both find something;
+- a row of cause filters generated from `CAUSES` (plus an `"All"` pseudo-option), horizontally scrollable below `sm` so eight of them don't wrap into four rows above the fold;
 - an `aria-live` result count, and a "nothing matches / reset filters" empty state — reachable now that the filters are real, unlike the old `Loading` fallback, which could never trigger.
+
+That chrome is no longer written here: the field, the filter row, the count and the slot for the page's one primary button all live in the shared [`DirectoryToolbar`](../../apps/web/src/components/DirectoryToolbar.tsx), rendered by both this page and `/events` (see [ui-kit.md](./ui-kit.md#directorytoolbar)).
+The filtering state and the `useMemo` over the directory array stay in the page.
 
 The "Your dashboard" button still navigates to `/dashboard`.
 The grid is `1 / 2 / 3` columns (`sm` / `xl`) inside a `max-w-7xl` centered container with `px-9` mobile padding, matching the app's responsive standard in [CLAUDE.md](../../CLAUDE.md).

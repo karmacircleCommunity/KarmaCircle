@@ -16,6 +16,17 @@ Both variants carry `motion-safe:active:scale-97` (added August 2026) — the ap
 
 [apps/web/src/features/authentication/components/AuthButton.tsx](../../apps/web/src/features/authentication/components/AuthButton.tsx) — see [authentication.md](./authentication.md). Built on top of `Button`, currently unused by the live auth pages.
 
+## `DirectoryToolbar`
+
+[apps/web/src/components/DirectoryToolbar.tsx](../../apps/web/src/components/DirectoryToolbar.tsx), exported from the `@components` barrel.
+The search + filter + result-count chrome above both directory pages, `/events` and `/organizations`.
+Generic over the filter option type (`<T extends string>`), so each page passes its own taxonomy and keeps its own filtering state and `useMemo` — the component owns presentation only, plus an `action` slot for that page's single primary button ("Create an event", "Your dashboard").
+
+It was extracted in August 2026 from two hand-maintained copies that had started to look like two different products, and restyled down in the same pass.
+The old block stacked three heavy rows above the cards: a shadowed white pill search field, a row of nine outlined-and-filled cause chips, and a separate uppercase count line.
+Now the field is a single underline that turns brand on `focus-within`, the causes are plain text buttons with a 2px brand underline marking the active one, and the count shares the filter row on `sm` and up — leaving the primary button as the only filled surface on the page above the grid.
+The filter row still scrolls horizontally below `sm` (with the `-mx-9` bleed matching the pages' `px-9` mobile padding) rather than wrapping into four rows above the fold.
+
 ## Card components
 
 - `OrganizationCard` — see [organizations.md](./organizations.md).

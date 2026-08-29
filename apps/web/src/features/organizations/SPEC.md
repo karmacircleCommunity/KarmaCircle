@@ -29,7 +29,7 @@ That is still true: both pages render from `constants/organizationDirectory.ts`,
 
 Twelve `DirectoryOrganization` records, deliberately varied (different causes, countries, sizes, verified and not), plus:
 - `ORGANIZATION_ACCENTS` — six warm gradient/monogram palettes, indexed via each record's `accent`. **Not palette tokens and must not become any.** They used to identify the cards; since every record carries its own `cover` photo they only tint the monogram on the profile header.
-- `CAUSES` — the closed cause taxonomy the filter chips are generated from.
+- `CAUSES` — the closed cause taxonomy the toolbar's cause filters are generated from.
 - `findOrganization(userName)` — the `:userName` route lookup.
 - `formatCount(value)` — `Intl.NumberFormat`'s compact notation ("12.4k"), not a hand-rolled divide-and-round.
 
@@ -40,7 +40,7 @@ That fixture also carried a real-looking bcrypt `password` field; the replacemen
 
 **Rendered chrome:** `<ComponentHelmet type="Organizations" />` (see [layout-navigation.md](../../../docs/specs/layout-navigation.md)), `<Navbar />`, a heading block, the search + filter row, the results grid, `<Footer />`.
 
-**Search and filters are real.** The previous version's `<input>` had no `onChange` and its "Filters" `<button>` had no `onClick`. Today a `useMemo` filter runs over the directory array on `query` (matched against name, tagline, cause, city and country) and `cause` (chips generated from `CAUSES` plus an `"All"` pseudo-option). Both are pure client-side work over whatever array they're handed, so wiring a real fetch in later doesn't touch them.
+**Search and filters are real.** The previous version's `<input>` had no `onChange` and its "Filters" `<button>` had no `onClick`. Today a `useMemo` filter runs over the directory array on `query` (matched against name, tagline, cause, city and country) and `cause` (filters generated from `CAUSES` plus an `"All"` pseudo-option, rendered by the shared `DirectoryToolbar` in `@components`). Both are pure client-side work over whatever array they're handed, so wiring a real fetch in later doesn't touch them.
 
 The dead `Loading` branch is gone — with real filters there is now a reachable **empty state** ("Nothing matches that yet" + a reset-filters button) where the unreachable loading fallback used to be. A real loading/error state comes with the real fetch.
 

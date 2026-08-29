@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { FiSearch, FiX } from "react-icons/fi";
 import { PiCaretRightBold } from "react-icons/pi";
 import { useNavigate } from "react-router-dom";
-import { Footer, Navbar } from "@components";
+import { DirectoryToolbar, Footer, Navbar } from "@components";
 import ComponentHelmet from "@components/ComponentHelmet";
 import OrganizationCard from "@features/organizations/components/OrganizationCard";
 import { useSectionReveal } from "@hooks";
@@ -24,10 +23,13 @@ const CAUSE_FILTERS: CauseFilter[] = ["All", ...CAUSES];
  * the filtering below, which is deliberately pure client-side work over
  * whatever array it is handed.
  *
- * Search and the cause chips both actually filter (the previous version's
+ * Search and the cause filter both actually filter (the previous version's
  * input and "Filters" button had no handlers at all). Matching is done on
  * name, tagline, cause, city and country so typing "kolkata" or "water"
- * finds something, not just an exact name prefix.
+ * finds something, not just an exact name prefix. The chrome around them -
+ * field, filter row, result count - is the shared `DirectoryToolbar`, the
+ * same component `/events` renders; the filtering state and logic stay
+ * here.
  */
 const Organizations = () => {
   const navigate = useNavigate();
@@ -70,82 +72,33 @@ const Organizations = () => {
           cause, by city, or by name.
         </p>
 
-        {/* Search + dashboard. One row from `sm` up; the dashboard button
-            drops below the field on a phone rather than squeezing the input
-            down to a few characters. */}
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="group flex h-13 flex-1 items-center gap-3 rounded-full border border-brand-secondary/12 bg-white px-5 shadow-[0_2px_14px_-10px_var(--color-brand-secondary)] transition-[border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:shadow-[0_6px_20px_-12px_var(--color-brand)]">
-            <FiSearch
-              aria-hidden="true"
-              className="size-4.5 shrink-0 text-ink/40 transition-colors duration-200 group-focus-within:text-brand"
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by name, cause or city"
-              aria-label="Search organizations"
-              // Safari draws its own clear affordance on type="search";
-              // this component renders its own so the two don't stack.
-              className="size-full min-w-0 border-none bg-transparent font-poppins text-body text-ink outline-none placeholder:text-ink/40 [&::-webkit-search-cancel-button]:hidden"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-brand-secondary/6 text-ink/55 transition-colors duration-200 hover:bg-brand/12 hover:text-brand"
-              >
-                <FiX className="size-3.5" />
-              </button>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard")}
-            className="flex h-13 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand px-7 font-poppins text-body font-medium whitespace-nowrap text-white shadow-[0_8px_24px_-12px_var(--color-brand)] transition-colors duration-300 ease-out hover:bg-brand-hover motion-safe:active:scale-97"
-          >
-            Your dashboard
-            <PiCaretRightBold aria-hidden="true" className="size-4" />
-          </button>
-        </div>
-
-        {/* Cause chips. A horizontal scroller on narrow screens rather than
-            a wrapping four-row block that pushes the grid below the fold. */}
-        <div
-          role="group"
-          aria-label="Filter by cause"
-          className="-mx-9 mt-5 flex gap-2 overflow-x-auto px-9 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden"
-        >
-          {CAUSE_FILTERS.map((option) => {
-            const active = option === cause;
-            return (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setCause(option)}
-                className={`shrink-0 cursor-pointer rounded-full border px-4 py-2 font-outfit text-body whitespace-nowrap transition-colors duration-200 motion-safe:active:scale-97 ${
-                  active
-                    ? "border-brand bg-brand text-white"
-                    : "border-brand-secondary/12 bg-white text-ink/70 hover:border-brand/40 hover:text-brand"
-                }`}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
-
-        <p
-          aria-live="polite"
-          className="mt-6 font-poppins text-caption tracking-wide text-ink/50 uppercase"
-        >
-          {results.length}{" "}
-          {results.length === 1 ? "organization" : "organizations"}
-          {cause !== "All" && ` in ${cause}`}
-        </p>
+        <DirectoryToolbar
+          query={query}
+          onQueryChange={setQuery}
+          searchPlaceholder="Search by name, cause or city"
+          searchLabel="Search organizations"
+          options={CAUSE_FILTERS}
+          active={cause}
+          onSelect={setCause}
+          filterLabel="Filter by cause"
+          summary={
+            <>
+              {results.length}{" "}
+              {results.length === 1 ? "organization" : "organizations"}
+              {cause !== "All" && ` in ${cause}`}
+            </>
+          }
+          action={
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand px-6 font-poppins text-body font-medium whitespace-nowrap text-white shadow-[0_8px_24px_-14px_var(--color-brand)] transition-colors duration-300 ease-out hover:bg-brand-hover motion-safe:active:scale-97"
+            >
+              Your dashboard
+              <PiCaretRightBold aria-hidden="true" className="size-4" />
+            </button>
+          }
+        />
       </div>
 
       <div className="mx-auto max-w-7xl px-9 pb-20 sm:px-10 lg:px-12">
