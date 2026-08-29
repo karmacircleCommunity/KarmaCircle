@@ -9,8 +9,8 @@ This directory mirrors the structure of the frontend's own `docs/specs/` (see be
 
 ## What this project is
 
-This is `milan-api` (package name, a holdover from the app's former "NgoWorld"/"Milan" branding), the Express/TypeScript/MongoDB backend for **KarmaCircle**, a platform that connects NGOs, charities, organizations, and individual users.
-It's one of two apps in this monorepo — its consumer is [apps/web](../../../web) (package name `milan-frontend`), a Vite + React SPA.
+This is `karmacircle-api`, the Express/TypeScript/MongoDB backend for **KarmaCircle**, a platform that connects NGOs, charities, organizations, and individual users.
+It's one of two apps in this monorepo — its consumer is [apps/web](../../../web) (package name `karmacircle-frontend`), a Vite + React SPA.
 There is no server-rendered UI in this repo — it is a pure JSON API.
 See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate and how to read the frontend's own graph/specs when a change touches both sides.
 
@@ -57,7 +57,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | [payments.md](./payments.md) | Create a Razorpay order (amount → order id) | — (Razorpay is the system of record) | no |
 | [products.md](./products.md) | Add a product, list/get products, add a product to a user's cart (writes into `User.cart`) | ✅ `Product` | `POST /product/cart/add` only |
 | [reports.md](./reports.md) | "Report a problem" form submission, rate-limited per email | ✅ `ReportProblem` | no |
-| [api-contract.md](./api-contract.md) | Every route this API exposes, cross-referenced against exactly what the frontend calls (`src/services/ApiEndpoints.ts` / `MilanApi.ts` in the KarmaCircle repo) — **read this before changing any route path, method, or response shape** | — | — |
+| [api-contract.md](./api-contract.md) | Every route this API exposes, cross-referenced against exactly what the frontend calls (`src/services/ApiEndpoints.ts` / `KarmaCircleApi.ts` in the KarmaCircle repo) — **read this before changing any route path, method, or response shape** | — | — |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs and gaps found while writing these specs (most now resolved — the file tracks what's still open vs. fixed) — read this before touching `auth`/`users` | — | — |
 
 Unlike the frontend, this backend does **not** use a two-tier "short cross-feature summary here, deep colocated `SPEC.md` inside the folder" split.

@@ -50,6 +50,35 @@ export const CheckEmailExists = async (email: string) => {
   }
 };
 
+// REQUEST A PASSWORD RESET LINK — the backend always responds the same
+// way whether or not `email` has an account (see apps/api/docs/specs/
+// auth.md), so the caller should only branch on network/status success,
+// never on the response body implying the email did or didn't exist.
+export const ForgotPassword = async (email: string) => {
+  try {
+    const response = await Axios.post(authEndpoints.forgotPassword, {
+      email,
+    });
+    return response;
+  } catch (error) {
+    return (error as AxiosError).response;
+  }
+};
+
+// CONSUME A PASSWORD RESET LINK — `token` comes from the
+// /auth/reset-password/:token route param.
+export const ResetPassword = async (payload: {
+  token: string;
+  newPassword: string;
+}) => {
+  try {
+    const response = await Axios.post(authEndpoints.resetPassword, payload);
+    return response;
+  } catch (error) {
+    return (error as AxiosError).response;
+  }
+};
+
 // get all organizations
 export const GetAllOrganizations = async () => {
   try {

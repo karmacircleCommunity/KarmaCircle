@@ -2,7 +2,7 @@ import type { LandingIcon } from "./types";
 import type { User } from "@/types/user";
 
 /**
- * `successCallback()` (`MilanApi.js`, `GET /auth/login/success`) returns
+ * `successCallback()` (`KarmaCircleApi.ts`, `GET /auth/login/success`) returns
  * the raw Axios response on success but the raw caught error object on
  * failure — its own catch block returns `err`, not `err.response` (see
  * SPEC.md). That's why this type carries both a `data.message` shape
@@ -37,7 +37,7 @@ export interface DriveStep {
  * A card in the horizontally-scrolled drives rail (`DrivesRail.tsx`).
  *
  * These are illustrative sample drives, not live data — there is no
- * "list public drives" endpoint in `MilanApi.ts`/`ApiEndpoints.ts` today
+ * "list public drives" endpoint in `KarmaCircleApi.ts`/`ApiEndpoints.ts` today
  * (see SPEC.md). Amounts are pre-formatted strings, including the currency
  * symbol, because the samples deliberately span countries; `percent` is
  * the single numeric field since it's the one the progress bar animates.

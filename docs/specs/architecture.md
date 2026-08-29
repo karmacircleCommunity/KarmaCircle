@@ -46,7 +46,6 @@ There is no `/donate` route registered anywhere, even though `apps/web/src/featu
 - `vite.config.mjs` configures the path aliases (see [README.md](./README.md)), dev server (`port: 3000`, `host: true`, `usePolling: true` for the watcher — relevant in Docker/WSL setups), and `vite-plugin-pwa` with a `CacheFirst` runtime-caching strategy for Google Fonts and image files.
 - Environment variables are read via `import.meta.env.*` and must be prefixed `VITE_`.
   The two names actually read in code are `VITE_API_URL` (base URL for every backend call) and `VITE_RAZORPAY_KEY_ID` (see [donate-shop-trending.md](./donate-shop-trending.md)).
-  `apps/web/.env.example` documents `VITE_MILANAPI` instead of `VITE_API_URL` — that's a stale variable name; see [known-issues.md](./known-issues.md).
 - `eslint.config.js` and `.prettierrc` define lint/format rules; `husky` + `lint-staged` run `eslint --fix` and `prettier --write` on staged `.js`/`.jsx`/`.ts`/`.tsx` files pre-commit.
 - `commitlint.config.js` enforces Conventional Commits via a husky `commit-msg` hook.
 
@@ -77,12 +76,12 @@ apps/web/src/
     dashboard/                 — Dashboard page, ProfileSection, TrackSection
     organizations/                     — Organizations page, OrganizationCard, Organizations.ts fetcher
     events/                    — Events/DetailedEvent pages, event cards, CreateEvent(s), useEvent
-    landing-home/               — Home page, Landing hero, MilanInfoBanner
+    landing-home/               — Home page, Landing hero
     donate-shop-trending/      — Donate page + PaymentGateway.ts (Razorpay); the Shop and Trending pages were deleted
     error-handling/            — Error404 (rebuilt August 2026), Test pages
   components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, ScrollProgress, BacktoTop, ComponentHelmet, ClickAwayListener
   hooks/                       — cross-cutting hooks used by 2+ features (useSectionReveal, useMagnetic, useReducedMotion — the shared motion layer, see ui-kit.md#motion)
-  services/                    — MilanApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
+  services/                    — KarmaCircleApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
   statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts)
   utils/                       — cross-cutting helpers used by 2+ features (toasts, fetcher, connectivity check)
   styles/                      — Tailwind entry point + hand-written global CSS (index.css), plus App.css
@@ -92,5 +91,5 @@ apps/web/src/
 Inside a feature folder, only the needed subfolders exist — e.g. `organizations/` has no `hooks/`, `donate-shop-trending/` has no `components/`.
 A file only lives at the top level (`components/`, `services/`, `utils/`) when more than one feature actually imports it; single-consumer helpers moved into that consumer's feature folder even if they were previously top-level.
 
-Two backend-call layers coexist: `apps/web/src/services/MilanApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.js` / `services/Events.js` fetchers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`, only used by `getOrganizations`/`getEvents`).
+Two backend-call layers coexist: `apps/web/src/services/KarmaCircleApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.js` / `services/Events.js` fetchers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`, only used by `getOrganizations`/`getEvents`).
 See [api-integration.md](./api-integration.md) for which one each feature actually uses.

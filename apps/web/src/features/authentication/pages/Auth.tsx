@@ -1,79 +1,27 @@
 // Import statements
 import { UserType } from "@/types/user";
 import { Button } from "@components";
+import {
+  RequiredMark,
+  inputClasses,
+} from "@features/authentication/components/AuthFieldKit";
 import AuthLayout from "@features/authentication/components/AuthLayout";
 import { useAuth } from "@features/authentication/hooks/useAuth";
 import type { AuthErrors, Credentials } from "@features/authentication/types";
 import { AuthType } from "@features/authentication/types";
-import { validateEmail } from "@features/authentication/utils/validateEmail";
-import { CheckEmailExists, GoogleAuth } from "@services/MilanApi";
 import {
-  authTypeOptions,
-  nameRegex,
-  passwordRegex,
-  STATUSCODE,
-} from "@statics/Constants";
+  PASSWORD_STRENGTH_META,
+  getPasswordStrength,
+} from "@features/authentication/utils/passwordStrength";
+import { validateEmail } from "@features/authentication/utils/validateEmail";
+import { CheckEmailExists, GoogleAuth } from "@services/KarmaCircleApi";
+import { authTypeOptions, nameRegex, STATUSCODE } from "@statics/Constants";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
-import { useLocation } from "react-router-dom";
-
-const inputClasses =
-  "w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 font-outfit text-body text-ink transition placeholder:text-[14px] placeholder:text-gray-500 focus:border-[var(--auth-accent)] focus:ring-2 focus:ring-[var(--auth-accent)]/15 focus:outline-none disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-500";
-
-// Every field a step asks the user to actually fill in is mandatory — this
-// asterisk is purely a visual "required" cue next to the label, not tied to
-// HTML's own `required` attribute/validation, which the form already
-// handles itself via `errors` + each step's submit gate. Never shown next
-// to the disabled, already-answered email field on steps 2/3.
-const RequiredMark = () => (
-  <span className="ml-0.5 align-top text-xs text-red-500" aria-hidden="true">
-    *
-  </span>
-);
-
-type PasswordStrength = "weak" | "medium" | "strong";
-
-// Live strength read, purely a UX hint — the actual pass/fail gate on
-// submit is still `passwordRegex` alone (useAuth.ts). "weak" here means
-// "doesn't even meet that minimum yet"; a password can only be "medium"
-// or "strong" once it already does.
-function getPasswordStrength(password: string): PasswordStrength | null {
-  if (!password) {
-    return null;
-  }
-  if (!passwordRegex.test(password)) {
-    return "weak";
-  }
-  const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
-  return password.length >= 12 && hasSpecialChar ? "strong" : "medium";
-}
-
-const PASSWORD_STRENGTH_META: Record<
-  PasswordStrength,
-  { label: string; barColor: string; textColor: string; barWidth: string }
-> = {
-  weak: {
-    label: "Weak",
-    barColor: "bg-red-500",
-    textColor: "text-red-500",
-    barWidth: "w-1/3",
-  },
-  medium: {
-    label: "Medium",
-    barColor: "bg-amber-500",
-    textColor: "text-amber-600",
-    barWidth: "w-2/3",
-  },
-  strong: {
-    label: "Strong",
-    barColor: "bg-green-600",
-    textColor: "text-green-600",
-    barWidth: "w-full",
-  },
-};
+import { Link, useLocation } from "react-router-dom";
 
 // One flow, three steps, no separate "Sign In"/"Sign Up" pages:
 //   "email"  — pick individual/organization, enter email, Continue.
@@ -348,11 +296,12 @@ const Auth = () => {
                   Password
                   <RequiredMark />
                 </label>
-                {/* Not a link — there's no forgot-password route in this
-                    app yet. */}
-                <span className="font-outfit text-sm text-gray-400">
+                <Link
+                  to="/auth/forgot-password"
+                  className="font-outfit text-sm text-gray-500 transition-colors hover:text-ink"
+                >
                   Forgot password?
-                </span>
+                </Link>
               </div>
               <div className="relative">
                 <input

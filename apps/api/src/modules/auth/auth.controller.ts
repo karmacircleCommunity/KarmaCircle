@@ -12,6 +12,8 @@ import {
 } from "./auth.cookies";
 import {
   CheckEmailInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
   SigninInput,
   SignupInput,
   UpdatePasswordInput,
@@ -65,6 +67,30 @@ export async function updatePassword(req: Request, res: Response) {
   res
     .status(STATUS_CODE.CREATED)
     .json({ message: STATUS_MESSAGE.PASSWORD_UPDATE_SUCCESS });
+}
+
+/**
+ * Always responds 200 with the same generic message, whether or not
+ * `email` actually has an account — authService.requestPasswordReset
+ * resolves identically either way. See that function's own doc comment
+ * for why this isn't a new "does this email exist" leak.
+ */
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body as ForgotPasswordInput;
+  await authService.requestPasswordReset(email);
+
+  res
+    .status(STATUS_CODE.OK)
+    .json({ message: STATUS_MESSAGE.PASSWORD_RESET_EMAIL_SENT });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, newPassword } = req.body as ResetPasswordInput;
+  await authService.resetPassword(token, newPassword);
+
+  res
+    .status(STATUS_CODE.OK)
+    .json({ message: STATUS_MESSAGE.PASSWORD_RESET_SUCCESS });
 }
 
 export function googleInitiate(req: Request, res: Response) {

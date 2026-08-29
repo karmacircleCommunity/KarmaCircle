@@ -21,6 +21,16 @@ const envSchema = z.object({
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
 
+  // Same lazy-optional pattern as Razorpay above: config/mailer.ts builds
+  // the Resend client lazily and throws a 503 AppError if a request that
+  // actually needs to send an email (POST /auth/forgot-password) reaches
+  // it without this set, rather than blocking the whole API from booting.
+  RESEND_API_KEY: z.string().optional(),
+  // Falls back to Resend's own onboarding@resend.dev test sender if unset
+  // — fine for local dev, but any real deploy should set a verified
+  // sending address. See config/mailer.ts.
+  RESEND_FROM_EMAIL: z.string().optional(),
+
   ORIGIN_URL: z.string().min(1, "ORIGIN_URL is required"),
   ORIGIN_DOMAIN: z.string().min(1, "ORIGIN_DOMAIN is required"),
   IGNORE_ORIGINS: z

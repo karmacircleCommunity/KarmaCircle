@@ -21,8 +21,16 @@ import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRe
 // to one canonical route) so existing links/bookmarks to either still
 // work.
 const Auth = lazy(() => import("@features/authentication/pages/Auth"));
+const ForgotPassword = lazy(
+  () => import("@features/authentication/pages/ForgotPassword"),
+);
+const ResetPassword = lazy(
+  () => import("@features/authentication/pages/ResetPassword"),
+);
 
 const ProtectedAuth = DonotRenderWhenLoggedIn(Auth);
+const ProtectedForgotPassword = DonotRenderWhenLoggedIn(ForgotPassword);
+const ProtectedResetPassword = DonotRenderWhenLoggedIn(ResetPassword);
 
 export interface RouteConfigEntry {
   path: string;
@@ -38,6 +46,16 @@ const routesConfig: RouteConfigEntry[] = [
   {
     path: "/auth/signin",
     element: <ProtectedAuth />,
+  },
+  {
+    path: "/auth/forgot-password",
+    element: <ProtectedForgotPassword />,
+  },
+  // :token is the raw, single-use reset token from the emailed link —
+  // see features/authentication/pages/ResetPassword.tsx.
+  {
+    path: "/auth/reset-password/:token",
+    element: <ProtectedResetPassword />,
   },
   { path: "/user/:userName", element: <Profile /> },
   { path: "/organizations", element: <Organizations /> },

@@ -1,22 +1,22 @@
 # Authentication — Feature Spec
 
-Colocated, implementation-level companion to [docs/specs/authentication.md](../../../docs/specs/authentication.md).
+Colocated, implementation-level companion to [docs/specs/authentication.md](../../../../../docs/specs/authentication.md).
 That file is the short cross-feature summary meant to be read alongside the other features; this file is the deep reference meant to be read by an AI agent that is about to edit code inside `src/features/authentication/`.
-Read [docs/specs/state-management.md](../../../docs/specs/state-management.md) and [docs/specs/api-integration.md](../../../docs/specs/api-integration.md) first if you haven't — this feature is the primary writer of Redux user state and a primary caller of the auth endpoints described there.
-Read [docs/specs/known-issues.md](../../../docs/specs/known-issues.md) too; several items below are duplicated from it on purpose so this file is self-contained.
+Read [docs/specs/state-management.md](../../../../../docs/specs/state-management.md) and [docs/specs/api-integration.md](../../../../../docs/specs/api-integration.md) first if you haven't — this feature is the primary writer of Redux user state and a primary caller of the auth endpoints described there.
+Read [docs/specs/known-issues.md](../../../../../docs/specs/known-issues.md) too; several items below are duplicated from it on purpose so this file is self-contained.
 
 ## What this feature is responsible for
 
-Everything involved in turning an anonymous visitor into a session with a `Token` cookie and a populated Redux `user` slice: the unified sign-in/sign-up form, Google OAuth kickoff, the client-side field validation that runs before either path's network call, and the route guard that keeps an already-authenticated visitor off `/auth/signin` and `/auth/signup`.
+Everything involved in turning an anonymous visitor into a session with a `Token` cookie and a populated Redux `user` slice: the unified sign-in/sign-up form, the forgot-password/reset-password flow, Google OAuth kickoff, the client-side field validation that runs before any of these paths' network calls, and the route guard that keeps an already-authenticated visitor off `/auth/signin`, `/auth/signup`, `/auth/forgot-password`, and `/auth/reset-password/:token`.
 Logout is **not** owned by this feature — there is no `useLogout` hook or logout button here.
-`Logout()` (the API call) lives in `src/services/MilanApi.ts` and is invoked from three other features (`components/Navbar.tsx`, `features/onboarding-profile/pages/Profile.tsx`, `features/onboarding-profile/pages/UserProfile.tsx`) with three slightly different cleanup sequences — see [state-management.md](../../../docs/specs/state-management.md).
+`Logout()` (the API call) lives in `src/services/KarmaCircleApi.ts` and is invoked from three other features (`components/Navbar.tsx`, `features/onboarding-profile/pages/Profile.tsx`, `features/onboarding-profile/pages/UserProfile.tsx`) with three slightly different cleanup sequences — see [state-management.md](../../../../../docs/specs/state-management.md).
 If you're asked to fix or centralize logout, you'll be working outside this folder.
 
 ## Why it's shaped this way
 
 The backend ([apps/api](../../../../../apps/api), this repo's other app) is the actual source of truth for whether credentials are valid; client-side validation here exists purely to reduce round-trips for obviously-bad input (empty fields, malformed email, weak password) and to give inline field-level feedback rather than a single toast.
 
-As of the unified-auth-flow change (August 2026), there is exactly **one** live auth page, `pages/Auth.tsx`, instead of separate `SignIn.tsx`/`SignUp.tsx` pages — see "One unified flow, two entry routes" in [docs/specs/authentication.md](../../../docs/specs/authentication.md) for the product rationale (the visitor shouldn't have to know or say up front whether they already have an account; the app checks their email and routes them itself).
+As of the unified-auth-flow change (August 2026), there is exactly **one** live auth page, `pages/Auth.tsx`, instead of separate `SignIn.tsx`/`SignUp.tsx` pages — see "One unified flow, two entry routes" in [docs/specs/authentication.md](../../../../../docs/specs/authentication.md) for the product rationale (the visitor shouldn't have to know or say up front whether they already have an account; the app checks their email and routes them itself).
 The codebase still carries two competing *validation* designs — a minimal one wired into `Auth.tsx` (`useAuth.ts`) and a much fuller one that never got wired in (`useValidation.ts` + `useFormLogic.ts`, see below) — which is the most important thing to understand before touching this folder beyond the page itself: **there are two parallel, non-interoperating auth-validation systems here, and only one of them runs in production.**
 Do not assume both are exercised by any given change.
 
@@ -28,23 +28,27 @@ Do not assume both are exercised by any given change.
 | `hooks/useAuth.ts` | The validator + submit handler `Auth.tsx` calls for the final `"signin"`/`"signup"` step submit | ✅ yes |
 | `hooks/useValidation.ts` | Fuller, unused validator (individual + organization shapes) | ❌ no |
 | `hooks/useFormLogic.ts` | Unused generic submit-handler hook built on `useValidation.ts`; also the only place `individualInitialFormState`/`organizationInitialFormState` are defined | ❌ no |
-| `utils/validateEmail.ts` | The single email-format check (`validateEmail(email)`) shared by `Auth.tsx` and `useAuth.ts` — wraps `emailRegex` from `static/Constants.ts` | ✅ yes |
-| `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `Auth` (both routes) in `routesConfig.tsx` | ✅ yes |
-| `components/AuthLayout.tsx` | Auth's half of the shared page shell: the left panel's value props and the `--auth-accent` CSS vars. The frame itself (dark panel, cream form surface, wordmark placement, the 900px breakpoint where the left panel drops) is `@components/layouts/SplitPanelLayout`, shared with organization setup. `Auth.tsx` passes whichever step's form is current as `children`. Its root `<div>` also carries an `auth-page` class, which `styles/index.css` uses to scope the autofill-background override below. | ✅ yes |
+| `pages/ForgotPassword.tsx` | Step 1 of the reset flow — email field, calls `ForgotPassword()` (`KarmaCircleApi.ts`), always shows the same "check your inbox" confirmation regardless of whether the email had an account | ✅ yes — routed at `/auth/forgot-password` |
+| `pages/ResetPassword.tsx` | Step 2 of the reset flow, opened from the emailed link — reads the raw token from the `:token` route param, new-password + confirm-password fields, calls `ResetPassword()` (`KarmaCircleApi.ts`) | ✅ yes — routed at `/auth/reset-password/:token` |
+| `utils/validateEmail.ts` | The single email-format check (`validateEmail(email)`) shared by `Auth.tsx`, `useAuth.ts`, and `ForgotPassword.tsx` — wraps `emailRegex` from `static/Constants.ts` | ✅ yes |
+| `utils/passwordStrength.ts` | `getPasswordStrength()` + `PASSWORD_STRENGTH_META`, the live password-strength meter logic — shared by `Auth.tsx`'s `"signup"` step and `ResetPassword.tsx` (extracted out of `Auth.tsx` when `ResetPassword.tsx` needed the identical meter, so the two can't drift) | ✅ yes |
+| `components/AuthFieldKit.tsx` | `inputClasses` (the shared text-input Tailwind class string) + `RequiredMark` (the label asterisk) — shared by all three live pages so their fields can't visually drift apart | ✅ yes |
+| `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `Auth`, `ForgotPassword`, and `ResetPassword` in `routesConfig.tsx` | ✅ yes |
+| `components/AuthLayout.tsx` | Auth's half of the shared page shell: the left panel's value props and the `--auth-accent` CSS vars. The frame itself (dark panel, cream form surface, wordmark placement, the 900px breakpoint where the left panel drops) is `@components/layouts/SplitPanelLayout`, shared with organization setup. `Auth.tsx`/`ForgotPassword.tsx`/`ResetPassword.tsx` each pass their current form as `children`. Its root `<div>` also carries an `auth-page` class, which `styles/index.css` uses to scope the autofill-background override below. | ✅ yes |
 | `components/AuthButton.tsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
 | `components/RenderErrorMessage.tsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
-| `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (`Auth.tsx` inlines its own toggle logic instead) |
-| `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
+| `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (`Auth.tsx`/`ResetPassword.tsx` inline their own toggle logic instead) |
+| `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState`/`ForgotPasswordPayload`/`ResetPasswordPayload` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
 
-Five of the nine non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
-Per [known-issues.md](../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller organization-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live page at all today, and this scaffolding is the closest thing to a spec for it.
+Five of the fourteen non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
+Per [known-issues.md](../../../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller organization-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live page at all today, and this scaffolding is the closest thing to a spec for it.
 
 ## Types
 
 This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+organizations conversion pass — see `tsconfig.json` at the repo root.
-`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), `Auth.tsx`'s `Credentials`/`AuthErrors` shapes, and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`OrganizationFormState`/`SignupFormState` shapes.
+`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), `Auth.tsx`'s `Credentials`/`AuthErrors` shapes, `ForgotPasswordPayload`/`ResetPasswordPayload` (the request bodies `ForgotPassword()`/`ResetPassword()` in `KarmaCircleApi.ts` send — `ResetPassword.tsx` builds a `ResetPasswordPayload`-shaped object locally rather than importing the type there, since `KarmaCircleApi.ts` is shared code and shouldn't import a feature-specific type back), and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`OrganizationFormState`/`SignupFormState` shapes.
 `UserType` (the `"individual" | "organization"` enum) and `AuthTypeOption` (the react-select option shape) live in `src/types/user.ts` instead, since `organizations` needs `UserType` too.
-This feature's shared dependencies are all typed directly now, following the app shell and shared-layer conversion passes (see `docs/specs/architecture.md#typescript`): `src/statics/Constants.ts` (`authTypeOptions` types as `AuthTypeOption[]`), `src/utils/Toasts.ts`/`CheckInternetConnection.ts`, `src/services/MilanApi.ts`, the shared `Button` component, and the Redux `userSlice.ts`/Zustand `useAuth.ts` store.
+This feature's shared dependencies are all typed directly now, following the app shell and shared-layer conversion passes (see `docs/specs/architecture.md#typescript`): `src/statics/Constants.ts` (`authTypeOptions` types as `AuthTypeOption[]`), `src/utils/Toasts.ts`/`CheckInternetConnection.ts`, `src/services/KarmaCircleApi.ts`, the shared `Button` component, and the Redux `userSlice.ts`/Zustand `useAuth.ts` store.
 
 ## `pages/Auth.tsx`
 
@@ -61,9 +65,9 @@ Default export, function component, no props (rendered directly by the router �
 
 **Step `"email"`:** heading "Welcome to KarmaCircle"; a `role="tablist"` pair (Individual/Organization, `setUserType`) identical in markup to the old `SignUp.tsx` step 1's tabs; an email input; a Continue button (`disabled={!credentials.email || !isEmailFormatValid || checkingEmail}`, `isLoading={checkingEmail}`); an "or" divider; a "Continue with Google" button (`handleGoogle`, passes `credentials.userType?.value` the same way the old `SignUp.tsx` did). Google is rendered **only** on this step — it's a parallel entry point, not something that belongs layered onto a password or name field the visitor is already committed to.
 
-Submitting this step (`handleContinue`) runs, in order: `validateEmail()` (sets `errors.email` and stops on failure) → `CheckEmailExists(credentials.email)` (`MilanApi.ts`) with `checkingEmail` toggling around it → if `response.status === STATUSCODE.OK && response.data?.exists`, `setStep("signin")`; otherwise (including a failed/unreachable check — fails open, same reasoning the old `SignUp.tsx` step 1 used) `setStep("signup")`.
+Submitting this step (`handleContinue`) runs, in order: `validateEmail()` (sets `errors.email` and stops on failure) → `CheckEmailExists(credentials.email)` (`KarmaCircleApi.ts`) with `checkingEmail` toggling around it → if `response.status === STATUSCODE.OK && response.data?.exists`, `setStep("signin")`; otherwise (including a failed/unreachable check — fails open, same reasoning the old `SignUp.tsx` step 1 used) `setStep("signup")`.
 
-**Step `"signin"`:** a Back button (`← Back`, `handleBack`) above the heading; heading "Enter your password"; the email input, `value={credentials.email}`, `disabled`; a password input (`autoComplete="current-password"`) with the show/hide eye icon and the same inert "Forgot password?" text the old `SignIn.tsx` had (no forgot-password route exists yet); a "Sign In" button (`disabled={loading || !credentials.password}`). No "Sign up instead" link — landing here already means the app determined this email has an account, so there's nothing to choose.
+**Step `"signin"`:** a Back button (`← Back`, `handleBack`) above the heading; heading "Enter your password"; the email input, `value={credentials.email}`, `disabled`; a password input (`autoComplete="current-password"`) with the show/hide eye icon and a "Forgot password?" `Link` to `/auth/forgot-password` (a real link now — see `pages/ForgotPassword.tsx` below; it used to be inert `<span>` text with no route to point at); a "Sign In" button (`disabled={loading || !credentials.password}`). No "Sign up instead" link — landing here already means the app determined this email has an account, so there's nothing to choose.
 
 **Step `"signup"`:** same Back button; heading swaps on `isIndividual` ("What's your name?" / "What's your organization called?"), which reads `credentials.userType` set back on the `"email"` step; the disabled, pre-filled email input; a name input (letters/spaces-only sanitization on every keystroke, same as old `SignUp.tsx` step 2); a password input with the live strength meter (`getPasswordStrength`, same file); a "Sign Up" button (`disabled={loading || !credentials.password || !credentials.name}`). No "Log in instead" link for the same reason as above.
 
@@ -89,12 +93,42 @@ Unchanged by the unified-flow change except for who calls it and how `authType` 
    - `authType === "signup"`: checks `credentials.password` against `passwordRegex` from `static/Constants.ts` — `` /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/ ``, requiring 8+ characters, at least one digit, one lowercase, one uppercase letter. On failure: `setErrors`, field `password`, then return.
    Either branch short-circuits before any network call on failure.
 4. **Sets `loading = true`**, then calls exactly one of:
-   - `LoginUser(credentials)` (`MilanApi.ts`, `POST /auth/signin`, `withCredentials: true`) when `authType === "signin"`.
-   - `RegisterUser({ ...credentials, userType: credentials.userType.value })` (`MilanApi.ts`, `POST /auth/signup`, `withCredentials: true`) when `authType === "signup"` — `userType` is unwrapped from its `react-select` `{value, label}` shape into a bare string **only here**.
+   - `LoginUser(credentials)` (`KarmaCircleApi.ts`, `POST /auth/signin`, `withCredentials: true`) when `authType === "signin"`.
+   - `RegisterUser({ ...credentials, userType: credentials.userType.value })` (`KarmaCircleApi.ts`, `POST /auth/signup`, `withCredentials: true`) when `authType === "signup"` — `userType` is unwrapped from its `react-select` `{value, label}` shape into a bare string **only here**.
 5. **On `response.status === 200 || 201`:** `showSuccessToast(response?.data?.message)`, then `dispatch(updateUserData({ ...response.data.user, isLoggedIn: true }))`. Then, after a **fixed 1000ms `setTimeout`**, `navigate("/")` and `setLoading(false)`.
 6. **Otherwise:** `showErrorToast(response?.data?.message)`, `setLoading(false)`. Maps a Zod-shaped `response.data.errors` array's `email`/`password` entries onto `setErrors`, and on `authType === "signup"` specifically, maps an exact `USER_ALREADY_EXISTS` message onto `errors.email` too (this is what triggers `Auth.tsx`'s step-revert effect above).
 
 `useAuth` does not distinguish "email already exists" from "wrong password" from "server error" at the hook level — whatever `response?.data?.message` the backend sent is shown verbatim in the toast; there's no client-side mapping to friendlier copy.
+
+## `pages/ForgotPassword.tsx` — reset flow, step 1
+
+Default export, function component, no props, routed at `/auth/forgot-password` (wrapped in `DonotRenderWhenLoggedIn`, same as `Auth`). Reached from `Auth.tsx`'s `"signin"` step's "Forgot password?" link.
+
+**Local state:** `email`, `error` (single string, this page has exactly one field), `loading`, `submitted` (boolean — swaps the form for a confirmation message once the request has gone through).
+
+**Submit (`handleSubmit`):** `validateEmail(email)` (same shared util `Auth.tsx` uses) → on failure, `setError` and stop, no network call. Otherwise `ForgotPassword(email)` (`KarmaCircleApi.ts`, `POST /auth/forgot-password`, no `withCredentials` — this endpoint sets no cookie). On `response.status === STATUSCODE.OK`, sets `submitted = true` regardless of whether the email actually had an account — the backend's response is deliberately identical either way (see `apps/api/docs/specs/auth.md`), and this page mirrors that rather than branching on it. On any other status, shows `response?.data?.message` as an inline field error (a malformed email past client validation, a `429` from `authLimiter`, or a `503` if the backend's Resend integration isn't configured — see that same spec).
+
+**Confirmation view:** once `submitted`, replaces the form with "Check your inbox" copy naming the email that was submitted and the 1-hour expiry window. No auto-redirect — the visitor is expected to go check their email, not stay on this page.
+
+A "← Back to sign in" link (`/auth/signin`) sits above both the form and the confirmation view.
+
+## `pages/ResetPassword.tsx` — reset flow, step 2
+
+Default export, function component, no props, routed at `/auth/reset-password/:token` (wrapped in `DonotRenderWhenLoggedIn`). Only ever reached by following the link `apps/api`'s `requestPasswordReset` emails — `:token` is read via `useParams()`, never typed in by a visitor.
+
+**Local state:** `newPassword`, `confirmPassword`, `errors` (`{ newPassword?, confirmPassword?, token? }` — `token` doubles as the "this whole attempt failed" slot, rendered as a banner above the form rather than under a specific field, since an invalid/expired token isn't about either password field), `showPassword`, `loading`, `succeeded`.
+
+**Submit (`handleSubmit`):** `passwordRegex.test(newPassword)` (same rule `useAuth.ts`'s `"signup"` branch uses) → on failure, `errors.newPassword`, stop. `newPassword !== confirmPassword` → `errors.confirmPassword`, stop. Neither check makes a network call. Otherwise `ResetPassword({ token, newPassword })` (`KarmaCircleApi.ts`, `POST /auth/reset-password`). On `STATUSCODE.OK`: `showSuccessToast`, `succeeded = true`, then a **1500ms `setTimeout`** navigates to `/auth/signin` (deliberately longer than `useAuth.ts`'s 1000ms — this page's success state is a full-sentence confirmation, not just a toast, so it gets a beat longer on screen before the redirect). On `STATUSCODE.BAD_REQUEST` (invalid/expired/already-used token — see `apps/api/docs/specs/auth.md`): `errors.token` is set from the backend's message, rendered in the banner alongside a "Request a new link" link back to `/auth/forgot-password`. Any other status falls into the same `errors.token` banner with a generic message.
+
+Renders the same live password-strength meter as `Auth.tsx`'s `"signup"` step (`getPasswordStrength`/`PASSWORD_STRENGTH_META`, now shared via `utils/passwordStrength.ts` — see below), under the "New password" field only, plus a second, unmeddled "Confirm new password" field. `Auth.tsx`'s own signup step still has no confirm-password field; this page adds one specifically because a mistyped brand-new password here has no immediate way to notice (there's no existing password to double against, and the "fix" is having to request an entirely new reset link) — a UX gap the signup step doesn't share, since a mistyped signup password just fails the next sign-in attempt.
+
+## `utils/passwordStrength.ts` — the shared password-strength meter
+
+`getPasswordStrength(password)` and `PASSWORD_STRENGTH_META` — extracted out of `Auth.tsx` (where this logic used to live inline) once `ResetPassword.tsx` needed the exact same meter, so the two pages read from one definition instead of two copies that could drift. Both still treat this purely as a UX hint layered over `passwordRegex` (`static/Constants.ts`) — the real pass/fail gate is always the regex check each page's own submit handler runs (`useAuth.ts` for `Auth.tsx`, inline in `ResetPassword.tsx`'s `handleSubmit`), not this function.
+
+## `components/AuthFieldKit.tsx` — the shared field styling
+
+`inputClasses` (the Tailwind class string every text/password `<input>` across `Auth.tsx`/`ForgotPassword.tsx`/`ResetPassword.tsx` uses) and `RequiredMark` (the small red-asterisk span rendered after a required field's label) — extracted out of `Auth.tsx` for the same reason as `passwordStrength.ts` above: once two more pages needed the identical input styling, keeping one copy became worth it over three that could quietly diverge.
 
 ## `hooks/useValidation.ts` + `hooks/useFormLogic.ts` — the unused, fuller system
 
@@ -111,7 +145,7 @@ Also exports `individualInitialFormState` and `organizationInitialFormState` —
 A higher-order component: `DonotRenderWhenLoggedIn(Component) → WrappedComponent`.
 Applied once to `Auth` in [routesConfig.tsx](../../../src/app/routes/routesConfig.tsx), and that one wrapped component is mounted at both `/auth/signup` and `/auth/signin`.
 Guard condition: `useSelector(selectIsLoggedIn)` alone redirects (`<Navigate to="/" />`).
-Previously also required `Cookies.get("Token")` — dropped August 2026, since that cookie is `httpOnly` for Google OAuth sessions and so can never be read here, meaning a Google-signed-in user would fail this guard and land back on the sign-in page. See [state-management.md](../../../docs/specs/state-management.md#is-the-user-logged-in--one-real-check-one-stale-outlier).
+Previously also required `Cookies.get("Token")` — dropped August 2026, since that cookie is `httpOnly` for Google OAuth sessions and so can never be read here, meaning a Google-signed-in user would fail this guard and land back on the sign-in page. See [state-management.md](../../../../../docs/specs/state-management.md#is-the-user-logged-in--one-real-check-one-stale-outlier).
 This HOC protects exactly these two routes; there is no equivalent "require login" guard anywhere in the app.
 
 ## `components/AuthButton.tsx` — unused
@@ -137,7 +171,7 @@ If you add a confirm-password field, prefer wiring these in over writing a third
 Auth.tsx step "email"
         │  Continue → handleContinue()
         │    1. validateEmail() → setErrors + stop on fail
-        │    2. CheckEmailExists(email)  [MilanApi.ts]
+        │    2. CheckEmailExists(email)  [KarmaCircleApi.ts]
         ▼
    exists? ──yes──► step "signin" (email locked in, password only)
         │
@@ -152,7 +186,7 @@ useAuth(authType).authenticateUser(credentials, setErrors)
         │  3. password: signin → non-empty check only | signup → passwordRegex (Constants.ts)
         │                → setErrors + return on fail, either way
         ▼
-LoginUser(credentials) / RegisterUser({...credentials, userType: userType.value})   [MilanApi.ts]
+LoginUser(credentials) / RegisterUser({...credentials, userType: userType.value})   [KarmaCircleApi.ts]
         │  POST /auth/signin or /auth/signup, withCredentials: true
         ▼
 response.status 200/201 ──► showSuccessToast → dispatch(updateUserData({...user, isLoggedIn:true}))
@@ -167,7 +201,7 @@ Google OAuth is a separate, parallel path that bypasses `useAuth.ts` entirely, r
 ```
 Auth.tsx step "email"  handleGoogle()
         ▼
-GoogleAuth(userType)  [MilanApi.ts, GET /auth/google]  →  window.location.href = <backend-provided URL>
+GoogleAuth(userType)  [KarmaCircleApi.ts, GET /auth/google]  →  window.location.href = <backend-provided URL>
         │   (full page navigation — leaves the React app)
         ▼
 [user authenticates with Google on the backend's redirect target]
@@ -175,12 +209,44 @@ GoogleAuth(userType)  [MilanApi.ts, GET /auth/google]  →  window.location.href
 backend redirects back to the frontend and sets an `OAuthLoginInitiated` cookie
         ▼
 Home.tsx (features/landing-home) checks that cookie on mount
-        │  if present: successCallback()  [MilanApi.ts, GET /auth/login/success]
+        │  if present: successCallback()  [KarmaCircleApi.ts, GET /auth/login/success]
         ▼
 dispatch(updateUserData(...)) + dispatch(toggleUserLogin())   ← two separate dispatches, done in Home.tsx, not here
 ```
 
 Because completion of Google OAuth is handled by `Home.tsx` (a different feature) rather than anything in this folder, **a Google sign-in only "completes" on the frontend if the user's redirect lands back on `/`** — this feature has no way to finish the OAuth handshake on its own. See [landing-home/SPEC.md](../landing-home/SPEC.md) for the other half of this flow.
+
+The forgot-password/reset-password flow is a third, separate path — reachable from `Auth.tsx`'s `"signin"` step, but not routed through `useAuth.ts` at all:
+
+```
+Auth.tsx step "signin"  "Forgot password?" Link
+        ▼
+ForgotPassword.tsx  (/auth/forgot-password)
+        │  handleSubmit(): validateEmail() → setError + stop on fail
+        ▼
+ForgotPassword(email)  [KarmaCircleApi.ts, POST /auth/forgot-password]
+        │  always the same response whether or not the email has an account
+        ▼
+status OK ──► submitted = true → "Check your inbox" confirmation (no redirect)
+        │
+        └── else ──► inline field error (response?.data?.message)
+
+[visitor opens the emailed link]
+        ▼
+ResetPassword.tsx  (/auth/reset-password/:token)
+        │  handleSubmit(): passwordRegex.test(newPassword) → errors.newPassword + stop on fail
+        │                  newPassword !== confirmPassword → errors.confirmPassword + stop on fail
+        ▼
+ResetPassword({ token, newPassword })  [KarmaCircleApi.ts, POST /auth/reset-password]
+        │
+status OK ────► showSuccessToast → succeeded = true → setTimeout 1500ms → navigate("/auth/signin")
+        │
+400 ─────────► errors.token banner (message from the backend) + "Request a new link" → /auth/forgot-password
+        │
+else ────────► errors.token banner (generic message)
+```
+
+Neither page dispatches anything to Redux or sets a cookie — resetting a password doesn't sign the visitor in, it only lets them sign in normally afterward at `/auth/signin`. See [auth.md](../../../../../apps/api/docs/specs/auth.md) for the backend half of this flow (the reset token's lifetime, single-use behavior, and why the response shape is identical for a registered vs. unregistered email).
 
 ## Field metadata: `autoComplete`, `name`, and the required-field asterisk
 
@@ -204,11 +270,13 @@ Each editable field still has a small local `RequiredMark` component (`<span cla
 - **Offline feedback is generic, not field-specific** — step 1 of `authenticateUser` shows a connectivity toast (via `checkInternetConnection()`) but never a field-level `email`/`password` error.
 - **`AuthButton.tsx` links to a nonexistent `/auth/login` route** (should be `/auth/signin`), and its `window.location.pathname`-based mode inference has no clean equivalent under the unified flow — fix both before wiring this component into a page.
 - **No server-side format check on `name`** — `signupSchema` (`apps/api`) only validates `email`/`password` and `.passthrough()`-accepts everything else, so `nameRegex` is a client-only gate; a direct API call (curl, a future non-web client) can still write a name containing digits/punctuation. Low risk today since `name` isn't used anywhere security-sensitive, but worth knowing if that changes.
+- **`ForgotPassword.tsx`/`ResetPassword.tsx` don't reuse `utils/PasswordToggle.ts`** — same pre-existing pattern as `Auth.tsx` (see above), not a new gap introduced by these pages.
 
 ## If you're asked to...
 
 - **"Fix a sign-in/sign-up bug users are hitting"** → almost certainly `hooks/useAuth.ts` or `pages/Auth.tsx`; `useValidation.ts`/`useFormLogic.ts` are not in the live path.
+- **"Fix a forgot-password/reset-password bug"** → `pages/ForgotPassword.tsx` or `pages/ResetPassword.tsx`, both self-contained (neither goes through `useAuth.ts`). See their sections above and [auth.md](../../../../../apps/api/docs/specs/auth.md) for the matching backend behavior (token lifetime, single-use, why the forgot-password response never reveals whether the email existed).
 - **"Add an organization-specific signup field" (tagline, description, address, etc.)** → the live `Auth.tsx` collects none of these today. Converge on `useValidation.ts` + `useFormLogic.ts` + `organizationInitialFormState` as the target design rather than inventing new field-handling from scratch; you'll need to actually wire `useFormLogic` into `Auth.tsx`'s `"signup"` step (or a new step) to make it live.
-- **"Standardize the password show/hide toggle"** → adopt `utils/PasswordToggle.ts` instead of leaving `Auth.tsx` with its own inline copy.
+- **"Standardize the password show/hide toggle"** → adopt `utils/PasswordToggle.ts` instead of leaving `Auth.tsx`/`ResetPassword.tsx` with their own inline copies.
 - **"Make the Google button match the shared Button style"** → `Auth.tsx` currently uses a raw `<button className="btn authpage_oauth">`, not the shared `Button` component; ui-kit.md's shared `Button` supports an `onClickfunction` prop pattern to follow if you convert it.
 - **"Centralize logout"** → out of scope for this folder; see `docs/specs/state-management.md` and the three call sites listed there.

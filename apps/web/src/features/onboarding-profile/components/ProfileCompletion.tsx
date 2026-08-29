@@ -1,5 +1,5 @@
 import useProfileCompletion from "@features/onboarding-profile/hooks/useProfileCompletion";
-import { completeProfileApiCall } from "@services/MilanApi";
+import { completeProfileApiCall } from "@services/KarmaCircleApi";
 import { showSuccessToast } from "@utils/Toasts";
 import clsx from "clsx";
 import type { ChangeEvent } from "react";

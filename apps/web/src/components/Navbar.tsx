@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { resetUserData, selectUser } from "@app/store/slices/userSlice";
 import type { RootState } from "@app/store/store";
-import { Logout } from "@services/MilanApi";
+import { Logout } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import Button from "@components/buttons/Button";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
@@ -71,7 +71,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
 
     // @ts-expect-error — pre-existing loose access into `Logout()`'s
     // response shape (catch branch returns the raw caught error, not
-    // `error.response` — see MilanApi.ts/SPEC.md); preserved as-is for
+    // `error.response` — see KarmaCircleApi.ts/SPEC.md); preserved as-is for
     // a types-only pass.
     if (data?.status === 200) {
       // @ts-expect-error — see above.

@@ -39,6 +39,17 @@ export interface IUser extends Document {
    * excluded the same way `password` is (see user.service.ts).
    */
   tokenVersion: number;
+  /**
+   * SHA-256 hash of the single-use, 1-hour-lived forgot-password token —
+   * never the raw token itself, which only ever exists in the emailed
+   * link (see auth.service.ts's requestPasswordReset/resetPassword).
+   * Cleared on a successful reset, or on any other successful password
+   * change, so a stale unused token can't outlive the password it was
+   * issued for. Never returned to a client — excluded the same way
+   * `password` is (see user.service.ts).
+   */
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -80,6 +91,8 @@ const userSchema = new Schema<IUser>(
     },
     cart: [{ id: { type: String } }],
     tokenVersion: { type: Number, default: 0 },
+    resetPasswordToken: { type: String, index: true },
+    resetPasswordExpires: { type: Date },
   },
   // Individuals and organizations live in one physical collection (see
   // below) but are split at the schema level via a Mongoose discriminator

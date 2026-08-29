@@ -7,7 +7,7 @@ When you change a feature, update its spec file in the same PR so this map stays
 
 ## What this project is
 
-KarmaCircle (package name `milan-frontend`, a holdover from the app's former "NgoWorld"/"Milan" branding) is the React frontend for a platform that connects NGOs, charities, organizations, and individual users.
+KarmaCircle (package name `karmacircle-frontend`) is the React frontend for a platform that connects NGOs, charities, organizations, and individual users.
 It talks to the backend at [apps/api](../../apps/api), this repo's other workspace, over a REST API — see [apps/api/docs/specs/README.md](../../apps/api/docs/specs/README.md) for the backend's own map.
 This directory (`docs/specs/`) covers `apps/web` only; there is no server-side code here — it is a Vite + React SPA.
 
@@ -21,7 +21,7 @@ This directory (`docs/specs/`) covers `apps/web` only; there is no server-side c
 - **`@tanstack/react-query`**'s `QueryClientProvider` wraps the whole app but is not actually used by any query hooks yet — see [known-issues.md](./known-issues.md).
 - **MUI** (`@mui/material`, `@mui/x-date-pickers`) for the event-creation date/time pickers and a few form controls.
 - **Tailwind CSS v4** for all component styling (via `@tailwindcss/vite`), plus a small amount of hand-written global CSS in `apps/web/src/styles/index.css` for things Tailwind's class scanner can't reach — react-select/MUI-generated class names, a `<input type="radio">`-driven pseudo-element toggle switch, and Bootstrap's `.container` replicated for a few not-yet-Tailwind files. See [ui-kit.md](./ui-kit.md).
-- **Cypress** for end-to-end tests (`cypress/e2e/milanTest.spec.js`), currently a minimal smoke test.
+- **Cypress** for end-to-end tests (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`).
 
 ## Folder structure
 
@@ -64,13 +64,13 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 |---|---|
 | [architecture.md](./architecture.md) | App shell, routing table, providers, build config |
 | [state-management.md](./state-management.md) | Redux store/slice, Zustand store, redux-persist, cookies |
-| [api-integration.md](./api-integration.md) | Every way the frontend talks to the backend: `MilanApi.ts`, `integrations/*`, `ApiConnector`, SWR fetchers |
+| [api-integration.md](./api-integration.md) | Every way the frontend talks to the backend: `KarmaCircleApi.ts`, `integrations/*`, `ApiConnector`, SWR fetchers |
 | [authentication.md](./authentication.md) | Sign in, sign up, Google OAuth, logout, route guarding, password/email validation |
 | [onboarding-profile.md](./onboarding-profile.md) | Post-signup profile completion, profile editing, the public Profile/UserProfile pages |
 | [dashboard.md](./dashboard.md) | The logged-in organization/org dashboard |
 | [organizations.md](./organizations.md) | The Organizations directory, `OrganizationCard`, and the public organization profile at `/organization/:userName` |
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
-| [landing-home.md](./landing-home.md) | Home page, marketing Landing hero, `MilanInfoBanner` |
+| [landing-home.md](./landing-home.md) | Home page, marketing Landing hero |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |
 | [ui-kit.md](./ui-kit.md) | Shared `Button`, `AuthButton`, card components, and the styling conventions behind them |
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay); the Shop and Trending placeholder pages were deleted |

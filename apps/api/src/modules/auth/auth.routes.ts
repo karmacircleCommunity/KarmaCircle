@@ -7,6 +7,8 @@ import { asyncHandler } from "../../utils/async-handler";
 import * as authController from "./auth.controller";
 import {
   checkEmailSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   signinSchema,
   signupSchema,
   updatePasswordSchema,
@@ -123,6 +125,59 @@ router.post(
   authLimiter,
   validate(updatePasswordSchema),
   asyncHandler(authController.updatePassword),
+);
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset link by email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email }
+ *     responses:
+ *       200:
+ *         description: Always returns the same generic message, whether or not the email has an account
+ */
+router.post(
+  "/forgot-password",
+  authLimiter,
+  validate(forgotPasswordSchema),
+  asyncHandler(authController.forgotPassword),
+);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset a password using the token from a forgot-password email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, newPassword]
+ *             properties:
+ *               token: { type: string }
+ *               newPassword: { type: string, minLength: 5 }
+ *     responses:
+ *       200: { description: Password reset, every existing session invalidated }
+ *       400: { description: Token is invalid, expired, or already used }
+ */
+router.post(
+  "/reset-password",
+  authLimiter,
+  validate(resetPasswordSchema),
+  asyncHandler(authController.resetPassword),
 );
 
 /**

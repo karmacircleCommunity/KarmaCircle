@@ -83,29 +83,57 @@ describe("An organization signing up and going live", () => {
     cy.get('[data-cy="gate-resume"]').click();
     cy.url().should("include", "step=about");
 
+    // ---------- Step one: four questions, one screen each ----------
+    // Q1 — the name, already filled in at signup.
+    cy.get('[data-cy="org-name"]').should("have.value", org.name);
+    cy.get('[data-cy="org-save"]').click();
+
+    // Q2 — what they do. Continue refuses to leave a required question
+    // blank: the flow can be *left* at any time, but not walked past.
+    cy.url().should("include", "q=2");
+    cy.get('[data-cy="org-save"]').click();
+    cy.url().should("include", "q=2");
+    cy.get('[data-cy="setup-required-note"]').should("be.visible");
+
     cy.get('[data-cy="org-description"]').type(
       "We clear and rebuild riverbank homes after the monsoon, and run a year-round flood-readiness drive with local schools.",
     );
-    cy.get('[data-cy="org-tag"]').select("NGO");
-    cy.get('[data-cy="org-domain-Disaster relief"]').click();
-    tour("3-setup-step-one");
+    tour("3-setup-question");
     cy.get('[data-cy="org-save"]').click();
 
-    // Continuing saved step one and moved on — leaving now would keep it.
+    // Q3 — a single-choice question, which advances on its own once
+    // answered rather than waiting for a second click on Continue.
+    cy.url().should("include", "q=3");
+    cy.get('[data-cy="org-tag-NGO"]').click();
+    cy.url({ timeout: 10000 }).should("include", "q=4");
+
+    // Q4 — the causes, and the last question of the step: this Continue is
+    // the one that saves.
+    cy.get('[data-cy="org-domain-Disaster relief"]').click();
+    cy.get('[data-cy="org-save"]').click();
+
+    // Crossing into step two is what wrote step one — leaving now would
+    // keep every answer above.
     cy.url({ timeout: 15000 }).should("include", "step=reach");
     cy.reload();
     cy.get('[data-cy="org-teamsize"]').should("be.visible");
 
     // ---------- Step two, and live ----------
     cy.get('[data-cy="org-teamsize"]').type("34");
+    cy.get('[data-cy="org-save"]').click();
+
     cy.get('[data-cy="org-city"]').type("Guwahati");
     cy.get('[data-cy="org-country"]').type("India");
+    tour("4-setup-grouped-question");
+    cy.get('[data-cy="org-save"]').click();
+
     // Typed without a scheme on purpose — the form normalizes it rather
     // than 400ing on the backend's URL validation.
     cy.get('[data-cy="org-website"]').type("riverbank.example.org");
     cy.get('[data-cy="org-contact-email"]').type(org.email);
+    cy.get('[data-cy="org-save"]').click();
+
     cy.get('[data-cy="org-funds-raised"]').type("450000");
-    tour("4-setup-step-two");
     cy.get('[data-cy="org-save"]').click();
 
     // Completing the required list publishes the organization, and the
@@ -132,9 +160,13 @@ describe("An organization signing up and going live", () => {
     cy.contains("Your events").should("be.visible");
 
     // ---------- Coming back to edit ----------
-    // A live organization skips the intro and lands on the first step.
+    // A live organization skips the intro and lands on the first question.
     cy.visit("/organization/setup");
     cy.contains("Live", { timeout: 15000 }).should("be.visible");
-    cy.get('[data-cy="org-description"]').should("be.visible");
+    cy.get('[data-cy="org-name"]').should("have.value", org.name);
+
+    // Back from the first question goes to the intro, not out of the app.
+    cy.get('[data-cy="setup-back"]').click();
+    cy.get('[data-cy="setup-start"]', { timeout: 10000 }).should("be.visible");
   });
 });

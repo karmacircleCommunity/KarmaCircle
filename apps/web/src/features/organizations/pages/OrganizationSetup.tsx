@@ -1,15 +1,19 @@
 import Button from "@components/buttons/Button";
+import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { showSuccessToast } from "@utils/Toasts";
-import AboutStep from "../components/setup/AboutStep";
-import ReachStep from "../components/setup/ReachStep";
 import SetupIntro from "../components/setup/SetupIntro";
 import SetupLayout from "../components/setup/SetupLayout";
-import { REQUIRED_LABELS } from "../constants/organizationSetup";
+import SetupQuestion from "../components/setup/SetupQuestion";
+import {
+  FIELD_CY,
+  FIELD_SPECS,
+  REQUIRED_LABELS,
+} from "../constants/organizationSetup";
 import { useOrganizationSetup } from "../hooks/useOrganizationSetup";
-import type { OrganizationSetupStepId } from "../types";
+import { outstandingFields } from "../utils/organizationSetupForm";
 
 /**
  * The organization's own setup page, routed at `/organization/setup`.
@@ -21,26 +25,35 @@ import type { OrganizationSetupStepId } from "../types";
  * (`missingRequiredFields()` in the API's organization service) and
  * publishes the record itself on the save that completes it.
  *
- * Three things this page deliberately is:
+ * Four things this page deliberately is:
  *
+ * - **One question at a time.** Every screen asks a single thing, in
+ *   sentence form, and moves with it — the same shape as a Typeform. The
+ *   long labelled form this replaced put thirteen fields on one page, which
+ *   is what made a two-minute task read as paperwork.
  * - **Optional.** A new organization lands on an intro that asks whether it
  *   wants to do this now, with "Maybe later" as a real answer. Nothing here
  *   traps the account: every screen exits to the rest of the app, and the
- *   flow can be resumed from `/organization/setup` (or the reminder on the
- *   dashboard) at any time.
- * - **Two steps, each saved on its own.** This is a lot to ask at once, so
- *   Continue saves before it advances and "Save and finish later" saves
- *   before it leaves. Nothing typed is lost by stopping.
+ *   flow can be resumed from the navbar or the setup gate at any time.
+ * - **Saved per step, not per question.** Crossing from one step to the
+ *   next writes everything answered so far. Four questions in, one PATCH.
  * - **Partial.** A half-finished save is allowed and expected — the
- *   organization simply stays in draft until the rest arrives.
+ *   organization simply stays in draft until the rest arrives. A required
+ *   question can be walked past; it says so rather than blocking.
  *
- * The pieces: `useOrganizationSetup` (state, staging, per-step save),
- * `constants/organizationSetup.ts` (the steps, as data), `SetupLayout` (the
- * shell and the progress rail) and one component per step. A third step is
- * an entry in that constant plus a component — no other file changes.
+ * The pieces: `useOrganizationSetup` (state, position, transitions,
+ * per-step save), `constants/organizationSetup.ts` (steps and questions, as
+ * data), `SetupLayout` (the shell, the rail, the progress bar) and
+ * `SetupQuestion` (one screen, rendered by kind). A new question is an
+ * entry in that constant — no other file changes.
  */
 const OrganizationSetup = () => {
   const navigate = useNavigate();
+
+  // The question a Continue was refused on. Held by id rather than as a
+  // boolean so it clears itself the moment the flow moves — there is
+  // nothing to reset, and a stale error can't follow the user forward.
+  const [blockedOn, setBlockedOn] = useState<string | null>(null);
   const {
     organization,
     taxonomy,
@@ -52,7 +65,14 @@ const OrganizationSetup = () => {
     stage,
     step,
     steps,
-    goTo,
+    question,
+    questionNumber,
+    questionCount,
+    direction,
+    leaving,
+    goToStep,
+    next,
+    back,
     saveStep,
   } = useOrganizationSetup();
 
@@ -90,19 +110,13 @@ const OrganizationSetup = () => {
     navigate("/");
   };
 
-  const goForward = async (id: OrganizationSetupStepId, index: number) => {
-    const updated = await saveStep(id);
-    if (!updated) return;
+  const advance = async () => {
+    const result = await next();
+    if (result.kind !== "finished") return;
 
-    const next = steps[index + 1];
-    if (next) {
-      goTo(next.id);
-      return;
-    }
-
-    if (updated.isLive) {
+    if (result.organization.isLive) {
       showSuccessToast("Your organization is live");
-      navigate(`/organization/${updated.handle}`);
+      navigate(`/organization/${result.organization.handle}`);
     } else {
       showSuccessToast("Saved — still a few details to go");
     }
@@ -136,7 +150,7 @@ const OrganizationSetup = () => {
     </div>
   );
 
-  if (!step) {
+  if (!step || !question) {
     return (
       <SetupLayout stage={stage} steps={steps} topBar={topBar}>
         <SetupIntro
@@ -145,16 +159,39 @@ const OrganizationSetup = () => {
           started={steps.some(
             (entry) => entry.outstanding < entry.requiredFields.length,
           )}
-          onStart={() => goTo(steps[0].id)}
+          onStart={() => goToStep(steps[0].id)}
           onLater={() => navigate("/")}
         />
       </SetupLayout>
     );
   }
 
-  const isLastStep = step.index === steps.length - 1;
-  // The server's list, not the form's — this is what actually blocks
-  // publication, and it is worth being exact about at the end of the flow.
+  // The end of the flow — the only screen whose button publishes rather
+  // than continues.
+  const isLastQuestion = questionNumber === questionCount;
+
+  // What this screen itself still needs, so the message is about the
+  // question being asked rather than about the flow as a whole.
+  const unanswered = outstandingFields(form, question.requiredFields);
+  const unansweredLabels = unanswered
+    .map((field) => FIELD_SPECS[field]?.label.toLowerCase() ?? field)
+    .join(" and ");
+
+  /**
+   * Puts the cursor back on the answer a refused Continue was about — the
+   * field itself where there is one, or the first option where the answer
+   * is a set of choices (`org-tag-NGO`, `org-domain-Shelter`, …).
+   */
+  const focusFirstAnswer = () => {
+    const handle = FIELD_CY[unanswered[0]];
+    const target =
+      document.querySelector<HTMLElement>(`[data-cy="${handle}"]`) ??
+      document.querySelector<HTMLElement>(`[data-cy^="${handle}-"]`);
+    target?.focus();
+  };
+
+  // The server's list — what actually blocks publication — shown only at
+  // the end, where "why am I still a draft?" is the live question.
   const stillMissing = organization.missingFields
     .map((field) => REQUIRED_LABELS[field])
     .filter(Boolean);
@@ -169,40 +206,114 @@ const OrganizationSetup = () => {
         />
       </Helmet>
 
-      <SetupLayout stage={stage} steps={steps} topBar={topBar}>
-        <h1 className="font-poppins text-[26px] leading-tight font-bold text-ink sm:text-3xl">
-          {step.title}
-        </h1>
-        <p className="mt-3 font-outfit text-body text-gray-600">
-          {step.subtitle}
-        </p>
-
+      <SetupLayout
+        stage={stage}
+        steps={steps}
+        topBar={topBar}
+        questionNumber={questionNumber}
+        questionCount={questionCount}
+      >
         <form
-          className="mt-8"
+          // Keyed on the question so React remounts — and therefore
+          // re-animates — the whole screen on every move, rather than
+          // diffing one headline into another in place.
+          key={question.id}
           onSubmit={(event) => {
             event.preventDefault();
-            goForward(step.id, step.index);
-          }}
-        >
-          {step.id === "about" ? (
-            <AboutStep form={form} setField={setField} taxonomy={taxonomy} />
-          ) : (
-            <ReachStep form={form} setField={setField} taxonomy={taxonomy} />
-          )}
 
-          {isLastStep && !organization.isLive && stillMissing.length > 0 && (
-            <p className="mt-8 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 font-outfit text-body text-amber-800">
-              Still needed before you can go live: {stillMissing.join(", ")}.
-              Saving now keeps everything else.
+            // The guard. Leaving the flow entirely is still free ("Save and
+            // finish later" saves whatever is filled in and goes), but
+            // walking *past* a required question isn't: an answer skipped
+            // here is one nobody would ever be prompted for again, and the
+            // organization would sit in draft with no idea which screen it
+            // was on.
+            if (unanswered.length > 0) {
+              setBlockedOn(question.id);
+              focusFirstAnswer();
+              return;
+            }
+
+            setBlockedOn(null);
+            advance();
+          }}
+          className={
+            leaving
+              ? direction === "forward"
+                ? "motion-safe:animate-question-out"
+                : "motion-safe:animate-question-out-back"
+              : direction === "forward"
+                ? "motion-safe:animate-question-in"
+                : "motion-safe:animate-question-in-back"
+          }
+        >
+          <h1 className="m-0 font-poppins text-[26px] leading-tight font-bold text-ink sm:text-[32px]">
+            {question.headline}
+            {/* On a single-field question the headline *is* the label, so
+                the required marker belongs here. Grouped questions carry
+                one per field instead (SetupQuestion.tsx). */}
+            {question.kind !== "group" &&
+              question.requiredFields.length > 0 && (
+                <span
+                  className="ml-1 align-top text-xl text-red-500"
+                  aria-hidden="true"
+                >
+                  *
+                </span>
+              )}
+          </h1>
+
+          {question.hint && (
+            <p className="mt-3 font-outfit text-body text-gray-600 sm:text-body-lg">
+              {question.hint}
             </p>
           )}
 
-          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-8">
+            <SetupQuestion
+              question={question}
+              form={form}
+              setField={setField}
+              taxonomy={taxonomy}
+              // A single-choice answer is the whole screen — asking for a
+              // second click on "Continue" to confirm it says nothing.
+              onAnswered={() => question.autoAdvance && advance()}
+            />
+
+            {/* Sits under the field it is about. It used to hang off the
+                button on the far side of the screen, where it read as a
+                warning about the button rather than a note about a blank
+                answer. Quiet until a Continue is actually refused, then it
+                turns into the reason why. */}
+            {unanswered.length > 0 && (
+              <p
+                data-cy="setup-required-note"
+                role={blockedOn === question.id ? "alert" : undefined}
+                className={`mt-3 font-outfit text-caption ${
+                  blockedOn === question.id ? "text-red-500" : "text-ink/45"
+                }`}
+              >
+                {blockedOn === question.id
+                  ? question.kind === "group"
+                    ? `Fill in ${unansweredLabels} to continue.`
+                    : "Fill this in to continue."
+                  : "Required — your profile can't go live without it."}
+              </p>
+            )}
+          </div>
+
+          {isLastQuestion &&
+            !organization.isLive &&
+            stillMissing.length > 0 && (
+              <p className="mt-8 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 font-outfit text-body text-amber-800">
+                Still needed before you can go live: {stillMissing.join(", ")}.
+                Saving now keeps everything else.
+              </p>
+            )}
+
+          <div className="mt-9 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
-              onClick={() =>
-                goTo(step.index === 0 ? "intro" : steps[step.index - 1].id)
-              }
+              onClick={back}
               data-cy="setup-back"
               className="inline-flex cursor-pointer items-center justify-center gap-1.5 border-none bg-transparent p-0 font-outfit text-body font-medium text-ink/60 transition-colors hover:text-ink sm:justify-start"
             >
@@ -217,12 +328,12 @@ const OrganizationSetup = () => {
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5 sm:w-auto"
               cypressfield="org-save"
             >
-              {isLastStep
+              {isLastQuestion
                 ? organization.isLive
                   ? "Save changes"
                   : "Save and publish"
-                : "Save and continue"}
-              {!isLastStep && <FiArrowRight aria-hidden />}
+                : "Continue"}
+              {!isLastQuestion && <FiArrowRight aria-hidden />}
             </Button>
           </div>
         </form>

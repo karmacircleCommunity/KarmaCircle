@@ -38,7 +38,7 @@ const Footer = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // No newsletter endpoint exists in MilanApi.ts/apps/api — see
+  // No newsletter endpoint exists in KarmaCircleApi.ts/apps/api — see
   // docs/specs/known-issues.md. This gives honest feedback (nothing is
   // silently swallowed) without claiming an email was actually captured,
   // rather than mirroring Profile.tsx's Subscribe button, which has no

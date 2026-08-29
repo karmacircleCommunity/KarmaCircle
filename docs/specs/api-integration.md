@@ -8,7 +8,7 @@ Everything below documents how the *frontend* calls it, not what the backend gua
 
 This is the single most important thing to know before adding a new API call: there are two different, uncoordinated ways calls are made.
 
-### Layer A — `apps/web/src/services/MilanApi.ts` (the one almost everything uses)
+### Layer A — `apps/web/src/services/KarmaCircleApi.ts` (the one almost everything uses)
 
 Plain `axios` calls (imported directly as `Axios`, not through `ApiConnector`).
 Each function catches errors and returns `error.response` (or `error` itself in a couple of functions) instead of throwing — callers must check `response?.status` rather than using `try/catch`.
@@ -22,7 +22,7 @@ Only two consumers exist: `getOrganizations()` in [Organizations.ts](../../apps/
 See [known-issues.md](./known-issues.md).
 `ApiConnector`'s dead status-600 check (`if (response.status === 400) console.error("Logout triggered due to status 600 response")`) is unreachable — `response.status === 400` never equals `600`, and axios throws (doesn't return) on 4xx/5xx by default anyway, so this branch is unreachable through the normal success path.
 
-**When adding a new call, follow Layer A's pattern** (`MilanApi.ts` + direct `axios`) unless you're specifically building on top of the existing `getOrganizations`/`getEvents` read helpers.
+**When adding a new call, follow Layer A's pattern** (`KarmaCircleApi.ts` + direct `axios`) unless you're specifically building on top of the existing `getOrganizations`/`getEvents` read helpers.
 
 ## Endpoint registry — `apps/web/src/services/ApiEndpoints.ts`
 
@@ -43,7 +43,7 @@ Note `userEndpoints.update` and `userEndpoints.updateProfile` both exist and poi
 `useSWR(key, fetcher, options)` is the dominant pattern for GET requests inside components.
 Two fetcher functions exist:
 - [apps/web/src/utils/Fetcher.ts](../../apps/web/src/utils/Fetcher.ts) — `axios.get(url, { withCredentials: true }).then(res => res.data)`. Used almost everywhere.
-- [apps/web/src/utils/fetchers/PatchFetcher.ts](../../apps/web/src/utils/fetchers/PatchFetcher.ts) — same shape but issues a PATCH. Not currently imported by any component (dead file) — SWR mutations in this app instead call the relevant `MilanApi.ts` function directly and then call `mutate()`.
+- [apps/web/src/utils/fetchers/PatchFetcher.ts](../../apps/web/src/utils/fetchers/PatchFetcher.ts) — same shape but issues a PATCH. Not currently imported by any component (dead file) — SWR mutations in this app instead call the relevant `KarmaCircleApi.ts` function directly and then call `mutate()`.
 
 SWR call sites:
 | Component | Key | Purpose |

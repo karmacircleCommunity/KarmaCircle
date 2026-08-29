@@ -12,7 +12,7 @@ import "swiper/css/pagination";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useSWR from "swr";
-import { Logout } from "@services/MilanApi";
+import { Logout } from "@services/KarmaCircleApi";
 import fetcher from "@utils/Fetcher";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 

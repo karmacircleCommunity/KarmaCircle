@@ -1,6 +1,6 @@
 # API Contract — Backend Routes vs. What the Frontend Actually Calls
 
-Every route this API exposes, cross-referenced against the frontend's endpoint constants (`apps/web/src/services/ApiEndpoints.ts`) and call sites (`apps/web/src/services/MilanApi.ts` and per-feature code). Read this before changing any route's path, method, or request/response shape — and before assuming a frontend call "just works" against this backend.
+Every route this API exposes, cross-referenced against the frontend's endpoint constants (`apps/web/src/services/ApiEndpoints.ts`) and call sites (`apps/web/src/services/KarmaCircleApi.ts` and per-feature code). Read this before changing any route's path, method, or request/response shape — and before assuming a frontend call "just works" against this backend.
 
 **Snapshot taken August 2026, from static reading of both apps — not verified by running either app end-to-end.** Treat every "works"/"broken" verdict below as a strong static-analysis claim, not a confirmed-live-tested fact; reproduce with a real request before shipping a fix that assumes one of these is correct.
 
@@ -19,6 +19,8 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 | `POST /auth/signin` | auth | no | `authEndpoints.signin` | ✅ `LoginUser()` |
 | `GET /auth/check-email` | auth | no | `authEndpoints.checkEmail` | ✅ `CheckEmailExists()` — called from `SignUp.tsx`'s step-1 "Continue" |
 | `POST /auth/update` | auth | no (email+oldPassword in body) | — | ❌ no frontend constant/call exists for this route at all |
+| `POST /auth/forgot-password` | auth | no | `authEndpoints.forgotPassword` | ✅ `ForgotPassword()` — `features/authentication/pages/ForgotPassword.tsx` |
+| `POST /auth/reset-password` | auth | no (single-use token in body) | `authEndpoints.resetPassword` | ✅ `ResetPassword()` — `features/authentication/pages/ResetPassword.tsx` |
 | `GET /auth/google` | auth | no | `authEndpoints.googleLogin` | ✅ `GoogleAuth()` |
 | `GET /auth/google/callback` | auth | Passport | — | n/a (hit by Google's redirect, not called directly by frontend code) |
 | `GET /auth/login/failed` | auth | no | — | n/a (redirect target, not called directly) |
@@ -52,7 +54,7 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 
 ### 1. `POST /user/update` vs. the frontend's `PATCH` call — **fixed**
 
-The frontend's `updateUserProfile()` ([MilanApi.ts](../../../../apps/web/src/services/MilanApi.ts)) issues `Axios.patch(userEndpoints.updateProfile, credentials, { withCredentials: true })`. This backend used to register the handler as `router.post("/update", ...)` ([user.routes.ts](../../src/modules/users/user.routes.ts)) — Express only matches the declared method, so a `PATCH` to `/user/update` fell through to `notFoundHandler` (`404`) instead of the intended controller, breaking the live "edit my profile" flow both `ProfileCompletion.tsx` and `ProfileUpdate.tsx` use. **Fixed** by changing the route to `router.patch("/update", ...)` — matches what the frontend already sends, no frontend change needed. The old `POST` registration was removed rather than kept alongside it (nothing else called it).
+The frontend's `updateUserProfile()` ([KarmaCircleApi.ts](../../../../apps/web/src/services/KarmaCircleApi.ts)) issues `Axios.patch(userEndpoints.updateProfile, credentials, { withCredentials: true })`. This backend used to register the handler as `router.post("/update", ...)` ([user.routes.ts](../../src/modules/users/user.routes.ts)) — Express only matches the declared method, so a `PATCH` to `/user/update` fell through to `notFoundHandler` (`404`) instead of the intended controller, breaking the live "edit my profile" flow both `ProfileCompletion.tsx` and `ProfileUpdate.tsx` use. **Fixed** by changing the route to `router.patch("/update", ...)` — matches what the frontend already sends, no frontend change needed. The old `POST` registration was removed rather than kept alongside it (nothing else called it).
 
 ### 1b. `POST /user/update`'s body shape didn't match the `User.address` schema — **fixed**
 
@@ -68,11 +70,11 @@ See [auth.md](./auth.md#google-oauth-flow) for the full trace. The route's contr
 
 ### 4. `PATCH /user/complete` — **fixed**
 
-The frontend's `completeProfileApiCall()` ([MilanApi.ts](../../../../apps/web/src/services/MilanApi.ts)) calls `Axios.patch(userEndpoints.completeProfile, credentials, { withCredentials: true })`, i.e. `PATCH /user/complete` — no route existed for this at all, and `config.hasCompletedProfile` (see [users.md](./users.md#the-user-model-is-shared-by-five-modules)) could never become `true` through any code path in this API. **Fixed** by adding `PATCH /user/complete` (`requireAuth`-gated, same body shape as `PATCH /user/update`), whose service layer accepts the profile fields and always sets `config.hasCompletedProfile: true` server-side on success — independent of whatever the client's body claims about that field.
+The frontend's `completeProfileApiCall()` ([KarmaCircleApi.ts](../../../../apps/web/src/services/KarmaCircleApi.ts)) calls `Axios.patch(userEndpoints.completeProfile, credentials, { withCredentials: true })`, i.e. `PATCH /user/complete` — no route existed for this at all, and `config.hasCompletedProfile` (see [users.md](./users.md#the-user-model-is-shared-by-five-modules)) could never become `true` through any code path in this API. **Fixed** by adding `PATCH /user/complete` (`requireAuth`-gated, same body shape as `PATCH /user/update`), whose service layer accepts the profile fields and always sets `config.hasCompletedProfile: true` server-side on success — independent of whatever the client's body claims about that field.
 
 ## Endpoints with no frontend caller yet
 
-`GET /display/users`, `GET /display/organizations` (directory module), and the entire `products` module (`/product/*`) have no corresponding call anywhere in the frontend's `ApiEndpoints.ts`/`MilanApi.ts`. This isn't necessarily a bug — the frontend's Shop/Trending pages are explicitly "coming soon" placeholders per its own spec — but it means these routes are currently untested by any real client traffic pattern; if you change their contract, there's no frontend code that would visibly break to catch a regression, only this doc and (for `products`) whatever new frontend work eventually lands.
+`GET /display/users`, `GET /display/organizations` (directory module), and the entire `products` module (`/product/*`) have no corresponding call anywhere in the frontend's `ApiEndpoints.ts`/`KarmaCircleApi.ts`. This isn't necessarily a bug — the frontend's Shop/Trending pages are explicitly "coming soon" placeholders per its own spec — but it means these routes are currently untested by any real client traffic pattern; if you change their contract, there's no frontend code that would visibly break to catch a regression, only this doc and (for `products`) whatever new frontend work eventually lands.
 
 ## Keeping this file honest
 

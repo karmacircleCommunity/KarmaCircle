@@ -182,10 +182,10 @@ analytics view. This intentionally matches the "Real time Analytics — Coming
 Soon" label wrapped around it in `Dashboard.tsx`; it is a deliberate visual
 placeholder, not a partially-wired feature.
 
-## `services/fetchDashboard()` — exists, unused (lives in `src/services/MilanApi.ts`, not this folder)
+## `services/fetchDashboard()` — exists, unused (lives in `src/services/KarmaCircleApi.ts`, not this folder)
 
 `fetchDashboard()` (`GET /organizations/dashboard`, via
-`organizationEndpoints.dashboard`) is exported from the shared `MilanApi.ts` but
+`organizationEndpoints.dashboard`) is exported from the shared `KarmaCircleApi.ts` but
 **no component in this feature (or anywhere else) calls it**. `Dashboard.tsx`
 fetches `userEndpoints.profile` instead, which returns the account's own
 user/organization record — not aggregate dashboard analytics. If you're ever
@@ -282,7 +282,7 @@ too, as of that feature's own conversion pass.
   `useProfileCompletion()` instance is separate from Dashboard's — you'd need to
   either lift the hook up and pass `credentials`/`handleChange` down as props,
   or drop Dashboard's redundant `handleSetDefaultValues` call as dead code.
-- **"Wire up real analytics"** → `fetchDashboard()` (`MilanApi.ts`) is the
+- **"Wire up real analytics"** → `fetchDashboard()` (`KarmaCircleApi.ts`) is the
   intended data source; `TrackSection.tsx` is the component to make dynamic
   (currently fully static).
 - **"Show real follower/event counts and cover/profile images"** → these need

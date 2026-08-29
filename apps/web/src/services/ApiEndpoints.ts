@@ -55,6 +55,8 @@ const authEndpoints = {
   signin: `${API}/auth/signin`,
   signup: `${API}/auth/signup`,
   checkEmail: `${API}/auth/check-email`,
+  forgotPassword: `${API}/auth/forgot-password`,
+  resetPassword: `${API}/auth/reset-password`,
   googleLogin: `${API}/auth/google`,
   googleLoginSuccess: `${API}/auth/login/success`,
   logout: `${API}/auth/logout`,

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { passwordRegex, STATUSMESSAGE } from "@statics/Constants";
 import { updateUserData } from "@app/store/slices/userSlice";
 import checkInternetConnection from "@utils/CheckInternetConnection";
-import { LoginUser, RegisterUser } from "@services/MilanApi";
+import { LoginUser, RegisterUser } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { AuthType } from "../types";
 import type { Credentials, SetAuthErrors, UseAuthResult } from "../types";

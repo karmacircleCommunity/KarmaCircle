@@ -32,6 +32,19 @@ export interface UseAuthResult {
   loading: boolean;
 }
 
+/** Body shape for `ForgotPassword()` (`KarmaCircleApi.ts`, `POST /auth/forgot-password`). */
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+/** Body shape for `ResetPassword()` (`KarmaCircleApi.ts`, `POST /auth/reset-password`).
+ * `token` comes from the `:token` route param on `/auth/reset-password/:token`,
+ * not typed by the user. */
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
 /* ---------------------------------------------------------------------
  * hooks/useValidation.js — the fuller, unused validator.
  * ------------------------------------------------------------------- */

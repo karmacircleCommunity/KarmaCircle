@@ -166,16 +166,24 @@ describe("The organization journey, start to finish", () => {
     cy.get('[data-cy="setup-start"]').click();
     cy.wait(READ);
 
+    caption("One question at a time", "Not thirteen boxes on one page");
+    cy.wait(READ);
+
+    cy.get('[data-cy="org-save"]').click();
+
     caption("What the organization actually does", "");
     cy.get('[data-cy="org-description"]').type(
       "We clear and rebuild riverbank homes after the monsoon, and run a year-round flood-readiness drive with local schools.",
       { delay: 12 },
     );
-    cy.wait(BEAT);
-
-    caption("What kind of organization it is", "NGO, charity, club, trust");
-    cy.get('[data-cy="org-tag"]').select("NGO");
     cy.wait(READ);
+    cy.get('[data-cy="org-save"]').click();
+
+    caption("What kind of organization it is", "Answer it, and it moves on");
+    cy.wait(BEAT);
+    cy.get('[data-cy="org-tag-NGO"]').click();
+    cy.url({ timeout: 10000 }).should("include", "q=4");
+    cy.wait(BEAT);
 
     caption(
       "The causes it works on",
@@ -194,20 +202,23 @@ describe("The organization journey, start to finish", () => {
     caption("How many people are behind it", "");
     cy.get('[data-cy="org-teamsize"]').type("34", TYPE);
     cy.wait(BEAT);
+    cy.get('[data-cy="org-save"]').click();
 
-    caption("Where it works", "");
+    caption("Where it works", "Three boxes, because it is one thought");
     cy.get('[data-cy="org-city"]').type("Guwahati", TYPE);
     cy.get('[data-cy="org-state"]').type("Assam", TYPE);
     cy.get('[data-cy="org-country"]').type("India", TYPE);
-    cy.wait(BEAT);
+    cy.wait(READ);
+    cy.get('[data-cy="org-save"]').click();
 
     caption("How to reach it", "Optional — none of this blocks going live");
-    cy.get('[data-cy="org-website"]').type("https://riverbank.example.org", {
+    cy.get('[data-cy="org-website"]').type("riverbank.example.org", {
       delay: 20,
     });
     cy.get('[data-cy="org-contact-email"]').type(org.email, { delay: 20 });
     cy.get('[data-cy="org-contact-phone"]').type("+91 98300 00000", TYPE);
     cy.wait(BEAT);
+    cy.get('[data-cy="org-save"]').click();
 
     caption("Money", "Their own figure, and shown as their own claim");
     cy.get('[data-cy="org-funds-raised"]').type("450000", TYPE);

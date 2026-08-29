@@ -1,5 +1,5 @@
 import { STATUSCODE } from "@statics/Constants";
-import { updateUserProfile } from "@services/MilanApi";
+import { updateUserProfile } from "@services/KarmaCircleApi";
 import { showSuccessToast } from "@utils/Toasts";
 import clsx from "clsx";
 import type { ChangeEvent } from "react";

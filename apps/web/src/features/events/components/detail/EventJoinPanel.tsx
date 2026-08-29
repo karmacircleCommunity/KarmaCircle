@@ -8,7 +8,7 @@ import type { EventJoinPanelProps } from "../../types";
  * The decision panel: cost, remaining spots, and the join control.
  *
  * **Joining is local-only, and deliberately so.** There is no attend/RSVP
- * endpoint in `MilanApi.ts` or `ApiEndpoints.ts` today (see
+ * endpoint in `KarmaCircleApi.ts` or `ApiEndpoints.ts` today (see
  * `docs/specs/api-integration.md`), so the button acknowledges the press
  * and says out loud that the organizer has not been told yet. A control
  * that looks live and silently does nothing is the worse failure - it is

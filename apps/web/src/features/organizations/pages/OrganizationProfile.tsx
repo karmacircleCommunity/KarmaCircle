@@ -105,7 +105,7 @@ const OrganizationProfileView = ({
   const accent =
     ORGANIZATION_ACCENTS[organization.accent % ORGANIZATION_ACCENTS.length];
   // Local-only, and deliberately so: there is no follow/subscribe endpoint
-  // in `MilanApi.ts` or `ApiEndpoints.ts` today. The button acknowledging a
+  // in `KarmaCircleApi.ts` or `ApiEndpoints.ts` today. The button acknowledging a
   // press beats a control that looks live and does nothing, which is what
   // `Profile.tsx`'s Subscribe/Sponsor pair does.
   const [following, setFollowing] = useState(false);

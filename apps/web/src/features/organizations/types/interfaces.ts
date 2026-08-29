@@ -216,26 +216,73 @@ export interface OrganizationSetupForm {
 export type OrganizationSetupField = keyof OrganizationSetupForm;
 
 /**
- * One step of the wizard, declared as data. A new step is an entry in
- * `SETUP_STEPS` (constants/organizationSetup.ts) plus a component that
- * renders its fields — the layout, the progress rail, the per-step save
- * and the URL handling all read this list rather than hardcoding two
- * steps.
+ * How one question renders. The flow asks one thing at a time — the kind
+ * is what decides whether that is a line, a paragraph, a set of choices or
+ * a small group of related boxes.
+ */
+export type OrganizationSetupQuestionKind =
+  "text" | "textarea" | "number" | "choice" | "chips" | "group";
+
+/**
+ * One screen of the setup flow: a headline, and the field (or the tight
+ * group of fields) it collects.
+ *
+ * A group exists for the cases where splitting would be worse than
+ * asking once — city/state/country is one thought, and three consecutive
+ * screens for it reads as an interrogation.
+ */
+export interface OrganizationSetupQuestion {
+  id: string;
+  kind: OrganizationSetupQuestionKind;
+  /** The question itself, set as the screen's heading. */
+  headline: string;
+  /** One line under it, when the headline alone leaves something unsaid. */
+  hint?: string;
+  fields: OrganizationSetupField[];
+  /** The subset of `fields` that blocks publication. */
+  requiredFields: OrganizationSetupField[];
+  /**
+   * Advance on its own once answered. True for single-choice screens,
+   * where a second click on "Continue" is a click that says nothing.
+   */
+  autoAdvance?: boolean;
+}
+
+/** What one field looks like inside a `group` question. */
+export interface OrganizationSetupFieldSpec {
+  label: string;
+  type: "text" | "number" | "email" | "url" | "tel";
+  placeholder?: string;
+  hint?: string;
+}
+
+/**
+ * One step of the wizard, declared as data. A step is a save boundary: its
+ * questions are asked one at a time, and leaving the last of them is what
+ * writes the whole step to the API.
+ *
+ * A new step is an entry in `SETUP_STEPS` (constants/organizationSetup.ts);
+ * a new question is an entry inside one. The layout, the progress rail, the
+ * per-step save and the URL handling all read this list rather than
+ * hardcoding either count.
  */
 export interface OrganizationSetupStep {
   id: OrganizationSetupStepId;
-  /** Heading above the form on that step. */
+  /** Heading for the step, shown on the progress rail. */
   title: string;
-  /** One line under the heading, on the form itself. */
-  subtitle: string;
-  /** The shorter line the left-hand progress rail shows. */
+  /** The shorter line the rail shows under it. */
   summary: string;
-  /** Everything this step saves. Only these keys are sent when it saves. */
+  /** The screens this step is made of, in the order they are asked. */
+  questions: OrganizationSetupQuestion[];
+  /**
+   * Everything this step saves — every question's fields, flattened. Only
+   * these keys are sent when it saves. Derived, never hand-written.
+   */
   fields: OrganizationSetupField[];
   /**
    * The subset of `fields` that blocks publication. Mirrors the backend's
-   * `REQUIRED_FIELDS` — split across the steps, and the two lists must
-   * add up to the same set.
+   * `REQUIRED_FIELDS` — split across the steps, and the two lists must add
+   * up to the same set. Derived from the questions.
    */
   requiredFields: OrganizationSetupField[];
 }

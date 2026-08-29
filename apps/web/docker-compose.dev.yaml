@@ -3,8 +3,8 @@ version: "3.8"
 services:
   app:
     restart: always
-    container_name: milan-frontend-container
-    image: milan-frontend
+    container_name: karmacircle-frontend-container
+    image: karmacircle-frontend
     build:
       context: .
       dockerfile: Dockerfile

@@ -23,7 +23,7 @@ Two routes:
 
 The read path was built with a working fetcher that was never plugged into the
 page — see [api-integration.md](../../../docs/specs/api-integration.md) for why
-two separate call layers exist (`MilanApi.ts` vs. `ApiConnector`-based
+two separate call layers exist (`KarmaCircleApi.ts` vs. `ApiConnector`-based
 `services/*.ts` fetchers) and which one this feature uses. **No longer true as
 of August 2026:** both pages fetch live records, and a third page
 (`pages/OrganizationSetup.tsx`) is what gets an organization published in the
@@ -112,7 +112,7 @@ rail-and-bead treatment) — and a `lg:sticky` sidebar holding a dark
 `bg-surface-dark` support card and a contact card.
 
 The Follow button is **local `useState` only**: there is no follow/subscribe
-endpoint in `MilanApi.ts`/`ApiEndpoints.ts`. It's a plain `<button>` rather than
+endpoint in `KarmaCircleApi.ts`/`ApiEndpoints.ts`. It's a plain `<button>` rather than
 the shared `Button` because it has two visually distinct states, and a `variant`
 class plus a state-dependent `className` would be two equal-specificity
 utilities fighting over the same properties with no reliable winner (the cascade
@@ -159,15 +159,15 @@ Goes through `apiConnector()` (`src/services/ApiConnector.ts`) — the "Layer B"
 call path described in
 [api-integration.md](../../../docs/specs/api-integration.md), a thin
 `axios.create({})` wrapper (`axiosInstance`), **not** the `Axios` instance
-`MilanApi.ts`'s functions use. Unlike `MilanApi.ts`'s functions,
+`KarmaCircleApi.ts`'s functions use. Unlike `KarmaCircleApi.ts`'s functions,
 `getOrganizations()` **throws** on a non-200 status rather than returning the
 error response — a caller needs a `try/catch`, not an
 `if (response?.status === ...)` check; this is the opposite calling convention
-from every `MilanApi.ts` function, so don't copy the `MilanApi.ts`
+from every `KarmaCircleApi.ts` function, so don't copy the `KarmaCircleApi.ts`
 catch-and-return-response pattern if you wire this in — wrap the call site in
 `try/catch` instead, or change `useSWR`'s error handling to expect a thrown
 error (SWR natively supports throwing fetchers — this shape is actually
-SWR-idiomatic, more so than `MilanApi.ts`'s pattern is).
+SWR-idiomatic, more so than `KarmaCircleApi.ts`'s pattern is).
 
 `apiConnector()` itself has a dead/unreachable branch:
 `if (response.status === 400) console.error("Logout triggered due to status 600 response")`
@@ -259,9 +259,9 @@ that once the real backend shape is confirmed.
   `useSWR(organizationEndpoints.all, () => getOrganizations())` in
   `Organizations.tsx`, keep the `useMemo` filter as-is, and add a real
   loading/error branch alongside the existing empty state. `getOrganizations()`
-  **throws** on non-200 (unlike every `MilanApi.ts` function, which
+  **throws** on non-200 (unlike every `KarmaCircleApi.ts` function, which
   catch-and-return) — that shape is SWR-idiomatic, so don't rewrite it to match
-  `MilanApi.ts`.
+  `KarmaCircleApi.ts`.
 - **"Make the organization profile live"** → same fetch, plus
   `organizationEndpoints.details(userName)` for the single record; the not-found
   panel already covers the "no such organization" case.

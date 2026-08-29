@@ -28,7 +28,7 @@ Almost certainly a debugging scratch file — safe to delete unless someone conf
 
 ## Cypress E2E
 
-`cypress/e2e/milanTest.spec.js` is the only spec file and is a minimal smoke test.
+`cypress/e2e/smoke.spec.js` is a minimal smoke test (there's also `organizationSetup.spec.js`, covering the organization setup flow).
 `cypress/support/commands.js` and `e2e.js` are the default Cypress scaffolding, largely unmodified.
 There is no CI-side unit test runner configured (no `test` script in `apps/web/package.json`); Cypress (`npm run cypress:open` / `cypress:run`) is the only automated test tooling in this repo today.
 

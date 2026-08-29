@@ -51,7 +51,7 @@ Edit `apps/api/.env`:
 
 | Var | What to put |
 |---|---|
-| `MONGO_URI` | `mongodb://localhost:27017/milan` (points at the container from step 1) |
+| `MONGO_URI` | `mongodb://localhost:27017/karmacircle` (points at the container from step 1) |
 | `PORT` | `5050` — **not** `5000`, see [Known gotchas](#known-gotchas) |
 | `CALLBACK_URL` | `http://localhost:5050/auth/google/callback` (must match `PORT`) |
 | `JWT_SECRET` | Any random string — the example file's default is fine |
@@ -67,7 +67,7 @@ npm install   # skip if you've already done this
 cp .env.example .env
 ```
 
-Edit `apps/web/.env` — **the example file's `VITE_MILANAPI` var is a known dead-end (see `docs/specs/known-issues.md`); the code actually reads `VITE_API_URL`.** Replace it:
+Edit `apps/web/.env` — the example file already sets `VITE_API_URL` to a placeholder; point it at your backend port:
 
 ```
 VITE_API_URL="http://localhost:5050"
@@ -108,4 +108,3 @@ Then open `http://localhost:3000` in a browser and try signing up / signing in �
 
 - **Port 5000 is often already taken on macOS** by the system's AirPlay Receiver (`ControlCenter` process) — you'll get `EADDRINUSE` even though nothing in this repo is using it. Easiest fix: run the backend on a different port (this guide uses `5050`), rather than disabling AirPlay Receiver. Check what's squatting on a port with `lsof -i :5000 -sTCP:LISTEN`.
 - **`apps/api/.env.example` ships `SECRET_KEY`/`CLIENT_ID`/`CLIENT_SECRET`/`RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` as empty strings**, but `src/config/env.ts`'s Zod schema requires all of them non-empty (`.min(1)`) — the server won't boot at all until you fill in at least a placeholder for each, even if you have no intention of using Google OAuth or Razorpay locally.
-- **`apps/web/.env.example`'s `VITE_MILANAPI` variable is not read by any code.** The actual variable is `VITE_API_URL`. Following the example file literally gives you a frontend with no backend URL configured at all (silent failure, not an error).

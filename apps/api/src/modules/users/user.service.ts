@@ -6,7 +6,8 @@ interface Page<T> {
   total: number;
 }
 
-const PUBLIC_FIELDS = "-password -__v -tokenVersion";
+const PUBLIC_FIELDS =
+  "-password -__v -tokenVersion -resetPasswordToken -resetPasswordExpires";
 
 export async function generateUniqueUsername(email: string): Promise<string> {
   let userName = email.split("@")[0];
@@ -113,6 +114,14 @@ export async function completeProfile(
 }
 
 export function sanitize(user: IUser) {
-  const { password, _id, __v, tokenVersion, ...rest } = user.toObject();
+  const {
+    password,
+    _id,
+    __v,
+    tokenVersion,
+    resetPasswordToken,
+    resetPasswordExpires,
+    ...rest
+  } = user.toObject();
   return rest;
 }

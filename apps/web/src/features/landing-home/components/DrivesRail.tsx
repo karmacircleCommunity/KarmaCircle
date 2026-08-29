@@ -17,7 +17,7 @@ const RESUME_DELAY_MS = 2200;
  * The drives rail — the second section below the hero.
  *
  * **These cards are sample content, not live data.** There is no public
- * "list drives/events" endpoint in `MilanApi.ts`/`ApiEndpoints.ts` today
+ * "list drives/events" endpoint in `KarmaCircleApi.ts`/`ApiEndpoints.ts` today
  * (`Organizations.tsx`/`Events.tsx` have the same gap — see
  * docs/specs/known-issues.md), so the section says so on the page rather
  * than implying a live feed. The card shape is deliberately the shape of a

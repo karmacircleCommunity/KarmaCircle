@@ -1,7 +1,25 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/test-app";
+import * as mailer from "../src/config/mailer";
 
 const app = buildTestApp();
+
+jest.mock("../src/config/mailer", () => ({
+  sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
+const sendPasswordResetEmail = mailer.sendPasswordResetEmail as jest.Mock;
+
+/**
+ * requestPasswordReset only ever hands the raw token to the mocked mailer
+ * (it's never returned in any API response) — extract it from whichever
+ * reset URL the mock was called with, the way a real user would from the
+ * email itself.
+ */
+function extractTokenFromLastResetEmail(): string {
+  const resetUrl = sendPasswordResetEmail.mock.calls.at(-1)?.[1] as string;
+  return resetUrl.split("/").pop() as string;
+}
 
 describe("Auth", () => {
   const credentials = { email: "jane@example.com", password: "hunter2" };
@@ -142,6 +160,134 @@ describe("Auth", () => {
       });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("forgot password", () => {
+    describe("POST /auth/forgot-password", () => {
+      it("emails a reset link for a registered email", async () => {
+        await request(app).post("/auth/signup").send(credentials);
+
+        const res = await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: credentials.email });
+
+        expect(res.status).toBe(200);
+        expect(sendPasswordResetEmail).toHaveBeenCalledTimes(1);
+        expect(sendPasswordResetEmail).toHaveBeenCalledWith(
+          credentials.email,
+          expect.stringContaining("/auth/reset-password/"),
+        );
+      });
+
+      it("responds identically for an unregistered email, without emailing anything", async () => {
+        const res = await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: "nobody@example.com" });
+
+        expect(res.status).toBe(200);
+        expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+      });
+
+      it("rejects a malformed email with 400", async () => {
+        const res = await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: "not-an-email" });
+
+        expect(res.status).toBe(400);
+      });
+    });
+
+    describe("POST /auth/reset-password", () => {
+      it("resets the password and signs out every existing session", async () => {
+        const signupRes = await request(app)
+          .post("/auth/signup")
+          .send(credentials);
+        const cookie = signupRes.headers["set-cookie"][0];
+
+        await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: credentials.email });
+        const token = extractTokenFromLastResetEmail();
+
+        const resetRes = await request(app)
+          .post("/auth/reset-password")
+          .send({ token, newPassword: "new-password-1" });
+        expect(resetRes.status).toBe(200);
+
+        const oldSignin = await request(app)
+          .post("/auth/signin")
+          .send(credentials);
+        expect(oldSignin.status).toBe(401);
+
+        const newSignin = await request(app)
+          .post("/auth/signin")
+          .send({ email: credentials.email, password: "new-password-1" });
+        expect(newSignin.status).toBe(200);
+
+        const staleSession = await request(app)
+          .get("/organizations/dashboard")
+          .set("Cookie", cookie);
+        expect(staleSession.status).toBe(401);
+      });
+
+      it("rejects a garbage token with 400", async () => {
+        const res = await request(app)
+          .post("/auth/reset-password")
+          .send({ token: "not-a-real-token", newPassword: "new-password-1" });
+
+        expect(res.status).toBe(400);
+      });
+
+      it("rejects reusing an already-consumed token with 400", async () => {
+        await request(app).post("/auth/signup").send(credentials);
+        await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: credentials.email });
+        const token = extractTokenFromLastResetEmail();
+
+        const firstUse = await request(app)
+          .post("/auth/reset-password")
+          .send({ token, newPassword: "new-password-1" });
+        expect(firstUse.status).toBe(200);
+
+        const secondUse = await request(app)
+          .post("/auth/reset-password")
+          .send({ token, newPassword: "new-password-2" });
+        expect(secondUse.status).toBe(400);
+      });
+
+      it("rejects an expired token with 400", async () => {
+        await request(app).post("/auth/signup").send(credentials);
+        await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: credentials.email });
+        const token = extractTokenFromLastResetEmail();
+
+        const { User } = await import("../src/modules/users/user.model");
+        await User.updateOne(
+          { email: credentials.email },
+          { resetPasswordExpires: new Date(Date.now() - 1000) },
+        );
+
+        const res = await request(app)
+          .post("/auth/reset-password")
+          .send({ token, newPassword: "new-password-1" });
+        expect(res.status).toBe(400);
+      });
+
+      it("rejects a new password under 5 characters with 400", async () => {
+        await request(app).post("/auth/signup").send(credentials);
+        await request(app)
+          .post("/auth/forgot-password")
+          .send({ email: credentials.email });
+        const token = extractTokenFromLastResetEmail();
+
+        const res = await request(app)
+          .post("/auth/reset-password")
+          .send({ token, newPassword: "abcd" });
+        expect(res.status).toBe(400);
+      });
     });
   });
 

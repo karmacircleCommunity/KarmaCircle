@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
+import { sendPasswordResetEmail } from "../../config/mailer";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
 import * as organizationService from "../organizations/organization.service";
@@ -11,6 +12,22 @@ import { THIRTY_DAYS_MS } from "./auth.cookies";
 import { SignupInput } from "./auth.validation";
 
 const SALT_ROUNDS = 10;
+
+// How long a forgot-password link stays valid, counted from the moment
+// requestPasswordReset issues it — not tied to THIRTY_DAYS_MS (the
+// session/cookie lifetime), a deliberately much shorter window since this
+// token alone is enough to take over the account.
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000;
+
+/**
+ * The raw token is what's emailed and never stored — only its hash lives
+ * on the User document (same reasoning as storing a password hash, not
+ * the password: a DB read/leak alone shouldn't be enough to reset anyone's
+ * account).
+ */
+function hashResetToken(rawToken: string): string {
+  return crypto.createHash("sha256").update(rawToken).digest("hex");
+}
 
 interface TokenPayload {
   User: { id: string };
@@ -143,12 +160,69 @@ export async function updatePassword(
   // made this call, since this endpoint isn't tied to the caller's own
   // cookie. A password change should never leave old sessions alive.
   existingUser.tokenVersion += 1;
+  // A forgot-password token issued before this change but not yet used
+  // shouldn't outlive the password it was issued for — otherwise it stays
+  // valid (up to RESET_TOKEN_EXPIRY_MS) as a second way into the account
+  // after this "real" password change.
+  existingUser.resetPasswordToken = undefined;
+  existingUser.resetPasswordExpires = undefined;
   await existingUser.save();
 }
 
 export async function emailExists(email: string): Promise<boolean> {
   const existingUser = await userService.findByEmail(email);
   return existingUser !== null;
+}
+
+/**
+ * Issues a forgot-password link for `email` and emails it, if — and only
+ * silently if not — an account with that email exists. Always resolves
+ * the same way either way (no thrown/returned signal distinguishing
+ * "sent" from "no such account") so the caller (authController.forgotPassword)
+ * can respond with one generic message regardless; see known-issues.md for
+ * why this doesn't newly leak account existence (GET /auth/check-email
+ * already answers that question directly, for a different purpose).
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const existingUser = await userService.findByEmail(email);
+  if (!existingUser) {
+    return;
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  existingUser.resetPasswordToken = hashResetToken(rawToken);
+  existingUser.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+  await existingUser.save();
+
+  const resetUrl = `${env.ORIGIN_URL}/auth/reset-password/${rawToken}`;
+  await sendPasswordResetEmail(existingUser.email, resetUrl);
+}
+
+export async function resetPassword(
+  rawToken: string,
+  newPassword: string,
+): Promise<void> {
+  const existingUser = await User.findOne({
+    resetPasswordToken: hashResetToken(rawToken),
+    resetPasswordExpires: { $gt: new Date() },
+  });
+
+  if (!existingUser) {
+    throw new AppError(
+      STATUS_CODE.BAD_REQUEST,
+      STATUS_MESSAGE.INVALID_RESET_TOKEN,
+    );
+  }
+
+  existingUser.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  // Single-use: clear the token so this same link can't reset the
+  // password a second time.
+  existingUser.resetPasswordToken = undefined;
+  existingUser.resetPasswordExpires = undefined;
+  // Same reasoning as updatePassword above — a password change should
+  // never leave pre-existing sessions alive.
+  existingUser.tokenVersion += 1;
+  await existingUser.save();
 }
 
 export async function findOrCreateGoogleUser(params: {

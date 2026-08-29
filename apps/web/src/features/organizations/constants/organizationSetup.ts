@@ -1,4 +1,10 @@
-import type { OrganizationSetupField, OrganizationSetupStep } from "../types";
+import type {
+  OrganizationSetupField,
+  OrganizationSetupFieldSpec,
+  OrganizationSetupQuestion,
+  OrganizationSetupStep,
+  OrganizationSetupStepId,
+} from "../types";
 
 /**
  * What each required field is called on screen. The backend answers with
@@ -16,58 +22,186 @@ export const REQUIRED_LABELS: Record<string, string> = {
 };
 
 /**
- * The wizard, as data.
- *
- * Two steps rather than one long form because this is a lot to ask of an
- * account that signed up thirty seconds ago: each step saves on its own
- * (`useOrganizationSetup`), so leaving after step one keeps step one.
- *
- * `requiredFields` across both steps must stay equal to the backend's
- * `REQUIRED_FIELDS` (apps/api/src/modules/organizations/
- * organization.service.ts) — that list is what actually decides whether
- * the organization publishes; this one only decides where each item is
- * asked for. `SETUP_REQUIRED_FIELDS` below is the flattened version, and
- * exists so a mismatch shows up in one place.
- */
-export const SETUP_STEPS: OrganizationSetupStep[] = [
-  {
-    id: "about",
-    title: "What your organization does",
-    subtitle: "The part people read first. Two or three sentences is plenty.",
-    summary: "Your name, your work, and the causes you cover.",
-    fields: ["name", "description", "tag", "domains"],
-    requiredFields: ["description", "tag", "domains"],
-  },
-  {
-    id: "reach",
-    title: "Where you are, and how to reach you",
-    subtitle:
-      "This is what puts you in the right searches and lets people get in touch.",
-    summary: "Location, size, contact details and funding.",
-    fields: [
-      "teamSize",
-      "city",
-      "state",
-      "country",
-      "website",
-      "contactEmail",
-      "contactPhone",
-      "fundsRaised",
-      "fundsGoal",
-    ],
-    requiredFields: ["teamSize", "city", "country"],
-  },
-];
-
-export const SETUP_REQUIRED_FIELDS: OrganizationSetupField[] =
-  SETUP_STEPS.flatMap((step) => step.requiredFields);
-
-/**
  * The backend caps `domains` at five (`updateOrganizationSchema`). The cap
  * is enforced in the UI as well as trusted from it — a sixth chip that
  * looks selectable and then 400s is worse than one that can't be pressed.
  */
 export const MAX_DOMAINS = 5;
+
+/**
+ * Labels and input types for the fields that appear inside a `group`
+ * question. Single-field questions don't need an entry: their headline
+ * *is* the label, and repeating it underneath reads as a stutter.
+ */
+export const FIELD_SPECS: Partial<
+  Record<OrganizationSetupField, OrganizationSetupFieldSpec>
+> = {
+  city: { label: "City", type: "text" },
+  state: { label: "State or region", type: "text" },
+  country: { label: "Country", type: "text" },
+  website: { label: "Website", type: "text", placeholder: "karmacircle.org" },
+  contactEmail: { label: "Contact email", type: "email" },
+  contactPhone: { label: "Contact phone", type: "tel" },
+  fundsRaised: {
+    label: "Raised so far",
+    type: "number",
+    hint: "Your own figure, shown as stated by you",
+  },
+  fundsGoal: { label: "Trying to raise", type: "number" },
+};
+
+/**
+ * Test handles, per field. Written out rather than derived from the field
+ * name so the Cypress specs keep working regardless of how a field is
+ * spelled in the model (`contactEmail` has always been `org-contact-email`
+ * on screen), and so renaming a field can't silently break a spec.
+ */
+export const FIELD_CY: Record<OrganizationSetupField, string> = {
+  name: "org-name",
+  description: "org-description",
+  tag: "org-tag",
+  domains: "org-domains",
+  teamSize: "org-teamsize",
+  city: "org-city",
+  state: "org-state",
+  country: "org-country",
+  website: "org-website",
+  contactEmail: "org-contact-email",
+  contactPhone: "org-contact-phone",
+  fundsRaised: "org-funds-raised",
+  fundsGoal: "org-funds-goal",
+};
+
+/**
+ * The flow, asked one question at a time.
+ *
+ * Written as data rather than as components because everything else reads
+ * it: the progress bar counts these, the URL addresses them
+ * (`?step=about&q=2`), the save boundary is the end of a step's list, and
+ * the resume link finds the first step still unanswered. Adding a question
+ * is an entry here plus, at most, a `FIELD_SPECS` row.
+ *
+ * Two rules the copy follows: every headline is a question a person would
+ * actually ask out loud, and anything optional says so on screen rather
+ * than leaving someone guessing whether a blank box will cost them.
+ */
+const ABOUT_QUESTIONS: OrganizationSetupQuestion[] = [
+  {
+    id: "name",
+    kind: "text",
+    headline: "What's your organization called?",
+    hint: "The name people will search for.",
+    fields: ["name"],
+    requiredFields: ["name"],
+  },
+  {
+    id: "description",
+    kind: "textarea",
+    headline: "What do you actually do?",
+    hint: "Two or three sentences on the work you run, who it reaches, and where.",
+    fields: ["description"],
+    requiredFields: ["description"],
+  },
+  {
+    id: "tag",
+    kind: "choice",
+    headline: "What kind of organization are you?",
+    fields: ["tag"],
+    requiredFields: ["tag"],
+    autoAdvance: true,
+  },
+  {
+    id: "domains",
+    kind: "chips",
+    headline: "Which causes do you work on?",
+    hint: `Pick up to ${MAX_DOMAINS}. These are the filters people find you by.`,
+    fields: ["domains"],
+    requiredFields: ["domains"],
+  },
+];
+
+const REACH_QUESTIONS: OrganizationSetupQuestion[] = [
+  {
+    id: "teamSize",
+    kind: "number",
+    headline: "How many people are behind it?",
+    hint: "Staff and regular volunteers — a rough number is fine.",
+    fields: ["teamSize"],
+    requiredFields: ["teamSize"],
+  },
+  {
+    id: "location",
+    kind: "group",
+    headline: "Where are you based?",
+    hint: "This is what puts you in the right local searches.",
+    fields: ["city", "state", "country"],
+    requiredFields: ["city", "country"],
+  },
+  {
+    id: "contact",
+    kind: "group",
+    headline: "How can people reach you?",
+    hint: "All optional — but a profile with no way to get in touch rarely hears from anyone.",
+    fields: ["website", "contactEmail", "contactPhone"],
+    requiredFields: [],
+  },
+  {
+    id: "funding",
+    kind: "group",
+    headline: "Anything you'd like to say about funding?",
+    hint: "Optional. Shown on your profile as your own stated figures, never as a verified total.",
+    fields: ["fundsRaised", "fundsGoal"],
+    requiredFields: [],
+  },
+];
+
+/** Flattens a step's questions into the field lists the rest of the app uses. */
+function toStep(
+  id: OrganizationSetupStepId,
+  title: string,
+  summary: string,
+  questions: OrganizationSetupQuestion[],
+): OrganizationSetupStep {
+  return {
+    id,
+    title,
+    summary,
+    questions,
+    fields: questions.flatMap((question) => question.fields),
+    // `name` is deliberately dropped here: signup always fills it, so it
+    // can never be what blocks publication, and counting it would have the
+    // progress rail claim a detail is outstanding when it isn't. It stays
+    // in the question's own `requiredFields` so the screen still marks it
+    // as needed.
+    requiredFields: questions.flatMap((question) =>
+      question.requiredFields.filter((field) => field !== "name"),
+    ),
+  };
+}
+
+export const SETUP_STEPS: OrganizationSetupStep[] = [
+  toStep(
+    "about",
+    "What your organization does",
+    "Your name, your work, and the causes you cover.",
+    ABOUT_QUESTIONS,
+  ),
+  toStep(
+    "reach",
+    "Where you are, and how to reach you",
+    "Location, size, contact details and funding.",
+    REACH_QUESTIONS,
+  ),
+];
+
+export const SETUP_REQUIRED_FIELDS: OrganizationSetupField[] =
+  SETUP_STEPS.flatMap((step) => step.requiredFields);
+
+/** How many screens the whole flow is, for the progress bar's denominator. */
+export const SETUP_QUESTION_COUNT = SETUP_STEPS.reduce(
+  (total, step) => total + step.questions.length,
+  0,
+);
 
 /**
  * The missing fields as a readable phrase — "what you do, city and

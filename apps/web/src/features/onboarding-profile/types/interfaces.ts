@@ -149,7 +149,7 @@ export interface UserProfileDetails {
 }
 
 /**
- * `Logout()`'s (`MilanApi.js`) return shape — like several `MilanApi.js`
+ * `Logout()`'s (`KarmaCircleApi.ts`) return shape — like several `KarmaCircleApi.ts`
  * functions, its catch block returns the caught error as-is, so the
  * real inferred type includes `unknown`; asserted at each call site
  * (`Profile.tsx`, `UserProfile.tsx`) to the shape both actually read.

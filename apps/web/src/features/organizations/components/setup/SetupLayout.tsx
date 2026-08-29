@@ -19,10 +19,20 @@ type SetupLayoutProps = {
   steps: OrganizationSetupStepStatus[];
   /** The draft/live badge and the exit affordance, pinned above the form. */
   topBar?: ReactNode;
+  /** 1-based position across the whole flow. Absent on the intro. */
+  questionNumber?: number;
+  questionCount?: number;
   children: ReactNode;
 };
 
-const SetupLayout = ({ stage, steps, topBar, children }: SetupLayoutProps) => {
+const SetupLayout = ({
+  stage,
+  steps,
+  topBar,
+  questionNumber,
+  questionCount,
+  children,
+}: SetupLayoutProps) => {
   const current = steps.find((step) => step.current);
   const remaining = steps.reduce((total, step) => total + step.outstanding, 0);
 
@@ -97,28 +107,37 @@ const SetupLayout = ({ stage, steps, topBar, children }: SetupLayoutProps) => {
     >
       {topBar}
 
-      {/* The rail above is desktop-only, so small screens get the step
-          count and a progress bar instead — the same information, in the
-          space a phone can spare. */}
-      {current && (
-        <div className="mb-7 min-[900px]:hidden">
-          <p className="m-0 font-outfit text-caption font-medium tracking-[0.14em] text-ink/55 uppercase">
-            Step {current.index + 1} of {steps.length}
-          </p>
-          <div className="mt-2 flex gap-1.5">
-            {steps.map((step) => (
-              <span
-                key={step.id}
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  step.done || step.index <= current.index
-                    ? "bg-brand"
-                    : "bg-ink/12"
-                }`}
-              />
-            ))}
+      {/* One bar for the whole flow, at every size. The rail on the left
+          says which step; this says how much is left, which is the thing a
+          one-question-at-a-time flow otherwise hides — without it there is
+          no way to tell question three of eight from three of thirty.
+          `transition-[width]` is what makes it slide forward as each
+          question is answered instead of jumping. */}
+      {questionNumber && questionCount ? (
+        <div className="mb-8">
+          <div className="flex items-baseline justify-between">
+            <span className="font-outfit text-caption font-medium tracking-[0.14em] text-ink/45 uppercase">
+              {current?.title}
+            </span>
+            <span className="font-outfit text-caption text-ink/45">
+              {questionNumber} of {questionCount}
+            </span>
+          </div>
+          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-ink/8">
+            <div
+              className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out"
+              style={{
+                width: `${(questionNumber / questionCount) * 100}%`,
+              }}
+              role="progressbar"
+              aria-valuenow={questionNumber}
+              aria-valuemin={1}
+              aria-valuemax={questionCount}
+              aria-label="Setup progress"
+            />
           </div>
         </div>
-      )}
+      ) : null}
 
       {children}
     </SplitPanelLayout>

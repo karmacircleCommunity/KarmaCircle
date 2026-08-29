@@ -1,5 +1,5 @@
 import { STATUSCODE } from "@statics/Constants";
-import { completeProfileApiCall } from "@services/MilanApi";
+import { completeProfileApiCall } from "@services/KarmaCircleApi";
 import { showSuccessToast } from "@utils/Toasts";
 import { useState } from "react";
 import type { ChangeEvent } from "react";

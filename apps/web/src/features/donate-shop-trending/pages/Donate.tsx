@@ -18,7 +18,7 @@ import SingleOrganizationEvent from "../../components/Cards/SingleOrganizationEv
 // src/features/components/Loading, not src/components/Loading.tsx, where
 // the real component now lives, exported from the shared @components barrel).
 import Loading from "../../components/Loading";
-import { GetAllOrganizations } from "@services/MilanApi";
+import { GetAllOrganizations } from "@services/KarmaCircleApi";
 import "./Donate.css";
 
 const Donate = () => {

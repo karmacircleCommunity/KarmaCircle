@@ -15,7 +15,7 @@ KarmaCircle is a hub to **connect** NGOs, Charities, and the world to **collabor
 
 </div>
 
-<img alt="KarmaCircle Readme Banner" src="./apps/web/src/assets/pictures/readme/MilanBanner.png" width="700px"/>
+<img alt="KarmaCircle Readme Banner" src="./apps/web/src/assets/pictures/readme/KarmaCircleBanner.png" width="700px"/>
 
 </div>
 
@@ -27,8 +27,8 @@ This repo holds both apps that make up KarmaCircle:
 
 | App | Path | What it is |
 |---|---|---|
-| Frontend | [`apps/web`](./apps/web) | `milan-frontend` — React 19 + Vite SPA |
-| Backend | [`apps/api`](./apps/api) | `milan-api` — Express + TypeScript + MongoDB API |
+| Frontend | [`apps/web`](./apps/web) | `karmacircle-frontend` — React 19 + Vite SPA |
+| Backend | [`apps/api`](./apps/api) | `karmacircle-api` — Express + TypeScript + MongoDB API |
 
 They're independently deployed (two separate Vercel projects) but share this repo, CI, and contribution workflow. See [CLAUDE.md](./CLAUDE.md) and [AGENTS.md](./AGENTS.md) for the fuller architecture/agentic-workflow notes, and each app's own `docs/specs/README.md` for its feature/module map.
 

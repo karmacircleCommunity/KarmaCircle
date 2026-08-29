@@ -13,7 +13,7 @@ import type { EventFundraiserPanelProps } from "../../types";
  * one progress bar means one thing across the app.
  *
  * The contribute button is honest about being a stub: there is no payment
- * endpoint in `MilanApi.ts` today, so it acknowledges the press rather than
+ * endpoint in `KarmaCircleApi.ts` today, so it acknowledges the press rather than
  * pretending to take money - the same call `OrganizationProfile.tsx` makes
  * for its Follow button.
  */

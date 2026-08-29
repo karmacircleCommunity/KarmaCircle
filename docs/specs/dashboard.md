@@ -29,7 +29,7 @@ Matches the "Coming Soon" framing in `Dashboard.tsx` — this is intentionally a
 
 ## `fetchDashboard` (defined, unused)
 
-[MilanApi.ts](../../apps/web/src/services/MilanApi.ts) exports `fetchDashboard()` (`GET /organizations/dashboard`, via `organizationEndpoints.dashboard`).
+[KarmaCircleApi.ts](../../apps/web/src/services/KarmaCircleApi.ts) exports `fetchDashboard()` (`GET /organizations/dashboard`, via `organizationEndpoints.dashboard`).
 No component currently calls it — `Dashboard.tsx` fetches `userEndpoints.profile` instead.
 If you're asked to wire up real dashboard analytics, this is the endpoint that was evidently intended for it.
 

@@ -8,7 +8,7 @@ import DrivesRail from "@features/landing-home/components/DrivesRail";
 import OpenSource from "@features/landing-home/components/OpenSource";
 import { Footer } from "@components";
 import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice";
-import { successCallback } from "@services/MilanApi";
+import { successCallback } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { OAuthSuccessResponse } from "../types";
 

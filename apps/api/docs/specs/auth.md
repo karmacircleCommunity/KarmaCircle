@@ -1,6 +1,6 @@
 # Auth Module
 
-[src/modules/auth/](../../src/modules/auth/) — email/password signup and signin, password change, Google OAuth, logout, and the `Token` JWT cookie that every other protected route relies on.
+[src/modules/auth/](../../src/modules/auth/) — email/password signup and signin, password change, forgot/reset password, Google OAuth, logout, and the `Token` JWT cookie that every other protected route relies on.
 This module owns no Mongoose model of its own — it reads/writes through `users`' `User` model (see [users.md](./users.md#the-user-model-is-shared-by-five-modules)).
 
 ## Two parallel login mechanisms, one resulting cookie shape
@@ -31,6 +31,25 @@ There are two distinct ways a client ends up authenticated, and they set **diffe
 ## `POST /auth/update` — password change
 
 `authLimiter` → `validate(updatePasswordSchema)` → `authController.updatePassword`. Body: `{ email, oldPassword, newPassword }` (`newPassword` must be 5+ chars — the *only* password-strength rule enforced anywhere server-side, and it's looser than the frontend's own 8-char/mixed-case/digit signup rule). Looks the user up **by `email` in the body**, not by the `Token` cookie/session — **this endpoint is unauthenticated**; nothing requires the caller to be logged in as the account they're changing the password for, only that they know the current email + old password. `404 USER_NOT_FOUND` if the email doesn't exist; **`401 USER_NOT_FOUND`** (not `INVALID_CREDENTIALS`) if `oldPassword` doesn't match — the status code (401) and message constant (`USER_NOT_FOUND`) are mismatched here, worth fixing together if you touch this path so callers aren't told "user not found" for a wrong-password case. On success: `201 PASSWORD_UPDATE_SUCCESS`, no cookie set/refreshed — the caller's existing `Token` (if any) is untouched, but it no longer works: this also increments `tokenVersion` (see `signToken` below), which invalidates **every** `Token` cookie issued for this account, including whichever session made this exact call. There is no re-issuance here to compensate — a client that calls this while already logged in should expect to need to sign in again afterward.
+
+## `POST /auth/forgot-password` and `POST /auth/reset-password`
+
+The proper, self-service way for a locked-out user to regain access — unlike `POST /auth/update` above (which needs the *current* password), this pair only needs proof of owning the account's inbox. Both are `authLimiter`-gated like every other route in this module, and unauthenticated (you can't require a token to recover from not having one).
+
+Requires `RESEND_API_KEY` (see [config/mailer.ts](../../src/config/mailer.ts) and `.env.example`) — optional in `env.ts`, same lazy-503 pattern `payment.service.ts` uses for Razorpay: the API boots fine without it, and only a request that actually needs to send an email fails, with `503 Email sending is not configured yet.`, until it's set.
+
+**`POST /auth/forgot-password`** — `authLimiter` → `validate(forgotPasswordSchema)` → `authController.forgotPassword`. Body: `{ email }`. Always responds `200 { message: PASSWORD_RESET_EMAIL_SENT }`, whether or not `email` has an account — `authService.requestPasswordReset` resolves identically either way (a no-op if there's no such user, no distinguishable timing/response difference for the caller to branch on). This is deliberate: not a new information leak, since `GET /auth/check-email` already answers "does this email exist" directly, just for a different purpose — see that route's own doc comment above.
+
+For a real account, `requestPasswordReset`:
+1. Generates a raw 32-byte random token (`crypto.randomBytes(32).toString("hex")`).
+2. Stores only its **SHA-256 hash** on the `User` document as `resetPasswordToken`, plus `resetPasswordExpires` (now + 1 hour) — same reasoning as storing a bcrypt password hash rather than the password itself: a DB read/leak alone shouldn't be enough to take over an account.
+3. Emails the **raw** token (never the hash) as a link — `${ORIGIN_URL}/auth/reset-password/<rawToken>` — via `sendPasswordResetEmail` ([config/mailer.ts](../../src/config/mailer.ts), Resend). `ORIGIN_URL` is the same env var CORS already uses for the frontend's origin, reused here rather than adding a second "what's the frontend's URL" config value.
+
+**`POST /auth/reset-password`** — `authLimiter` → `validate(resetPasswordSchema)` → `authController.resetPassword`. Body: `{ token, newPassword }` (`newPassword` 5+ chars, same rule as `POST /auth/update`). `authService.resetPassword` re-hashes the incoming `token` and looks up a user by `resetPasswordToken` equal to that hash **and** `resetPasswordExpires` still in the future — `400 INVALID_RESET_TOKEN` if no such user (covers wrong token, expired token, and an already-used token identically, since a used token's fields are cleared, not just expired). On success: hashes `newPassword`, clears `resetPasswordToken`/`resetPasswordExpires` (so the same link can't be replayed — single-use), and bumps `tokenVersion` (same as `POST /auth/update` — a password reset should invalidate every existing session, including whichever one happened to make this exact call).
+
+**`POST /auth/update` also now clears a pending reset token on success** — closes a gap where a forgot-password link issued but not yet used could otherwise still work for up to its full 1-hour window even after the account's password had already legitimately changed through the other path.
+
+The `resetPasswordToken`/`resetPasswordExpires` fields live on `IUser` ([users.md](./users.md#the-user-model-is-shared-by-five-modules)), excluded from both `PUBLIC_FIELDS` and `sanitize()` the same way `password`/`tokenVersion` are — never returned to a client.
 
 ## Google OAuth flow
 
@@ -75,8 +94,9 @@ jwt.sign({ User: { id: email }, tokenVersion }, env.JWT_SECRET, { expiresIn: THI
 
 The JWT now expires — `expiresIn` is derived from `THIRTY_DAYS_MS` (exported from [auth.cookies.ts](../../src/modules/auth/auth.cookies.ts), the same constant the `Token` cookie's own `expires` is built from), so the token and the cookie carrying it always lapse at the exact same instant. This alone only bounds how long a leaked token stays valid (up to 30 days); actually killing a session on demand needed something more, which is what `tokenVersion` is for.
 
-Every `User` document has a `tokenVersion` (default `0` — see [users.md](./users.md#the-user-model-is-shared-by-five-modules)), embedded in the JWT payload at sign time. [`requireAuth`](../../src/middleware/auth.ts) compares the token's `tokenVersion` against the DB's current value on every request and rejects a mismatch — so bumping a user's `tokenVersion` immediately invalidates every token issued before that point, not just ones that have naturally expired. Two things bump it:
+Every `User` document has a `tokenVersion` (default `0` — see [users.md](./users.md#the-user-model-is-shared-by-five-modules)), embedded in the JWT payload at sign time. [`requireAuth`](../../src/middleware/auth.ts) compares the token's `tokenVersion` against the DB's current value on every request and rejects a mismatch — so bumping a user's `tokenVersion` immediately invalidates every token issued before that point, not just ones that have naturally expired. Three things bump it:
 - **`POST /auth/update`** (password change) — see above; always bumps, unconditionally logging out every existing session on that account.
+- **`POST /auth/reset-password`** — see above; same reasoning as `/auth/update`, a password change should never leave old sessions alive.
 - **`GET /auth/logout`** — see below; bumps only the account the cookie being cleared actually belonged to.
 
 Nothing else bumps it — signing in on a second device, for instance, does not invalidate the first device's session; `tokenVersion` is a blunt "kill everything" tool, not per-device session tracking.

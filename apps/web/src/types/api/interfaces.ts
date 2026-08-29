@@ -1,5 +1,5 @@
 /**
- * Shared shapes for `src/services/MilanApi.ts` responses.
+ * Shared shapes for `src/services/KarmaCircleApi.ts` responses.
  * That file is plain JS (see docs/specs/api-integration.md) and every
  * function in it catches network errors and returns `error.response`
  * instead of throwing, so callers always deal with a response-shaped

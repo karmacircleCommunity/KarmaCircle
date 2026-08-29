@@ -84,10 +84,10 @@
      while attention moves to what arrives. */
   --animate-question-in: question-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-question-out: question-out 0.17s cubic-bezier(0.4, 0, 1, 1) both;
-  --animate-question-in-back: question-in-back 0.42s cubic-bezier(0.16, 1, 0.3, 1)
-    both;
-  --animate-question-out-back: question-out-back 0.17s cubic-bezier(0.4, 0, 1, 1)
-    both;
+  --animate-question-in-back: question-in-back 0.42s
+    cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-question-out-back: question-out-back 0.17s
+    cubic-bezier(0.4, 0, 1, 1) both;
 
   @keyframes pop-in {
     from {
@@ -288,7 +288,7 @@ code {
 }
 
 /* Bootstrap's .container, replicated for the handful of non-SCSS files
-   (Donate.tsx, Landing.tsx, Milaninfobanner.tsx) that still rely on it
+   (Donate.tsx, Landing.tsx) that still rely on it
    now that Bootstrap itself has been removed.
 
    Wrapped in `@layer base` (fixed August 2026): `@import "tailwindcss"`
@@ -304,7 +304,7 @@ code {
    matter what utility the component asked for. Filing this under `base`
    restores the normal expectation ("a Tailwind utility on the element
    wins"), matching how `.container` behaves everywhere else that doesn't
-   pair it with a conflicting utility (Donate.tsx, Milaninfobanner.tsx),
+   pair it with a conflicting utility (Donate.tsx),
    so their rendering is unaffected by this change. */
 @layer base {
   .container {

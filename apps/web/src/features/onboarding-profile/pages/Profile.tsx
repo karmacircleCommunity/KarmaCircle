@@ -12,7 +12,7 @@ import useSWR from "swr";
 import { Button, Navbar } from "@components";
 import { organizationEndpoints } from "@services/ApiEndpoints";
 import { resetUserData } from "@app/store/slices/userSlice";
-import { Logout } from "@services/MilanApi";
+import { Logout } from "@services/KarmaCircleApi";
 import fetcher from "@utils/Fetcher";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { checkMissingFields } from "@features/onboarding-profile/utils/checkMissingFields";

@@ -1,6 +1,6 @@
 import { useSWRConfig } from "swr";
 import { eventEndpoints } from "@services/ApiEndpoints";
-import { CreateEvent } from "@services/MilanApi";
+import { CreateEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { EventFormErrors, EventFormState, UseEventResult } from "../types";
 
@@ -70,8 +70,8 @@ export function useEvent(event: EventFormState): UseEventResult {
     setshowCreateModal: (open: boolean) => void,
   ): Promise<void> => {
     if (Object.keys(errors).length === 0) {
-      // MilanApi.js's CreateEvent() returns the caught error object as-is on
-      // failure (not error.response, unlike most MilanApi.js functions —
+      // KarmaCircleApi.ts's CreateEvent() returns the caught error object as-is on
+      // failure (not error.response, unlike most KarmaCircleApi.ts functions —
       // see SPEC.md), so its inferred return type collapses to include
       // `unknown`. Asserted here to the shape this hook actually reads,
       // including the pre-existing doubled `.response.response` access below.
