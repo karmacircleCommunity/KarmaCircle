@@ -1,3 +1,4 @@
+import { FilterQuery } from "mongoose";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
 import { findByEmail } from "../users/user.service";
@@ -8,10 +9,19 @@ export async function findByUid(uid: string) {
   return Event.findOne({ uid });
 }
 
-export async function findAll(pagination: { skip: number; limit: number }) {
+export async function findAll(
+  filters: { host?: string },
+  pagination: { skip: number; limit: number },
+) {
+  const query: FilterQuery<IEvent> = {};
+
+  if (filters.host) {
+    query.hostUsername = filters.host;
+  }
+
   const [data, total] = await Promise.all([
-    Event.find({}).skip(pagination.skip).limit(pagination.limit),
-    Event.countDocuments({}),
+    Event.find(query).skip(pagination.skip).limit(pagination.limit),
+    Event.countDocuments(query),
   ]);
   return { data, total };
 }

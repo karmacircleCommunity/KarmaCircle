@@ -10,6 +10,13 @@ export const showSuccessToast = (message?: string): void => {
     return;
   }
 
+  // A toast with nothing in it is a bubble that appears, says nothing and
+  // leaves — which is exactly what an API response with no `message` field
+  // used to produce. Say nothing instead.
+  if (!message) {
+    return;
+  }
+
   toast.success(message, {
     position: "top-center",
     autoClose: 2000,
@@ -38,7 +45,12 @@ export const showErrorToast = (message?: string): void => {
     return;
   }
 
-  toast.error(message, {
+  // Unlike a success, an error the user can't see is worse than a vague
+  // one — fall back to generic copy rather than swallowing it. See
+  // showSuccessToast above for why an empty toast is never rendered.
+  const text = message || "Something went wrong. Please try again.";
+
+  toast.error(text, {
     position: "top-center",
     autoClose: 2000,
     hideProgressBar: false,

@@ -11,11 +11,15 @@ const router = Router();
  * @openapi
  * /events:
  *   get:
- *     summary: Get an event by uid, or list all events (paginated)
+ *     summary: Get an event by uid, or list events (paginated, optionally by host)
  *     tags: [Events]
  *     parameters:
  *       - in: query
  *         name: uid
+ *         schema: { type: string }
+ *       - in: query
+ *         name: host
+ *         description: A host's userName — returns only that host's own events
  *         schema: { type: string }
  *       - in: query
  *         name: page

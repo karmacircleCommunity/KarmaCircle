@@ -81,7 +81,7 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 ## Test coverage
 
-`auth`, `events`, `products`, and `users` have test files (`tests/auth.test.ts`, `tests/events.test.ts`, `tests/products.test.ts`, `tests/users.test.ts`). `organizations`, `directory`, `payments`, and `reports` are completely untested — a change to any of them is only checked by `typecheck`/`lint`, not by CI-run behavioral tests, until coverage is added. See [architecture.md](./architecture.md#testing).
+`auth`, `events`, `organizations`, `products`, and `users` have test files (`tests/auth.test.ts`, `tests/events.test.ts`, `tests/organizations.test.ts`, `tests/products.test.ts`, `tests/users.test.ts`). `directory`, `payments`, and `reports` are completely untested — a change to any of them is only checked by `typecheck`/`lint`, not by CI-run behavioral tests, until coverage is added. See [architecture.md](./architecture.md#testing).
 
 `apiLimiter`/`authLimiter` ([rate-limit.ts](../../src/middleware/rate-limit.ts)) are skipped when `NODE_ENV=test` — they weren't originally, and a test file making enough `/auth/*` calls across its whole suite (as `tests/auth.test.ts` does once its session-revocation tests were added) would start getting genuine `429`s partway through a run, unrelated to whatever behavior that test was actually checking. If you're ever debugging a mysteriously-failing test that looks like a state-leak between `it` blocks, check the response status/body before assuming it — a `429` disguised as a missing `Set-Cookie` header is exactly what this looked like before it was traced down.
 

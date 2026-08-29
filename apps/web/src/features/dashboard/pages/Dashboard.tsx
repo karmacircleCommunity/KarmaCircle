@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import useSWR from "swr";
 import { Navbar } from "@components";
-import ProfileCompletion from "@features/onboarding-profile/components/ProfileCompletion";
+import OrganizationSetupGate from "@features/organizations/components/OrganizationSetupGate";
 import type { DashboardProfileResponse } from "../types";
 
 const Dashboard = () => {
@@ -29,7 +29,13 @@ const Dashboard = () => {
   const { handleSetDefaultValues } = useProfileCompletion();
 
   return (
-    <>
+    // A draft organization gets told what is still missing and handed a
+    // link that resumes setup where it stopped, instead of this page's
+    // empty placeholders. The gate is a no-op for a live organization.
+    <OrganizationSetupGate
+      title="Your dashboard opens up once your profile is live"
+      description="Your organization is still a draft, so there is nothing here to show yet — no profile for anyone to visit, and no way for people to find you. Finish the details and this fills in."
+    >
       <Navbar />
       <div className="mx-12 px-28 py-8">
         <div className="flex h-full items-start gap-[1.2rem]">
@@ -62,7 +68,6 @@ const Dashboard = () => {
               onClick={() => {
                 setOpenModal(true);
                 handleSetDefaultValues(profileData?.user);
-                console.log(profileData?.user);
               }}
             >
               Edit Profile
@@ -88,21 +93,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {profileData?.user?.config?.hasCompletedProfile === false && (
-        // Pre-existing prop-name mismatch, not introduced by this
-        // conversion: ProfileCompletion.tsx's props are
-        // `{ setShowEditModal, refreshProfileData }`, not `edit`/`setOpenModal`.
-        // See docs/specs/dashboard.md and dashboard/SPEC.md's "Critical
-        // prop-name mismatch" section — fixing it is a behavior change
-        // out of scope for a types-only pass.
-        <ProfileCompletion
-          // @ts-expect-error — see comment above.
-          edit={openModal}
-          setOpenModal={setOpenModal}
-          refreshProfileData={refreshProfileData}
-        />
-      )}
-
       {openModal === true && (
         <ProfileUpdate
           setOpenModal={setOpenModal}
@@ -110,7 +100,7 @@ const Dashboard = () => {
           profileData={profileData?.user}
         />
       )}
-    </>
+    </OrganizationSetupGate>
   );
 };
 

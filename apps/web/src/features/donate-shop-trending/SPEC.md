@@ -1,7 +1,8 @@
-# Donate, Shop & Trending — Feature Spec
+# Donate (Shop & Trending removed) — Feature Spec
 
 Colocated, implementation-level companion to [docs/specs/donate-shop-trending.md](../../../docs/specs/donate-shop-trending.md).
-Three unrelated low-priority areas sharing one folder because none of them is a finished feature; treat `Donate.tsx` and `PaymentGateway.ts` as needing real rework if touched, and `Shop.tsx`/`Trending.tsx` as intentionally, harmlessly unfinished.
+The folder keeps its three-part name for history, but only Donate is left in it: treat `Donate.tsx` and `PaymentGateway.ts` as needing real rework if touched.
+Shop and Trending no longer exist as pages - both were deleted in August 2026, along with the shared `ComingSoon` component they were the only consumers of (see below).
 
 ## What this feature is responsible for
 
@@ -9,7 +10,7 @@ A donation flow (broken, unroutable), the Razorpay checkout integration that don
 
 ## Why it's shaped this way
 
-`Shop.tsx`/`Trending.tsx` are genuinely, deliberately incomplete — no feature was ever built, and that's fine, they're not broken code, just not-yet-written product surface. `Donate.tsx` is different: it's *stale* code from before a component reorganization (it imports paths that no longer exist), left in the tree without a route pointing to it, so it currently causes no runtime harm but would break the build the moment anyone wires it into `routesConfig.tsx` without first fixing it.
+`Donate.tsx` is *stale* code from before a component reorganization (it imports paths that no longer exist), left in the tree without a route pointing to it, so it currently causes no runtime harm but would break the build the moment anyone wires it into `routesConfig.tsx` without first fixing it.
 
 ## File manifest
 
@@ -17,8 +18,6 @@ A donation flow (broken, unroutable), the Razorpay checkout integration that don
 |---|---|---|
 | `pages/Donate.tsx` | Donation page — pick an organization, pay via Razorpay | ❌ not routed, **and would fail to build if it were** (broken imports) |
 | `pages/Donate.css` | Styles for the above | ✅ imports fine on its own, just unused in practice |
-| `pages/Shop.tsx` | `/shop` — "coming soon" placeholder | ✅ routed, intentionally unfinished |
-| `pages/Trending.tsx` | `/trending` — "coming soon" placeholder | ✅ routed, intentionally unfinished |
 | `services/PaymentGateway.ts` | `displayRazorpay(money)` — Razorpay checkout | ❌ not imported by any component (only reachable from the broken `Donate.tsx`), **and has its own undocumented bug even if wired up** |
 
 ## `pages/Donate.tsx` — broken imports, not routed, would fail to build if reached
@@ -71,13 +70,17 @@ Razorpay's checkout widget requires a valid `order_id` to open a real payment se
 
 **Not imported by any component today** — the Razorpay checkout script itself is loaded separately, by `Donate.tsx`'s own broken `loadScript` call, not by this file; if `Donate.tsx` is rewritten, decide whether script-loading responsibility should move into this file instead (arguably a better home for it, since it's specifically needed for what this file does).
 
-## `pages/Shop.tsx` and `pages/Trending.tsx` — intentional, working placeholders
+## Shop and Trending - deleted, not hidden (August 2026)
 
-Both are thin, correctly-working wrappers around the shared [`ComingSoon`](../../components/ComingSoon.tsx) component: `<Navbar />` + `<ComingSoon launchitem="..." />`.
-`Shop.tsx` passes `` `shop's page.` `` (note the trailing period, which `ComingSoon`'s own copy presumably incorporates into a sentence), `Trending.tsx` passes `"Trending section"` (no trailing period — a minor inconsistency between the two call sites' string formatting, cosmetic only).
-Both are correctly routed (`/shop`, `/trending`) in `routesConfig.tsx`.
-**Unlike `Donate.tsx`, there is nothing broken here** — these two files are exactly as finished as they're meant to be today.
-If asked to "build the shop" or "build trending," this is genuinely new feature work with no existing scaffolding to build from in this folder (contrast with `organizations`/`events`, where a real fetcher already exists and just needs wiring) — don't go looking for a half-built shop/trending implementation elsewhere in the repo; there isn't one.
+Both pages are gone, in two steps on the same day: Trending first, then Shop.
+Removed with them: `pages/Trending.tsx`, `pages/Shop.tsx`, the `/trending` and `/shop` routes in `routesConfig.tsx`, the `Shop` re-export in `route.ts`, both `Navbar` entries ("Trending" and "Shops"), and the "Trending Events" footer link.
+Both paths now fall through to `Error404` like any other unmatched URL.
+
+The reason was presentational, not architectural: the shared `ComingSoon` illustration read as cartoony and off-brand next to the rest of the site, and rather than restyle two pages with no product behind them, the surfaces were taken down.
+
+**`ComingSoon` went with them.** `src/components/ComingSoon.tsx`, its `@components` barrel export, and `src/assets/pictures/comingsoon.svg` were all deleted, because these two pages were its only consumers - there is no "coming soon" component in this app any more. If you need one again, write it fresh against the landing page's type/colour tokens rather than restoring the old one.
+
+If Shop or Trending is ever built for real, each starts from nothing: recreate the page, re-add the route, and put the nav/footer links back.
 
 ## Data flow summary — Donate, if it were fixed and wired up
 
@@ -123,4 +126,4 @@ This folder is TypeScript (`.ts`/`.tsx`) as of the dashboard/donate-shop-trendin
 
 - **"Fix the donate page"** → full rework, not a patch; see the itemized list under `pages/Donate.tsx` above. Confirm scope first — this touches routing, a missing component (`SingleOrganizationEvent`), login-state consistency, and the payment integration's own bug.
 - **"Fix the Razorpay integration" specifically** → start with `data.currency`/`data.id` → `data.data.currency`/`data.data.id` in `PaymentGateway.ts`; this is the highest-value, most self-contained fix in this feature and is currently untested because nothing calls this function.
-- **"Build the shop/trending page"** → genuinely new work, no existing scaffolding beyond the current `ComingSoon` placeholder; `ComingSoon`'s implementation lives in `src/components/ComingSoon.tsx`, outside this feature.
+- **"Build the shop/trending page"** → nothing to build on at all; both pages, both routes, and the `ComingSoon` placeholder component they used were deleted (see above).

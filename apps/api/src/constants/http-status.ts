@@ -52,4 +52,7 @@ export const STATUS_MESSAGE = {
   PROFILE_COMPLETE_SUCCESS: "Profile Completed Successfully",
   PROFILE_FETCH_FAILED: "Failed to fetch profile data !",
   TOO_MANY_REQUESTS: "You have already reported a problem in the last 2 hours.",
+  ORGANIZATION_NOT_FOUND: "Organization not found !",
+  ORGANIZATION_UPDATE_SUCCESS: "Organization Updated Successfully",
+  NOT_AN_ORGANIZATION: "This account is not an organization !",
 } as const;

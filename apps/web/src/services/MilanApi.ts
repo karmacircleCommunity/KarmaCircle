@@ -60,6 +60,23 @@ export const GetAllOrganizations = async () => {
   }
 };
 
+// UPDATE THE SIGNED-IN ORGANIZATION'S OWN RECORD
+// PATCH, not PUT, on purpose: the setup form saves whatever the user has
+// filled in so far, and the backend decides on its own whether that was
+// the last required field (which publishes the organization) — see
+// apps/api/src/modules/organizations/organization.service.ts.
+export const UpdateMyOrganization = async (details: unknown) => {
+  try {
+    const response = await Axios.patch(organizationEndpoints.mine, details, {
+      withCredentials: true,
+    });
+
+    return response;
+  } catch (error) {
+    return (error as AxiosError).response;
+  }
+};
+
 // REPORT PROBLEMS
 export const ReportProblem = async (credentials: unknown) => {
   try {

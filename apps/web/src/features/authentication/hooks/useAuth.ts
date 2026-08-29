@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { UserType } from "@/types/user";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { passwordRegex, STATUSMESSAGE } from "@statics/Constants";
@@ -66,8 +67,18 @@ export function useAuth(authType: AuthType): UseAuthResult {
         }),
       );
 
+      // A brand-new organization has nothing to see on the home page: its
+      // record exists but is in draft, invisible everywhere until the
+      // required details are filled. Send it to the one screen that can
+      // change that — which asks whether it wants to do that now rather
+      // than forcing the form on it, and exits back to "/" if not. See
+      // features/organizations/pages/OrganizationSetup.tsx.
+      const isNewOrganization =
+        authType === AuthType.SignUp &&
+        credentials.userType?.value === UserType.Organization;
+
       setTimeout(() => {
-        navigate("/");
+        navigate(isNewOrganization ? "/organization/setup" : "/");
         setLoading(false);
       }, 1000);
     } else {

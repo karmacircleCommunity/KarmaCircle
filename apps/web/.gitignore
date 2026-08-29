@@ -1,2 +1,6 @@
 .vercel
 .env*
+
+# Cypress run artifacts — regenerated on every run, never committed.
+cypress/videos/
+cypress/screenshots/

@@ -18,11 +18,14 @@ Its `prefill` block hardcodes the app author's own name/email/phone (`Tamal Das`
 Its success `handler` only shows a thank-you toast; it doesn't confirm the payment with the backend or update any order/donation record client-side (that's presumably handled server-side via Razorpay webhooks, but there's nothing in this repo to verify that).
 Not currently imported by any component (since `Donate.tsx` can't build) — the Razorpay checkout script itself is loaded separately, by `Donate.tsx`'s own `loadScript` call, not by this file.
 
-## Shop and Trending — intentional placeholders
+## Shop and Trending - deleted (August 2026)
 
-[apps/web/src/features/donate-shop-trending/pages/Shop.tsx](../../apps/web/src/features/donate-shop-trending/pages/Shop.tsx) (routed `/shop`) and [apps/web/src/features/donate-shop-trending/pages/Trending.tsx](../../apps/web/src/features/donate-shop-trending/pages/Trending.tsx) (routed `/trending`) are both thin wrappers around the shared `<ComingSoon />` component — see [apps/web/src/components/ComingSoon.tsx](../../apps/web/src/components/ComingSoon.tsx).
-`ComingSoon` takes a `launchitem` string (e.g. `"shop's page."`, `"Trending section"`) and renders a static illustration, a heading, and a "Sign up to get notified" CTA linking to `/auth/signup`.
-These two pages are deliberately unfinished — unlike Donate, there is no broken/dead code here to fix, just no feature built yet.
+Neither page exists any more, and neither does the component they shared.
+Deleted: `pages/Shop.tsx`, `pages/Trending.tsx`, the `/shop` and `/trending` entries in `routesConfig.tsx`, the `Shop` re-export in `route.ts`, both `Navbar` links ("Shops", "Trending"), the "Trending Events" link in `footerLinksConfig.ts`, and - because these two pages were its only consumers - `src/components/ComingSoon.tsx`, its `@components` barrel export, and `src/assets/pictures/comingsoon.svg`.
+Both `/shop` and `/trending` now render `Error404`.
+
+They were removed because the `ComingSoon` illustration looked cartoony and off-theme, and there was no product behind either page worth restyling it for.
+There is no "coming soon" component in this app now; if one is needed again, write it fresh against the design tokens in [ui-kit.md](./ui-kit.md) rather than restoring the deleted one.
 
 ## Types
 

@@ -71,6 +71,24 @@
   --animate-pop-in: pop-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-rise-in: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 
+  /* The organization setup flow's one-question-at-a-time transitions
+     (features/organizations/components/setup). Four rather than two
+     because the direction has to read correctly: moving forward, the
+     answered question leaves upward and the next one arrives from below;
+     going back, both reverse. A single pair would make "Back" look like
+     another step forward, which is exactly the cue that tells someone
+     whether they are progressing or retreating.
+
+     Exits are faster than entrances (0.17s vs 0.42s) so the flow never
+     feels like it is waiting on itself — the leaving card is already gone
+     while attention moves to what arrives. */
+  --animate-question-in: question-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-question-out: question-out 0.17s cubic-bezier(0.4, 0, 1, 1) both;
+  --animate-question-in-back: question-in-back 0.42s cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+  --animate-question-out-back: question-out-back 0.17s cubic-bezier(0.4, 0, 1, 1)
+    both;
+
   @keyframes pop-in {
     from {
       opacity: 0;
@@ -90,6 +108,50 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes question-in {
+    from {
+      opacity: 0;
+      transform: translateY(38px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes question-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-26px);
+    }
+  }
+
+  @keyframes question-in-back {
+    from {
+      opacity: 0;
+      transform: translateY(-38px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes question-out-back {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(26px);
     }
   }
 

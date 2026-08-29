@@ -28,7 +28,6 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | `/organization/:userName` | `OrganizationProfile` | The public organization profile (`features/organizations`), reached from a directory card. Until August 2026 this route rendered `Profile` — the account view — which is now `/user/:userName` only |
 | `/dashboard` | `Dashboard` | Logged-in organization/org's own dashboard |
 | `/events` | `Events` | Event directory |
-| `/shop` | `Shop` | "Coming soon" placeholder |
 | `/trending` | `Trending` | "Coming soon" placeholder |
 | `*` | `Error404` | Catch-all |
 
@@ -79,9 +78,9 @@ apps/web/src/
     organizations/                     — Organizations page, OrganizationCard, Organizations.ts fetcher
     events/                    — Events/DetailedEvent pages, event cards, CreateEvent(s), useEvent
     landing-home/               — Home page, Landing hero, MilanInfoBanner
-    donate-shop-trending/      — Donate, Shop, Trending pages, PaymentGateway.ts (Razorpay)
-    error-handling/            — Error404, Test pages
-  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, ScrollProgress, BacktoTop, ComingSoon, ComponentHelmet, ClickAwayListener
+    donate-shop-trending/      — Donate page + PaymentGateway.ts (Razorpay); the Shop and Trending pages were deleted
+    error-handling/            — Error404 (rebuilt August 2026), Test pages
+  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, ScrollProgress, BacktoTop, ComponentHelmet, ClickAwayListener
   hooks/                       — cross-cutting hooks used by 2+ features (useSectionReveal, useMagnetic, useReducedMotion — the shared motion layer, see ui-kit.md#motion)
   services/                    — MilanApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
   statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts)

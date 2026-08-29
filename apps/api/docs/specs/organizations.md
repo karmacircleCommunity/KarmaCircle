@@ -1,17 +1,54 @@
 # Organizations Module
 
-[src/modules/organizations/](../../src/modules/organizations/) — look up an organization by username (or list all organizations), and the authenticated organization's own dashboard data. Owns no model of its own; both handlers query `users`' `User` collection filtered to `userType: "organization"` (see [users.md](./users.md#the-user-model-is-shared-by-five-modules)). There's no separate `Organization` collection — "organization" is a Mongoose discriminator on the same `User` model/collection an individual account also uses (`user.model.ts` exports the `Organization` discriminator model directly, though this module's queries still go through the shared `userService.findByType("organization", ...)` helper rather than importing `Organization` itself).
+[src/modules/organizations/](../../src/modules/organizations/) — the organization's own record: its public directory listing, its public profile, and the owner-only setup/edit endpoints behind them.
 
-## `GET /organizations`
+## The record, and why it is its own collection
 
-No auth. `validate(listOrganizationsQuerySchema, "query")` — `{ userName?: string, page?: number, limit?: number }` (pagination merged in from [src/utils/pagination.ts](../../src/utils/pagination.ts), default `page=1`/`limit=20`, capped at 100). If `userName` present: `userService.findByUsername(userName)` — **this looks up by username across the whole `User` collection, not filtered to `userType: "organization"`** — so `GET /organizations?userName=<an individual's username>` returns that individual's data with `200`, not a `404`. This mirrors a note already in the frontend's own spec (`Profile.tsx` calls this same organization-lookup path for both `/user/:userName` and `/organization/:userName` routes) — it's not a bug so much as this endpoint quietly doubling as "look up any user, regardless of type," which is worth knowing if you ever add organization-only logic here (`page`/`limit` are accepted but ignored on this branch). If `userName` absent: `userService.findByType("organization", { skip, limit })` — every organization, paginated, `{ data, pagination }` via `PUBLIC_FIELDS` projection (`-password -__v`, `_id` included). This same service function backs [directory.md](./directory.md)'s `GET /display/organizations`, so both routes paginate identically.
+An organization signs up exactly like an individual (`POST /auth/signup` with `userType: "organization"`) and that login **is** the organization — there is no separate "person" account today.
+What changed (August 2026) is where an organization's *data* lives: signup now writes two documents, the `users` login and a new `organizations` document owned by it ([organization.model.ts](../../src/modules/organizations/organization.model.ts)).
 
-## `GET /organizations/dashboard`
+The split exists because an organization grows fields a person never has — tag, domains, team size, funds, verification — and, later, affiliated members.
+Hanging those off the shared `User` schema would bloat every individual's document or force a migration the day affiliates ship.
+`ownerEmail` (keyed by email, because that is what a verified JWT carries as `req.auth.email`) and the initially-single `members` array are that future pre-wired: an affiliate accepting an invite becomes a row in `members`, and nothing else moves.
 
-`requireAuth` → `organizationController.dashboard`. Looks the caller up by `req.auth.email` (`userService.findByEmail`, **not** filtered to `userType: "organization"` either — an individual account hitting this route with a valid token gets their own data back too, not a `403`). `404 DASHBOARD_FETCH_FAILED` if the token's email doesn't resolve to any user (shouldn't normally happen — `requireAuth` already validated the JWT, this only fires if the account was deleted after the token was issued, since tokens never expire — see [auth.md](./auth.md#signtoken)). On success: `200` with `userService.sanitize(user)` — the full sanitized profile (no `_id`, no `password`), same shape as the signup/signin response.
+The `Organization` **discriminator on the `User` model** still exists and is still what `getUserModel("organization")` constructs the login with — it is not the same thing as this collection, and both are load-bearing. See [users.md](./users.md).
 
-This is the endpoint the frontend's `fetchDashboard()` actually calls (`organizationEndpoints.dashboard`) and it **works** as a contract match — see [api-contract.md](./api-contract.md#get-organizationsdashboard). It's a separate, working code path from the frontend's `Dashboard.tsx` SWR call to `userEndpoints.profile`, which targets a route this API doesn't expose at all — see [known-issues.md](./known-issues.md#cross-repo-contract-breaks).
+### Draft and live
+
+A new organization is created with `status: "draft"` and is invisible to everyone but its owner: absent from `GET /organizations`, and a `404` on `GET /organizations/{handle}` — deliberately the same `404` an unknown handle gets, so a visitor cannot tell a half-finished signup from a nonexistent one.
+
+`REQUIRED_FIELDS` in [organization.service.ts](../../src/modules/organizations/organization.service.ts) is the list that gates publication: `description`, `tag`, `domains` (at least one), `teamSize`, `city`, `country`.
+They are deliberately **not** `required: true` on the schema — the setup form saves partial progress, and the record simply stays in draft.
+`updateForOwner` re-checks the list on every save and flips `status` to `live` on the save that completes it.
+The transition is one-way: a live organization that later blanks a required field stays live rather than vanishing from the directory mid-edit and breaking every link to it.
+
+A logo is **not** on the required list, on purpose: there is no upload endpoint yet, so requiring one would gate every organization behind a field it cannot fill. The frontend falls back to an accent band with the organization's monogram.
+
+### What the organization may not set about itself
+
+`status`, `verified`, `followers`, `handle` and `ownerEmail` are absent from `updateOrganizationSchema`, which is `.strict()` — sending any of them is a `400`, not a silently-ignored field.
+`verified` is an admin-only flag (there is no admin route for it yet); `followers` is a counted number, not a claimed one.
+`fundsRaised` **is** the organization's own claim, and is named so it can sit alongside a counted figure later rather than being overwritten by one — the frontend labels it "stated" wherever it renders.
+
+## Routes
+
+| Route | Auth | Notes |
+|---|---|---|
+| `GET /organizations` | no | Live organizations only, `{ data, pagination }` via `toPublic()`. Filters: `?search=` (case-insensitive partial match on name/description/city/country), `?tag=`, `?domain=`, plus `?page=&limit=`. |
+| `GET /organizations?userName=` | no | **Legacy branch, unchanged**: an account lookup answered out of the `users` collection, not this one. Still what `Profile.tsx` calls for `/user/:userName` and `/organization/:userName` account views. |
+| `GET /organizations/taxonomy` | no | `{ tags, domains }` — the closed vocabularies in [organization.taxonomy.ts](../../src/modules/organizations/organization.taxonomy.ts). The frontend renders its filter chips and setup form from this rather than keeping a second copy. |
+| `GET /organizations/me` | ✅ | The owner's own record via `toPrivate()` — public fields plus `ownerEmail`, `contactPhone`, `members`, `status`, `missingFields`, `isLive`. `403` for an individual account. Backfills the record for organizations that predate this collection (`findOrCreateForOwner`). |
+| `PATCH /organizations/me` | ✅ | Saves any subset of `updateOrganizationSchema`, publishes if that completed the required list. Returns `{ message, organization }`. |
+| `GET /organizations/dashboard` | ✅ | Unchanged: the caller's own sanitized **user** document, not this collection. |
+| `GET /organizations/{handle}` | no | One live organization via `toPublic()`. Declared last in the router — `/taxonomy`, `/me` and `/dashboard` would all match this wildcard otherwise. |
+
+`toPublic()` is where the public/private line is drawn, once, rather than at each call site: `ownerEmail`, `members`, `contactPhone` and `status` never reach a public response, so a new public route cannot leak them by forgetting to filter.
+
+## Tests
+
+[tests/organizations.test.ts](../../tests/organizations.test.ts) covers the draft-to-live transition (including that a partial save stays in draft), the `404` on a draft's public profile, the `401`/`403` gates on `/me`, the public shape's omissions, the search and domain filters, and the `400` on an attempt to set `status`/`verified`.
+`tests/auth.test.ts`'s discriminator test asserts the other half: a fresh organization signup does not appear in the directory.
 
 ## What's known-broken here
 
-Nothing broken within this module in isolation — both routes do what their code says. The interesting gaps are the "organization" filter not actually restricting `GET /organizations?userName=` or `GET /organizations/dashboard` to organization-type accounts, noted above, and are informational rather than bugs unless product intent says otherwise.
+The `?userName=` branch still looks up **any** user, not only organization-type ones, so `GET /organizations?userName=<an individual>` returns that individual with `200`. `GET /organizations/dashboard` is likewise not filtered to organizations. Both are unchanged legacy behavior, informational rather than bugs unless product intent says otherwise.

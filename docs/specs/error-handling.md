@@ -3,8 +3,18 @@
 ## 404
 
 [apps/web/src/features/error-handling/pages/Error404.tsx](../../apps/web/src/features/error-handling/pages/Error404.tsx), matched by the `*` catch-all route in `routesConfig.tsx`.
-Renders a static SVG illustration and a `Button` (`to="/"`) back to home.
-No `<Helmet>`/SEO tags, unlike most other top-level pages — worth adding if you touch this file.
+
+**Rebuilt August 2026.** It is now a typographic page carrying the normal site chrome: `<Helmet>` (title "KarmaCircle | Page not found" + meta description), `<Navbar />`, an eyebrow chip, an `<h1>`, one sentence of explanation, a primary `Button` (`to="/"`) back to home, quiet text links to `/organizations` and `/events`, and `<Footer />`.
+Its layout is deliberately the same shape as `EventNotFound` in [apps/web/src/features/events/pages/DetailedEvent.tsx](../../apps/web/src/features/events/pages/DetailedEvent.tsx), so the global 404 and the in-page not-found state read as one product.
+All styling is Tailwind utilities in `className`; the page owns no CSS file.
+
+The version it replaced was a full-bleed Freepik illustration (`error404.svg`) plus a bare `Button`, styled by a hand-written `Error404.css`. Four things were wrong with it, all fixed and all worth not reintroducing:
+- The `Button` was passed no `className`, and the shared `Button` component ships **no** padding, radius, or typography of its own (see [ui-kit.md](./ui-kit.md#styling-conventions)) - every call site supplies those. It rendered as a bare brand-coloured rectangle clamped to its own text.
+- Its wrapper used a `.button-wrapper` class that was never defined anywhere in the repo, so nothing centred or padded it and the link sat flush against the left viewport edge.
+- The illustration was `width: 60%` with no `max-width`, against a 750x500 viewBox - roughly 2.4x its design size on a wide monitor.
+- It rendered neither `<Navbar />` nor `<Footer />`, unlike every other page in the app, and set no `<title>`.
+
+`error404.svg` and `Error404.css` were both deleted along with it.
 
 ## API/network error feedback
 

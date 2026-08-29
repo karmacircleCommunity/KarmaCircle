@@ -17,6 +17,7 @@ Two unrelated event-creation UIs were built at different times and never reconci
 | File | Role | Live? |
 |---|---|---|
 | `pages/Events.tsx` | The `/events` page | ✅ routed, renders **sample data** from `constants/eventDirectory.ts` |
+| `pages/YourEvents.tsx` | The `/organization/events` page — one organization's own events, behind `OrganizationSetupGate` | ✅ routed, renders **live data** via `GET /events?host={handle}` |
 | `pages/DetailedEvent.tsx` | The `/events/:eventId` detail page | ✅ routed, renders **sample data** from `constants/eventDirectory.ts` + `constants/eventDetails.ts` |
 | `components/detail/` | The seven pieces that page composes — `EventHero`, `EventFacts`, `EventAgenda`, `EventLocationPanel`, `EventJoinPanel`, `EventFundraiserPanel`, `EventSection` | ✅ rendered by `DetailedEvent.tsx` only |
 | `constants/eventDetails.ts` | Detail-page content for all twelve events, keyed by `DirectoryEvent.id` | ✅ read by `DetailedEvent.tsx` |

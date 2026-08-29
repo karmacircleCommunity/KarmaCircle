@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
+import * as organizationService from "../organizations/organization.service";
 import { IUser, User, getUserModel } from "../users/user.model";
 import * as userService from "../users/user.service";
 import { THIRTY_DAYS_MS } from "./auth.cookies";
@@ -73,6 +74,18 @@ export async function signup(
     password: hashedPassword,
   });
   await newUser.save();
+
+  // An organization signup creates two documents, not one: the login
+  // above, and the organization's own (empty, draft) record it will fill
+  // in before anyone can see it. Individuals get no such record. See
+  // modules/organizations/organization.model.ts.
+  if (userType === "organization") {
+    await organizationService.createForOwner({
+      ownerEmail: email,
+      handle: userName,
+      name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : userName,
+    });
+  }
 
   return {
     token: signToken(email, newUser.tokenVersion),

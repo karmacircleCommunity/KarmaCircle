@@ -4,13 +4,11 @@ import { buildTestApp } from "./helpers/test-app";
 const app = buildTestApp();
 
 async function signupAndGetCookie() {
-  const res = await request(app)
-    .post("/auth/signup")
-    .send({
-      email: "host@example.com",
-      password: "hunter2",
-      name: "Test Host",
-    });
+  const res = await request(app).post("/auth/signup").send({
+    email: "host@example.com",
+    password: "hunter2",
+    name: "Test Host",
+  });
 
   const cookie = res.headers["set-cookie"]?.[0];
   if (!cookie) {
@@ -50,6 +48,35 @@ describe("Events", () => {
     expect(res.status).toBe(201);
     expect(res.body.savedEvent.uid).toBe(validOnlineEvent.uid);
     expect(res.body.savedEvent.hostUsername).toBeDefined();
+  });
+
+  it("filters the list to one host's own events with ?host=", async () => {
+    const cookie = await signupAndGetCookie();
+
+    const created = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({ ...validOnlineEvent, uid: "host-filter-event" });
+    expect(created.status).toBe(201);
+
+    const host = created.body.savedEvent.hostUsername;
+
+    const mine = await request(app).get("/events").query({ host });
+    expect(mine.status).toBe(200);
+    expect(mine.body.data.length).toBeGreaterThan(0);
+    expect(
+      mine.body.data.every(
+        (event: { hostUsername: string }) => event.hostUsername === host,
+      ),
+    ).toBe(true);
+    expect(mine.body.pagination.total).toBe(mine.body.data.length);
+
+    // Someone else's handle returns an empty page, not everyone's events.
+    const theirs = await request(app)
+      .get("/events")
+      .query({ host: "nobody-by-that-name" });
+    expect(theirs.status).toBe(200);
+    expect(theirs.body.data).toHaveLength(0);
   });
 
   it("rejects an Offline event missing location fields with 400", async () => {

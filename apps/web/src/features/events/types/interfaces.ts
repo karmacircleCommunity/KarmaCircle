@@ -226,3 +226,43 @@ export interface EventJoinPanelProps extends DetailedEventRecord {
   joined: boolean;
   onToggleJoin: () => void;
 }
+
+/**
+ * One event exactly as `GET /events` returns it — the raw Mongoose
+ * document, not the fixture's `DirectoryEvent` shape. Mirrors `IEvent` in
+ * apps/api/src/modules/events/event.model.ts; the two must change
+ * together.
+ *
+ * Deliberately separate from `DirectoryEvent`: a live record has no cover
+ * photo guarantee, no cause and no capacity, which is exactly why the
+ * directory's card can't render one yet. See docs/specs/events.md.
+ */
+export interface ApiEvent {
+  _id: string;
+  uid: string;
+  name: string;
+  description: string;
+  hostUsername: string;
+  hostName: string;
+  coverImage?: string;
+  mode: "Online" | "Offline";
+  city?: string;
+  state?: string;
+  country?: string;
+  platform?: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+}
+
+/** `GET /events` — the paginated list response. */
+export interface ApiEventList {
+  data: ApiEvent[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

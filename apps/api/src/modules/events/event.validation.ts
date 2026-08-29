@@ -48,6 +48,13 @@ export const listEventsQuerySchema = z
   .object({
     uid: z.string().optional(),
     slug: z.string().optional(),
+    /**
+     * Filters to one host's own events, by the `userName` stored on each
+     * event as `hostUsername`. This is what backs the organization's
+     * "Your events" page — the alternative, fetching every event and
+     * filtering in the browser, silently hides matches on page two.
+     */
+    host: z.string().trim().min(1).optional(),
   })
   .merge(paginationQuerySchema);
 

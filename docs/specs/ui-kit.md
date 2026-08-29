@@ -7,6 +7,9 @@ This is the one truly shared, widely-adopted primitive in the app — used acros
 
 Props: `type` (default `"button"`), `variant` (default `"solid"`; also `"outline"` is used at call sites — check `Button.tsx`'s `variantClasses` for the full set of variant classes before assuming others exist), `className`, `to`, `disabled`, `isLoading`, `cypressfield` (sets `data-cy`, for Cypress test targeting), `onClickfunction` (the click handler prop — **not** `onClick`; passing a plain `onClick` would be spread onto the element via `...props` and technically still work as a native handler, but `onClickfunction` is the prop this codebase consistently uses at every call site, so use it for consistency).
 
+**`Button` ships no shape of its own - every call site must pass one.** `variantClasses.solid` is only `bg-brand text-white` plus its hover/disabled/press states; there is no padding, no border-radius, and no font in it (and no global `.btn` rule anywhere - the `btn` class the component emits matches nothing). A `<Button>` rendered with no `className` is a bare brand-coloured rectangle clamped to its own text. Copy a shape from an existing call site (`Navbar.tsx`'s `rounded-5px px-5 py-2 font-outfit text-base`, or `Error404.tsx`'s pill `rounded-full px-6 py-3 font-poppins text-body`) rather than shipping the naked component - two pages did exactly that and both looked broken until August 2026.
+Note that `variantClasses.outline` **does** include `rounded-xl`; overriding it from `className` with a different radius is a same-layer collision decided by Tailwind's own class ordering, not by your `className`, so prefer `solid` when you need a pill.
+
 Behavior: if `to` is set **and** `navigator.onLine === true`, renders a `react-router-dom` `<Link>` instead of a `<button>` — an offline visitor passing `to` would silently get a plain, non-navigating `<button>` element instead (this is presumably intentional, to avoid dead navigation while offline, but it means `onClickfunction` also won't fire in that case since the button has no handler wired either way unless one was passed via `...props`).
 While `isLoading` is true, `children` are replaced with a `react-spinners` `ClipLoader`.
 
@@ -26,6 +29,18 @@ It was extracted in August 2026 from two hand-maintained copies that had started
 The old block stacked three heavy rows above the cards: a shadowed white pill search field, a row of nine outlined-and-filled cause chips, and a separate uppercase count line.
 Now the field is a single underline that turns brand on `focus-within`, the causes are plain text buttons with a 2px brand underline marking the active one, and the count shares the filter row on `sm` and up — leaving the primary button as the only filled surface on the page above the grid.
 The filter row still scrolls horizontally below `sm` (with the `-mx-9` bleed matching the pages' `px-9` mobile padding) rather than wrapping into four rows above the fold.
+
+## `SplitPanelLayout`
+
+[apps/web/src/components/layouts/SplitPanelLayout.tsx](../../apps/web/src/components/layouts/SplitPanelLayout.tsx).
+The shell for the app's focused flows: a dark brand panel on the left, whatever the user is actually doing on the right, and no navbar or footer to wander off into mid-flow.
+
+Two flows use it — signing in/up ([authentication.md](./authentication.md)) and organization setup ([organizations.md](./organizations.md#the-setup-flow--organizationsetup)).
+They differ only in what fills the left panel, so that is the `aside` prop; the art, the scrim, the cream form surface (`#faf8f5` — pure white next to small body text read as glare) and where the wordmark sits at each breakpoint live here once.
+It was extracted from `AuthLayout.tsx` in August 2026 when setup became a wizard, rather than copied — two near-identical shells is how two flows become two designs.
+
+`align="start"` for a panel tall enough to scroll (a centered tall form jumps as its height changes between steps), `align="center"` for a short one.
+The left panel is `sticky` from 900px up so a long form scrolls past it, and below 900px it is dropped entirely rather than stacked — its job is reassurance, and on a phone that belongs under the form, not above it, pushing the first field off screen.
 
 ## Card components
 
@@ -75,7 +90,7 @@ The reusable layer added August 2026 so "make it feel alive" doesn't mean a four
 - **`useMagnetic({ strength, max })`** — returns a ref; the element leans toward the cursor while hovered and springs back on leave. Gated to `(hover: hover) and (pointer: fine)` and off under reduced motion — on a phone, `pointermove` fires from a tap and would leave the element permanently offset. Writes through `gsap.quickTo` (no React state at pointer-event frequency). **It owns the element's `transform`**: an inline transform beats a class, so a magnetic element must not also carry `hover:-translate-*`/`active:scale-*`, which would silently do nothing. Used by `OpenSource.tsx`'s primary CTA.
 - **`useReducedMotion()`** — reactive `prefers-reduced-motion` as state, for components that have to *render* differently rather than branch inside a `useGSAP` body.
 - **`ScrollProgress`** (`apps/web/src/components/ScrollProgress.tsx`) — a 2px brand rule across the top of the window that fills as the page scrolls, mounted once in `App.tsx` outside the router so it survives navigation. Driven by a `ScrollTrigger` on `document.documentElement` rather than a `window.scrollY` listener, because the app's real scroll position is Lenis's eased one — a raw listener visibly runs ahead of the page it describes. `scrub: 0.2` gives it a slight trailing ease. Decorative, so it simply never animates under reduced motion rather than being parked at a static fill that would describe a scroll position nobody is at.
-- **Motion tokens in `index.css`'s `@theme`** — `--animate-pop-in` (used by the mobile nav sheet) and `--animate-rise-in` (used by `ComingSoon`). Tailwind v4 reads the `@keyframes` for an `--animate-*` token out of the same `@theme` block, so both halves have to live together; a keyframes rule outside `@theme` is not picked up. Apply them through `motion-safe:` (`motion-safe:animate-pop-in`). Everything here is an **entrance, never a loop** — the only looping animation in the app is Tailwind's own `animate-ping` on the 6px "Open source" dot in `OpenSource.tsx`.
+- **Motion tokens in `index.css`'s `@theme`** — `--animate-pop-in` (used by the mobile nav sheet) and `--animate-rise-in` (no consumer today - its only one, `ComingSoon`, was deleted in August 2026). Tailwind v4 reads the `@keyframes` for an `--animate-*` token out of the same `@theme` block, so both halves have to live together; a keyframes rule outside `@theme` is not picked up. Apply them through `motion-safe:` (`motion-safe:animate-pop-in`). Everything here is an **entrance, never a loop** — the only looping animation in the app is Tailwind's own `animate-ping` on the 6px "Open source" dot in `OpenSource.tsx`.
 - **Hover/press conventions applied across the app** in the same pass: nav links get a directional underline wipe (`origin-right` at rest, `origin-left` on hover, so it sweeps through rather than rubber-banding back), the navbar logo's brand dot scales with the wordmark, cards lift, and every `Button` presses (see above). All transform-based ones are `motion-safe:`-prefixed.
 
 ## Animation & scroll infra

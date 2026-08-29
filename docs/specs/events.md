@@ -15,6 +15,20 @@ It replaced 20 identical fake objects that were **shaped like user/organization 
 
 The "Create An Event" button opens `CreateEvent` from [apps/web/src/features/events/components/CreateEvent.tsx](../../apps/web/src/features/events/components/CreateEvent.tsx).
 
+## `YourEvents.tsx` — the organization's own events
+
+[apps/web/src/features/events/pages/YourEvents.tsx](../../apps/web/src/features/events/pages/YourEvents.tsx), routed at `/organization/events` (August 2026).
+This is where the navbar's "Your events" points; it used to point at `/event/create`, a path no route has ever matched, so the menu item was a 404 for every organization that clicked it.
+
+Two things make it different from the `/events` directory above it:
+
+- **It is behind `OrganizationSetupGate`** ([organizations.md](./organizations.md#the-setup-flow--organizationsetup)) — a draft organization is told what is still missing and handed a link that resumes setup, rather than shown an events page it cannot yet use.
+- **It renders live records, not the fixture.** It fetches `GET /events?host={handle}`, a filter added to the API in the same change, so filtering happens server-side and nothing is hidden on page two.
+
+It deliberately does **not** use `EventCard`: the card needs a cover photo, a cause and a capacity, and a live event record (`ApiEvent`, mirroring the API's `IEvent`) has none of the three. Plain rows are what the data actually supports. When those fields exist on a real event, this page and the directory can converge on the card.
+
+Event creation is still broken (see below), so in practice this page shows its empty state — which is honest, rather than a fixture pretending otherwise.
+
 ## Two different "create event" components (pick carefully)
 
 There are **two separate, differently-implemented "create an event" modals** in this codebase, and they are used in different places:

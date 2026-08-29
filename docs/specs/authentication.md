@@ -32,7 +32,9 @@ It returns `{ authenticateUser, loading }`.
    - **Sign-up:** checks `credentials.password` against `passwordRegex` (`static/Constants.ts` — 8+ chars, at least one digit, one lowercase, one uppercase letter; exported so `Auth.tsx`'s live strength meter can read the same rule).
    Either way, this client check happens before any network call is made.
 4. Sets `loading = true`, then calls `LoginUser(credentials)` or `RegisterUser({ ...credentials, userType: credentials.userType.value })` from `MilanApi.ts`. `userType` is only unwrapped from its `{value, label}` shape for sign-up.
-5. On `response.status` 200/201: shows a success toast, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })` to Redux, then after a fixed 1000ms `setTimeout`, navigates to `/` and clears `loading`.
+5. On `response.status` 200/201: shows a success toast, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })` to Redux, then after a fixed 1000ms `setTimeout`, navigates and clears `loading`.
+   The destination is `/` in every case **except a brand-new organization sign-up, which goes to `/organization/setup`** — its record exists but is in draft, so it is invisible everywhere else until the required details are filled.
+That page opens by *asking* whether the organization wants to do this now rather than by presenting the form: setting the profile up is optional, and "Maybe later" returns to `/` (see [organizations.md](./organizations.md)).
 6. Otherwise: shows an error toast with `response?.data?.message` and clears `loading`. On sign-up specifically, if that message is exactly the backend's `409 USER_ALREADY_EXISTS` text, also sets `errors.email` to it — see "the `"signup"` step reverting to `"email"`" above.
 
 `Auth.tsx` disables the current step's submit `<Button>` while `loading` is true or while any required field for that step is empty, and shows a `ClipLoader` spinner via the shared `Button` component's `isLoading` prop.

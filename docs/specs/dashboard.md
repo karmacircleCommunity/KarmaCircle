@@ -9,6 +9,8 @@ Routed at `/dashboard`, reachable by URL to any visitor regardless of auth state
 - Fetches the logged-in account's own profile via SWR: `useSWR(userEndpoints.profile, fetcher, { onSuccess, onError })`.
   `onSuccess` dispatches `updateUserData(data?.user)` to Redux on every successful fetch/revalidation, keeping Redux in sync with the server.
   `onError` shows an error toast with `error?.response?.data?.message`.
+- **The whole page is wrapped in `OrganizationSetupGate`.** An organization still in draft never sees the placeholders below; it gets a panel naming what is still missing and a link that resumes setup at the step it stopped on. The gate is a no-op for a live organization, and fetches nothing for an individual. See [organizations.md](./organizations.md#the-setup-flow--organizationsetup).
+- **It no longer renders `ProfileCompletion`.** That modal — the old "We're almost done" org-completion form, mounted whenever `config.hasCompletedProfile === false` — was a second, competing implementation of the same job as the setup wizard, and its close button was wired to a prop this page never passed, so it could not be dismissed. It is gone from here; the component itself is still in the tree, now rendered nowhere. See [onboarding-profile.md](./onboarding-profile.md).
 - Renders a cover image and profile picture — both are hardcoded stock photo URLs (Pexels/other CDN), not derived from `profileData` at all.
 - Renders static follower/event counts (`1.25k` / `231`) — not derived from `profileData` either; these are placeholder numbers.
 - An "Edit Profile" `<button>` opens `ProfileUpdate` (`setOpenModal(true)`), first calling `handleSetDefaultValues(profileData?.user)` from `useProfileCompletion` to pre-populate the form.

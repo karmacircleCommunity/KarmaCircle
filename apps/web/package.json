@@ -68,7 +68,8 @@
     "type-check": "tsc --noEmit",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "docker-frontend": "docker-compose -f docker-compose.dev.yaml up --build"
+    "docker-frontend": "docker-compose -f docker-compose.dev.yaml up --build",
+    "cypress:walkthrough": "cypress run --env NO_COMMAND_LOG=1 --config specPattern=cypress/walkthrough/**/*.spec.js,video=true,viewportWidth=1440,viewportHeight=900"
   },
   "browserslist": {
     "production": [

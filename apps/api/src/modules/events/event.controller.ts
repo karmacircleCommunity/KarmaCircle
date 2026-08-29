@@ -7,7 +7,8 @@ import * as eventService from "./event.service";
 import { CreateEventInput, ListEventsQuery } from "./event.validation";
 
 export async function listEvents(req: Request, res: Response) {
-  const { uid, slug, page, limit } = req.query as unknown as ListEventsQuery;
+  const { uid, slug, host, page, limit } =
+    req.query as unknown as ListEventsQuery;
   const eventUid = uid ?? slug;
 
   if (eventUid) {
@@ -21,6 +22,7 @@ export async function listEvents(req: Request, res: Response) {
   }
 
   const { data, total } = await eventService.findAll(
+    { host },
     toSkipLimit({ page, limit }),
   );
   return res

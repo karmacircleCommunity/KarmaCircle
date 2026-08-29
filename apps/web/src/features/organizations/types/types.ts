@@ -20,3 +20,17 @@ export type Cause =
 
 /** The cause chips include an "All" pseudo-option that clears the filter. */
 export type CauseFilter = Cause | "All";
+
+/**
+ * The setup wizard's steps, in order. String ids rather than indexes so
+ * they survive in the URL (`/organization/setup?step=reach`) and so
+ * inserting a third step later doesn't renumber the two that exist.
+ */
+export type OrganizationSetupStepId = "about" | "reach";
+
+/**
+ * What the setup page is showing. `"intro"` is the opt-in screen a draft
+ * organization lands on after signup — setting the profile up is
+ * deliberately optional, so nothing is asked of them before they say yes.
+ */
+export type OrganizationSetupStage = "intro" | OrganizationSetupStepId;

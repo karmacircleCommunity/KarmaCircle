@@ -25,7 +25,7 @@ See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate a
 - **Razorpay** SDK for payment-order creation — see [payments.md](./payments.md).
 - **Helmet, compression, cors, express-rate-limit, pino/pino-http** for the standard middleware stack — see [architecture.md](./architecture.md).
 - **swagger-jsdoc + swagger-ui-express** — every route file carries `@openapi` JSDoc blocks; the generated spec is served at `/docs`. Treat a route's JSDoc block as documentation of intent, not as a guarantee it matches the Zod schema next to it — cross-check both when in doubt.
-- **Jest + ts-jest + Supertest + mongodb-memory-server** for tests (`tests/*.test.ts`) — an in-memory Mongo instance per test run, no real database needed. Only `auth`, `events`, `products`, and `users` have test files today; `organizations`, `directory`, `payments`, and `reports` are currently untested. See [architecture.md](./architecture.md#testing).
+- **Jest + ts-jest + Supertest + mongodb-memory-server** for tests (`tests/*.test.ts`) — an in-memory Mongo instance per test run, no real database needed. Only `auth`, `events`, `organizations`, `products`, and `users` have test files today; `directory`, `payments`, and `reports` are currently untested. See [architecture.md](./architecture.md#testing).
 - **Vercel serverless** is the production deploy target (`api/index.ts` wraps `createApp()` as a handler, `vercel.json` rewrites everything to it); `npm start` (plain `node dist/src/server.ts` after `npm run build`) is the non-Vercel path. Both boot the exact same `createApp()` from `src/app.ts`. See [architecture.md](./architecture.md).
 
 ## Folder structure
@@ -39,7 +39,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | `<name>.controller.ts` | Thin HTTP layer — reads `req`, calls the service, shapes the response. No business logic. |
 | `<name>.service.ts` | Business logic and all Mongoose queries |
 | `<name>.validation.ts` | Zod schemas + their inferred `z.infer` types, used by both `validate()` middleware and the controller's request-body casts |
-| `<name>.model.ts` | Mongoose `Schema`/`model`, only in modules that own a collection (`users`, `events`, `products`, `reports` — `organizations`/`directory`/`auth`/`payments` don't have one; see below) |
+| `<name>.model.ts` | Mongoose `Schema`/`model`, only in modules that own a collection (`users`, `organizations`, `events`, `products`, `reports` — `directory`/`auth`/`payments` don't have one; see below) |
 
 `src/config/` (env, database, logger, passport, swagger), `src/middleware/` (auth, error-handler, rate-limit, validate), `src/constants/` (`STATUS_CODE`/`STATUS_MESSAGE`), and `src/utils/` (`asyncHandler`, `pagination`) hold everything shared across modules — see [architecture.md](./architecture.md) for what each does.
 `src/routes/index.ts` mounts every module's router onto its base path; `src/app.ts` assembles the whole Express app (middleware stack + mounted routes); `src/server.ts` and `api/index.ts` are the two ways that app actually gets served (see [architecture.md](./architecture.md#two-entry-points)).
@@ -51,7 +51,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | [architecture.md](./architecture.md) | App shell, middleware stack, config, two entry points, build/deploy, testing | — | — |
 | [auth.md](./auth.md) | Email/password signup+signin, password update, Google OAuth (Passport), JWT issuance, cookie shapes, `requireAuth` middleware | reuses `users`' `User` model | mixed (see file) |
 | [users.md](./users.md) | Look up a user (or list individuals) by username, fetch/update/complete the authenticated user's own profile, the shared `User` model (used by `auth`/`organizations`/`directory`/`events`/`products` too) | ✅ `User` | `GET /user/profile`, `PATCH /user/update`, `PATCH /user/complete` |
-| [organizations.md](./organizations.md) | Look up an organization (or list all organizations) — same `User` collection, filtered by `userType`; the authenticated organization's own dashboard | reuses `users`' `User` model | `GET /organizations/dashboard` only |
+| [organizations.md](./organizations.md) | The organization's own record: public directory + profile, owner-only setup/edit, the draft→live gate, the tag/domain taxonomy; plus the legacy account-lookup and dashboard branches | ✅ `Organization` (its own collection, owned by a `users` login) | `GET/PATCH /organizations/me`, `GET /organizations/dashboard` |
 | [directory.md](./directory.md) | Public, unfiltered "list every user" / "list every organization" endpoints — no pagination, no auth | reuses `users`' `User` model | no |
 | [events.md](./events.md) | List all events / one event by `uid`, create an event as the authenticated host | ✅ `Event` | `POST /events/create` only |
 | [payments.md](./payments.md) | Create a Razorpay order (amount → order id) | — (Razorpay is the system of record) | no |

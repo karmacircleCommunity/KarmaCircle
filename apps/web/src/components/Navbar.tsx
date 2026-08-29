@@ -10,6 +10,8 @@ import type { RootState } from "@app/store/store";
 import { Logout } from "@services/MilanApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import Button from "@components/buttons/Button";
+import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
+import { resumeSetupPath } from "@features/organizations/utils/organizationSetupForm";
 
 // No "Home" entry — the logo already links there (standard marketing-site
 // convention: a persistent top nav lists the *other* destinations, not the
@@ -20,16 +22,8 @@ const Links = [
     link: "/organizations",
   },
   {
-    name: "Trending",
-    link: "/trending",
-  },
-  {
     name: "Events",
     link: "/events",
-  },
-  {
-    name: "Shops",
-    link: "/shop",
   },
 ];
 
@@ -47,6 +41,11 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
   const user = useSelector(selectUser);
+
+  // A draft organization needs one always-visible way back into setup —
+  // it opted out of finishing it, and nothing else on screen tells it that
+  // it is still invisible. Fetches nothing for anyone else.
+  const { organization, isDraft } = useMyOrganization();
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
@@ -194,6 +193,17 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
 
               {isLoggedIn ? (
                 <>
+                  {isDraft && organization && (
+                    <div>
+                      <Link
+                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-brand no-underline"
+                        to={resumeSetupPath(organization.missingFields)}
+                        onClick={() => setIsNavbarOpen(false)}
+                      >
+                        Finish setting up
+                      </Link>
+                    </div>
+                  )}
                   <div>
                     <Link
                       className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
@@ -239,6 +249,16 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
               aria-orientation="horizontal"
               className="h-px w-full bg-[#e2e5e883]"
             ></div>
+            {isDraft && organization && (
+              <Link
+                to={resumeSetupPath(organization.missingFields)}
+                data-cy="nav-finish-setup"
+                className="flex items-center justify-between gap-2 rounded-5px p-2.5 font-outfit text-base leading-none font-medium text-brand no-underline hover:bg-brand/8"
+              >
+                Finish setting up
+                <span className="size-1.5 shrink-0 rounded-full bg-brand" />
+              </Link>
+            )}
             <Link
               to={
                 user?.userType === "individual"
@@ -251,7 +271,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
             </Link>
             {user?.userType === "organization" ? (
               <Link
-                to={"/event/create"}
+                to={"/organization/events"}
                 className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
               >
                 Your Events

@@ -1,54 +1,69 @@
 import { useMemo, useRef, useState } from "react";
 import { PiCaretRightBold } from "react-icons/pi";
 import { useNavigate } from "react-router-dom";
+import useSWR from "swr";
 import { DirectoryToolbar, Footer, Navbar } from "@components";
 import ComponentHelmet from "@components/ComponentHelmet";
 import OrganizationCard from "@features/organizations/components/OrganizationCard";
 import { useSectionReveal } from "@hooks";
-import {
-  CAUSES,
-  organizationDirectory,
-} from "../constants/organizationDirectory";
-import type { CauseFilter } from "../types";
+import { organizationEndpoints } from "@services/ApiEndpoints";
+import fetcher from "@utils/Fetcher";
+import { toDisplayOrganization } from "../utils/toDisplayOrganization";
+import type { ApiOrganizationList, OrganizationTaxonomy } from "../types";
 
-const CAUSE_FILTERS: CauseFilter[] = ["All", ...CAUSES];
+/** Clears the domain filter. Not a domain the backend knows about. */
+const ALL = "All";
 
 /**
  * The organizations directory, routed at `/organizations`.
  *
- * **The list is sample content, not live data** — see
- * `constants/organizationDirectory.ts`. `services/Organizations.ts`'s
- * `getOrganizations()` is still the un-called real fetch; wiring this up
- * means swapping `organizationDirectory` for a `useSWR` call and keeping
- * the filtering below, which is deliberately pure client-side work over
- * whatever array it is handed.
+ * **Live data**, as of the organization model landing: `GET /organizations`
+ * returns only organizations whose profile is complete enough to publish —
+ * a half-finished signup is invisible here by design, not by accident (see
+ * `docs/specs/organizations.md`). The sample fixture this page used to
+ * render still exists in `constants/organizationDirectory.ts` but nothing
+ * reads its records any more.
  *
- * Search and the cause filter both actually filter (the previous version's
- * input and "Filters" button had no handlers at all). Matching is done on
- * name, tagline, cause, city and country so typing "kolkata" or "water"
- * finds something, not just an exact name prefix. The chrome around them -
- * field, filter row, result count - is the shared `DirectoryToolbar`, the
- * same component `/events` renders; the filtering state and logic stay
- * here.
+ * Both the search term and the cause chip are sent to the backend rather
+ * than applied to the fetched page — see the `useSWR` key below. The chrome
+ * around them (field, chips, result count) is the shared
+ * `DirectoryToolbar`, the same component `/events` renders.
  */
 const Organizations = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [cause, setCause] = useState<CauseFilter>("All");
+  const [domain, setDomain] = useState<string>(ALL);
 
-  const results = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+  // The filter chips are the backend's own domain list, fetched rather
+  // than hardcoded — a chip the API would never match is a chip that looks
+  // broken. See GET /organizations/taxonomy.
+  const { data: taxonomy } = useSWR<OrganizationTaxonomy>(
+    organizationEndpoints.taxonomy,
+    fetcher,
+  );
 
-    return organizationDirectory.filter((org) => {
-      if (cause !== "All" && org.cause !== cause) return false;
-      if (!needle) return true;
+  // Filtering is server-side: the directory is paginated, so filtering a
+  // single page in the browser would silently hide matches on page two.
+  // `keepPreviousData` is what stops the grid flashing empty on every
+  // keystroke while the next response is in flight.
+  const { data, isLoading } = useSWR<ApiOrganizationList>(
+    organizationEndpoints.directory({
+      search: query.trim() || undefined,
+      domain: domain === ALL ? undefined : domain,
+    }),
+    fetcher,
+    { keepPreviousData: true },
+  );
 
-      return [org.name, org.tagLine, org.cause, org.city, org.country]
-        .join(" ")
-        .toLowerCase()
-        .includes(needle);
-    });
-  }, [query, cause]);
+  const results = useMemo(
+    () => (data?.data ?? []).map(toDisplayOrganization),
+    [data],
+  );
+
+  const domainFilters = useMemo(
+    () => [ALL, ...(taxonomy?.domains ?? [])],
+    [taxonomy],
+  );
 
   // The results grid gets the same scroll entrance the landing sections
   // use, scoped to the grid so it never reaches the page chrome above it.
@@ -56,7 +71,7 @@ const Organizations = () => {
   // filter would stay at the hook's starting opacity.
   const gridRef = useRef<HTMLDivElement>(null);
 
-  useSectionReveal(gridRef, [results.length, cause]);
+  useSectionReveal(gridRef, [results.length, domain]);
 
   return (
     <>
@@ -77,15 +92,20 @@ const Organizations = () => {
           onQueryChange={setQuery}
           searchPlaceholder="Search by name, cause or city"
           searchLabel="Search organizations"
-          options={CAUSE_FILTERS}
-          active={cause}
-          onSelect={setCause}
+          options={domainFilters}
+          active={domain}
+          onSelect={setDomain}
           filterLabel="Filter by cause"
           summary={
             <>
-              {results.length}{" "}
-              {results.length === 1 ? "organization" : "organizations"}
-              {cause !== "All" && ` in ${cause}`}
+              {isLoading && !data
+                ? "Loading organizations"
+                : `${data?.pagination.total ?? results.length} ${
+                    (data?.pagination.total ?? results.length) === 1
+                      ? "organization"
+                      : "organizations"
+                  }`}
+              {domain !== ALL && ` in ${domain}`}
             </>
           }
           action={
@@ -105,17 +125,20 @@ const Organizations = () => {
         {results.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-brand-secondary/15 bg-white/60 px-8 py-16 text-center">
             <h2 className="font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
-              Nothing matches that yet
+              {query || domain !== ALL
+                ? "Nothing matches that yet"
+                : "No organizations here yet"}
             </h2>
             <p className="mx-auto mt-2 max-w-sm font-poppins text-body leading-6 text-ink/65">
-              Try a broader search, or clear the cause filter to see every
-              organization in the circle.
+              {query || domain !== ALL
+                ? "Try a broader search, or clear the cause filter to see every organization in the circle."
+                : "An organization appears here once it has finished setting up its profile."}
             </p>
             <button
               type="button"
               onClick={() => {
                 setQuery("");
-                setCause("All");
+                setDomain(ALL);
               }}
               className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
             >

@@ -225,19 +225,23 @@ describe("Auth", () => {
   });
 
   describe("userType discriminator", () => {
-    it("signing up with userType 'organization' is queryable via GET /organizations, not GET /user", async () => {
+    it("signing up with userType 'organization' is not listed via GET /user, and stays out of the directory until its profile is complete", async () => {
       const organization = {
         email: "organization@example.com",
         password: "hunter2",
+        name: "Helping Hands",
         userType: "organization",
       };
       const signupRes = await request(app).post("/auth/signup").send(organization);
       expect(signupRes.status).toBe(201);
 
+      // The signup created a draft organization record alongside the
+      // login — draft records are invisible to visitors, so the public
+      // directory is still empty. See modules/organizations.
       const organizationList = await request(app).get("/organizations");
       expect(
-        organizationList.body.data.map((o: { email: string }) => o.email),
-      ).toContain(organization.email);
+        organizationList.body.data.map((o: { name: string }) => o.name),
+      ).not.toContain(organization.name);
 
       const individualList = await request(app).get("/user");
       expect(

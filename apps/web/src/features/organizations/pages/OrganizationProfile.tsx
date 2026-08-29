@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import useSWR from "swr";
 import type { ReactNode } from "react";
 import {
   FiArrowLeft,
@@ -15,45 +16,60 @@ import { Link, useParams } from "react-router-dom";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
 import { useSectionReveal } from "@hooks";
+import { organizationEndpoints } from "@services/ApiEndpoints";
+import fetcher from "@utils/Fetcher";
 import {
   ORGANIZATION_ACCENTS,
-  findOrganization,
   formatCount,
 } from "../constants/organizationDirectory";
-import type { DirectoryOrganization } from "../types";
+import { monogram } from "../utils/monogram";
+import { toDisplayOrganization } from "../utils/toDisplayOrganization";
+import type { ApiOrganization, DisplayOrganization } from "../types";
 
-const monogram = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
+/** Live records store a full URL; the old fixture stored a bare domain. */
+const toHref = (website: string) =>
+  /^https?:\/\//i.test(website) ? website : `https://${website}`;
+
+const toLabel = (website: string) => website.replace(/^https?:\/\//i, "");
 
 /**
- * The public organization page, routed at `/organization/:userName`.
+ * The public organization page, routed at `/organization/:userName`
+ * (`:userName` is the record's `handle`).
  *
- * Before this existed the route rendered `Profile.tsx` — the account page
- * shared with `/user/:userName`, which fetches `GET /organizations?userName=`
- * and, for an organization nobody is signed in as, rendered a stock logo
- * and two dead buttons on an otherwise empty screen. That page is still the
- * *account* view and still owns `/user/:userName`; this one is the public
- * directory profile a visitor lands on from a card.
+ * **Live**, as of the organization model landing: it fetches
+ * `GET /organizations/{handle}`, which serves only organizations whose
+ * profile is complete. A draft organization 404s here exactly as an
+ * unknown handle does — a visitor must not be able to tell a half-finished
+ * signup from a nonexistent one.
  *
- * **The content is sample data** (`constants/organizationDirectory.ts`) —
- * there is no live drives/impact endpoint yet, so the page says so in a
- * badge rather than implying a live feed, the same way `DrivesRail` does on
- * the landing page. Everything is laid out in the shape a real record would
- * arrive in: swapping the lookup for `useSWR` should not move any markup.
+ * Sections with nothing behind them do not render. A newly published
+ * organization has no drives and no milestones, and inventing placeholders
+ * for them would be the same lie the sample fixture used to tell. The
+ * layout below is unchanged from that fixture-driven version — mapping
+ * happens in `utils/toDisplayOrganization.ts`, not in markup.
  */
 const OrganizationProfile = () => {
   const { userName } = useParams();
-  const organization = findOrganization(userName);
+  const { data, error, isLoading } = useSWR<ApiOrganization>(
+    userName ? organizationEndpoints.byHandle(userName) : null,
+    fetcher,
+  );
 
-  if (!organization) return <OrganizationNotFound userName={userName} />;
+  if (isLoading) return <OrganizationProfileLoading />;
+  if (error || !data) return <OrganizationNotFound userName={userName} />;
 
-  return <OrganizationProfileView organization={organization} />;
+  return <OrganizationProfileView organization={toDisplayOrganization(data)} />;
 };
+
+const OrganizationProfileLoading = () => (
+  <>
+    <Navbar />
+    <div className="mx-auto max-w-6xl px-9 py-24 sm:px-10 lg:px-12">
+      <p className="font-poppins text-body text-ink/55">Loading profile…</p>
+    </div>
+    <Footer />
+  </>
+);
 
 const OrganizationNotFound = ({ userName }: { userName?: string }) => (
   <>
@@ -84,7 +100,7 @@ const OrganizationNotFound = ({ userName }: { userName?: string }) => (
 const OrganizationProfileView = ({
   organization,
 }: {
-  organization: DirectoryOrganization;
+  organization: DisplayOrganization;
 }) => {
   const accent =
     ORGANIZATION_ACCENTS[organization.accent % ORGANIZATION_ACCENTS.length];
@@ -97,14 +113,22 @@ const OrganizationProfileView = ({
 
   useSectionReveal(pageRef);
 
+  const hasMainColumnSections =
+    organization.activeDrives.length > 0 || organization.milestones.length > 0;
+
   const metaChips = [
-    { icon: FiMapPin, label: `${organization.city}, ${organization.country}` },
-    { icon: FiCalendar, label: `Since ${organization.founded}` },
-    {
-      icon: FiUsers,
-      label: `${formatCount(organization.volunteers)} volunteers`,
+    organization.city && {
+      icon: FiMapPin,
+      label: [organization.city, organization.country]
+        .filter(Boolean)
+        .join(", "),
     },
-  ];
+    { icon: FiCalendar, label: `Since ${organization.founded}` },
+    organization.volunteers > 0 && {
+      icon: FiUsers,
+      label: `${formatCount(organization.volunteers)} in the team`,
+    },
+  ].filter(Boolean) as Array<{ icon: typeof FiMapPin; label: string }>;
 
   return (
     <>
@@ -128,11 +152,21 @@ const OrganizationProfileView = ({
                 it is object-cover on a fixed height rather than an aspect
                 box. */}
             <div className="relative h-32 overflow-hidden bg-brand-secondary/10 sm:h-44">
-              <img
-                src={organization.cover}
-                alt={organization.coverAlt}
-                className="size-full object-cover"
-              />
+              {organization.cover ? (
+                <img
+                  src={organization.cover}
+                  alt={organization.coverAlt}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="size-full"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+                  }}
+                />
+              )}
               {/* The monogram overlaps this by half its height and photos
                   are busy at the bottom edge - the scrim keeps that corner
                   calm enough for a white-bordered badge to sit on. */}
@@ -240,18 +274,20 @@ const OrganizationProfileView = ({
                     )}
                   </button>
 
-                  <a
-                    href={`https://${organization.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-secondary/15 px-6 py-3 font-poppins text-body font-medium text-brand-secondary no-underline transition-colors duration-200 hover:border-brand/45 hover:text-brand"
-                  >
-                    {organization.website}
-                    <FiArrowUpRight
-                      aria-hidden="true"
-                      className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
-                    />
-                  </a>
+                  {organization.website && (
+                    <a
+                      href={toHref(organization.website)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-secondary/15 px-6 py-3 font-poppins text-body font-medium text-brand-secondary no-underline transition-colors duration-200 hover:border-brand/45 hover:text-brand"
+                    >
+                      {toLabel(organization.website)}
+                      <FiArrowUpRight
+                        aria-hidden="true"
+                        className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+                      />
+                    </a>
+                  )}
                 </div>
               </div>
 
@@ -277,115 +313,145 @@ const OrganizationProfileView = ({
 
         {/* ---------- Body ---------- */}
         <div className="mx-auto max-w-6xl px-9 py-12 sm:px-10 lg:px-12 lg:py-16">
-          <div className="lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+          {/* Two columns only when the main column has enough in it to hold
+              one up. A newly published organization has no drives and no
+              milestones, so its main column is a single paragraph and a row
+              of chips — beside a sticky sidebar that leaves a column-height
+              void where the rest of the page should be. Below that
+              threshold the sidebar goes under the content instead. */}
+          <div
+            className={
+              hasMainColumnSections
+                ? "lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10"
+                : "mx-auto max-w-3xl"
+            }
+          >
             <main className="min-w-0">
-              <Section title="About us" id="about">
-                {organization.about.map((paragraph, index) => (
-                  <p
-                    key={index}
-                    data-reveal
-                    className="mt-4 font-poppins text-body leading-7 text-ink/75 first:mt-0 sm:text-body-lg sm:leading-8"
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-
-                <ul
-                  data-reveal
-                  className="mt-6 flex list-none flex-wrap gap-2 p-0"
+              {(organization.about.length > 0 ||
+                organization.focusAreas.length > 0) && (
+                <Section
+                  title={
+                    organization.about.length > 0
+                      ? "About us"
+                      : "What we work on"
+                  }
+                  id="about"
                 >
-                  {organization.focusAreas.map((area) => (
-                    <li
-                      key={area}
-                      className="rounded-full border border-brand-secondary/12 bg-surface-warm px-3.5 py-1.5 font-outfit text-body text-ink/70"
-                    >
-                      {area}
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-
-              <Section title="Drives running now" id="drives">
-                <ul className="flex list-none flex-col gap-4 p-0">
-                  {organization.activeDrives.map((drive) => (
-                    <li
-                      key={drive.id}
+                  {organization.about.map((paragraph, index) => (
+                    <p
+                      key={index}
                       data-reveal
-                      className="rounded-2xl border border-brand-secondary/8 bg-white p-5 transition-[border-color,box-shadow] duration-300 hover:border-brand/30 hover:shadow-[0_16px_34px_-22px_var(--color-brand)] sm:p-6"
+                      className="mt-4 font-poppins text-body leading-7 text-ink/75 first:mt-0 sm:text-body-lg sm:leading-8"
                     >
-                      <h3 className="font-outfit text-lg font-semibold tracking-tight text-brand-secondary sm:text-xl">
-                        {drive.title}
-                      </h3>
-                      <p className="mt-2 font-poppins text-body leading-6 text-ink/70">
-                        {drive.summary}
-                      </p>
+                      {paragraph}
+                    </p>
+                  ))}
 
-                      <div
-                        className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-brand-secondary/10"
-                        role="progressbar"
-                        aria-valuenow={drive.percent}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-label={`${drive.title} funding progress`}
+                  <ul
+                    data-reveal
+                    className="mt-6 flex list-none flex-wrap gap-2 p-0"
+                  >
+                    {organization.focusAreas.map((area) => (
+                      <li
+                        key={area}
+                        className="rounded-full border border-brand-secondary/12 bg-surface-warm px-3.5 py-1.5 font-outfit text-body text-ink/70"
+                      >
+                        {area}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {organization.activeDrives.length > 0 && (
+                <Section title="Drives running now" id="drives">
+                  <ul className="flex list-none flex-col gap-4 p-0">
+                    {organization.activeDrives.map((drive) => (
+                      <li
+                        key={drive.id}
+                        data-reveal
+                        className="rounded-2xl border border-brand-secondary/8 bg-white p-5 transition-[border-color,box-shadow] duration-300 hover:border-brand/30 hover:shadow-[0_16px_34px_-22px_var(--color-brand)] sm:p-6"
+                      >
+                        <h3 className="font-outfit text-lg font-semibold tracking-tight text-brand-secondary sm:text-xl">
+                          {drive.title}
+                        </h3>
+                        <p className="mt-2 font-poppins text-body leading-6 text-ink/70">
+                          {drive.summary}
+                        </p>
+
+                        <div
+                          className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-brand-secondary/10"
+                          role="progressbar"
+                          aria-valuenow={drive.percent}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={`${drive.title} funding progress`}
+                        >
+                          <span
+                            className="block h-full rounded-full bg-brand"
+                            style={{ width: `${drive.percent}%` }}
+                          />
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                          <p className="font-outfit text-body-lg font-semibold text-brand-secondary">
+                            {drive.raised}
+                            <span className="ml-1.5 font-poppins text-caption font-normal text-ink/50">
+                              of {drive.goal}
+                            </span>
+                          </p>
+                          <p className="font-poppins text-caption text-ink/55">
+                            {drive.supporters} supporters • {drive.daysLeft}{" "}
+                            days left
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {organization.milestones.length > 0 && (
+                <Section title="Track record" id="track-record">
+                  {/* Same rail-and-bead vocabulary as HowItWorks' playbook, so
+                    a timeline looks like a timeline everywhere in the app. */}
+                  <ol className="relative list-none p-0">
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-y-2 left-[7px] w-px bg-brand-secondary/12"
+                    />
+                    {organization.milestones.map((milestone) => (
+                      <li
+                        key={milestone.id}
+                        data-reveal
+                        className="relative pb-8 pl-8 last:pb-0"
                       >
                         <span
-                          className="block h-full rounded-full bg-brand"
-                          style={{ width: `${drive.percent}%` }}
+                          aria-hidden="true"
+                          className="absolute top-1.5 left-0 size-3.5 rounded-full border-2 border-surface bg-brand"
                         />
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                        <p className="font-outfit text-body-lg font-semibold text-brand-secondary">
-                          {drive.raised}
-                          <span className="ml-1.5 font-poppins text-caption font-normal text-ink/50">
-                            of {drive.goal}
-                          </span>
+                        <p className="font-outfit text-caption font-semibold tracking-[0.14em] text-brand uppercase">
+                          {milestone.year}
                         </p>
-                        <p className="font-poppins text-caption text-ink/55">
-                          {drive.supporters} supporters • {drive.daysLeft} days
-                          left
+                        <h3 className="mt-1.5 font-outfit text-lg font-semibold tracking-tight text-brand-secondary">
+                          {milestone.title}
+                        </h3>
+                        <p className="mt-1.5 font-poppins text-body leading-6 text-ink/70">
+                          {milestone.body}
                         </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-
-              <Section title="Track record" id="track-record">
-                {/* Same rail-and-bead vocabulary as HowItWorks' playbook, so
-                    a timeline looks like a timeline everywhere in the app. */}
-                <ol className="relative list-none p-0">
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-y-2 left-[7px] w-px bg-brand-secondary/12"
-                  />
-                  {organization.milestones.map((milestone) => (
-                    <li
-                      key={milestone.id}
-                      data-reveal
-                      className="relative pb-8 pl-8 last:pb-0"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="absolute top-1.5 left-0 size-3.5 rounded-full border-2 border-surface bg-brand"
-                      />
-                      <p className="font-outfit text-caption font-semibold tracking-[0.14em] text-brand uppercase">
-                        {milestone.year}
-                      </p>
-                      <h3 className="mt-1.5 font-outfit text-lg font-semibold tracking-tight text-brand-secondary">
-                        {milestone.title}
-                      </h3>
-                      <p className="mt-1.5 font-poppins text-body leading-6 text-ink/70">
-                        {milestone.body}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              </Section>
+                      </li>
+                    ))}
+                  </ol>
+                </Section>
+              )}
             </main>
 
             {/* ---------- Sidebar ---------- */}
-            <aside className="mt-12 flex flex-col gap-5 lg:sticky lg:top-24 lg:mt-0">
+            <aside
+              className={`mt-12 flex flex-col gap-5 ${
+                hasMainColumnSections ? "lg:sticky lg:top-24 lg:mt-0" : ""
+              }`}
+            >
               <div
                 data-reveal
                 className="overflow-hidden rounded-2xl bg-surface-dark p-6"
@@ -397,16 +463,19 @@ const OrganizationProfileView = ({
                   Every rupee, naira or pound goes to the drive you pick.
                   KarmaCircle takes no cut of what moves.
                 </p>
-                <Button
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border-none px-6 py-3 font-poppins text-body font-medium"
-                  onClickfunction={() => {
-                    document
-                      .getElementById("drives")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                >
-                  <FiHeart aria-hidden="true" /> Sponsor a drive
-                </Button>
+                {organization.activeDrives.length > 0 && (
+                  <Button
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border-none px-6 py-3 font-poppins text-body font-medium"
+                    onClickfunction={() => {
+                      document.getElementById("drives")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    }}
+                  >
+                    <FiHeart aria-hidden="true" /> Sponsor a drive
+                  </Button>
+                )}
               </div>
 
               <div
@@ -418,40 +487,44 @@ const OrganizationProfileView = ({
                 </h2>
 
                 <dl className="mt-4 flex flex-col gap-4">
-                  <div className="flex gap-3">
-                    <FiMapPin
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0 text-brand"
-                    />
-                    <div>
-                      <dt className="font-poppins text-caption tracking-wide text-ink/45 uppercase">
-                        Address
-                      </dt>
-                      <dd className="m-0 mt-1 font-poppins text-body leading-6 text-ink/75">
-                        {organization.address}
-                      </dd>
+                  {organization.address && (
+                    <div className="flex gap-3">
+                      <FiMapPin
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-brand"
+                      />
+                      <div>
+                        <dt className="font-poppins text-caption tracking-wide text-ink/45 uppercase">
+                          Address
+                        </dt>
+                        <dd className="m-0 mt-1 font-poppins text-body leading-6 text-ink/75">
+                          {organization.address}
+                        </dd>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="flex gap-3">
-                    <FiMail
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0 text-brand"
-                    />
-                    <div className="min-w-0">
-                      <dt className="font-poppins text-caption tracking-wide text-ink/45 uppercase">
-                        Email
-                      </dt>
-                      <dd className="m-0 mt-1 font-poppins text-body break-all text-ink/75">
-                        <a
-                          href={`mailto:${organization.contactEmail}`}
-                          className="text-ink/75 no-underline transition-colors duration-200 hover:text-brand"
-                        >
-                          {organization.contactEmail}
-                        </a>
-                      </dd>
+                  {organization.contactEmail && (
+                    <div className="flex gap-3">
+                      <FiMail
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-brand"
+                      />
+                      <div className="min-w-0">
+                        <dt className="font-poppins text-caption tracking-wide text-ink/45 uppercase">
+                          Email
+                        </dt>
+                        <dd className="m-0 mt-1 font-poppins text-body break-all text-ink/75">
+                          <a
+                            href={`mailto:${organization.contactEmail}`}
+                            className="text-ink/75 no-underline transition-colors duration-200 hover:text-brand"
+                          >
+                            {organization.contactEmail}
+                          </a>
+                        </dd>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex gap-3">
                     <FiUsers
@@ -463,8 +536,7 @@ const OrganizationProfileView = ({
                         Community
                       </dt>
                       <dd className="m-0 mt-1 font-poppins text-body text-ink/75">
-                        {formatCount(organization.followers)} followers •{" "}
-                        {organization.drives} drives run
+                        {formatCount(organization.followers)} followers
                       </dd>
                     </div>
                   </div>
