@@ -17,9 +17,11 @@ import type { EventCardProps } from "../types";
  * while `Events.tsx` passed each one an `event` prop it ignored. See
  * `docs/specs/events.md`.
  *
- * The card is not a link yet: there is no event detail route (
- * `DetailedEvent.tsx` is a one-line stub, unregistered). The organizer name
- * *is* a link, to a profile that does exist.
+ * The whole card is a link to `/events/:id`, via a stretched overlay on
+ * the title link (`after:absolute after:inset-0`) rather than an `<a>`
+ * wrapped around everything - that keeps one accessible name for the
+ * destination and leaves the organizer link, which points somewhere else
+ * entirely, clickable on top of it (`relative z-1`).
  *
  * The date is shown twice-over in two halves on purpose: the cover badge
  * carries the day ("12 SEP"), the meta row carries only weekday and time
@@ -33,7 +35,7 @@ const EventCard = ({ event }: EventCardProps) => {
   return (
     <article
       data-reveal
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-brand-secondary/8 bg-white shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-secondary/8 bg-white shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1"
     >
       <div className="relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10">
         <img
@@ -58,12 +60,17 @@ const EventCard = ({ event }: EventCardProps) => {
       </div>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <h2 className="truncate font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:text-lg">
-          {event.title}
+        <h2 className="m-0 font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:text-lg">
+          <Link
+            to={`/events/${event.id}`}
+            className="block truncate text-inherit no-underline transition-colors duration-200 group-hover:text-brand after:absolute after:inset-0 after:content-['']"
+          >
+            {event.title}
+          </Link>
         </h2>
         <Link
           to={`/organization/${event.organizerUserName}`}
-          className="mt-1 block truncate font-poppins text-caption tracking-wide text-ink/55 uppercase no-underline transition-colors duration-200 hover:text-brand"
+          className="relative z-1 mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/55 uppercase no-underline transition-colors duration-200 hover:text-brand"
         >
           {event.organizer}
         </Link>

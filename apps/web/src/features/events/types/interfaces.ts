@@ -113,3 +113,116 @@ export interface DirectoryEvent {
 export interface EventCardProps {
   event: DirectoryEvent;
 }
+
+/** One line of the run sheet on the event detail page. */
+export interface EventAgendaItem {
+  /** Wall-clock label, pre-formatted: the schedule is written in the
+   *  event's own timezone, not the reader's. */
+  time: string;
+  title: string;
+  detail?: string;
+}
+
+/** Where an offline event physically happens. */
+export interface EventVenue {
+  name: string;
+  /** Street lines, printed one per row above the city. */
+  addressLines: string[];
+  /** How to actually arrive - the nearest metro, which gate, where to park. */
+  gettingThere: string;
+  /** Fed to a maps search URL; kept as text so no map SDK is needed. */
+  mapQuery: string;
+}
+
+/** How an online event is joined. */
+export interface EventOnlineAccess {
+  /** "Zoom", "Google Meet" - the same vocabulary as `DirectoryEvent.platform`. */
+  platform: string;
+  /** When and how the link reaches an attendee. */
+  linkDelivery: string;
+  /** Anything they need working before they turn up. */
+  requirements: string;
+}
+
+/**
+ * What an event costs to attend.
+ *
+ * Absent on a `DirectoryEvent`'s detail means free, which is the case for
+ * almost every event on the circle - these are nonprofit drives, and a
+ * price is the exception worth spelling out. The optional `note` covers
+ * the middle ground: free to attend, but bring your own boots.
+ */
+export interface EventCost {
+  amount: number;
+  currency: string;
+  /** What the money is for, shown next to the amount. */
+  note: string;
+}
+
+/**
+ * The money an event is raising alongside the volunteering, if any.
+ *
+ * Same vocabulary as `OrganizationDrive` on the organization profile
+ * (raised-of-goal, supporters, a percentage bar) so a visitor reads one
+ * progress bar the same way everywhere.
+ */
+export interface EventFundraiser {
+  /** What the money buys, in the organizer's own words. */
+  purpose: string;
+  goal: number;
+  raised: number;
+  /** ISO 4217, formatted at render by `formatMoney`. */
+  currency: string;
+  supporters: number;
+}
+
+/**
+ * Everything the detail page shows that a directory card does not.
+ *
+ * Kept separate from `DirectoryEvent` rather than bolted onto it: the grid
+ * needs none of this, and a real API will almost certainly serve the list
+ * and the single event from two endpoints. `constants/eventDetails.ts`
+ * holds one of these per directory event, keyed by `DirectoryEvent.id`.
+ */
+export interface EventDetail {
+  /** Long-form description, one paragraph per entry. */
+  about: string[];
+  /** Real ISO timestamp, so the page can print a duration rather than
+   *  asking the reader to subtract two times. */
+  endsAt: string;
+  agenda: EventAgendaItem[];
+  /** What an attendee should turn up with, or be ready for. */
+  bringAlong: string[];
+  /** Offline events. Exactly one of `venue`/`onlineAccess` is set, matching
+   *  `DirectoryEvent.mode`. */
+  venue?: EventVenue;
+  /** Online events. */
+  onlineAccess?: EventOnlineAccess;
+  /** Omitted for the free events, which is most of them. */
+  cost?: EventCost;
+  fundraiser?: EventFundraiser;
+  /** Languages the session is actually run in. */
+  languages: string[];
+  /** Set only where there is a real restriction. */
+  minimumAge?: number;
+  contactEmail: string;
+}
+
+/** A directory event joined to its detail record - what the page renders. */
+export interface DetailedEventRecord {
+  event: DirectoryEvent;
+  detail: EventDetail;
+}
+
+export interface EventAgendaProps {
+  agenda: EventAgendaItem[];
+}
+
+export interface EventFundraiserPanelProps {
+  fundraiser: EventFundraiser;
+}
+
+export interface EventJoinPanelProps extends DetailedEventRecord {
+  joined: boolean;
+  onToggleJoin: () => void;
+}

@@ -12,6 +12,7 @@ export { default as Organizations } from "@features/organizations/pages/Organiza
 export { default as OrganizationProfile } from "@features/organizations/pages/OrganizationProfile";
 export { default as Dashboard } from "@features/dashboard/pages/Dashboard";
 export { default as Events } from "@features/events/pages/Events";
+export { default as DetailedEvent } from "@features/events/pages/DetailedEvent";
 
 // Shop Routes
 export { default as Shop } from "@features/donate-shop-trending/pages/Shop";

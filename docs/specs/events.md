@@ -46,15 +46,34 @@ On success (`response.status === 201`): success toast, closes the modal, and cal
 ## Event display components
 
 - [EventsMarqueeCards.tsx](../../apps/web/src/features/events/components/EventsMarqueeCards.tsx) — takes an `event` prop, renders cover image, name, and either a location (Offline) or a platform icon+name (Online), plus a formatted start date/time (via [getFormattedDate.ts](../../apps/web/src/features/events/utils/getFormattedDate.ts)). Responsive text truncation at `window.innerWidth <= 500`. Not currently rendered by any page — looks intended for a "recent events" marquee (there's a commented-out `<Marquee>` block in `Profile.tsx` that would have used something like this).
-- [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) — the card in the `Events.tsx` grid, rendering entirely from its `event` prop. The same card as `OrganizationCard` and the landing page's drives rail — 16:9 cover, cause label on a scrim, one-line title, two-line summary on a fixed box — plus a date badge on the cover and a "N going / N spots left" rule at the bottom (`Full` when there are none, since a zero reads as a data bug). The badge carries the day ("12 SEP") and the meta row carries only weekday and time ("Sat · 9:00 pm"), so the two don't print the same date twice as they did until August 2026; the meta block also holds its own `mb-4`, because `mt-auto` on the bottom rule resolves to zero on a card whose copy fills the box and the rule then sat directly on the location line. **Not a link**: there's no event detail route yet (`DetailedEvent.tsx` is an unregistered one-line stub), so only the organizer name links out, to the organization profile. Carries `data-reveal`; `Events.tsx` scopes `useSectionReveal` to the grid so cards fade in on scroll and re-reveal when a filter changes. See [ui-kit.md](./ui-kit.md#motion).
+- [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) — the card in the `Events.tsx` grid, rendering entirely from its `event` prop. The same card as `OrganizationCard` and the landing page's drives rail — 16:9 cover, cause label on a scrim, one-line title, two-line summary on a fixed box — plus a date badge on the cover and a "N going / N spots left" rule at the bottom (`Full` when there are none, since a zero reads as a data bug). The badge carries the day ("12 SEP") and the meta row carries only weekday and time ("Sat · 9:00 pm"), so the two don't print the same date twice as they did until August 2026; the meta block also holds its own `mb-4`, because `mt-auto` on the bottom rule resolves to zero on a card whose copy fills the box and the rule then sat directly on the location line. **The whole card links to `/events/:id`**, via a stretched overlay on the title link (`after:absolute after:inset-0`) rather than an `<a>` around everything — one accessible name for the destination, with the organizer link (which points somewhere else entirely) still clickable on top of it via `relative z-1`. Carries `data-reveal`; `Events.tsx` scopes `useSectionReveal` to the grid so cards fade in on scroll and re-reveal when a filter changes. See [ui-kit.md](./ui-kit.md#motion).
   Until August 2026 it accepted no props at all and hardcoded every field, so all twenty cards were byte-for-byte identical.
 
 **Net effect:** nothing rendered under `/events` reflects real backend data — the cards are now distinct, event-shaped fixture records rather than twenty copies of one hardcoded placeholder, but they are still fixtures, even though the data-fetching (`getEvents`) and creation (`useEvent` + `CreateEvents`) pieces needed to make it real already exist and mostly work.
 
-## `HostedEvents` and `DetailedEvent` (empty stubs)
+## `DetailedEvent.tsx` — routed at `/events/:eventId`
+
+[apps/web/src/features/events/pages/DetailedEvent.tsx](../../apps/web/src/features/events/pages/DetailedEvent.tsx).
+The page an `EventCard` opens. Until August 2026 it was a one-line placeholder (`<div>DetailedEvent</div>`) with no route at all, which is why the grid's cards had nowhere to link and did nothing when clicked.
+
+`:eventId` is `DirectoryEvent.id`. The page does two lookups — `findEvent` (card-level record, `constants/eventDirectory.ts`) and `findEventDetail` (everything this page adds, `constants/eventDetails.ts`) — and renders a not-found state, in the same shape as `OrganizationProfile.tsx`'s, if either misses.
+
+**Content, top to bottom:** `EventHero` (the same cover photo as the card, so arriving reads as that card opening; title, organizer link, then when / how long / where), then a two-column body — main column: About, a four-cell fact strip (`EventFacts`), the run sheet (`EventAgenda`), venue-or-joining (`EventLocationPanel`), and what to bring; sidebar: the join panel (`EventJoinPanel`) and, only where the event raises money, `EventFundraiserPanel`.
+On a phone the sidebar renders *first* (`order-1`/`order-2`, one control and one piece of state — not a second copy), because "can I go, and what does it cost" outranks the reading on a narrow screen.
+
+**Cost is a first-class fact and free is the default.** `EventDetail.cost` is *omitted* for a free event rather than set to zero — almost every event here is a nonprofit drive — so the free case says "Free to attend / Nonprofit event. Nothing to pay, ever." in words. One fixture event (`morning-movement-class`) is priced, nominally and per term, purely so the paid branch is exercised.
+
+**Nothing on this page writes anywhere.** There is no single-event endpoint, and no attend/RSVP or payment endpoint either (see [api-integration.md](./api-integration.md)):
+- Join is local component state. The counts move with it (`going + 1`, one spot fewer, "You are going"), and the panel says in words that it is saved on the device only and the organizer has not been told. That is deliberate — a control that looks live and silently does nothing is the worse failure, and is what `Profile.tsx`'s Subscribe/Sponsor pair does.
+- Contribute toasts "contributions open here soon".
+- Share uses `navigator.share` where it exists and the clipboard otherwise; a dismissed share sheet (`AbortError`) is not treated as an error.
+- The venue's map is a plain Google Maps *search link*, not an embed — an iframe would mean a third-party script and a cookie banner for one address.
+
+**Both fixtures, again.** Swapping the two lookups for a `useSWR` call should not move any markup.
+
+## `HostedEvents` (empty stub)
 
 - [apps/web/src/features/events/components/HostedEvents.tsx](../../apps/web/src/features/events/components/HostedEvents.tsx) — file exists but is **completely empty** (0 bytes); importing it would fail.
-- [apps/web/src/features/events/pages/DetailedEvent.tsx](../../apps/web/src/features/events/pages/DetailedEvent.tsx) — a one-line placeholder (`<div>DetailedEvent</div>`), not registered in `routesConfig.tsx` (no `/events/:id`-style route exists).
 
 ## Types
 

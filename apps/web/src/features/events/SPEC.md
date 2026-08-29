@@ -5,7 +5,7 @@ This is the most duplicated-and-broken feature in the codebase — two separate 
 
 ## What this feature is responsible for
 
-The `/events` directory page, event display (cards, a slider), and event creation.
+The `/events` directory page, the `/events/:eventId` detail page, event display (cards, a slider), and event creation.
 Nothing rendered under `/events` today reflects real backend data — every visible card, count, and image is a hardcoded placeholder — even though the fetch and creation pieces needed to make it real mostly already exist.
 
 ## Why it's shaped this way
@@ -17,7 +17,10 @@ Two unrelated event-creation UIs were built at different times and never reconci
 | File | Role | Live? |
 |---|---|---|
 | `pages/Events.tsx` | The `/events` page | ✅ routed, renders **sample data** from `constants/eventDirectory.ts` |
-| `pages/DetailedEvent.tsx` | One-line stub (`<div>DetailedEvent</div>`) | ❌ not routed |
+| `pages/DetailedEvent.tsx` | The `/events/:eventId` detail page | ✅ routed, renders **sample data** from `constants/eventDirectory.ts` + `constants/eventDetails.ts` |
+| `components/detail/` | The seven pieces that page composes — `EventHero`, `EventFacts`, `EventAgenda`, `EventLocationPanel`, `EventJoinPanel`, `EventFundraiserPanel`, `EventSection` | ✅ rendered by `DetailedEvent.tsx` only |
+| `constants/eventDetails.ts` | Detail-page content for all twelve events, keyed by `DirectoryEvent.id` | ✅ read by `DetailedEvent.tsx` |
+| `utils/formatEventFacts.ts` | Money, funded-percent, duration and maps-URL helpers for the detail page | ✅ used by the detail components |
 | `components/CreateEvent.tsx` | "Create event" modal opened from `Events.tsx` | ✅ reachable, but **non-functional** (see below) |
 | `components/CreateEvents.tsx` | The other, MUI-based, actually-correct "create event" modal | ❌ not rendered from any page |
 | `hooks/useEvent.ts` | Validator + submit handler paired with `CreateEvents` | ✅ used by `CreateEvents` only |
@@ -44,6 +47,26 @@ Both directories render that one component, so the toolbar cannot drift between 
 Gone with that rewrite: the inert "Filters" button (it never had a handler), the `<EventSlider />` carousel and its `FeaturedEventCard`/`FeaturedEventImage` slides (all hardcoded, nothing else imported them - files deleted), the `<hr>`, the unused `swiper/css` imports, and the `Loading` fallback that could never render.
 
 The "Create An Event" button survives, restyled to match `/organizations`' primary button. It still opens `CreateEvent.tsx`, which patches the user's profile instead of creating an event (below) - so it cannot yet put a card in this grid.
+
+## `DetailedEvent.tsx` — the page a card opens
+
+Routed at `/events/:eventId` (`app/routes/routesConfig.tsx`), where `:eventId` is `DirectoryEvent.id`.
+Two lookups — `findEvent` for the card-level record and `findEventDetail` for everything this page adds — and a not-found state, shaped like `OrganizationProfile.tsx`'s, if either misses.
+
+**Why the detail content is a separate file** (`constants/eventDetails.ts`, not fields on `DirectoryEvent`): the grid needs none of it, and a real API will almost certainly serve the list and one event from two endpoints.
+Keeping them apart means wiring this up later lands in one place.
+Every directory event must have an entry there; a missing one falls through to the 404 state, which for a record that is in the grid would be a bug, not a 404.
+
+**Cost.** `EventDetail.cost` is *omitted* for free events rather than set to zero — nearly everything here is a nonprofit drive, so a price is the exception worth spelling out.
+The free branch says so in words ("Free to attend"), never a currency-formatted zero.
+`morning-movement-class` is the one priced fixture, nominal and per-term, so the paid branch is actually exercised.
+
+**Nothing here writes anywhere.** No single-event endpoint exists, and no attend/RSVP or payment endpoint either.
+Join is local `useState` in the page, passed down with an `onToggleJoin` callback; the counts move with it and `EventJoinPanel` says in words that it is device-only and the organizer has not been told.
+Contribute toasts. Share is `navigator.share` with a clipboard fallback, treating a dismissed sheet (`AbortError`) as a non-event.
+Follow that pattern for anything else added here: acknowledge the press and be honest, rather than shipping a control that looks live and silently does nothing (which is exactly what `Profile.tsx`'s Subscribe/Sponsor pair does).
+
+**Layout.** Two columns from `lg`, with the sidebar `order-1` on mobile — on a narrow screen "can I go, and what does it cost" comes before the reading. One rendered instance either way; never a duplicated panel with duplicated state.
 
 ## Two different "create event" components — the central thing to get right
 
@@ -125,7 +148,7 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 - **`EventCard.tsx`** — renders entirely from its `event: DirectoryEvent` prop. Same card as `organizations/OrganizationCard.tsx` and `landing-home/DrivesRail.tsx` (16:9 cover photo, cause label on a scrim, one-line `truncate` title, two-line `line-clamp-2` summary on a `min-h-11` box), plus the two things an event needs and those don't: a date badge on the cover, and a "N going / N spots left" rule at the bottom (`Full` rather than `0 spots left`, since a zero reads as a data bug).
   **The date is split across the two surfaces on purpose** - `formatEventBadge` on the cover ("12 SEP"), `formatEventTime` in the meta row ("Sat · 9:00 pm"). Both used to call `formatEventDate`, so every card printed the same day number twice. The meta block carries `mb-4` rather than leaning on the bottom rule's `mt-auto`, which resolves to zero once the copy fills the card and left the rule touching the location line.
 
-  **The card is not a link** — there is no event detail route yet (`DetailedEvent.tsx` is a one-line stub, unregistered), so only the organizer name links out, to the organization profile that does exist. Give the card a link the moment a detail page exists; the hover lift already implies one.
+  **The card links to `/events/:id`** — a stretched overlay on the title link (`after:absolute after:inset-0`) rather than an `<a>` wrapped around the card, so there is one accessible name for the destination and the organizer link, which goes somewhere else entirely, stays clickable on top of it (`relative z-1`). Until August 2026 the card was not a link at all, because the detail page was an unregistered stub.
   Until August 2026 this component **declared no parameters at all**: every field ("Food Marathon, 2025", "GodLike Organization", three identical GitHub avatars, "+300 Participated") was hardcoded, identical across all twenty cards, while `Events.tsx` passed it an `event` prop it never read.
 (`FeaturedEventCard.tsx`, `FeaturedEventImage.tsx`, `EventSlider.tsx` and `Slider.css` were deleted in the August 2026 directory rewrite - a hand-rolled 3s carousel over ten slides of identical hardcoded content, with no pause-on-hover, no manual controls and no accessibility affordances. Nothing outside itself imported them.)
 - **`EventsMarqueeCards.tsx`** — **the one component in this feature that actually reads and correctly uses an `event` prop**: cover image, name, either a location (`CiLocationOn` + `event.address`, when `mode === "Offline"`) or a platform icon+name (`mode !== "Offline"`, icon URL chosen via a nested ternary keyed on `event.platform` — falls back to a generic "other" icon for any platform not literally `"Zoom Meeting"`/`"Google Meet"`/`"Microsoft Teams"`), and a formatted start date/time via `getFormattedDate(event?.startDate)` + `event?.startTime` rendered with responsive truncation (`window.innerWidth <= 500` shows an abbreviated date). **Not rendered by any page.** Given `Profile.tsx` (onboarding-profile feature) has a commented-out `Marquee` block referencing an `EventsCard`, this component looks like the intended content for that commented-out section — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md).

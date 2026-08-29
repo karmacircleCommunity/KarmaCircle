@@ -39,8 +39,8 @@ Pages are exported from a barrel file, [apps/web/src/app/routes/route.ts](../../
 `routesConfig.tsx` imports most pages from this barrel but imports `Home`, `Trending`, and `Auth` directly — there's no functional difference for the ones that could go through the barrel, just inconsistent style. `Auth` specifically must be imported directly (not re-exported from `route.ts`) for its `lazy()` wrapping to actually code-split it — see [known-issues.md](./known-issues.md)'s former `[INEFFECTIVE_DYNAMIC_IMPORT]` entry, now fixed this way.
 
 There is no `/donate` route registered anywhere, even though `apps/web/src/features/donate-shop-trending/pages/Donate.tsx` exists.
-There is no `/events/:id` (or similar) detail route either, even though `apps/web/src/features/events/pages/DetailedEvent.tsx` exists as a stub.
-Both are effectively unreachable dead code today — see [known-issues.md](./known-issues.md).
+`/events/:eventId` was registered in August 2026 and renders `DetailedEvent.tsx`, which until then was an unrouted stub — see [events.md](./events.md).
+`/donate` is still effectively unreachable dead code — see [known-issues.md](./known-issues.md).
 
 ## Build configuration
 

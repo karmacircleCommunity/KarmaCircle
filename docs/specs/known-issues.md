@@ -14,7 +14,6 @@ Treat entries here as **things to be aware of**, not necessarily things to fix u
 ## Routing
 
 - **`/donate` has no route**, even though `apps/web/src/features/donate-shop-trending/pages/Donate.tsx` exists (and that file is separately broken — see below).
-- **`/events/:id`-equivalent has no route**, even though `apps/web/src/features/events/pages/DetailedEvent.tsx` exists as a one-line stub.
 - **`apps/web/src/features/onboarding-profile/pages/UserProfile.tsx` has no route** despite being a fairly complete page — see [onboarding-profile.md](./onboarding-profile.md).
 - **Footer links to `/terms`, `/privacy`, `/cookies`** — none of these routes exist; clicking them hits the 404 page.
 - **Navbar's account dropdown links to `/event/create`** (organization users only) — no such route exists.

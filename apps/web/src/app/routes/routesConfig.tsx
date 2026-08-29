@@ -2,6 +2,7 @@ import { lazy } from "react";
 import type { JSX } from "react";
 import Home from "@features/landing-home/pages/Home";
 import {
+  DetailedEvent,
   Organizations,
   OrganizationProfile,
   Dashboard,
@@ -48,6 +49,10 @@ const routesConfig: RouteConfigEntry[] = [
   { path: "/organization/:userName", element: <OrganizationProfile /> },
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/events", element: <Events /> },
+  // The event a visitor opens from a directory card. `:eventId` is
+  // `DirectoryEvent.id` (a slug today, whatever the API keys events by
+  // later) - see features/events/pages/DetailedEvent.tsx.
+  { path: "/events/:eventId", element: <DetailedEvent /> },
   { path: "/shop", element: <Shop /> },
   { path: "/trending", element: <Trending /> },
   { path: "*", element: <Error404 /> },
