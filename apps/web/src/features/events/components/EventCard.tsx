@@ -1,6 +1,6 @@
 import { FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { formatEventBadge, formatEventDate } from "../constants/eventDirectory";
+import { formatEventBadge, formatEventTime } from "../constants/eventDirectory";
 import type { EventCardProps } from "../types";
 
 /**
@@ -17,10 +17,14 @@ import type { EventCardProps } from "../types";
  * while `Events.tsx` passed each one an `event` prop it ignored. See
  * `docs/specs/events.md`.
  *
- * The card is not a link: there is no event detail route yet
- * (`DetailedEvent.tsx` is a one-line stub, unregistered). The organizer
- * name *is* a link, to a profile that does exist - which is also why it
- * sits outside the card's own hover treatment.
+ * The card is not a link yet: there is no event detail route (
+ * `DetailedEvent.tsx` is a one-line stub, unregistered). The organizer name
+ * *is* a link, to a profile that does exist.
+ *
+ * The date is shown twice-over in two halves on purpose: the cover badge
+ * carries the day ("12 SEP"), the meta row carries only weekday and time
+ * ("Sat · 9:00 pm"). Both used to print the full date, so every card said
+ * "12" twice.
  */
 const EventCard = ({ event }: EventCardProps) => {
   const online = event.mode === "Online";
@@ -68,10 +72,13 @@ const EventCard = ({ event }: EventCardProps) => {
           {event.summary}
         </p>
 
-        <div className="mt-2.5 flex flex-col gap-1.5 font-poppins text-caption tracking-wide text-ink/55">
+        {/* `mb-4` rather than leaning on `mt-auto` below: on a card whose
+            copy fills the box, `mt-auto` resolves to zero and the rule ends
+            up sitting directly on the location line. */}
+        <div className="mt-2.5 mb-4 flex flex-col gap-1.5 font-poppins text-caption tracking-wide text-ink/55">
           <span className="inline-flex items-center gap-1.5">
             <FiCalendar aria-hidden="true" className="size-3.5 shrink-0" />
-            {formatEventDate(event.startsAt)}
+            {formatEventTime(event.startsAt)}
           </span>
           <span className="inline-flex items-center gap-1.5 truncate">
             {online ? (

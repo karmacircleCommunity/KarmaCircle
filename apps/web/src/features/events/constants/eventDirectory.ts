@@ -241,6 +241,11 @@ export const eventDirectory: DirectoryEvent[] = [
 /**
  * "Sat 12 Sep · 9:00 pm" in the visitor's own locale.
  *
+ * The long form, for surfaces that show the date once - the detail page
+ * hero. `EventCard` uses `formatEventBadge` + `formatEventTime` instead,
+ * because it shows both and the two would otherwise print the same day
+ * number twice.
+ *
  * Deliberately not `getFormattedDate.ts` (this feature's other date
  * helper): that one takes the API's `{ date, time }` string pair, while
  * these fixtures carry a real ISO timestamp. When the API arrives, whichever
@@ -263,3 +268,24 @@ export const formatEventBadge = (startsAt: string) =>
     day: "numeric",
     month: "short",
   });
+
+/**
+ * "Sat · 9:00 pm" - weekday and start time, no day number.
+ *
+ * The companion to `formatEventBadge` on a card that shows both: the badge
+ * carries the date, this carries the part the badge can't fit.
+ */
+export const formatEventTime = (startsAt: string) => {
+  const date = new Date(startsAt);
+
+  return `${date.toLocaleDateString(undefined, {
+    weekday: "short",
+  })} · ${date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  })}`;
+};
+
+/** The directory entry for `id`, or `undefined` for an unknown route param. */
+export const findEvent = (id?: string) =>
+  eventDirectory.find((event) => event.id === id);
