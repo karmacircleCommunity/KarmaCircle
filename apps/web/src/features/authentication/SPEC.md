@@ -95,16 +95,16 @@ Unchanged by the unified-flow change except for who calls it and how `authType` 
 4. **Sets `loading = true`**, then calls exactly one of:
    - `LoginUser(credentials)` (`KarmaCircleApi.ts`, `POST /auth/signin`, `withCredentials: true`) when `authType === "signin"`.
    - `RegisterUser({ ...credentials, userType: credentials.userType.value })` (`KarmaCircleApi.ts`, `POST /auth/signup`, `withCredentials: true`) when `authType === "signup"` — `userType` is unwrapped from its `react-select` `{value, label}` shape into a bare string **only here**.
-5. **On `response.status === 200 || 201`:** `showSuccessToast(response?.data?.message)`, then `dispatch(updateUserData({ ...response.data.user, isLoggedIn: true }))`. Then, after a **fixed 1000ms `setTimeout`**, `navigate("/")` and `setLoading(false)`.
+5. **On `response.status === 200 || 201`:** `showSuccessToast(response?.data?.message)`, then `dispatch(updateUserData({ ...response.data.user, isLoggedIn: true }))`, then `setLoading(false)` and `navigate(isNewOrganization ? "/organization/setup" : "/")` — `isNewOrganization` being a signup whose `userType.value === UserType.Organization`. The navigate runs synchronously in the same tick as the dispatch: it previously sat behind a **fixed 1000ms `setTimeout`**, which let `DonotRenderWhenLoggedIn`'s `<Navigate to="/" />` (it fires as soon as `isLoggedIn` turns true) win the race and flash the home page for a second before the deferred org redirect landed. Navigating immediately unmounts `Auth` before the guard re-renders; the app-level Toaster preserves the success toast across the route change.
 6. **Otherwise:** `showErrorToast(response?.data?.message)`, `setLoading(false)`. Maps a Zod-shaped `response.data.errors` array's `email`/`password` entries onto `setErrors`, and on `authType === "signup"` specifically, maps an exact `USER_ALREADY_EXISTS` message onto `errors.email` too (this is what triggers `Auth.tsx`'s step-revert effect above).
 
 `useAuth` does not distinguish "email already exists" from "wrong password" from "server error" at the hook level — whatever `response?.data?.message` the backend sent is shown verbatim in the toast; there's no client-side mapping to friendlier copy.
 
 ## `pages/ForgotPassword.tsx` — reset flow, step 1
 
-Default export, function component, no props, routed at `/auth/forgot-password` (wrapped in `DonotRenderWhenLoggedIn`, same as `Auth`). Reached from `Auth.tsx`'s `"signin"` step's "Forgot password?" link.
+Default export, function component, no props, routed at `/auth/forgot-password` (wrapped in `DonotRenderWhenLoggedIn`, same as `Auth`). Reached from `Auth.tsx`'s `"signin"` step's "Forgot password?" link, which passes the email already entered there in router `state` (`<Link state={{ email }}>`) — never a query param, since it's the visitor's email.
 
-**Local state:** `email`, `error` (single string, this page has exactly one field), `loading`, `submitted` (boolean — swaps the form for a confirmation message once the request has gone through).
+**Local state:** `email` (seeded from `location.state.email` when the "signin" step handed one over, so the visitor doesn't retype the address they entered a step ago; `""` on a hand-typed visit to the route), `error` (single string, this page has exactly one field), `loading`, `submitted` (boolean — swaps the form for a confirmation message once the request has gone through).
 
 **Submit (`handleSubmit`):** `validateEmail(email)` (same shared util `Auth.tsx` uses) → on failure, `setError` and stop, no network call. Otherwise `ForgotPassword(email)` (`KarmaCircleApi.ts`, `POST /auth/forgot-password`, no `withCredentials` — this endpoint sets no cookie). On `response.status === STATUSCODE.OK`, sets `submitted = true` regardless of whether the email actually had an account — the backend's response is deliberately identical either way (see `apps/api/docs/specs/auth.md`), and this page mirrors that rather than branching on it. On any other status, shows `response?.data?.message` as an inline field error (a malformed email past client validation, a `429` from `authLimiter`, or a `503` if the backend's Resend integration isn't configured — see that same spec).
 
@@ -190,7 +190,7 @@ LoginUser(credentials) / RegisterUser({...credentials, userType: userType.value}
         │  POST /auth/signin or /auth/signup, withCredentials: true
         ▼
 response.status 200/201 ──► showSuccessToast → dispatch(updateUserData({...user, isLoggedIn:true}))
-                              → setTimeout 1000ms → navigate("/")
+                              → setLoading(false) + navigate(newOrg ? "/organization/setup" : "/")  [same tick, not deferred]
         │
         └── else ──► showErrorToast(response?.data?.message)
                        └── signup 409 USER_ALREADY_EXISTS → errors.email → step reverts to "email"

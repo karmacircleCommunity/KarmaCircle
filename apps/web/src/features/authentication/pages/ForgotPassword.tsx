@@ -20,7 +20,13 @@ import { Link, useLocation } from "react-router-dom";
 const ForgotPassword = () => {
   const location = useLocation();
 
-  const [email, setEmail] = useState("");
+  // Carried over from Auth.tsx's "signin" step via router state (never a
+  // query param — it's the visitor's email) so they don't have to retype
+  // the address they just entered a step ago.
+  const carriedEmail = (location.state as { email?: unknown } | null)?.email;
+  const [email, setEmail] = useState(
+    typeof carriedEmail === "string" ? carriedEmail : "",
+  );
   const [error, setError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);

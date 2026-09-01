@@ -305,6 +305,7 @@ const Auth = () => {
                 </label>
                 <Link
                   to="/auth/forgot-password"
+                  state={{ email: credentials.email }}
                   className="font-outfit text-sm text-gray-500 transition-colors hover:text-ink"
                 >
                   Forgot password?

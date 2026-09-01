@@ -77,10 +77,17 @@ export function useAuth(authType: AuthType): UseAuthResult {
         authType === AuthType.SignUp &&
         credentials.userType?.value === UserType.Organization;
 
-      setTimeout(() => {
-        navigate(isNewOrganization ? "/organization/setup" : "/");
-        setLoading(false);
-      }, 1000);
+      // Navigate in the same tick as the `updateUserData` dispatch above,
+      // not after a delay. `Auth` is wrapped in `DonotRenderWhenLoggedIn`,
+      // which redirects to "/" the moment Redux `isLoggedIn` flips true —
+      // so a deferred navigate() let that guard fire first, bouncing the
+      // user to the home page for ~1s before this finally sent them on to
+      // their real destination. Doing both together lets the route change
+      // (and unmount `Auth`) before the guard ever re-evaluates. The
+      // success toast is rendered by the app-level Toaster and survives
+      // the navigation, so it loses nothing.
+      setLoading(false);
+      navigate(isNewOrganization ? "/organization/setup" : "/");
     } else {
       showErrorToast(response?.data?.message);
 
