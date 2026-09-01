@@ -29,7 +29,7 @@
     "helmet": "^7.1.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.5.2",
+    "mongoose": "^9.9.4",
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "pino": "^8.17.2",
