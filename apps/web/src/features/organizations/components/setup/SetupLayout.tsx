@@ -5,6 +5,7 @@ import type {
   OrganizationSetupStage,
   OrganizationSetupStepStatus,
 } from "../../types";
+import SetupIntroAside from "./SetupIntroAside";
 
 /**
  * The setup flow's shell. Same frame as the auth pages (`SplitPanelLayout`),
@@ -38,71 +39,76 @@ const SetupLayout = ({
 
   return (
     <SplitPanelLayout
-      align="start"
-      contentClassName="max-w-xl"
+      align={stage === "intro" ? "center" : "start"}
+      contentClassName={stage === "intro" ? "max-w-md" : "max-w-xl"}
       aside={
-        <>
-          <h2 className="font-poppins text-3xl leading-tight font-bold text-white">
-            {stage === "intro"
-              ? "A full profile is what gets you found."
-              : "Nearly there."}
-          </h2>
-          <p className="mt-3 font-outfit text-body text-white/70">
-            {stage === "intro"
-              ? "Organizations with their causes, location and story filled in show up in the directory and in every search that matches them."
-              : remaining === 0
+        stage === "intro" ? (
+          // One held note plus atmosphere, not a second column of
+          // information — everything actionable is on the right. See
+          // SetupIntroAside.tsx.
+          <SetupIntroAside />
+        ) : (
+          <>
+            <h2 className="font-poppins text-3xl leading-tight font-bold text-white">
+              Nearly there.
+            </h2>
+            <p className="mt-3 font-outfit text-body text-white/70">
+              {remaining === 0
                 ? "Everything we need is filled in. Save to publish your profile."
                 : `${remaining} ${remaining === 1 ? "detail" : "details"} left before your profile goes live.`}
-          </p>
+            </p>
 
-          <ol className="mt-10 flex list-none flex-col p-0">
-            {steps.map((step, index) => (
-              <li key={step.id} className="relative flex gap-4 pb-8 last:pb-0">
-                {index < steps.length - 1 && (
+            <ol className="mt-10 flex list-none flex-col p-0">
+              {steps.map((step, index) => (
+                <li key={step.id} className="relative flex gap-4 pb-8 last:pb-0">
+                  {index < steps.length - 1 && (
+                    <span
+                      aria-hidden
+                      className="absolute top-9 bottom-1 left-[15px] w-px bg-white/15"
+                    />
+                  )}
                   <span
                     aria-hidden
-                    className="absolute top-9 bottom-1 left-[15px] w-px bg-white/15"
-                  />
-                )}
-                <span
-                  aria-hidden
-                  className={`z-1 flex size-8 shrink-0 items-center justify-center rounded-full font-outfit text-sm font-semibold transition-colors ${
-                    step.done
-                      ? "bg-brand text-white"
-                      : step.current
-                        ? "border border-white/70 bg-white/10 text-white"
-                        : "border border-white/20 text-white/50"
-                  }`}
-                >
-                  {step.done ? <FiCheck /> : index + 1}
-                </span>
-                <div className="pt-0.5">
-                  <p
-                    className={`font-outfit text-body-lg font-semibold ${
-                      step.current || step.done ? "text-white" : "text-white/60"
+                    className={`z-1 flex size-8 shrink-0 items-center justify-center rounded-full font-outfit text-sm font-semibold transition-colors ${
+                      step.done
+                        ? "bg-brand text-white"
+                        : step.current
+                          ? "border border-white/70 bg-white/10 text-white"
+                          : "border border-white/20 text-white/50"
                     }`}
                   >
-                    {step.title}
-                  </p>
-                  <p className="mt-0.5 font-outfit text-body text-white/60">
-                    {step.summary}
-                  </p>
-                  {step.outstanding > 0 && (
-                    <p className="mt-1 font-outfit text-caption text-white/45">
-                      {step.outstanding}{" "}
-                      {step.outstanding === 1 ? "detail" : "details"} to fill in
+                    {step.done ? <FiCheck /> : index + 1}
+                  </span>
+                  <div className="pt-0.5">
+                    <p
+                      className={`font-outfit text-body-lg font-semibold ${
+                        step.current || step.done
+                          ? "text-white"
+                          : "text-white/60"
+                      }`}
+                    >
+                      {step.title}
                     </p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
+                    <p className="mt-0.5 font-outfit text-body text-white/60">
+                      {step.summary}
+                    </p>
+                    {step.outstanding > 0 && (
+                      <p className="mt-1 font-outfit text-caption text-white/45">
+                        {step.outstanding}{" "}
+                        {step.outstanding === 1 ? "detail" : "details"} to fill
+                        in
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
 
-          <p className="mt-10 border-t border-white/10 pt-6 font-outfit text-body text-white/55">
-            Each step saves on its own. You can leave whenever you like and pick
-            this up later.
-          </p>
-        </>
+            <p className="mt-10 border-t border-white/10 pt-6 font-outfit text-body text-white/55">
+              Each step saves on its own — your progress is kept as you go.
+            </p>
+          </>
+        )
       }
     >
       {topBar}

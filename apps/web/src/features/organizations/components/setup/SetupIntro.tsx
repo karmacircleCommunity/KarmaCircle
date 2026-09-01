@@ -3,13 +3,15 @@ import { FiArrowRight, FiCheck } from "react-icons/fi";
 import type { OrganizationSetupStepStatus } from "../../types";
 
 /**
- * The opt-in screen a draft organization lands on straight after signup.
+ * The screen a draft organization lands on straight after signup.
  *
- * Setting a profile up is optional — this asks rather than assumes, and
- * "Maybe later" is a real, equally reachable answer that leaves the account
- * on the home page with nothing half-filled. What it does not do is hide
- * the consequence: a draft organization is invisible until this is done,
- * and that is said plainly rather than discovered later.
+ * The intent is that they set the profile up now — that is the primary
+ * button, and the copy points at what a finished profile does rather than
+ * at the exit. "Maybe later" still exists (setup is not technically
+ * mandatory, and the flow can be resumed from the navbar), but it is a
+ * quiet text link, not a second button competing with the CTA. What the
+ * screen does not do is hide the consequence: the "Draft — not visible
+ * yet" badge above says plainly that nothing is public until this is done.
  */
 type SetupIntroProps = {
   name: string;
@@ -37,15 +39,12 @@ const SetupIntro = ({
         : "Your account is ready. Fill in a few details and your organization appears in the directory, where donors and volunteers can find it."}
     </p>
 
-    <ol className="mt-8 flex list-none flex-col gap-3 p-0">
+    <ol className="mt-9 flex list-none flex-col gap-2 p-0">
       {steps.map((step, index) => (
-        <li
-          key={step.id}
-          className="flex items-start gap-4 rounded-2xl border border-brand-secondary/10 bg-white p-5"
-        >
+        <li key={step.id} className="flex items-start gap-3.5 py-2">
           <span
             aria-hidden
-            className={`flex size-8 shrink-0 items-center justify-center rounded-full font-outfit text-sm font-semibold ${
+            className={`flex size-7 shrink-0 items-center justify-center rounded-full font-outfit text-sm font-semibold ${
               step.done
                 ? "bg-brand text-white"
                 : "border border-brand/25 bg-brand/8 text-brand"
@@ -57,7 +56,7 @@ const SetupIntro = ({
             <p className="m-0 font-outfit text-body-lg font-medium text-ink">
               {step.title}
             </p>
-            <p className="mt-1 font-outfit text-body text-ink/60">
+            <p className="mt-0.5 font-outfit text-body text-ink/55">
               {step.summary}
             </p>
           </div>
@@ -65,28 +64,28 @@ const SetupIntro = ({
       ))}
     </ol>
 
-    <p className="mt-6 font-outfit text-body text-ink/55">
-      Two short steps, and each one saves on its own — stopping after the first
-      loses nothing. Leaving now is fine too:{" "}
-      <strong className="font-medium">Profile → Finish setting up</strong> in
-      the top bar brings you straight back to where you stopped.
+    <p className="mt-8 font-outfit text-body text-ink/50">
+      Two steps, around two minutes. Each one saves on its own as you go.
     </p>
 
-    <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="mt-8 flex flex-col items-center gap-4">
       <Button
         onClickfunction={onStart}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5 sm:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5"
         cypressfield="setup-start"
       >
         {started ? "Continue setup" : "Set up my profile"}
         <FiArrowRight aria-hidden />
       </Button>
 
+      {/* Deliberately understated — a centred text link, not a button.
+          Setup is not mandatory, so this stays reachable, but it should
+          read as a footnote to the CTA rather than an equal choice. */}
       <button
         type="button"
         onClick={onLater}
         data-cy="setup-later"
-        className="w-full cursor-pointer rounded-lg border-none bg-transparent px-2 py-3 text-center font-outfit text-body font-medium text-ink/60 transition-colors hover:text-ink sm:w-auto sm:text-left"
+        className="cursor-pointer border-none bg-transparent p-0 font-outfit text-caption text-ink/40 underline-offset-2 transition-colors hover:text-ink/70 hover:underline"
       >
         Maybe later
       </button>

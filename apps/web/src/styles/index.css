@@ -60,16 +60,30 @@
      of this same block — a keyframes rule declared outside `@theme` is not
      picked up, so both halves have to live together.
 
-     Everything here is an *entrance*, never a loop: a permanently animating
+     The default here is an *entrance*, never a loop: a permanently animating
      element on a page someone is trying to read is the difference between
-     a site that feels alive and one that feels like a slot machine. The one
-     looping animation in the app is Tailwind's own `animate-ping` on the
-     "Open source" dot (OpenSource.tsx), which is 6px across.
+     a site that feels alive and one that feels like a slot machine. The
+     looping animations in the app are all deliberate, decorative-only
+     exceptions that never touch a text node: Tailwind's own `animate-ping`
+     on the 6px "Open source" dot (OpenSource.tsx), and `--animate-aura` /
+     `--animate-orbit` below, which sit behind the copy on the setup intro's
+     left panel (SetupIntroAside.tsx) — a panel with no task on it — run
+     slow and low-contrast, and are dropped by `motion-safe:` under reduced
+     motion, where the motif simply rests.
 
      Apply these through the `motion-safe:` variant (e.g.
      `motion-safe:animate-pop-in`) so `prefers-reduced-motion` drops them. */
   --animate-pop-in: pop-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-rise-in: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  /* The setup intro's left-panel atmosphere (SetupIntroAside.tsx). `aura`
+     is a slow bloom on the brand glow behind the headline; `orbit` turns a
+     single brand dot around a faint ring — a point travelling a circle,
+     the KarmaCircle read at panel scale. Both are decorative, both sit
+     behind the copy, both are long enough (18s / 44s) to register only if
+     you look for them. See the note above on why these loop at all. */
+  --animate-aura: aura 18s ease-in-out infinite;
+  --animate-orbit: orbit 44s linear infinite;
 
   /* The organization setup flow's one-question-at-a-time transitions
      (features/organizations/components/setup). Four rather than two
@@ -108,6 +122,24 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes aura {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1) translate3d(0, 0, 0);
+    }
+    50% {
+      opacity: 0.72;
+      transform: scale(1.14) translate3d(4%, -3%, 0);
+    }
+  }
+
+  @keyframes orbit {
+    to {
+      transform: rotate(360deg);
     }
   }
 

@@ -9,7 +9,7 @@ The backend now keeps organizations in their own collection with a draft/live st
 
 1. Someone signs up with account type "Organization" (`Auth.tsx`). The backend creates the login **and** a draft organization record owned by it.
 2. `useAuth` sends a new organization to `/organization/setup` rather than the home page — a draft has nothing to see anywhere else.
-3. That page **opens on an intro that asks**, rather than on the form. Setting the profile up is optional: "Maybe later" leaves for the home page with nothing half-filled, and the account can come back at any time (the dashboard carries a reminder while the organization is still in draft).
+3. That page **opens on an intro**, rather than on the form. The intro's job is to get setup started now — the primary button does that, and the copy is about what a published profile does (turning up in the directory and in searches). Setup is not technically mandatory, so a de-emphasised "Maybe later" text link still leaves for the home page with nothing half-filled, and the account can come back at any time (the dashboard carries a reminder while the organization is still in draft) — but the screen no longer frames leaving as an equal option.
 4. Saying yes starts a Typeform-style flow: one question per screen, eight of them, grouped into two steps. Each step saves on its own, so stopping halfway keeps whatever was answered.
 5. Until the required fields are filled, the organization is absent from `/organizations` and its own public profile 404s.
 6. The save that completes the required list publishes it. The directory and the profile light up in the same moment, and the owner is handed straight to their new public profile.
@@ -34,13 +34,17 @@ Six files, each with one job:
 
 **Adding a question is an entry in `SETUP_STEPS`** (plus, at most, a `FIELD_SPECS` row for a grouped field). The progress bar's denominator, the URL, the save boundary, the intro's preview and the rail all read that list; none of them count to two steps or eight questions.
 
-### It is optional, and it is escapable
+### It leads with setup, and it is still escapable
 
 The previous version of this page dropped a brand-new organization into a long required form with no way out but the browser's back button.
+The correction to that was once "make leaving as easy as staying"; the intro over-rotated on it, mirroring the step list and the save/leave reassurance on both panels so the loudest thing on the screen was permission to leave.
+The pass after that over-corrected the other way — the left panel became a second information column (headline, paragraph, three-item checklist, footnote) that mirrored the right in density even though the content differed.
 Now:
 
-- **The intro asks first.** `SetupIntro.tsx` shows what will be asked, says plainly that a draft is invisible until it's done, and offers "Maybe later" as an equally reachable answer.
-- **Every step has an exit.** "Save and finish later" saves the step on screen and then leaves for `/`; "Back" walks back through the steps to the intro.
+- **The intro leads with the payoff, not the exit.** `SetupIntro.tsx` (the right panel) is the whole task: the two steps that are coming, the timing line, and the primary "Set up my profile" button. The "Draft — not visible yet" badge above it carries the consequence. It is vertically centred (`align="center"`) in a `max-w-md` column, so the panel reads as considered rather than crammed at the top.
+- **The left panel is deliberately near-empty — but not inert.** `SetupLayout.tsx` at `stage === "intro"` renders `SetupIntroAside.tsx`: one two-line statement ("People are already looking for what you do. / A complete profile is how they find you."), a small brand rule, and behind the copy a slow brand aura and an orbit motif (a brand dot circling a faint ring). No step list, no bullets, no footnote. The wide margin is the design — an organization that has just signed up is past being sold to — and the ambient motion is what stops that margin reading as unfinished. Both loops are `motion-safe:` and decorative-only (see [ui-kit.md](./ui-kit.md#motion)). The panel earns its density back as the step rail once the questions start (`stage !== "intro"`).
+- **"Maybe later" still exists, quietly.** Setup is not technically mandatory and the flow resumes from the navbar, so the link stays (`data-cy="setup-later"`) — but as a small, centred `text-caption` text link under the CTA, not a second button beside it. The "leaving now is fine, here's how to get back" paragraph is gone.
+- **Every step has an exit.** "Save and finish later" saves the step on screen and then leaves for `/`; "Back" walks back through the steps to the intro. This is the genuine mid-flow safety valve; it was never the thing that was over-emphasised.
 - **There are two ways back in, always visible.** The navbar's account dropdown grows a **"Finish setting up"** entry while the organization is a draft ([layout-navigation.md](./layout-navigation.md)), and `components/OrganizationSetupGate.tsx` stands in front of every page that only means something once the profile is live — `/dashboard` and `/organization/events` today. Instead of a dashboard of empty placeholders, a draft account gets told which step it stopped on and handed a link that resumes there.
 - **"Resume" means resume.** `resumeSetupPath(missingFields)` returns the first step that still has a required field missing, so both entry points land on `?step=reach` if only step two is outstanding — not back at the beginning.
 - **Both read the record through one hook.** `hooks/useMyOrganization.ts` fetches `GET /organizations/me` only for a signed-in organization (it is a 403 for anyone else) and SWR dedupes the key, so the navbar and the gate on the same page share one request.
