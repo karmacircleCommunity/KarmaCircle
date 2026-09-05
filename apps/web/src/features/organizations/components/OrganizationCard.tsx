@@ -43,7 +43,7 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => {
     <Link
       data-reveal
       to={`/organization/${organization.userName}`}
-      aria-label={`${organization.name} — ${organization.cause} in ${organization.city}, ${organization.country}`}
+      aria-label={`${organization.name} — ${organization.cause} in ${organization.city}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-brand-secondary/8 bg-white text-inherit no-underline shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-safe:hover:-translate-y-1"
     >
       <div className="relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10">
@@ -110,7 +110,7 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => {
 
         <p className="mt-2.5 inline-flex items-center gap-1.5 font-poppins text-caption tracking-wide text-ink/55">
           <FiMapPin aria-hidden="true" className="size-3.5 shrink-0" />
-          {organization.city}, {organization.country}
+          {organization.city}
           <span aria-hidden="true" className="text-ink/25">
             •
           </span>

@@ -179,9 +179,11 @@ describe("The organization journey, start to finish", () => {
     cy.wait(READ);
     cy.get('[data-cy="org-save"]').click();
 
-    caption("What kind of organization it is", "Answer it, and it moves on");
+    caption("What kind of organization it is", "");
     cy.wait(BEAT);
     cy.get('[data-cy="org-tag-NGO"]').click();
+    cy.wait(BEAT);
+    cy.get('[data-cy="org-save"]').click();
     cy.url({ timeout: 10000 }).should("include", "q=4");
     cy.wait(BEAT);
 
@@ -204,10 +206,10 @@ describe("The organization journey, start to finish", () => {
     cy.wait(BEAT);
     cy.get('[data-cy="org-save"]').click();
 
-    caption("Where it works", "Three boxes, because it is one thought");
-    cy.get('[data-cy="org-city"]').type("Guwahati", TYPE);
-    cy.get('[data-cy="org-state"]').type("Assam", TYPE);
-    cy.get('[data-cy="org-country"]').type("India", TYPE);
+    caption("Where it works", "The city already knows its own state");
+    cy.get('[data-cy="org-city"]').type("Guwah", TYPE);
+    cy.wait(BEAT);
+    cy.get('[data-cy="org-city-option-Guwahati"]', { timeout: 15000 }).click();
     cy.wait(READ);
     cy.get('[data-cy="org-save"]').click();
 
@@ -240,7 +242,7 @@ describe("The organization journey, start to finish", () => {
       "Both steps' answers, on one page",
       "Saved separately, published together",
     );
-    cy.contains("Guwahati, India").should("be.visible");
+    cy.contains("Guwahati, Assam").should("be.visible");
     cy.wait(READ);
 
     // ---------------------------------------------------------------

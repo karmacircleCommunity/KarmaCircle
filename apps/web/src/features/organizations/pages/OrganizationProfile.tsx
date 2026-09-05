@@ -119,9 +119,7 @@ const OrganizationProfileView = ({
   const metaChips = [
     organization.city && {
       icon: FiMapPin,
-      label: [organization.city, organization.country]
-        .filter(Boolean)
-        .join(", "),
+      label: organization.city,
     },
     { icon: FiCalendar, label: `Since ${organization.founded}` },
     organization.volunteers > 0 && {

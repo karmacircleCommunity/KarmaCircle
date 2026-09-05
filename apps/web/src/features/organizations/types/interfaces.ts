@@ -82,7 +82,6 @@ export interface DisplayOrganization {
    *  `CAUSES`. */
   cause: string;
   city: string;
-  country: string;
   founded: number;
   verified: boolean;
   followers: number;
@@ -133,7 +132,7 @@ export interface ApiOrganization {
   domains: string[];
   description?: string;
   teamSize?: number;
-  location: { city?: string; state?: string; country?: string };
+  location: { city?: string; state?: string };
   website?: string;
   contactEmail?: string;
   logo?: string;
@@ -205,7 +204,6 @@ export interface OrganizationSetupForm {
   teamSize: string;
   city: string;
   state: string;
-  country: string;
   website: string;
   contactEmail: string;
   contactPhone: string;
@@ -228,8 +226,8 @@ export type OrganizationSetupQuestionKind =
  * group of fields) it collects.
  *
  * A group exists for the cases where splitting would be worse than
- * asking once — city/state/country is one thought, and three consecutive
- * screens for it reads as an interrogation.
+ * asking once — city and state are one thought, and two consecutive
+ * screens for them reads as an interrogation.
  */
 export interface OrganizationSetupQuestion {
   id: string;
@@ -241,11 +239,6 @@ export interface OrganizationSetupQuestion {
   fields: OrganizationSetupField[];
   /** The subset of `fields` that blocks publication. */
   requiredFields: OrganizationSetupField[];
-  /**
-   * Advance on its own once answered. True for single-choice screens,
-   * where a second click on "Continue" is a click that says nothing.
-   */
-  autoAdvance?: boolean;
 }
 
 /** What one field looks like inside a `group` question. */
@@ -254,6 +247,10 @@ export interface OrganizationSetupFieldSpec {
   type: "text" | "number" | "email" | "url" | "tel";
   placeholder?: string;
   hint?: string;
+  /** Mirrors this field's Zod `.max()` in `updateOrganizationSchema` (the
+   *  API's `organization.validation.ts`) so a save can't fail on a length
+   *  the field itself never stopped someone from typing. */
+  maxLength?: number;
 }
 
 /**

@@ -66,22 +66,24 @@
      looping animations in the app are all deliberate, decorative-only
      exceptions that never touch a text node: Tailwind's own `animate-ping`
      on the 6px "Open source" dot (OpenSource.tsx), and `--animate-aura` /
-     `--animate-orbit` below, which sit behind the copy on the setup intro's
-     left panel (SetupIntroAside.tsx) — a panel with no task on it — run
-     slow and low-contrast, and are dropped by `motion-safe:` under reduced
-     motion, where the motif simply rests.
+     `--animate-orbit` below, which sit behind the quote on the setup flow's
+     left panel (wired as SplitPanelLayout's `asideDecor` in SetupLayout.tsx,
+     anchored to the panel's corners well clear of the copy) — run slow and
+     low-contrast, and are dropped by `motion-safe:` under reduced motion,
+     where the motif simply rests.
 
      Apply these through the `motion-safe:` variant (e.g.
      `motion-safe:animate-pop-in`) so `prefers-reduced-motion` drops them. */
   --animate-pop-in: pop-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-rise-in: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 
-  /* The setup intro's left-panel atmosphere (SetupIntroAside.tsx). `aura`
-     is a slow bloom on the brand glow behind the headline; `orbit` turns a
-     single brand dot around a faint ring — a point travelling a circle,
-     the KarmaCircle read at panel scale. Both are decorative, both sit
-     behind the copy, both are long enough (18s / 44s) to register only if
-     you look for them. See the note above on why these loop at all. */
+  /* The setup flow's left-panel atmosphere (SetupLayout's `asideDecor`).
+     `aura` is a slow bloom on the brand glow behind the quotation mark;
+     `orbit` turns a single brand dot around a faint ring anchored off the
+     panel's bottom-left corner — a point travelling a circle, the
+     KarmaCircle read at panel scale. Both are decorative, both sit behind
+     the copy, both are long enough (18s / 44s) to register only if you look
+     for them. See the note above on why these loop at all. */
   --animate-aura: aura 18s ease-in-out infinite;
   --animate-orbit: orbit 44s linear infinite;
 
@@ -213,6 +215,22 @@
   --color-border-subtle: #f0efef;
   --color-border-muted: #e0e0e0;
   --color-input-border: #ced4da;
+
+  /* Semantic/status tokens - success, error, warning, info. Added when the
+     toast component turned out to be the only place in the app using
+     status color at all, and it wasn't using these - it was rendering
+     react-toastify's stock palette (#07bc0c green, hsl(6,78%,57%) red)
+     untouched, which reads as a different product next to the rest of the
+     UI. Muted rather than saturated to match the app's existing clay/warm
+     palette instead of fighting it, and each checked against WCAG AA
+     (>=4.5:1) for white text on the token, same bar as --color-brand
+     above. See ReactToastify's --toastify-* variable overrides below for
+     where these actually reach the toast, and /brand for the full
+     rendered palette. */
+  --color-success: #2e6b4a;
+  --color-error: #a8402f;
+  --color-warning: #8a5a12;
+  --color-info: #3a6a8a;
 }
 
 html {
@@ -371,6 +389,39 @@ code {
       max-width: 1320px;
     }
   }
+}
+
+/* react-toastify's own CSS custom properties (ReactToastify.css, imported
+   from utils/Toasts.ts) - rebrand its default palette (green/red/yellow/
+   blue, sans-serif) to this app's tokens instead of hand-styling every
+   individual toast call. Selector is `:root:root`, not a plain `:root`:
+   repeating the same pseudo-class doubles its specificity from (0,1,0,0)
+   to (0,2,0,0) without leaving `:root`, which is what actually makes this
+   win. ReactToastify.css's own `:root { --toastify-* }` block is unlayered
+   plain CSS, same as this rule, so - per the `.container` gotcha just
+   above - relying on source order alone (whichever stylesheet's import
+   happens to land later in Vite's bundle) would not be safe; a real
+   specificity edge is. */
+:root:root {
+  --toastify-color-success: var(--color-success);
+  --toastify-color-error: var(--color-error);
+  --toastify-color-warning: var(--color-warning);
+  --toastify-color-info: var(--color-info);
+  --toastify-icon-color-success: var(--color-success);
+  --toastify-icon-color-error: var(--color-error);
+  --toastify-icon-color-warning: var(--color-warning);
+  --toastify-icon-color-info: var(--color-info);
+  --toastify-text-color-light: var(--color-ink);
+  --toastify-toast-background: #ffffff;
+  --toastify-toast-bd-radius: var(--radius-10px);
+  --toastify-toast-padding: 1rem;
+  --toastify-toast-shadow: 0 18px 38px -16px
+    color-mix(in srgb, var(--color-brand-secondary) 35%, transparent);
+  --toastify-font-family: var(--font-outfit);
+  --toastify-color-progress-success: var(--color-success);
+  --toastify-color-progress-error: var(--color-error);
+  --toastify-color-progress-warning: var(--color-warning);
+  --toastify-color-progress-info: var(--color-info);
 }
 
 /* react-select's own generated class name; can't be reached by Tailwind's scanner */

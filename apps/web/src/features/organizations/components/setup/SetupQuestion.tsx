@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiCheck } from "react-icons/fi";
 import {
   FIELD_CY,
@@ -11,6 +11,10 @@ import type {
   OrganizationSetupQuestion,
   OrganizationTaxonomy,
 } from "../../types";
+import type { LocateCity } from "../../hooks/useLocateCity";
+import { sanitizeSetupValue } from "../../utils/organizationSetupForm";
+import SetupFieldLabel from "./SetupFieldLabel";
+import SetupLocationFields from "./SetupLocationFields";
 
 /**
  * One question of the setup flow, rendered by kind.
@@ -33,8 +37,25 @@ type SetupQuestionProps = {
     value: OrganizationSetupForm[K],
   ) => void;
   taxonomy?: OrganizationTaxonomy;
-  /** Called by a single-choice question once it has been answered. */
-  onAnswered: () => void;
+  /**
+   * The "use my current location" state, owned by the page because its
+   * button sits in the headline row rather than in here. Only the location
+   * question reads it.
+   */
+  locate: LocateCity;
+  /**
+   * What's badly formed right now, keyed by field (`invalidFields`). Held
+   * by the page rather than computed here because the same map is what
+   * decides whether Continue is allowed through.
+   */
+  errors?: Partial<Record<OrganizationSetupField, string>>;
+  /**
+   * Show every error in `errors`, whether or not that field has been left
+   * yet. Set when a Continue is refused: at that point the user has been
+   * told the screen is wrong, so saying *which* field only after they
+   * revisit it would be a riddle.
+   */
+  showErrors?: boolean;
 };
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -51,12 +72,31 @@ const lineInput =
  * which read as floating in space rather than as written on a line. A box
  * is also where a browser extension (Grammarly and friends) expects to put
  * its own button: in the corner of a bordered field, not loose over a gap.
+ *
+ * Sized as body copy, not as a headline: the letter-key choice buttons
+ * (`border-brand-secondary/15`) set the line here, not `lineInput`'s
+ * near-black `border-ink/15` - this box is meant to read as one of the
+ * app's warm surfaces, not a generic HTML field dropped on top of one.
  */
 const AREA_MIN_PX = 88;
 const AREA_MAX_PX = 240;
+const DESCRIPTION_MAX = 500;
+/** Nudges the counter to amber before the hard `maxLength` cutoff bites. */
+const DESCRIPTION_WARN = DESCRIPTION_MAX - 50;
+
+/**
+ * The two single-field, non-group questions ("What's your organization
+ * called?" and "How many people are behind it?") aren't in `FIELD_SPECS` -
+ * their headline is the label, so they never needed an entry there - but
+ * `name` and `teamSize` are still capped server-side
+ * (`updateOrganizationSchema`). Named for the one field each guards, same as
+ * `DESCRIPTION_MAX` above.
+ */
+const NAME_MAX = 120;
+const TEAM_SIZE_MAX = 1_000_000;
 
 const textArea =
-  "w-full resize-none overflow-y-auto rounded-xl border border-ink/15 bg-white px-4 py-3.5 pr-12 font-outfit text-lg leading-relaxed text-ink transition-colors placeholder:text-ink/25 focus:border-brand focus:ring-2 focus:ring-brand/15 focus:outline-none";
+  "w-full resize-none overflow-y-auto rounded-xl border border-brand-secondary/15 bg-surface px-4 py-3.5 pr-16 font-outfit text-body-lg leading-relaxed text-ink transition-colors placeholder:text-ink/25 focus:border-brand focus:ring-2 focus:ring-brand/15 focus:outline-none";
 
 /**
  * Grows the box to fit what has been typed, between the two bounds above.
@@ -78,11 +118,20 @@ const SetupQuestion = ({
   form,
   setField,
   taxonomy,
-  onAnswered,
+  locate,
+  errors = {},
+  showErrors = false,
 }: SetupQuestionProps) => {
   const firstInput = useRef<HTMLInputElement | HTMLTextAreaElement | null>(
     null,
   );
+
+  // Which fields the user has finished with. A format complaint while
+  // someone is still mid-way through typing an email is noise - every
+  // address is invalid until the moment it isn't - so an error waits for
+  // the blur, or for a refused Continue (`showErrors`). Local state, and
+  // the component remounts per question, so it clears itself on every move.
+  const [touched, setTouched] = useState<Partial<Record<string, boolean>>>({});
 
   // Every text-ish field on these screens holds a string; `setField` is
   // generic over the whole form, `domains` (a string[]) included, so this
@@ -94,15 +143,26 @@ const SetupQuestion = ({
   // only thing to do is answer it, so making someone click into the field
   // first is a step that carries no meaning. Skipped on touch, where it
   // would throw up the keyboard over the question being asked.
+  //
+  // `preventScroll` matters here: the screen mounts mid-way through the
+  // `question-in` entrance (a 38px upward slide), so a plain `focus()` would
+  // scroll the page to the field's pre-animation position and then let the
+  // slide drag it back — a visible jump. `requestAnimationFrame` waits for
+  // the remounted node to be laid out before reaching for it.
   useEffect(() => {
     const coarse = window.matchMedia?.("(pointer: coarse)").matches;
-    if (!coarse) firstInput.current?.focus();
 
-    // Size the paragraph box to whatever is already saved in it, so coming
-    // back to an answered question doesn't show it collapsed.
-    if (firstInput.current instanceof HTMLTextAreaElement) {
-      autoGrow(firstInput.current);
-    }
+    const frame = requestAnimationFrame(() => {
+      if (!coarse) firstInput.current?.focus({ preventScroll: true });
+
+      // Size the paragraph box to whatever is already saved in it, so coming
+      // back to an answered question doesn't show it collapsed.
+      if (firstInput.current instanceof HTMLTextAreaElement) {
+        autoGrow(firstInput.current);
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, [question.id]);
 
   const options =
@@ -118,7 +178,6 @@ const SetupQuestion = ({
   const choose = (value: string) => {
     if (question.kind === "choice") {
       setField("tag", value);
-      onAnswered();
       return;
     }
 
@@ -199,6 +258,26 @@ const SetupQuestion = ({
   }
 
   if (question.kind === "group") {
+    // The one group whose answers are drawn from a known list, so it gets
+    // suggestions and a "use my location" shortcut instead of two blank
+    // boxes. Split out rather than switched on inside the loop below: it
+    // carries its own async data and cross-fills one field from the other,
+    // neither of which the generic path has any business knowing about.
+    if (question.id === "location") {
+      return (
+        <SetupLocationFields
+          question={question}
+          form={form}
+          setField={setText}
+          registerFirstInput={(element) => {
+            firstInput.current = element;
+          }}
+          inputClassName={lineInput}
+          locate={locate}
+        />
+      );
+    }
+
     return (
       <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
         {question.fields.map((field, index) => {
@@ -207,21 +286,21 @@ const SetupQuestion = ({
           const required = question.requiredFields.includes(field);
 
           return (
-            <label key={field} className="flex flex-col gap-1">
-              <span className="font-outfit text-body font-medium text-ink/70">
+            <div key={field} className="flex flex-col gap-1">
+              <SetupFieldLabel
+                htmlFor={`org-field-${field}`}
+                required={required}
+              >
                 {spec.label}
-                {required && (
-                  <span className="ml-0.5 align-top text-xs text-red-500">
-                    *
-                  </span>
-                )}
-              </span>
+              </SetupFieldLabel>
               <input
+                id={`org-field-${field}`}
                 ref={(element) => {
                   if (index === 0) firstInput.current = element;
                 }}
                 type={spec.type}
                 min={spec.type === "number" ? 0 : undefined}
+                maxLength={spec.maxLength}
                 placeholder={spec.placeholder}
                 value={form[field] as string}
                 onChange={(event) => setText(field, event.target.value)}
@@ -233,7 +312,7 @@ const SetupQuestion = ({
                   {spec.hint}
                 </span>
               )}
-            </label>
+            </div>
           );
         })}
       </div>
@@ -241,45 +320,69 @@ const SetupQuestion = ({
   }
 
   if (question.kind === "textarea") {
+    const count = form.description.length;
+    const nearLimit = count >= DESCRIPTION_WARN;
+
     return (
-      <textarea
-        ref={(element) => {
-          firstInput.current = element;
-        }}
-        rows={2}
-        // Grammarly (and anything else driven off these attributes) injects
-        // its own button into the corner of a textarea, which lands on top
-        // of the field's own chrome and looks like a rendering bug. Asked
-        // for explicitly — the browser's native spellcheck still runs.
-        data-gramm="false"
-        data-gramm_editor="false"
-        data-enable-grammarly="false"
-        value={form.description}
-        maxLength={4000}
-        onChange={(event) => {
-          setField("description", event.target.value);
-          autoGrow(event.target);
-        }}
-        placeholder="We clear and rebuild riverbank homes after the monsoon…"
-        data-cy="org-description"
-        style={{ minHeight: AREA_MIN_PX, maxHeight: AREA_MAX_PX }}
-        className={textArea}
-      />
+      <div className="relative">
+        <textarea
+          ref={(element) => {
+            firstInput.current = element;
+          }}
+          rows={2}
+          // Grammarly (and anything else driven off these attributes) injects
+          // its own button into the corner of a textarea, which lands on top
+          // of the field's own chrome and looks like a rendering bug. Asked
+          // for explicitly — the browser's native spellcheck still runs.
+          data-gramm="false"
+          data-gramm_editor="false"
+          data-enable-grammarly="false"
+          value={form.description}
+          maxLength={DESCRIPTION_MAX}
+          onChange={(event) => {
+            setField("description", event.target.value);
+            autoGrow(event.target);
+          }}
+          placeholder="We clear and rebuild riverbank homes after the monsoon…"
+          data-cy="org-description"
+          style={{ minHeight: AREA_MIN_PX, maxHeight: AREA_MAX_PX }}
+          className={textArea}
+        />
+        {/* Lives in the `pr-16` gutter the field already reserves, clear of
+            where typed text wraps. Only turns amber near the hard cap -
+            there's no minimum to nag about, `description` is required and
+            that's already said above the field. */}
+        <span
+          aria-hidden="true"
+          data-cy="org-description-count"
+          className={`pointer-events-none absolute right-3.5 bottom-3 font-outfit text-caption tabular-nums ${
+            nearLimit ? "text-amber-600" : "text-ink/45"
+          }`}
+        >
+          {count}/{DESCRIPTION_MAX}
+        </span>
+      </div>
     );
   }
 
   const field = question.fields[0];
+  const isNumber = question.kind === "number";
 
   return (
     <input
       ref={(element) => {
         firstInput.current = element;
       }}
-      type={question.kind === "number" ? "number" : "text"}
-      min={question.kind === "number" ? 1 : undefined}
+      type={isNumber ? "number" : "text"}
+      min={isNumber ? 1 : undefined}
+      // Mirrors the API's own caps (`updateOrganizationSchema`) so a step
+      // can't fail to save over a length or size nothing on screen warned
+      // about: `name` at 120 chars, `teamSize` at a million.
+      max={isNumber ? TEAM_SIZE_MAX : undefined}
+      maxLength={isNumber ? undefined : NAME_MAX}
       value={form[field] as string}
       onChange={(event) => setText(field, event.target.value)}
-      placeholder={question.kind === "number" ? "12" : "Type your answer…"}
+      placeholder={isNumber ? "12" : "Type your answer…"}
       data-cy={FIELD_CY[field]}
       className={`${lineInput} text-2xl`}
     />

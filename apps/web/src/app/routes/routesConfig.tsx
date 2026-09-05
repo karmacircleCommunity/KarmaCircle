@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazy, useEffect } from "react";
 import type { JSX } from "react";
 import Home from "@features/landing-home/pages/Home";
 import {
@@ -37,8 +37,21 @@ export interface RouteConfigEntry {
   element: JSX.Element;
 }
 
+// The design system used to live here as an in-app page
+// (features/brand-kit, deleted September 2026). It's now the standalone
+// karmacircleCommunity/karmacircle-brand repo at brand.karmacircle.org -
+// see docs/specs/ui-kit.md. This keeps any existing /brand link working
+// as a redirect instead of a dead 404.
+const BrandRedirect = () => {
+  useEffect(() => {
+    window.location.replace("https://brand.karmacircle.org");
+  }, []);
+  return null;
+};
+
 const routesConfig: RouteConfigEntry[] = [
   { path: "/", element: <Home /> },
+  { path: "/brand", element: <BrandRedirect /> },
   {
     path: "/auth/signup",
     element: <ProtectedAuth />,

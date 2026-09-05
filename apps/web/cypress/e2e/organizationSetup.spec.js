@@ -101,10 +101,11 @@ describe("An organization signing up and going live", () => {
     tour("3-setup-question");
     cy.get('[data-cy="org-save"]').click();
 
-    // Q3 — a single-choice question, which advances on its own once
-    // answered rather than waiting for a second click on Continue.
+    // Q3 — a single-choice question. Selecting an option just marks it
+    // picked; Continue still needs its own click.
     cy.url().should("include", "q=3");
     cy.get('[data-cy="org-tag-NGO"]').click();
+    cy.get('[data-cy="org-save"]').click();
     cy.url({ timeout: 10000 }).should("include", "q=4");
 
     // Q4 — the causes, and the last question of the step: this Continue is
@@ -122,8 +123,13 @@ describe("An organization signing up and going live", () => {
     cy.get('[data-cy="org-teamsize"]').type("34");
     cy.get('[data-cy="org-save"]').click();
 
-    cy.get('[data-cy="org-city"]').type("Guwahati");
-    cy.get('[data-cy="org-country"]').type("India");
+    // The city field suggests from the list that ships with the app, and a
+    // pick answers both halves of the question: the state is a fact about
+    // the city, so nobody should have to supply it twice.
+    cy.get('[data-cy="org-city"]').type("Guwah");
+    cy.get('[data-cy="org-city-option-Guwahati"]', { timeout: 15000 }).click();
+    cy.get('[data-cy="org-city"]').should("have.value", "Guwahati");
+    cy.get('[data-cy="org-state"]').should("have.value", "Assam");
     tour("4-setup-grouped-question");
     cy.get('[data-cy="org-save"]').click();
 
@@ -144,7 +150,7 @@ describe("An organization signing up and going live", () => {
 
     // Step one's answers survived the two separate saves.
     cy.contains("Disaster relief").should("be.visible");
-    cy.contains("Guwahati, India").should("be.visible");
+    cy.contains("Guwahati").should("be.visible");
 
     // ---------- In the directory ----------
     cy.visit("/organizations");

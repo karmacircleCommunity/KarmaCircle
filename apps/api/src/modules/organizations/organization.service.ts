@@ -28,7 +28,6 @@ export const REQUIRED_FIELDS = [
   "domains",
   "teamSize",
   "city",
-  "country",
 ] as const;
 
 export type RequiredField = (typeof REQUIRED_FIELDS)[number];
@@ -43,7 +42,6 @@ export function missingRequiredFields(
   if (!organization.domains?.length) missing.push("domains");
   if (!organization.teamSize) missing.push("teamSize");
   if (!organization.location?.city?.trim()) missing.push("city");
-  if (!organization.location?.country?.trim()) missing.push("country");
 
   return missing;
 }
@@ -66,7 +64,6 @@ export function toPublic(organization: IOrganization) {
     location: {
       city: organization.location?.city,
       state: organization.location?.state,
-      country: organization.location?.country,
     },
     website: organization.website,
     contactEmail: organization.contactEmail,
@@ -152,13 +149,12 @@ export async function findOrCreateForOwner(owner: {
 }
 
 function toUpdate(data: UpdateOrganizationInput) {
-  const { city, state, country, ...rest } = data;
+  const { city, state, ...rest } = data;
 
   return {
     ...rest,
     ...(city !== undefined && { "location.city": city }),
     ...(state !== undefined && { "location.state": state }),
-    ...(country !== undefined && { "location.country": country }),
   };
 }
 
@@ -213,7 +209,6 @@ export async function findLive(
       { name: term },
       { description: term },
       { "location.city": term },
-      { "location.country": term },
     ];
   }
 

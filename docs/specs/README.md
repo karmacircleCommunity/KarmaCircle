@@ -72,7 +72,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |
-| [ui-kit.md](./ui-kit.md) | Shared `Button`, `AuthButton`, card components, and the styling conventions behind them |
+| [ui-kit.md](./ui-kit.md) | Shared `Button`, `AuthButton`, card components, the styling conventions behind them, and a pointer to the design system site (brand.karmacircle.org, a separate repo) |
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay); the Shop and Trending placeholder pages were deleted |
 | [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.tsx` |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs, dead code, and inconsistencies found while writing these specs — read this before touching adjacent code |

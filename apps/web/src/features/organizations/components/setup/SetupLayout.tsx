@@ -1,19 +1,21 @@
 import SplitPanelLayout from "@components/layouts/SplitPanelLayout";
 import type { ReactNode } from "react";
-import { FiCheck } from "react-icons/fi";
 import type {
   OrganizationSetupStage,
   OrganizationSetupStepStatus,
 } from "../../types";
-import SetupIntroAside from "./SetupIntroAside";
+import SetupAside from "./SetupAside";
 
 /**
- * The setup flow's shell. Same frame as the auth pages (`SplitPanelLayout`),
- * with the left panel given over to progress: which step you are on, what is
- * still outstanding on each, and the promise that leaving is safe.
+ * The setup flow's shell. Same frame as the auth pages (`SplitPanelLayout`).
  *
- * The progress rail is rendered from the step list rather than hardcoded, so
- * a third step is a change in `constants/organizationSetup.ts` alone.
+ * The left panel is a rotating quote (`SetupAside`) — identical on the intro
+ * and on every question screen, with a slow aura/orbit behind it (the
+ * panel's `asideDecor`). It used to be a step rail; wayfinding now lives
+ * entirely in the right-hand progress bar below — one count, not two. The
+ * bar's denominator, the URL and the save boundary all still read the step
+ * list, so a third step is a change in `constants/organizationSetup.ts`
+ * alone.
  */
 type SetupLayoutProps = {
   stage: OrganizationSetupStage;
@@ -35,87 +37,52 @@ const SetupLayout = ({
   children,
 }: SetupLayoutProps) => {
   const current = steps.find((step) => step.current);
-  const remaining = steps.reduce((total, step) => total + step.outstanding, 0);
 
   return (
     <SplitPanelLayout
       align={stage === "intro" ? "center" : "start"}
       contentClassName={stage === "intro" ? "max-w-md" : "max-w-xl"}
-      aside={
-        stage === "intro" ? (
-          // One held note plus atmosphere, not a second column of
-          // information — everything actionable is on the right. See
-          // SetupIntroAside.tsx.
-          <SetupIntroAside />
-        ) : (
-          <>
-            <h2 className="font-poppins text-3xl leading-tight font-bold text-white">
-              Nearly there.
-            </h2>
-            <p className="mt-3 font-outfit text-body text-white/70">
-              {remaining === 0
-                ? "Everything we need is filled in. Save to publish your profile."
-                : `${remaining} ${remaining === 1 ? "detail" : "details"} left before your profile goes live.`}
-            </p>
-
-            <ol className="mt-10 flex list-none flex-col p-0">
-              {steps.map((step, index) => (
-                <li key={step.id} className="relative flex gap-4 pb-8 last:pb-0">
-                  {index < steps.length - 1 && (
-                    <span
-                      aria-hidden
-                      className="absolute top-9 bottom-1 left-[15px] w-px bg-white/15"
-                    />
-                  )}
-                  <span
-                    aria-hidden
-                    className={`z-1 flex size-8 shrink-0 items-center justify-center rounded-full font-outfit text-sm font-semibold transition-colors ${
-                      step.done
-                        ? "bg-brand text-white"
-                        : step.current
-                          ? "border border-white/70 bg-white/10 text-white"
-                          : "border border-white/20 text-white/50"
-                    }`}
-                  >
-                    {step.done ? <FiCheck /> : index + 1}
-                  </span>
-                  <div className="pt-0.5">
-                    <p
-                      className={`font-outfit text-body-lg font-semibold ${
-                        step.current || step.done
-                          ? "text-white"
-                          : "text-white/60"
-                      }`}
-                    >
-                      {step.title}
-                    </p>
-                    <p className="mt-0.5 font-outfit text-body text-white/60">
-                      {step.summary}
-                    </p>
-                    {step.outstanding > 0 && (
-                      <p className="mt-1 font-outfit text-caption text-white/45">
-                        {step.outstanding}{" "}
-                        {step.outstanding === 1 ? "detail" : "details"} to fill
-                        in
-                      </p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            <p className="mt-10 border-t border-white/10 pt-6 font-outfit text-body text-white/55">
-              Each step saves on its own — your progress is kept as you go.
-            </p>
-          </>
-        )
+      asideDecor={
+        <>
+          {/* Slow bloom behind the quotation mark. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 left-0 size-[460px] -translate-x-1/3 -translate-y-1/4 rounded-full bg-brand/25 blur-[130px] motion-safe:animate-aura"
+          />
+          {/* A single brand dot turning a faint ring, anchored off the
+              panel's bottom-left corner so its path never crosses the
+              copy — a point travelling a circle, the KarmaCircle. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-0 origin-center translate-x-[-46%] translate-y-[52%] text-white motion-safe:animate-orbit"
+          >
+            <svg width="520" height="520" viewBox="0 0 200 200" fill="none">
+              <circle
+                cx="100"
+                cy="100"
+                r="94"
+                stroke="currentColor"
+                strokeOpacity="0.07"
+              />
+              <circle
+                cx="100"
+                cy="100"
+                r="56"
+                stroke="currentColor"
+                strokeOpacity="0.05"
+              />
+              <circle cx="100" cy="6" r="3.5" fill="var(--color-brand)" />
+            </svg>
+          </div>
+        </>
       }
+      aside={<SetupAside />}
     >
       {topBar}
 
-      {/* One bar for the whole flow, at every size. The rail on the left
-          says which step; this says how much is left, which is the thing a
-          one-question-at-a-time flow otherwise hides — without it there is
+      {/* One bar for the whole flow, at every size — the only wayfinding in
+          the flow now that the left panel is quote-only. The step title on
+          the left, "N of 8" on the right: without the denominator there is
           no way to tell question three of eight from three of thirty.
           `transition-[width]` is what makes it slide forward as each
           question is answered instead of jumping. */}

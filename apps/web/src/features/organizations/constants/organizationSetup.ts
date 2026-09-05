@@ -18,7 +18,6 @@ export const REQUIRED_LABELS: Record<string, string> = {
   domains: "Causes you work on",
   teamSize: "How many people",
   city: "City",
-  country: "Country",
 };
 
 /**
@@ -36,12 +35,11 @@ export const MAX_DOMAINS = 5;
 export const FIELD_SPECS: Partial<
   Record<OrganizationSetupField, OrganizationSetupFieldSpec>
 > = {
-  city: { label: "City", type: "text" },
-  state: { label: "State or region", type: "text" },
-  country: { label: "Country", type: "text" },
+  city: { label: "City", type: "text", maxLength: 120 },
+  state: { label: "State or region", type: "text", maxLength: 120 },
   website: { label: "Website", type: "text", placeholder: "karmacircle.org" },
   contactEmail: { label: "Contact email", type: "email" },
-  contactPhone: { label: "Contact phone", type: "tel" },
+  contactPhone: { label: "Contact phone", type: "tel", maxLength: 30 },
   fundsRaised: {
     label: "Raised so far",
     type: "number",
@@ -60,11 +58,15 @@ export const FIELD_CY: Record<OrganizationSetupField, string> = {
   name: "org-name",
   description: "org-description",
   tag: "org-tag",
-  domains: "org-domains",
+  // Singular, matching the per-chip handle each domain button actually
+  // renders (`org-domain-Shelter`, …) - this entry is only ever consumed as
+  // a prefix match (`focusFirstAnswer` in OrganizationSetup.tsx), and the
+  // plural "org-domains" that used to be here never matched anything, so a
+  // Continue refused on this screen silently failed to focus the chips.
+  domains: "org-domain",
   teamSize: "org-teamsize",
   city: "org-city",
   state: "org-state",
-  country: "org-country",
   website: "org-website",
   contactEmail: "org-contact-email",
   contactPhone: "org-contact-phone",
@@ -108,7 +110,6 @@ const ABOUT_QUESTIONS: OrganizationSetupQuestion[] = [
     headline: "What kind of organization are you?",
     fields: ["tag"],
     requiredFields: ["tag"],
-    autoAdvance: true,
   },
   {
     id: "domains",
@@ -134,8 +135,8 @@ const REACH_QUESTIONS: OrganizationSetupQuestion[] = [
     kind: "group",
     headline: "Where are you based?",
     hint: "This is what puts you in the right local searches.",
-    fields: ["city", "state", "country"],
-    requiredFields: ["city", "country"],
+    fields: ["city", "state"],
+    requiredFields: ["city"],
   },
   {
     id: "contact",
@@ -204,8 +205,8 @@ export const SETUP_QUESTION_COUNT = SETUP_STEPS.reduce(
 );
 
 /**
- * The missing fields as a readable phrase — "what you do, city and
- * country" — for the places that nudge an organization back into setup.
+ * The missing fields as a readable phrase — "what you do, how many people
+ * and city" — for the places that nudge an organization back into setup.
  * Serial-comma-free "a, b and c", matching how the rest of the app's copy
  * reads.
  */

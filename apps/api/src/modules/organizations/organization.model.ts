@@ -54,7 +54,6 @@ export interface IOrganization extends Document {
   location: {
     city?: string;
     state?: string;
-    country?: string;
   };
   website?: string;
   contactEmail?: string;
@@ -108,7 +107,6 @@ const organizationSchema = new Schema<IOrganization>(
     location: {
       city: { type: String, trim: true },
       state: { type: String, trim: true },
-      country: { type: String, trim: true },
     },
     website: { type: String, trim: true },
     contactEmail: { type: String, trim: true },

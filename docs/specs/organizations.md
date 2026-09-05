@@ -29,22 +29,26 @@ Six files, each with one job:
 | `hooks/useOrganizationSetup.ts` | The record, the taxonomy, the form state, the position in the flow, the transitions, and the per-step save |
 | `constants/organizationSetup.ts` | The steps **and their questions, as data**, plus `FIELD_SPECS`, `REQUIRED_LABELS` and the domain cap |
 | `utils/organizationSetupForm.ts` | Pure form helpers — seeding, per-step payloads, dirty checks, outstanding counts, the resume path |
-| `components/setup/SetupLayout.tsx` | The shell, the progress rail and the progress bar, all rendered from the step list |
-| `components/setup/SetupQuestion.tsx`, `SetupIntro.tsx` | One question rendered by kind, and the opt-in screen |
+| `components/setup/SetupLayout.tsx` | The shell: the left-panel quote + atmosphere, and the flow-wide progress bar (denominator read from the step list) |
+| `components/setup/SetupAside.tsx`, `constants/setupAsideQuotes.ts` | The left panel — one real quote, re-picked at random per page load, same on the intro and every question |
+| `components/setup/SetupQuestion.tsx`, `SetupIntro.tsx` | One question rendered by kind, and the intro's right-hand panel (welcome + step preview + CTA) |
 
-**Adding a question is an entry in `SETUP_STEPS`** (plus, at most, a `FIELD_SPECS` row for a grouped field). The progress bar's denominator, the URL, the save boundary, the intro's preview and the rail all read that list; none of them count to two steps or eight questions.
+**Adding a question is an entry in `SETUP_STEPS`** (plus, at most, a `FIELD_SPECS` row for a grouped field). The progress bar's denominator, the URL, the save boundary and the intro's step preview all read that list; none of them count to two steps or eight questions.
 
 ### It leads with setup, and it is still escapable
 
 The previous version of this page dropped a brand-new organization into a long required form with no way out but the browser's back button.
 The correction to that was once "make leaving as easy as staying"; the intro over-rotated on it, mirroring the step list and the save/leave reassurance on both panels so the loudest thing on the screen was permission to leave.
-The pass after that over-corrected the other way — the left panel became a second information column (headline, paragraph, three-item checklist, footnote) that mirrored the right in density even though the content differed.
+The pass after that over-corrected the other way — the left panel became a second information column (headline, paragraph, three-item checklist, footnote) that mirrored the right in density.
+It then went too sparse — a two-line statement alone read as unfinished, and the intro and the question screens had two different left panels, which made the flow feel like two designs.
 Now:
 
 - **The intro leads with the payoff, not the exit.** `SetupIntro.tsx` (the right panel) is the whole task: the two steps that are coming, the timing line, and the primary "Set up my profile" button. The "Draft — not visible yet" badge above it carries the consequence. It is vertically centred (`align="center"`) in a `max-w-md` column, so the panel reads as considered rather than crammed at the top.
-- **The left panel is deliberately near-empty — but not inert.** `SetupLayout.tsx` at `stage === "intro"` renders `SetupIntroAside.tsx`: one two-line statement ("People are already looking for what you do. / A complete profile is how they find you."), a small brand rule, and behind the copy a slow brand aura and an orbit motif (a brand dot circling a faint ring). No step list, no bullets, no footnote. The wide margin is the design — an organization that has just signed up is past being sold to — and the ambient motion is what stops that margin reading as unfinished. Both loops are `motion-safe:` and decorative-only (see [ui-kit.md](./ui-kit.md#motion)). The panel earns its density back as the step rail once the questions start (`stage !== "intro"`).
+- **The left panel is the same on every screen of the flow** — intro and all eight questions — so the two stages read as one. `SetupAside.tsx` renders one real, publicly-attributed quote on giving or collective action (`constants/setupAsideQuotes.ts`): an oversized brand quotation mark set behind the line as a watermark, the line itself (`leading-relaxed`), then a monogram + name + role, generously spaced. A fresh quote is picked on every page load and held in state so it doesn't reshuffle mid-flow. Behind it, wired as `SplitPanelLayout`'s `asideDecor`, a slow brand aura and an orbit motif (a brand dot circling a faint ring) anchored off the panel's bottom-left corner, clear of the copy — both `motion-safe:` decorative loops (see [ui-kit.md](./ui-kit.md#motion)). These are **not testimonials**: no portrait (a monogram stands in), and the framing is "a thought to sit with", because this codebase does not manufacture social proof it doesn't have (see [authentication.md](./authentication.md)).
+- **Wayfinding moved to the right, and there is only one of it.** The old left-hand step rail is gone. The right panel's progress bar is the whole story: the step title on the left, "N of 8" on the right. `SetupAside` carries no counter at all — an earlier pass gave it a "Step 1 of 2 · 6 details left" line that sat next to the right panel's "2 of 8" and just made the two disagree (two scales, two phrasings, for one position in one flow).
+- **The left panel does not move between screens.** It is always vertically centred (`SplitPanelLayout` centres the aside regardless of `align`), so the quote sits in the same place on the intro and on every question. `align` still switches the *right* panel between `center` (intro, a short centred card) and `start` (questions, a top-aligned form that scrolls) — but that no longer drags the aside up and down with it, which is what made the intro→step-1 hand-off read as the page coming apart.
 - **"Maybe later" still exists, quietly.** Setup is not technically mandatory and the flow resumes from the navbar, so the link stays (`data-cy="setup-later"`) — but as a small, centred `text-caption` text link under the CTA, not a second button beside it. The "leaving now is fine, here's how to get back" paragraph is gone.
-- **Every step has an exit.** "Save and finish later" saves the step on screen and then leaves for `/`; "Back" walks back through the steps to the intro. This is the genuine mid-flow safety valve; it was never the thing that was over-emphasised.
+- **Every step has an exit.** A close (×) in the top-right corner saves the step on screen and then leaves for `/`; "Back" walks back through the steps to the intro. This is the genuine mid-flow safety valve; it was never the thing that was over-emphasised. It was a full "Save and finish later" in the same visual weight as the flow's own actions, which put the way *out* at the volume of the way forward - the behaviour is unchanged (it still saves, and still says so in a toast), but the control now only has to mean "leave", and its `title`/`aria-label` still read "Save and finish later" for anyone who hovers or is on a screen reader.
 - **There are two ways back in, always visible.** The navbar's account dropdown grows a **"Finish setting up"** entry while the organization is a draft ([layout-navigation.md](./layout-navigation.md)), and `components/OrganizationSetupGate.tsx` stands in front of every page that only means something once the profile is live — `/dashboard` and `/organization/events` today. Instead of a dashboard of empty placeholders, a draft account gets told which step it stopped on and handed a link that resumes there.
 - **"Resume" means resume.** `resumeSetupPath(missingFields)` returns the first step that still has a required field missing, so both entry points land on `?step=reach` if only step two is outstanding — not back at the beginning.
 - **Both read the record through one hook.** `hooks/useMyOrganization.ts` fetches `GET /organizations/me` only for a signed-in organization (it is a 403 for anyone else) and SWR dedupes the key, so the navbar and the gate on the same page share one request.
@@ -58,9 +62,60 @@ The flow is a Typeform, not a form: each screen asks one thing in a sentence, an
 Question and step are two different granularities on purpose — **a question is how much someone is asked to think about at once; a step is how much is worth a round trip.** Four questions in, one PATCH.
 
 - **Step one, "about"** — name, what you do, kind of organization, causes. Required: `description`, `tag`, `domains`.
-- **Step two, "reach"** — team size, where you are, how to reach you, funding. Required: `teamSize`, `city`, `country`.
+- **Step two, "reach"** — team size, where you are, how to reach you, funding. Required: `teamSize`, `city`.
 
-Some screens ask for more than one field, and that is deliberate: city/state/country is one thought, and three consecutive screens for it reads as an interrogation. A question declares its own `fields`, so grouping is a data decision, not a component one.
+Some screens ask for more than one field, and that is deliberate: city/state is one thought, and two consecutive screens for it reads as an interrogation. A question declares its own `fields`, so grouping is a data decision, not a component one.
+
+#### "Where are you based?" suggests, and can answer itself
+
+The one grouped question whose answers come from a known set.
+Both fields are still plain text and anything typed is accepted, but the city field offers matches as you type, and picking one fills the state too - the state is a fact about the city, not a second question.
+Typing a state first only reorders the city matches, which is how "Rajpur" resolves to the right one of the six places called that.
+Beside the headline - in the right half of that row, which was otherwise empty - sits a single "Use my location", which asks the browser for a fix and turns it into the same two values.
+It is an outline pill borrowing the shape the flow already uses for its tag and cause options, so it reads as a control rather than as leftover text, and stays outline-only so it never competes with Continue.
+It has moved twice. The first version was a bare label with a hairline icon floating in the empty space under the City field, which looked like a rendering accident; the second was this pill, still stacked under the two fields, which put an optional aid *below* the answer it helps with and directly in the path between the fields and Continue.
+Above the fields it is offered before the typing starts rather than after it.
+
+**The shortcut disappears once there is a city.** It is answering a question nobody is asking any more, and leaving it there is what made the screen feel stacked. It comes back if the field is emptied, and it stays through a press that is still running or that just failed - the two moments where the next thing wanted is this button again.
+What the press has to say still lands under the fields, in caption grey: a full sentence needs room the headline row doesn't have, and the note is about the two values that just changed.
+[`useLocateCity`](../../apps/web/src/features/organizations/hooks/useLocateCity.ts) is what lets those two halves sit on opposite sides of the fields - the page owns the state, [`SetupLocateButton`](../../apps/web/src/features/organizations/components/setup/SetupLocateButton.tsx) renders the trigger in the headline row and [`SetupLocationFields`](../../apps/web/src/features/organizations/components/setup/SetupLocationFields.tsx) renders the result.
+The label dropped "current" along the way: sharing a row with a 32px headline makes every word cost a wrap, and there was no other location on offer.
+
+**Locating is tried three times, in two different ways, and every way it can fail says something different.**
+A desktop browser freshly granted permission often answers the first cheap request with "position unavailable" while its provider is still cold and succeeds on a second, more patient one, so a failure that is not a permission refusal is retried once with `enableHighAccuracy` and a longer timeout.
+A refusal is never retried - asking again for what was just declined is how a site gets its prompts blocked outright.
+
+**When the device still won't answer, the connection is asked instead.**
+`unavailable` is not always a state the user can get out of.
+Some browsers hold a granted permission and return "position unavailable" indefinitely - the operating system's Location Services are off for that browser, or the browser ships without the network-location backend Chrome has - and no amount of pressing Allow or walking the System Settings path changes it.
+That was the state this shipped in on Brave for macOS with Location Services already switched on for it, and it made the button a permanent dead end for anyone whose browser is in it.
+So `unsupported`, `insecure`, `unavailable` and `timeout` now fall back to a keyless IP lookup (`ipwho.is`, then `get.geojs.io` if the first is rate-limited or down), whose coordinates go through the same local nearest-city match.
+Typically about 150ms, and the result is labelled as what it is - *"Your device wouldn't say, so this is from your connection: Kolkata, West Bengal. Change it if that's not right."* - because an IP guess is the right town on a home line and the wrong country behind a VPN, and it should be offered as a guess so it gets corrected.
+`LocateSource` (`"device"` / `"network"`) is what carries that distinction up to the screen.
+`denied` deliberately does **not** fall back: answering an explicit refusal by finding another way is worse than failing.
+Neither does `no-match` - a device fix is authoritative about being nowhere near anything listed.
+If both providers fail too, the device's own failure is what gets reported, since it is the more actionable of the two.
+
+The six outcomes (`LocateFailure`) exist because the remedies are in six different places, and the important pair is `denied` versus `unavailable`: they feel identical from the outside and are fixed in two different settings screens.
+`denied` is this site's browser permission; `unavailable` is now the much narrower case of the browser being allowed to ask, coming back empty, *and* the connection not being placeable either.
+The copy for that case names the actual path through System Settings, because someone who has just pressed Allow and been told "couldn't work out where you are" will otherwise press Allow again - which is exactly what happened the first time this shipped.
+The raw `GeolocationPositionError` code and message go to `console.warn`, since that is the only way a bug report can say which of the two it was.
+
+It runs entirely off a list that ships with the app - [`@statics/IndiaCities`](../../apps/web/src/statics/IndiaCities.ts) and [`@statics/IndiaStates`](../../apps/web/src/statics/IndiaStates.ts), 4,198 towns and all 36 states and union territories, searched by [`@utils/locationSuggest`](../../apps/web/src/utils/locationSuggest.ts) and rendered by the shared [`Combobox`](./ui-kit.md#combobox).
+That was chosen over a geocoding API deliberately.
+There is no key to rotate, no per-keystroke quota, nothing to be slow or down, suggestions work offline, and the coordinates behind "use my current location" are matched against the bundled list in the browser rather than posted to somebody else's server - a location shared to fill in a form field should not also become a request to a third party.
+The one request that ever leaves is the IP fallback above, and it is the inverse of that: it carries no body and no identifier and asks where the connection is, rather than telling anyone where the user is.
+The cost is one 47KB (gzipped) chunk, dynamically imported when [`SetupLocationFields`](../../apps/web/src/features/organizations/components/setup/SetupLocationFields.tsx) mounts, so it is never in the initial bundle and is already loaded by the first keystroke.
+
+Two ranking details are load-bearing, and both exist because the obvious version was wrong on the obvious input:
+
+- **Matches are ordered by population inside each match tier.** Ranked by name length instead, "kol" answers Kolar, Kollam and Kolaras before Kolkata - every one a real place, none of them what almost anybody typing those three letters means. Population is a tie-break *within* a tier and never across one, so a village is still found as soon as enough of its name is typed to out-tier the city. It is used for ordering only and never displayed.
+- **"Use my location" offsets distance by a reach that grows with population.** Every city in the list is a single coordinate, which is a fiction for anywhere large: strict nearest-point wins answer "Dam Dam" to someone standing in Salt Lake and "Andheri" to someone in Mumbai. The reach is about 2km for a place too small to measure and caps at 30km for a metro, so a named suburb still wins when the fix is genuinely in it. A coordinate more than 150km from anything listed is refused outright rather than dressed up as a confident answer, which is also what happens to anyone outside India.
+
+The list is **generated, not hand-maintained** - city, state and coordinates from the open countries-states-cities database, population joined on from GeoNames' `cities5000`.
+Refresh it by re-running that join; a row patched by hand is one the next regeneration silently drops.
+It is India-only because the product is, and the shape (a state list plus rows pointing into it) takes a second country without changing the search code.
+
 
 `SETUP_STEPS[].requiredFields` across both steps must stay equal to the backend's `REQUIRED_FIELDS`; that list is what actually publishes the organization, this one only decides where each item is asked for. `SETUP_REQUIRED_FIELDS` is the flattened version, so a mismatch is visible in one place. `name` is the one exception — it is required to save but is deliberately excluded from the step's `requiredFields`, because signup always fills it and it can never be what blocks publication.
 
@@ -70,8 +125,6 @@ Some screens ask for more than one field, and that is deliberate: city/state/cou
 
 **Three things the keyboard does**, because a one-question screen leaves it idle otherwise: Enter continues (the screen is a `<form>`, so this is native, and a textarea keeps Enter for newlines); letter keys pick options on choice screens, which is why every option carries an A/B/C badge; and the first input of each question is focused on arrival — except on touch, where it would throw the keyboard up over the question being asked.
 
-**A single-choice question advances on its own.** Asking for a second click on "Continue" to confirm the only answer on screen says nothing.
-
 Behaviours worth keeping if this is rewritten again:
 
 - **A save sends only its own step's fields** (`toStepPayload`). Step two's blank inputs can't wipe step one's answers, and a validation failure in a field the user hasn't reached yet can't block the step they're on.
@@ -79,13 +132,15 @@ Behaviours worth keeping if this is rewritten again:
 - **A required question cannot be walked past, but the flow can be left at any time.** These are not the same freedom, and the distinction is the whole design: "Save and finish later" (and "Maybe later" on the intro) writes whatever is filled in and goes, while Continue refuses to move off a required question that is blank. An answer skipped mid-flow is one nobody would ever be prompted for again — the organization would sit in draft with no idea which screen it was on. The refusal focuses the offending field and turns the note under it red; it does not disable the button, so pressing it always explains itself rather than going dead.
 - **Required fields carry a red asterisk.** On a single-field question the headline *is* the label, so the marker goes on the headline; grouped questions carry one per field. Same marker as the auth flow's `RequiredMark`.
 - **A website typed without a scheme is normalized** to `https://…` rather than being rejected by the backend's `.url()`.
+- **A suggestion list never steals the Enter key.** The city and state fields sit inside the `<form>` whose Enter submits and advances the flow, so `Combobox` calls `preventDefault()` on Enter while its list is open - one press choosing a city and also skipping to the next question is one press doing two things, only one of which was asked for.
 - **The choices stop at five** on the causes question, which is the backend's cap on `domains` — a sixth option that looks selectable and then 400s is worse than one that can't be pressed.
 - **The form seeds from the record once, keyed on `handle`**, not on the whole object, so a background SWR revalidation cannot overwrite what the user is mid-way through typing. The response to each save is written into the SWR cache with `revalidate: false` for the same reason.
 - **An untouched step doesn't hit the network.** `saved` (a ref of what the server last acknowledged) is what the boundary compares against.
 - **Position lives in the URL** (`?step=about&q=2`), so browser Back works, a refresh doesn't restart the flow, and a live organization returning to edit skips the intro and lands on the first question. `q` is 1-based because it is human-facing, and clamped rather than trusted — a hand-typed `?q=99` lands on the last question, not a blank screen.
+- **The answer field is focused as each question arrives** (`SetupQuestion`'s mount effect, keyed on `question.id`) — one thing on screen, nothing to do but answer it, so a click into the field would be a step with no meaning. Skipped when `(pointer: coarse)` matches, where it would raise the keyboard over the question. The `focus()` is `preventScroll` inside a `requestAnimationFrame` so it doesn't fight the `question-in` slide. Choice/chips screens have no text field and focus nothing (letter keys A/B/C… act instead).
 
 The tag select and the cause chips are populated from `GET /organizations/taxonomy`, never from a hardcoded list — a chip the API would reject is a chip that looks broken.
-The progress rail ticks as the user types (read off the form), while the draft/live badge and the "still needed before you can go live" notice come from the server's own `missingFields`; the two reconcile on every save, and the server stays the only thing that decides publication.
+The progress bar ticks as the user types (read off the form), while the draft/live badge and the "still needed before you can go live" notice come from the server's own `missingFields`; the two reconcile on every save, and the server stays the only thing that decides publication.
 
 Everything a visitor sees is here except the things nobody in the organization may set: the verified badge and the counted stats. `fundsRaised` is typed in, and is labelled "stated" wherever it renders, on this page and on the profile.
 
@@ -94,7 +149,7 @@ The whole journey is covered end to end by `cypress/e2e/organizationSetup.spec.j
 ## Sample data: `constants/organizationDirectory.ts` — no longer rendered
 
 [apps/web/src/features/organizations/constants/organizationDirectory.ts](../../apps/web/src/features/organizations/constants/organizationDirectory.ts) is the single source of content for both pages in this feature.
-It holds twelve `DirectoryOrganization` records — different causes, countries, sizes, and a mix of verified/unverified — plus `ORGANIZATION_ACCENTS` (the decorative gradient palette the profile monogram is tinted by), `CAUSES` (the filter taxonomy), `findOrganization(userName)`, and `formatCount()`.
+It holds twelve `DirectoryOrganization` records — different causes, cities, sizes, and a mix of verified/unverified — plus `ORGANIZATION_ACCENTS` (the decorative gradient palette the profile monogram is tinted by), `CAUSES` (the filter taxonomy), `findOrganization(userName)`, and `formatCount()`.
 
 **Nothing reads its records any more.** `ORGANIZATION_ACCENTS`, `CAUSES` (still used by `Events.tsx`) and `formatCount()` are all still live exports; `organizationDirectory` itself and `findOrganization()` are not called by any page since both went live. The file is kept as the reference shape for a future seed script rather than deleted — see [known-issues.md](./known-issues.md).
 This replaced (August 2026) the twenty identical `"God Father Org"` objects that used to be declared inline in `Organizations.tsx`, which rendered as twenty visually identical cards.
@@ -102,7 +157,7 @@ The real data-fetching function, `getOrganizations()` in [apps/web/src/features/
 When asked to make this live, swap `organizationDirectory` for a `useSWR` call (or `getOrganizations()`) and keep the filtering in `Organizations.tsx`, which is deliberately pure client-side work over whatever array it is handed — see [api-integration.md](./api-integration.md).
 Both pages state on screen that the content is a preview rather than implying a live feed, the same convention `DrivesRail.tsx` follows on the landing page.
 
-The record shape is deliberately the shape a real organization record would have: `tagLine`, `cause`, `city`/`country`, `founded`, `verified`, `followers`/`drives`/`volunteers`, `focusAreas`, `about` (paragraphs), `stats`, `activeDrives`, `milestones`, `website`, `contactEmail`, `address`.
+The record shape is deliberately the shape a real organization record would have: `tagLine`, `cause`, `city`, `founded`, `verified`, `followers`/`drives`/`volunteers`, `focusAreas`, `about` (paragraphs), `stats`, `activeDrives`, `milestones`, `website`, `contactEmail`, `address`.
 
 ## `Organizations.tsx` — the directory
 
@@ -116,7 +171,7 @@ The chips are the backend's domain taxonomy. The empty state now distinguishes "
 **Search and filters actually work now.**
 The previous version had an input with no `onChange` and a "Filters" button with no `onClick`.
 Today:
-- a search field filtering on name, tagline, cause, city and country, so "kolkata" or "water" both find something;
+- a search field filtering on name, tagline, cause and city, so "kolkata" or "water" both find something;
 - a row of cause filters generated from `CAUSES` (plus an `"All"` pseudo-option), horizontally scrollable below `sm` so eight of them don't wrap into four rows above the fold;
 - an `aria-live` result count, and a "nothing matches / reset filters" empty state — reachable now that the filters are real, unlike the old `Loading` fallback, which could never trigger.
 

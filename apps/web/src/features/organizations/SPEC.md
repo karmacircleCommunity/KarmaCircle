@@ -41,7 +41,7 @@ nothing renders its records. See
 | `hooks/useOrganizationSetup.ts`                             | The setup flow's state: record, taxonomy, form, stage, per-step save                                 | ✅ used by `OrganizationSetup.tsx`                                                                                        |
 | `constants/organizationSetup.ts`                            | The wizard's steps as data, `REQUIRED_LABELS`, the five-domain cap                                   | ✅ read by the page, the hook and the draft notice                                                                        |
 | `utils/organizationSetupForm.ts`                            | Pure helpers: seeding, per-step payloads, dirty check, outstanding counts                            | ✅ used by the hook                                                                                                       |
-| `components/setup/*`                                        | `SetupLayout` (shell + progress rail), `SetupIntro`, `AboutStep`, `ReachStep`, `SetupField`          | ✅ used by `OrganizationSetup.tsx`                                                                                        |
+| `components/setup/*`                                        | `SetupLayout` (shell + progress bar), `SetupAside` (rotating quote panel), `SetupIntro`, `SetupQuestion`, `SetupLocationFields` (city/state suggestions + "use my current location"), `SetupFieldLabel` | ✅ used by `OrganizationSetup.tsx`                                                                                    |
 | `components/OrganizationDraftNotice.tsx`                    | Dashboard reminder + way back in for an organization still in draft                                  | ✅ mounted by `dashboard/pages/Dashboard.tsx` for organization accounts                                                   |
 | `utils/toDisplayOrganization.ts`                            | Maps the API shape onto what the card and profile render                                             | ✅ used by both public pages                                                                                              |
 | `utils/monogram.ts`                                         | Initials for an organization with no image of its own                                                | ✅ used by the card and the profile header                                                                                |
@@ -80,7 +80,7 @@ a heading block, the search + filter row, the results grid, `<Footer />`.
 **Search and filters are real.** The previous version's `<input>` had no
 `onChange` and its "Filters" `<button>` had no `onClick`. Today a `useMemo`
 filter runs over the directory array on `query` (matched against name, tagline,
-cause, city and country) and `cause` (filters generated from `CAUSES` plus an
+cause and city) and `cause` (filters generated from `CAUSES` plus an
 `"All"` pseudo-option, rendered by the shared `DirectoryToolbar` in
 `@components`). Both are pure client-side work over whatever array they're
 handed, so wiring a real fetch in later doesn't touch them.
@@ -272,6 +272,6 @@ that once the real backend shape is confirmed.
   `assets/pictures/organizations/` (or point `cover` at a URL from the API).
   Keep a per-record image and don't reintroduce a single shared banner across
   every card — that's the bug this card was redesigned to fix.
-- **"Add more sample organizations"** → keep them varied (cause, country, size,
+- **"Add more sample organizations"** → keep them varied (cause, city, size,
   verified/not). A directory where every row looks alike is what
   `constants/organizationDirectory.ts` exists to prevent.

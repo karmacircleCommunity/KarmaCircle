@@ -64,3 +64,5 @@ SWR call sites:
 
 All user-facing success/error feedback for API calls goes through [showSuccessToast / showErrorToast](../../apps/web/src/utils/Toasts.ts) (react-toastify), which both no-op (return early) if `checkInternetConnection()` reports the browser is offline.
 Follow this pattern for any new API-triggered feedback rather than calling `toast.success`/`toast.error` directly.
+`showWarningToast`/`showInfoToast` exist alongside them for a needs-attention-but-not-failed case; no current API call site uses either yet.
+All four are visually themed through `styles/index.css`'s `--toastify-*` overrides, not per-call styling - see [ui-kit.md](./ui-kit.md#toast) and the live samples at [brand.karmacircle.org](https://brand.karmacircle.org).

@@ -79,17 +79,21 @@ apps/web/src/
     landing-home/               — Home page, Landing hero
     donate-shop-trending/      — Donate page + PaymentGateway.ts (Razorpay); the Shop and Trending pages were deleted
     error-handling/            — Error404 (rebuilt August 2026), Test pages
-  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Modal, Loading, ScrollProgress, BacktoTop, ComponentHelmet, ClickAwayListener
+  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Combobox, Modal, Loading, ScrollProgress, BacktoTop, ComponentHelmet, ClickAwayListener
   hooks/                       — cross-cutting hooks used by 2+ features (useSectionReveal, useMagnetic, useReducedMotion — the shared motion layer, see ui-kit.md#motion)
   services/                    — KarmaCircleApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
-  statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts)
-  utils/                       — cross-cutting helpers used by 2+ features (toasts, fetcher, connectivity check)
+  statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts, IndiaStates.ts, IndiaCities.ts)
+  utils/                       — cross-cutting helpers used by 2+ features (toasts, fetcher, connectivity check, locationSuggest)
   styles/                      — Tailwind entry point + hand-written global CSS (index.css), plus App.css
   assets/                      — images, SVGs
 ```
 
 Inside a feature folder, only the needed subfolders exist — e.g. `organizations/` has no `hooks/`, `donate-shop-trending/` has no `components/`.
 A file only lives at the top level (`components/`, `services/`, `utils/`) when more than one feature actually imports it; single-consumer helpers moved into that consumer's feature folder even if they were previously top-level.
+
+Two deliberate exceptions, both added with the organization setup flow's location question ([organizations.md](./organizations.md#where-are-you-based-suggests-and-can-answer-itself)) and both with exactly one consumer today: `components/inputs/Combobox.tsx` and `utils/locationSuggest.ts`.
+They are shared because of what they are rather than how many places import them - a suggest-as-you-type form field is a UI-kit primitive and is documented as one ([ui-kit.md](./ui-kit.md#combobox)), and "where is this" is a question events will ask in the same words organizations do.
+The reference data they read (`statics/IndiaStates.ts`, `statics/IndiaCities.ts`) belongs in `statics/` on the existing rule, which is where `CountryList.ts` already sits with one consumer.
 
 Two backend-call layers coexist: `apps/web/src/services/KarmaCircleApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.js` / `services/Events.js` fetchers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`, only used by `getOrganizations`/`getEvents`).
 See [api-integration.md](./api-integration.md) for which one each feature actually uses.

@@ -1,17 +1,19 @@
 import Button from "@components/buttons/Button";
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { FiArrowLeft, FiArrowRight, FiArrowUpRight } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiX } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { showSuccessToast } from "@utils/Toasts";
 import SetupIntro from "../components/setup/SetupIntro";
 import SetupLayout from "../components/setup/SetupLayout";
+import SetupLocateButton from "../components/setup/SetupLocateButton";
 import SetupQuestion from "../components/setup/SetupQuestion";
 import {
   FIELD_CY,
   FIELD_SPECS,
   REQUIRED_LABELS,
 } from "../constants/organizationSetup";
+import { useLocateCity } from "../hooks/useLocateCity";
 import { useOrganizationSetup } from "../hooks/useOrganizationSetup";
 import { outstandingFields } from "../utils/organizationSetupForm";
 
@@ -54,6 +56,7 @@ const OrganizationSetup = () => {
   // boolean so it clears itself the moment the flow moves — there is
   // nothing to reset, and a stale error can't follow the user forward.
   const [blockedOn, setBlockedOn] = useState<string | null>(null);
+
   const {
     organization,
     taxonomy,
@@ -75,6 +78,11 @@ const OrganizationSetup = () => {
     back,
     saveStep,
   } = useOrganizationSetup();
+
+  // Owned here rather than inside the location question, because its button
+  // and its answer sit on opposite sides of the fields - see
+  // `useLocateCity`.
+  const locate = useLocateCity((key, value) => setField(key, value));
 
   const badge = (
     <span
@@ -137,14 +145,23 @@ const OrganizationSetup = () => {
           </Link>
         )
       ) : (
+        /* An exit, not an offer. This was a full-weight "Save and finish
+           later" in the same visual class as the flow's own actions, which
+           put a way *out* of the screen at the same volume as the way
+           forward. It saves either way - that is what the tooltip and the
+           toast are for - but the control itself now only has to say
+           "leave", and the close glyph in the corner is the one shape that
+           says that without a sentence. */
         <button
           type="button"
           onClick={leave}
           disabled={saving}
           data-cy="setup-exit"
-          className="cursor-pointer border-none bg-transparent p-0 font-outfit text-body font-medium text-ink/55 transition-colors hover:text-ink disabled:cursor-not-allowed"
+          title="Save and finish later"
+          aria-label="Save and finish later"
+          className="-mr-1.5 inline-flex cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-1.5 text-ink/40 transition-colors hover:bg-ink/5 hover:text-ink/70 disabled:cursor-not-allowed"
         >
-          Save and finish later
+          <FiX aria-hidden className="size-5" />
         </button>
       )}
     </div>
@@ -246,27 +263,59 @@ const OrganizationSetup = () => {
                 : "motion-safe:animate-question-in-back"
           }
         >
-          <h1 className="m-0 font-poppins text-[26px] leading-tight font-bold text-ink sm:text-[32px]">
-            {question.headline}
-            {/* On a single-field question the headline *is* the label, so
+          {/* Headline and hint on the left, the question's own optional
+              shortcut on the right. Only the location question has one
+              today, and it is here because the alternative - stacked under
+              the fields - put an optional aid below the answer it helps
+              with, in the space the eye is already moving through on its
+              way to Continue, while the right half of this row sat empty.
+              `items-start` keeps the pill level with the first line of the
+              headline rather than centred against a block that is two lines
+              on one screen and one on the next; below `sm` the row stacks
+              and the shortcut sits under the hint, left-aligned. */}
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+            <div className="min-w-0">
+              <h1 className="m-0 font-poppins text-[26px] leading-tight font-bold text-ink sm:text-[32px]">
+                {question.headline}
+                {/* On a single-field question the headline *is* the label, so
                 the required marker belongs here. Grouped questions carry
-                one per field instead (SetupQuestion.tsx). */}
-            {question.kind !== "group" &&
-              question.requiredFields.length > 0 && (
-                <span
-                  className="ml-1 align-top text-xl text-red-500"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
-              )}
-          </h1>
+                one per field instead (SetupQuestion.tsx).
 
-          {question.hint && (
-            <p className="mt-3 font-outfit text-body text-gray-600 sm:text-body-lg">
-              {question.hint}
-            </p>
-          )}
+                The joining character is a non-breaking space, not `ml-1` -
+                a plain space (or margin on the span) leaves a break
+                opportunity right before the marker, so a headline that
+                nearly fills the line strands a lone "*" on the next one,
+                flush left and detached from the question it belongs to. A
+                non-breaking space keeps the marker glued to the headline's
+                last word: if it doesn't fit, that word wraps down with it. */}
+                {question.kind !== "group" &&
+                  question.requiredFields.length > 0 && (
+                    <>
+                      {" "}
+                      <span
+                        className="align-top text-xl text-red-500"
+                        aria-hidden="true"
+                      >
+                        *
+                      </span>
+                    </>
+                  )}
+              </h1>
+
+              {question.hint && (
+                <p className="mt-3 mb-0 font-outfit text-body text-gray-600 sm:text-body-lg">
+                  {question.hint}
+                </p>
+              )}
+            </div>
+
+            {question.id === "location" && (
+              <SetupLocateButton
+                locate={locate}
+                hasCity={form.city.trim().length > 0}
+              />
+            )}
+          </div>
 
           <div className="mt-8">
             <SetupQuestion
@@ -274,29 +323,26 @@ const OrganizationSetup = () => {
               form={form}
               setField={setField}
               taxonomy={taxonomy}
-              // A single-choice answer is the whole screen — asking for a
-              // second click on "Continue" to confirm it says nothing.
-              onAnswered={() => question.autoAdvance && advance()}
+              locate={locate}
             />
 
             {/* Sits under the field it is about. It used to hang off the
                 button on the far side of the screen, where it read as a
                 warning about the button rather than a note about a blank
-                answer. Quiet until a Continue is actually refused, then it
-                turns into the reason why. */}
-            {unanswered.length > 0 && (
+                answer. Quiet until a Continue is actually refused - the
+                asterisk on the headline already marks a field required, and
+                what skipping one costs is said once, where it's actually
+                true: the "still needed to go live" banner at the end of the
+                flow. */}
+            {unanswered.length > 0 && blockedOn === question.id && (
               <p
                 data-cy="setup-required-note"
-                role={blockedOn === question.id ? "alert" : undefined}
-                className={`mt-3 font-outfit text-caption ${
-                  blockedOn === question.id ? "text-red-500" : "text-ink/45"
-                }`}
+                role="alert"
+                className="mt-3 font-outfit text-caption text-red-500"
               >
-                {blockedOn === question.id
-                  ? question.kind === "group"
-                    ? `Fill in ${unansweredLabels} to continue.`
-                    : "Fill this in to continue."
-                  : "Required — your profile can't go live without it."}
+                {question.kind === "group"
+                  ? `Fill in ${unansweredLabels} to continue.`
+                  : "Fill this in to continue."}
               </p>
             )}
           </div>

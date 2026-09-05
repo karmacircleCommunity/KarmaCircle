@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { Link } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
@@ -63,9 +62,6 @@ const Button = ({
     <button
       type={type}
       disabled={disabled}
-      // @ts-expect-error — `isLoading` isn't a real DOM attribute for
-      // `<button>`; pre-existing, preserved as-is for a types-only pass.
-      isLoading={isLoading}
       className={classes}
       data-cy={cypressfield}
       {...props}

@@ -23,11 +23,23 @@ type SplitPanelLayoutProps = {
   aside: ReactNode;
   children: ReactNode;
   /**
-   * How the right panel places its content. `"center"` for a short form
-   * (auth), `"start"` for anything tall enough to scroll (setup) — a
-   * centered tall form jumps as its height changes between steps.
+   * How the RIGHT panel places its content vertically. `"center"` for a
+   * short form (auth), `"start"` for anything tall enough to scroll (setup)
+   * — a centered tall form jumps as its height changes between steps.
+   *
+   * The left panel is unaffected: it always centres its aside, so it stays
+   * put across a flow whose right side switches between `center` and `start`
+   * (setup's intro vs. its question screens). A drifting left panel reads as
+   * the page coming apart mid-flow.
    */
   align?: "center" | "start";
+  /**
+   * Decorative layer rendered inside the left panel, on the art and under
+   * the scrim and the aside. Positioned relative to the panel itself, so a
+   * flow can anchor art to the panel's corners independently of the
+   * (always-centred) aside. Clipped to the panel (`overflow-hidden`).
+   */
+  asideDecor?: ReactNode;
   /** Width cap on the right panel's content. */
   contentClassName?: string;
   className?: string;
@@ -48,6 +60,7 @@ const SplitPanelLayout = ({
   aside,
   children,
   align = "center",
+  asideDecor,
   contentClassName = "max-w-sm",
   className = "",
   style,
@@ -61,6 +74,9 @@ const SplitPanelLayout = ({
         alt=""
         className="pointer-events-none absolute inset-0 size-full scale-125 object-cover blur-2xl"
       />
+
+      {asideDecor}
+
       {/* Scrim so the panel text stays legible regardless of where the
           image's lighter highlights land underneath it. */}
       <div

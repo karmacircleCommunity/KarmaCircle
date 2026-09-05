@@ -18,7 +18,6 @@ const completeProfile = {
   domains: ["Food and hunger"],
   teamSize: 12,
   city: "Kolkata",
-  country: "India",
 };
 
 async function signUpOrganization() {
@@ -39,7 +38,7 @@ describe("Organizations", () => {
       expect(res.body.status).toBe("draft");
       expect(res.body.isLive).toBe(false);
       expect(res.body.missingFields).toEqual(
-        expect.arrayContaining(["description", "tag", "domains", "teamSize", "city", "country"]),
+        expect.arrayContaining(["description", "tag", "domains", "teamSize", "city"]),
       );
     });
 

@@ -1,5 +1,16 @@
 # Shared UI Kit & Styling Conventions
 
+## The design system, rendered
+
+**[brand.karmacircle.org](https://brand.karmacircle.org)** renders every token this doc describes: colors (click to copy hex), the font/type scale, radius tokens, and live component samples.
+It's a separate repository, [karmacircleCommunity/karmacircle-brand](https://github.com/karmacircleCommunity/karmacircle-brand), not a route in this one.
+
+It briefly *was* an in-app page (`apps/web/src/features/brand-kit`, September 2026) before being split out at the user's request - a sidebar-nav layout with real light/dark theming, deployed to its own domain instead of a path inside the product site, so its design and content can grow independently.
+That in-app page is deleted; `/brand` here now just redirects to the standalone site (`routesConfig.tsx`).
+
+**Its tokens are a manual copy**, not an automated sync, of the values in this file's `@theme` block - see that repo's `src/index.css` and README.
+If a brand color, font, or radius changes here, update it there too; nothing enforces the two staying identical.
+
 ## `Button`
 
 [apps/web/src/components/buttons/Button.tsx](../../apps/web/src/components/buttons/Button.tsx), styled with Tailwind utility classes (a `variantClasses` lookup keyed by `variant`).
@@ -12,12 +23,21 @@ Note that `variantClasses.outline` **does** include `rounded-xl`; overriding it 
 
 Behavior: if `to` is set **and** `navigator.onLine === true`, renders a `react-router-dom` `<Link>` instead of a `<button>` — an offline visitor passing `to` would silently get a plain, non-navigating `<button>` element instead (this is presumably intentional, to avoid dead navigation while offline, but it means `onClickfunction` also won't fire in that case since the button has no handler wired either way unless one was passed via `...props`).
 While `isLoading` is true, `children` are replaced with a `react-spinners` `ClipLoader`.
+It also used to be forwarded to the `<button>` element itself, which is not a DOM attribute and so logged a React warning on every render of every button in the app; the forwarding was spurious (the prop is already destructured for the spinner) and was removed in September 2026, along with the file-level `eslint-disable react/no-unknown-property` that existed only to silence it.
 
 Both variants carry `motion-safe:active:scale-97` (added August 2026) — the app-wide press acknowledgement, so a click reads as registered before the network does anything. `motion-safe:` drops it under `prefers-reduced-motion`. It is a *class-based* transform, so it is silently inert on any button also driven by `useMagnetic`, which writes an inline one (see [Motion](#motion)); express press/hover feedback in colour on those.
 
 ## `AuthButton`
 
 [apps/web/src/features/authentication/components/AuthButton.tsx](../../apps/web/src/features/authentication/components/AuthButton.tsx) — see [authentication.md](./authentication.md). Built on top of `Button`, currently unused by the live auth pages.
+
+## Toast
+
+`showSuccessToast` / `showErrorToast` / `showWarningToast` / `showInfoToast` in [apps/web/src/utils/Toasts.ts](../../apps/web/src/utils/Toasts.ts), on top of react-toastify.
+Use these for any API-triggered feedback rather than calling `toast.success`/`toast.error` directly - they no-op when `checkInternetConnection()` reports the browser offline, and (success/error) return early on an empty message rather than rendering a bubble that says nothing. See [api-integration.md](./api-integration.md#toast-conventions).
+
+Themed through react-toastify's own `--toastify-*` CSS custom properties, overridden in `styles/index.css` under a `:root:root` selector rather than per-call inline styles.
+`:root:root` (not a plain `:root`) is deliberate: `ReactToastify.css` declares its own unlayered `:root { --toastify-* }` block, and repeating the pseudo-class doubles this override's specificity from (0,1,0,0) to (0,2,0,0), which is what makes it reliably win regardless of which stylesheet's import lands later in Vite's bundle - see the `.container` gotcha below for why source order alone isn't a safe bet here. A toast's background, radius, shadow, font, and success/error/warning/info colors all come from this one block; there is no per-toast styling left in `Toasts.ts`.
 
 ## `DirectoryToolbar`
 
@@ -30,6 +50,30 @@ The old block stacked three heavy rows above the cards: a shadowed white pill se
 Now the field is a single underline that turns brand on `focus-within`, the causes are plain text buttons with a 2px brand underline marking the active one, and the count shares the filter row on `sm` and up — leaving the primary button as the only filled surface on the page above the grid.
 The filter row still scrolls horizontally below `sm` (with the `-mx-9` bleed matching the pages' `px-9` mobile padding) rather than wrapping into four rows above the fold.
 
+## `Combobox`
+
+[apps/web/src/components/inputs/Combobox.tsx](../../apps/web/src/components/inputs/Combobox.tsx), exported from the `@components` barrel.
+A text field that suggests without insisting: whatever is typed is the value, and a suggestion is only ever a shortcut to typing it.
+
+That distinction is the whole design, and it is why this is not react-select (already a dependency, and right for the closed-set cases it is used for).
+react-select's free-text mode is `creatable`, which announces "create option" for what is really just a place that already exists.
+Here the input is an ordinary `<input type="text">` and an entry missing from the list costs the user nothing.
+
+**The caller owns the matching.** It passes `options` already filtered and ordered; the component owns only what a combobox has to own - whether the list is open, which row is active, the keyboard, and the ARIA (`role="combobox"`, `aria-expanded`, `aria-activedescendant`, a `listbox` of `option`s, and a `sr-only` live count).
+`onChange` fires on every keystroke, `onPick` only on an actual selection, which is what lets a caller fill a second field from the row that was chosen.
+
+Four behaviours to keep if it is ever rebuilt:
+
+- **Enter is swallowed while the list is open.** These fields live inside forms whose Enter submits; without `preventDefault()` one press both chooses a suggestion and submits, which is one press doing two things.
+- **There is no `onFocus` opener.** Fields are often focused by the page rather than by the person - the organization setup flow focuses the first answer as each question arrives - and a list unfurling over a saved answer nobody has touched reads as a fault. Typing opens it, and so does ArrowDown.
+- **It closes on an outside `pointerdown`, not on blur.** Blur fires when focus moves to the browser's own chrome too, and a list that vanishes because someone tabbed away and back is a list that feels broken. Option buttons `preventDefault()` their `mousedown` so the click that chooses one is not the press that closes the list.
+- **The panel is `absolute`.** Nothing below it moves as matches narrow; a page settling under the cursor mid-type is how a field ends up holding the wrong thing.
+- **The panel is tall enough for a full result set.** `max-h-88` clears the seven rows `SUGGESTION_LIMIT` allows, so nothing scrolls and no row is sliced through its own text - the first version cut the last one in half. The secondary hint on each row (the state, next to a city) is body-sized and muted rather than caption-sized: it is what tells two identically-named towns apart, so it has to be readable, and colour is what makes it recede.
+
+`autoComplete="off"` is set because the browser's own address autofill draws its menu in the same place, and two stacked dropdowns is not a choice anybody can make.
+
+Used today by the organization setup flow's location question (city and state) - see [organizations.md](./organizations.md#where-are-you-based-suggests-and-can-answer-itself).
+
 ## `SplitPanelLayout`
 
 [apps/web/src/components/layouts/SplitPanelLayout.tsx](../../apps/web/src/components/layouts/SplitPanelLayout.tsx).
@@ -39,12 +83,12 @@ Two flows use it — signing in/up ([authentication.md](./authentication.md)) an
 They differ only in what fills the left panel, so that is the `aside` prop; the art, the scrim, the cream form surface (`#faf8f5` — pure white next to small body text read as glare) and where the wordmark sits at each breakpoint live here once.
 It was extracted from `AuthLayout.tsx` in August 2026 when setup became a wizard, rather than copied — two near-identical shells is how two flows become two designs.
 
-`align="start"` for a panel tall enough to scroll (a centered tall form jumps as its height changes between steps), `align="center"` for a short one — setup switches between the two by stage, `center` on the intro and `start` once the one-question-at-a-time flow begins.
+`align` sets the vertical placement of the **right** panel only: `align="start"` for a panel tall enough to scroll (a centered tall form jumps as its height changes between steps), `align="center"` for a short one. Setup switches by stage — `center` on the intro, `start` once the one-question-at-a-time flow begins. The **left** panel always centres its aside, deliberately *not* following `align`: a flow whose right side toggles between `center` and `start` (setup) would otherwise drag the aside up and down at every stage change, which reads as the page coming apart. A centred quote next to a top-aligned form is the accepted trade.
 The left panel is `sticky` from 900px up so a long form scrolls past it, and below 900px it is dropped entirely rather than stacked — its job is reassurance, and on a phone that belongs under the form, not above it, pushing the first field off screen.
 
-The left panel's weight is set by what stage the flow is in, not by a fixed template. Auth fills it with three value props; setup's *intro* deliberately runs it near-empty — a single two-line statement, wide margins, everything actionable kept on the right — because a signed-up organization is past being sold to, and the negative space is doing the "this is a considered product" work that a list of bullets would undo. Once setup's questions start, the panel earns its density back as the step rail. If a third flow adopts this shell, match the panel's fill to how much the user still needs convincing, not to the other flows.
+`asideDecor` is an optional decorative layer rendered inside the left panel, on the art and under the scrim and the aside, positioned relative to the *panel* — so a flow can anchor art to the panel's corners regardless of where `align` puts the aside. Setup uses it for the quote panel's atmosphere (see below); auth passes nothing.
 
-The intro panel is `SetupIntroAside.tsx`, not inline markup, because emptiness that large needs *atmosphere* or it reads as unfinished: a slow brand aura behind the headline and an orbit motif (one brand dot circling a faint ring — the KarmaCircle at panel scale), both decorative, both behind the copy, both `motion-safe:` loops at 18s/44s that rest under reduced motion. See [Motion](#motion). This is the pattern to copy if another aesthetic-only panel ever feels hollow — add depth behind the words, don't add more words.
+The left panel's weight is set by the flow, not a fixed template. Auth fills it with three value props. Setup runs one **rotating quote** (`SetupAside.tsx` + `constants/setupAsideQuotes.ts`) — the same on the intro and every question screen, so the flow reads as one design — with atmosphere behind it via `asideDecor`: a slow brand aura behind the quotation mark and an orbit motif (one brand dot circling a faint ring, the KarmaCircle at panel scale) anchored off the bottom-left corner, clear of the text. Both are decorative `motion-safe:` loops (18s / 44s) that rest under reduced motion — see [Motion](#motion). The quotes are real and attributed but **not testimonials**: monogram, not portrait, and no implied endorsement, per the anti-fabrication rule ([authentication.md](./authentication.md)). If a third flow adopts this shell: a hollow aesthetic panel wants depth behind the words (an `asideDecor` motif), not more words.
 
 ## Card components
 
@@ -70,9 +114,12 @@ Design tokens are declared in an `@theme` block in `apps/web/src/styles/index.cs
 - `--color-surface-muted` (`#f5f7f7`), `--color-surface-hover` (`#f5f7fd`) — input/panel backgrounds and their hover state.
 - `--color-surface-dark` (`#0e0906`) — a warm near-black for full-bleed dark surfaces, distinct from `--color-brand-secondary` (the lighter clay-brown used for text/buttons). Originally a one-off `bg-[#0e0906]` on `AuthLayout.tsx`'s value-prop panel; tokenized (August 2026) once `Footer.tsx`'s redesign needed the identical dark background — see [layout-navigation.md](./layout-navigation.md#footer).
 - `--color-border-subtle` (`#f0efef`), `--color-border-muted` (`#e0e0e0`), `--color-input-border` (`#ced4da`) — the three recurring border grays.
-- `--font-mont` / `--font-poppins` / `--font-outfit` — the three brand fonts.
+- `--color-success` (`#2e6b4a`) / `--color-error` (`#a8402f`) / `--color-warning` (`#8a5a12`) / `--color-info` (`#3a6a8a`) - semantic/status colors, added September 2026 alongside the toast rebrand (see "Toast" below). Muted to sit next to the brand palette rather than react-toastify's stock saturated green/red/yellow/blue; each checked against WCAG AA (>=4.5:1) for white text, same bar as `--color-brand`. Use the `/` opacity modifier for a tinted background (`bg-success/10 text-success`) rather than a new bg tint token.
+- `--font-mont` / `--font-poppins` / `--font-outfit` — the three brand fonts. `--font-outfit` is the default for anything that isn't body copy (40+ files); `--font-poppins` is body copy and forms; `--font-mont` is a minor third face used by only `Header.tsx` and `Profile.tsx` - match one of the first two in new code rather than adding a fourth use of Montserrat. The document's base `body` font-family is "Mulish" (`styles/index.css`, not a `@theme` token), mostly overridden by the two tokens above at the component level.
 
 **Prefer a token (or, failing that, Tailwind's default palette — `gray-50`, `gray-300`, `gray-500`, etc.) over a new arbitrary-value hex class** (`bg-[#f5f7f7]`, `text-[#6b7280]`). An arbitrary-value color is only appropriate for a genuinely one-off decorative value that won't repeat — the moment the same hex shows up in a second place, add it to `@theme` instead (or reuse an existing token/default-palette color if it's an exact or near-exact match) so the whole app can be re-themed by editing one block. This app previously had the same brand orange spelled three different ways (`#ff5b31` / `#ff5a31` / `#ff5a30`) and `#6b2615` written as a raw hex almost as often as `text-brand-secondary` — both were consolidated into the tokens above; don't reintroduce that drift. Opacity variants of a token color should use Tailwind's `/` opacity modifier (`text-brand-secondary/75`, `border-black/25`) rather than baking alpha into a new hex literal.
+
+**`leading-<decimal>` is a trap in Tailwind v4.** `leading-1.05` / `leading-1.4` etc. do **not** mean `line-height: 1.05` — v4 resolves a bare number against the spacing scale, so `leading-1.05` compiles to `line-height: calc(var(--spacing) * 1.05)` ≈ **4px**, which collapses multi-line headings on top of each other. Use a named token (`leading-tight` 1.25, `leading-snug` 1.375, `leading-normal` 1.5, `leading-relaxed` 1.625) or the arbitrary unitless form `leading-[1.05]`. The repo's `eslint-plugin-tailwindcss` `no-unnecessary-arbitrary-value` rule (a v3-era plugin, set to `warn`) actively tells you to rewrite `leading-[1.05]` → `leading-1.05` — ignore it for `leading`/`tracking`; the arbitrary form is the correct one. `leading-4` / `leading-4.5` (a real spacing step, e.g. 18px on `text-sm`) is fine and intended.
 
 A few things can't be reached by Tailwind's class-scanner (it only sees literal strings in your source) and are hand-written global CSS in `apps/web/src/styles/index.css` instead:
 - React-select's and MUI's own generated class names (`.css-13cymwt-control`, `.MuiMenuItem-root`, etc.)
@@ -94,7 +141,7 @@ The reusable layer added August 2026 so "make it feel alive" doesn't mean a four
 - **`useMagnetic({ strength, max })`** — returns a ref; the element leans toward the cursor while hovered and springs back on leave. Gated to `(hover: hover) and (pointer: fine)` and off under reduced motion — on a phone, `pointermove` fires from a tap and would leave the element permanently offset. Writes through `gsap.quickTo` (no React state at pointer-event frequency). **It owns the element's `transform`**: an inline transform beats a class, so a magnetic element must not also carry `hover:-translate-*`/`active:scale-*`, which would silently do nothing. Used by `OpenSource.tsx`'s primary CTA.
 - **`useReducedMotion()`** — reactive `prefers-reduced-motion` as state, for components that have to *render* differently rather than branch inside a `useGSAP` body.
 - **`ScrollProgress`** (`apps/web/src/components/ScrollProgress.tsx`) — a 2px brand rule across the top of the window that fills as the page scrolls, mounted once in `App.tsx` outside the router so it survives navigation. Driven by a `ScrollTrigger` on `document.documentElement` rather than a `window.scrollY` listener, because the app's real scroll position is Lenis's eased one — a raw listener visibly runs ahead of the page it describes. `scrub: 0.2` gives it a slight trailing ease. Decorative, so it simply never animates under reduced motion rather than being parked at a static fill that would describe a scroll position nobody is at.
-- **Motion tokens in `index.css`'s `@theme`** — `--animate-pop-in` (used by the mobile nav sheet), `--animate-rise-in` (the setup intro headline, `SetupIntroAside.tsx`), and the setup intro's two ambient loops `--animate-aura` / `--animate-orbit` (same file). Tailwind v4 reads the `@keyframes` for an `--animate-*` token out of the same `@theme` block, so both halves have to live together; a keyframes rule outside `@theme` is not picked up. Apply them through `motion-safe:` (`motion-safe:animate-pop-in`). The **default is an entrance, never a loop** — a moving element on a surface someone is reading reads as a slot machine. The exceptions are all decorative-only, never on a text node: Tailwind's own `animate-ping` on the 6px "Open source" dot in `OpenSource.tsx`, and `aura`/`orbit`, which sit *behind* the copy on the setup intro's left panel (a panel with no task on it), run at 18s/44s, and are dropped by `motion-safe:` under reduced motion. If a fourth loop is proposed, it has to clear the same bar: decorative, slow, low-contrast, off a reading surface, gone under reduced motion.
+- **Motion tokens in `index.css`'s `@theme`** — `--animate-pop-in` (used by the mobile nav sheet), `--animate-rise-in` (the setup quote panel, `SetupAside.tsx`), and the setup panel's two ambient loops `--animate-aura` / `--animate-orbit` (wired as `SplitPanelLayout`'s `asideDecor` in `SetupLayout.tsx`). Tailwind v4 reads the `@keyframes` for an `--animate-*` token out of the same `@theme` block, so both halves have to live together; a keyframes rule outside `@theme` is not picked up. Apply them through `motion-safe:` (`motion-safe:animate-pop-in`). The **default is an entrance, never a loop** — a moving element on a surface someone is reading reads as a slot machine. The exceptions are all decorative-only, never on a text node: Tailwind's own `animate-ping` on the 6px "Open source" dot in `OpenSource.tsx`, and `aura`/`orbit`, which sit *behind* the quote on the setup flow's left panel and are anchored to the panel corners well clear of it, run at 18s/44s, and are dropped by `motion-safe:` under reduced motion. If a fourth loop is proposed, it has to clear the same bar: decorative, slow, low-contrast, off a reading surface, gone under reduced motion.
 - **Hover/press conventions applied across the app** in the same pass: nav links get a directional underline wipe (`origin-right` at rest, `origin-left` on hover, so it sweeps through rather than rubber-banding back), the navbar logo's brand dot scales with the wordmark, cards lift, and every `Button` presses (see above). All transform-based ones are `motion-safe:`-prefixed.
 
 **The setup flow's question transitions** (`--animate-question-in` / `-out` / `-in-back` / `-out-back`) are four tokens rather than two because direction has to read correctly: forward, the answered question leaves upward and the next arrives from below; back, both reverse. One pair would make "Back" look like another step forward. Exits are deliberately faster than entrances (0.17s vs 0.42s) so the flow never feels like it is waiting on itself. Anything consuming them must keep its own timeout in step with the CSS duration — see [organizations.md](./organizations.md#one-question-at-a-time-saved-once-per-step).

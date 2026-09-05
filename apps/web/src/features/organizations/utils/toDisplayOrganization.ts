@@ -67,7 +67,6 @@ export function toDisplayOrganization(
     description,
     cause: organization.domains?.[0] ?? organization.tag ?? "Organization",
     city: organization.location?.city ?? "",
-    country: organization.location?.country ?? "",
     founded: new Date(organization.createdAt).getFullYear(),
     verified: organization.verified,
     followers: organization.followers ?? 0,
@@ -88,11 +87,7 @@ export function toDisplayOrganization(
     milestones: [],
     website: organization.website ?? "",
     contactEmail: organization.contactEmail ?? "",
-    address: [
-      organization.location?.city,
-      organization.location?.state,
-      organization.location?.country,
-    ]
+    address: [organization.location?.city, organization.location?.state]
       .filter(Boolean)
       .join(", "),
   };

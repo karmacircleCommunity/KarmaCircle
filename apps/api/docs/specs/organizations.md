@@ -17,7 +17,7 @@ The `Organization` **discriminator on the `User` model** still exists and is sti
 
 A new organization is created with `status: "draft"` and is invisible to everyone but its owner: absent from `GET /organizations`, and a `404` on `GET /organizations/{handle}` — deliberately the same `404` an unknown handle gets, so a visitor cannot tell a half-finished signup from a nonexistent one.
 
-`REQUIRED_FIELDS` in [organization.service.ts](../../src/modules/organizations/organization.service.ts) is the list that gates publication: `description`, `tag`, `domains` (at least one), `teamSize`, `city`, `country`.
+`REQUIRED_FIELDS` in [organization.service.ts](../../src/modules/organizations/organization.service.ts) is the list that gates publication: `description`, `tag`, `domains` (at least one), `teamSize`, `city`.
 They are deliberately **not** `required: true` on the schema — the setup form saves partial progress, and the record simply stays in draft.
 `updateForOwner` re-checks the list on every save and flips `status` to `live` on the save that completes it.
 The transition is one-way: a live organization that later blanks a required field stays live rather than vanishing from the directory mid-edit and breaking every link to it.
@@ -34,7 +34,7 @@ A logo is **not** on the required list, on purpose: there is no upload endpoint 
 
 | Route | Auth | Notes |
 |---|---|---|
-| `GET /organizations` | no | Live organizations only, `{ data, pagination }` via `toPublic()`. Filters: `?search=` (case-insensitive partial match on name/description/city/country), `?tag=`, `?domain=`, plus `?page=&limit=`. |
+| `GET /organizations` | no | Live organizations only, `{ data, pagination }` via `toPublic()`. Filters: `?search=` (case-insensitive partial match on name/description/city), `?tag=`, `?domain=`, plus `?page=&limit=`. |
 | `GET /organizations?userName=` | no | **Legacy branch, unchanged**: an account lookup answered out of the `users` collection, not this one. Still what `Profile.tsx` calls for `/user/:userName` and `/organization/:userName` account views. |
 | `GET /organizations/taxonomy` | no | `{ tags, domains }` — the closed vocabularies in [organization.taxonomy.ts](../../src/modules/organizations/organization.taxonomy.ts). The frontend renders its filter chips and setup form from this rather than keeping a second copy. |
 | `GET /organizations/me` | ✅ | The owner's own record via `toPrivate()` — public fields plus `ownerEmail`, `contactPhone`, `members`, `status`, `missingFields`, `isLive`. `403` for an individual account. Backfills the record for organizations that predate this collection (`findOrCreateForOwner`). |
