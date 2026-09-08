@@ -1,12 +1,12 @@
-# Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-09-05)
+# Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-09-08)
 
 ## Corpus Check
-- 220 files · ~418,923 words
+- 220 files · ~425,145 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 784 nodes · 779 edges · 215 communities detected
-- Extraction: 80% EXTRACTED · 19% INFERRED · 1% AMBIGUOUS · INFERRED: 149 edges (avg confidence: 0.77)
+- 785 nodes · 782 edges · 215 communities detected
+- Extraction: 80% EXTRACTED · 19% INFERRED · 1% AMBIGUOUS · INFERRED: 150 edges (avg confidence: 0.77)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -245,10 +245,10 @@
   index.html → docs/FrontendSetup.md
 - `Frontend Tech Stack` --semantically_similar_to--> `Frontend Techstack Overview`  [INFERRED] [semantically similar]
   README.md → docs/FrontendSetup.md
+- `forgotPassword()` --calls--> `requestPasswordReset()`  [INFERRED]
+  /Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts → /Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.service.ts
 - `findByEmail()` --calls--> `createEvent()`  [INFERRED]
   /Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/users/user.service.ts → /Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/events/event.service.ts
-- `milanhub.org (production URL)` --conceptually_related_to--> `robots.txt (crawl policy)`  [INFERRED]
-  index.html → public/robots.txt
 
 ## Hyperedges (group relationships)
 - **End-to-end local onboarding flow: fork/clone the repo, set up the frontend, optionally run via Docker, and pair with the separate backend repo** —  [INFERRED 0.75]
@@ -265,31 +265,31 @@
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (50): src/integrations/ApiConnector.js (axios wrapper), src/integrations/ApiEndpoints.js (endpoint URL registry), Dashboard.jsx SWR call (userEndpoints.profile), ApiConnector dead/unreachable status-600 check, src/utils/Fetcher.js (SWR GET fetcher), getClubs() in src/integrations/Clubs.js, getEvents() in src/integrations/Events.js, Layer A: src/service/MilanApi.js (plain axios, most calls) (+42 more)
+Nodes (56): src/integrations/ApiConnector.js (axios wrapper), src/integrations/ApiEndpoints.js (endpoint URL registry), ApiConnector dead/unreachable status-600 check, API Integration Layer spec, getClubs() in src/integrations/Clubs.js, getEvents() in src/integrations/Events.js, Layer B: src/integrations/*.js (via ApiConnector, only getClubs/getEvents), src/utils/fetchers/PatchFetcher.js (dead file, unused PATCH fetcher) (+48 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.06
-Nodes (49): API Integration Layer spec, STATUSCODE map (src/static/Constants.js), userEndpoints.update vs userEndpoints.updateProfile (duplicate endpoint constants), src/ directory layout, Architecture spec, Two backend-call layers coexist (MilanApi.js vs integrations/*), vite.config.mjs (aliases, dev server, vite-plugin-pwa), Authentication spec (+41 more)
+Cohesion: 0.09
+Nodes (32): checkEmail(), loginSuccess(), emailExists(), findOrCreateGoogleUser(), hashResetToken(), requestPasswordReset(), resetPassword(), signin() (+24 more)
 
 ### Community 2 - "Community 2"
+Cohesion: 0.07
+Nodes (19): logout(), bumpTokenVersion(), verifyTokenLoosely(), checkInternetConnection(), validateForm(), share(), handleSubscribe(), updateUserProfile() (+11 more)
+
+### Community 3 - "Community 3"
 Cohesion: 0.06
 Nodes (40): ClubCard component, Clubs.jsx (clubs directory page, /clubs), Hardcoded 20-item fake club list in Clubs.jsx, Dead Loading fallback in Clubs.jsx (can never trigger), Dashboard.jsx (/dashboard), fetchDashboard() (MilanApi.js, GET /clubs/dashboard, unused), ProfileSection.jsx (empty one-line stub, unused), Stray console.log(profileData?.user) in Edit Profile handler (+32 more)
 
-### Community 3 - "Community 3"
-Cohesion: 0.07
-Nodes (18): logout(), bumpTokenVersion(), verifyTokenLoosely(), checkInternetConnection(), validateForm(), share(), handleSubscribe(), updateUserProfile() (+10 more)
-
 ### Community 4 - "Community 4"
-Cohesion: 0.1
-Nodes (29): checkEmail(), forgotPassword(), googleCallback(), issueOAuthSession(), loginSuccess(), signin(), signup(), baseCookieOptions() (+21 more)
+Cohesion: 0.07
+Nodes (38): Dashboard.jsx SWR call (userEndpoints.profile), src/utils/Fetcher.js (SWR GET fetcher), Layer A: src/service/MilanApi.js (plain axios, most calls), Profile.jsx SWR call (clubEndpoints.details(userName)), Rationale: new calls should follow Layer A's MilanApi.js pattern, UserProfile.jsx SWR call (userEndpoints.details(slug)), src/utils/Auth/DonotRenderWhenLoggedIn.jsx (route guard HOC), emailRegex validation step inside useAuth.authenticateUser (applies to sign-in too) (+30 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.07
-Nodes (9): handleContinue(), handleGoogle(), fetchOrganizationData(), CheckEmailExists(), completeProfileApiCall(), GetAllOrganizations(), GoogleAuth(), async() (+1 more)
+Cohesion: 0.09
+Nodes (20): listAllUsers(), listOrganizations(), listEvents(), createEvent(), findAll(), findByUid(), listOrganizations(), findLive() (+12 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.11
-Nodes (18): listAllUsers(), listOrganizations(), listEvents(), createEvent(), findAll(), findByUid(), listOrganizations(), findLive() (+10 more)
+Cohesion: 0.07
+Nodes (9): handleContinue(), handleGoogle(), fetchOrganizationData(), CheckEmailExists(), completeProfileApiCall(), GetAllOrganizations(), GoogleAuth(), async() (+1 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.09
@@ -308,8 +308,8 @@ Cohesion: 0.13
 Nodes (16): src/App.jsx (route/provider shell), <HelmetProvider> (react-helmet-async), src/index.jsx (app entry point), MUI <LocalizationProvider> (date/time pickers), redux-persist <PersistGate>, <QueryClientProvider> (@tanstack/react-query, unused), Redux <Provider> wrapper, src/pages/route.js (page barrel file) (+8 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.25
-Nodes (12): getByHandle(), getMine(), updateMine(), createForOwner(), findByOwnerEmail(), findLiveByHandle(), findOrCreateForOwner(), missingRequiredFields() (+4 more)
+Cohesion: 0.23
+Nodes (9): forgotPassword(), googleCallback(), issueOAuthSession(), signin(), signup(), baseCookieOptions(), clearedCookieOptions(), httpOnlyCookieOptions() (+1 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.13
@@ -336,36 +336,36 @@ Cohesion: 0.28
 Nodes (5): caption(), lookAround(), isStepId(), useOrganizationSetup(), wait()
 
 ### Community 18 - "Community 18"
-Cohesion: 0.22
-Nodes (2): getProduct(), findBySlug()
-
-### Community 19 - "Community 19"
 Cohesion: 0.4
 Nodes (2): pause(), resumeAfterIdle()
 
-### Community 20 - "Community 20"
+### Community 19 - "Community 19"
 Cohesion: 0.33
 Nodes (3): apiConnector(), getEvents(), getOrganizations()
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.6
 Nodes (6): IAmTamal/Milan GitHub repo, Changelog v0.3.3, Changelog v0.3.4, Changelog v0.3.5, Changelog v0.3.6, Changelog v0.3.7
 
-### Community 22 - "Community 22"
+### Community 21 - "Community 21"
 Cohesion: 0.5
 Nodes (2): choose(), onKeyDown()
 
-### Community 23 - "Community 23"
+### Community 22 - "Community 22"
 Cohesion: 0.6
 Nodes (3): prefersCoarsePointer(), prefersReducedMotion(), SmoothScroll()
 
-### Community 24 - "Community 24"
+### Community 23 - "Community 23"
 Cohesion: 0.4
 Nodes (1): AppError
 
-### Community 25 - "Community 25"
+### Community 24 - "Community 24"
 Cohesion: 0.4
 Nodes (2): createReport(), hasReportedRecently()
+
+### Community 25 - "Community 25"
+Cohesion: 0.4
+Nodes (5): Donate.jsx (unroutable, broken imports, near-full rewrite needed), GetAllClubs() (MilanApi.js, GET /clubs), Cookies.get('isLoggedIn') gate that can never pass (unused cookie), PaymentGateway.js / displayRazorpay() (POST /payment/razorpay), Hardcoded prefill (app author's own name/email/phone) in Razorpay checkout
 
 ### Community 26 - "Community 26"
 Cohesion: 0.83
@@ -653,11 +653,11 @@ Nodes (2): Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*), Razorpay A
 
 ### Community 97 - "Community 97"
 Cohesion: 1.0
-Nodes (2): .env.example (documents stale VITE_MILANAPI), Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL
+Nodes (2): src/pages/events/detailed/DetailedEvent.jsx (unrouted stub), Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub
 
 ### Community 98 - "Community 98"
 Cohesion: 1.0
-Nodes (2): src/pages/events/detailed/DetailedEvent.jsx (unrouted stub), Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub
+Nodes (2): .env.example (documents stale VITE_MILANAPI), Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL
 
 ### Community 99 - "Community 99"
 Cohesion: 1.0
@@ -1240,9 +1240,9 @@ Nodes (1): Four coexisting styling approaches (plain .scss, plain .css, CSS Modu
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 96`** (2 nodes): `Docker Setup: Env Variables (PORT, MONGO_URI, RAZORPAY_*)`, `Razorpay API Docs`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 97`** (2 nodes): `.env.example (documents stale VITE_MILANAPI)`, `Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL`
+- **Thin community `Community 97`** (2 nodes): `src/pages/events/detailed/DetailedEvent.jsx (unrouted stub)`, `Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 98`** (2 nodes): `src/pages/events/detailed/DetailedEvent.jsx (unrouted stub)`, `Issue: /events/:id-equivalent has no route despite DetailedEvent.jsx stub`
+- **Thin community `Community 98`** (2 nodes): `.env.example (documents stale VITE_MILANAPI)`, `Issue: .env.example documents VITE_MILANAPI instead of VITE_API_URL`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 99`** (2 nodes): `getProfileFields.js (unused getMissingElements/getEditableFields)`, `ProfileElements.js (unused declarative field metadata)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -1488,9 +1488,9 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `Bell notification icon (SVG, 'Bell_On' group): a ringing/active bell glyph rendered via currentColor stroke+fill for a UI notifications button` and `Default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `logout()` connect `Community 3` to `Community 4`?**
+- **Why does `logout()` connect `Community 2` to `Community 11`?**
   _High betweenness centrality (0.027) - this node is a cross-community bridge._
-- **Why does `Known Issues & Inconsistencies` connect `Community 1` to `Community 0`, `Community 2`?**
+- **Why does `Known Issues & Inconsistencies` connect `Community 0` to `Community 3`?**
   _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Why does `handleContinue()` connect `Community 5` to `Community 3`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `showSuccessToast()` connect `Community 2` to `Community 6`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
