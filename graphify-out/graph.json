@@ -8754,8 +8754,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationSetup.tsx",
       "source_location": "L92",
       "weight": 1.0,
-      "_src": "organizationsetup_invalidon",
-      "_tgt": "organizationsetupform_invalidfields",
+      "_src": "organizationsetupform_invalidfields",
+      "_tgt": "organizationsetup_invalidon",
       "source": "organizationsetupform_invalidfields",
       "target": "organizationsetup_invalidon"
     },
