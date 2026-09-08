@@ -87,7 +87,7 @@ const SetupLayout = ({
           `transition-[width]` is what makes it slide forward as each
           question is answered instead of jumping. */}
       {questionNumber && questionCount ? (
-        <div className="mb-8">
+        <div className="mb-5 sm:mb-8">
           <div className="flex items-baseline justify-between">
             <span className="font-outfit text-caption font-medium tracking-[0.14em] text-ink/45 uppercase">
               {current?.title}

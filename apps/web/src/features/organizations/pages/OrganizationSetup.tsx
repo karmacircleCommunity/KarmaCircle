@@ -91,14 +91,26 @@ const OrganizationSetup = () => {
   const invalidOn = (target: typeof question) =>
     target ? invalidFields(form, target.fields) : {};
 
+  // A full bordered pill reads fine on desktop, where there's space to
+  // spare, but on a 375px screen its own padding plus the gap under it (see
+  // `topBar` below) was some of the biggest single chunks of vertical space
+  // on the whole step — for a status label, not the step itself. Below `sm`
+  // it collapses to a dot + the same words, no border or fill; the pill
+  // treatment returns at `sm` and up.
   const badge = (
     <span
-      className={`inline-block rounded-full px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] uppercase ${
+      className={`inline-flex items-center gap-1.5 font-outfit text-caption font-medium tracking-widest uppercase sm:rounded-full sm:border sm:px-3.5 sm:py-1.5 sm:tracking-[0.16em] ${
         organization?.isLive
-          ? "border border-brand/25 bg-brand/8 text-brand"
-          : "border border-warning/30 bg-warning/10 text-warning"
+          ? "text-brand sm:border-brand/25 sm:bg-brand/8"
+          : "text-warning sm:border-warning/30 sm:bg-warning/10"
       }`}
     >
+      <span
+        aria-hidden="true"
+        className={`size-1.5 shrink-0 rounded-full sm:hidden ${
+          organization?.isLive ? "bg-brand" : "bg-warning"
+        }`}
+      />
       {organization?.isLive ? "Live" : "Draft — not visible yet"}
     </span>
   );
@@ -148,7 +160,7 @@ const OrganizationSetup = () => {
   };
 
   const topBar = (
-    <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-8">
       {badge}
       {stage === "intro" ? (
         organization.isLive && (
@@ -324,7 +336,7 @@ const OrganizationSetup = () => {
               and the shortcut sits under the hint, left-aligned. */}
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
             <div className="min-w-0">
-              <h1 className="m-0 font-poppins text-[26px] leading-tight font-bold text-ink sm:text-[32px]">
+              <h1 className="m-0 font-poppins text-[22px] leading-tight font-bold text-ink sm:text-[32px]">
                 {question.headline}
                 {/* On a single-field question the headline *is* the label, so
                 the required marker belongs here. Grouped questions carry
@@ -366,7 +378,7 @@ const OrganizationSetup = () => {
             )}
           </div>
 
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <SetupQuestion
               question={question}
               form={form}
@@ -407,14 +419,20 @@ const OrganizationSetup = () => {
               </p>
             )}
 
-          <div className="mt-9 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-7 flex flex-col-reverse gap-3 sm:mt-9 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={back}
               data-cy="setup-back"
               className="inline-flex cursor-pointer items-center justify-center gap-1.5 border-none bg-transparent p-0 font-outfit text-body font-medium text-ink/60 transition-colors hover:text-ink sm:justify-start"
             >
-              <FiArrowLeft aria-hidden />
+              {/* Paired with Continue's own arrow below on desktop, where the
+                  two read as one directional pair either side of the row.
+                  On a single-column mobile row they stack tight with no
+                  space between "them" and the words they point along, and
+                  end up reading as two redundant, cluttered icons rather
+                  than as a pair - so both drop below `sm`. */}
+              <FiArrowLeft aria-hidden className="hidden sm:inline" />
               Back
             </button>
 
@@ -437,7 +455,9 @@ const OrganizationSetup = () => {
                   ? "Save changes"
                   : "Save and publish"
                 : "Continue"}
-              {!isLastQuestion && <FiArrowRight aria-hidden />}
+              {!isLastQuestion && (
+                <FiArrowRight aria-hidden className="hidden sm:inline" />
+              )}
             </Button>
           </div>
         </form>

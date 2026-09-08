@@ -92,11 +92,11 @@ const SplitPanelLayout = ({
     {/* A soft cream, not pure white — pure white next to small-ish body
         text was reading as low-contrast glare rather than "clean". */}
     <div
-      className={`flex w-full flex-col bg-[#faf8f5] px-9 py-12 sm:px-10 ${
+      className={`flex w-full flex-col bg-[#faf8f5] px-9 py-8 sm:px-10 sm:py-12 ${
         align === "center" ? "items-center justify-center" : "items-center"
       }`}
     >
-      <Wordmark className="mb-8 self-start text-ink min-[900px]:hidden" />
+      <Wordmark className="mb-5 self-start text-ink min-[900px]:hidden sm:mb-8" />
 
       <div className={`w-full ${contentClassName}`}>{children}</div>
     </div>

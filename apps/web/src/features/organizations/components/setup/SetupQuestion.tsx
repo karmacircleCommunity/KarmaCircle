@@ -421,7 +421,7 @@ const SetupQuestion = ({
       onChange={(event) => setText(field, event.target.value)}
       placeholder={isNumber ? "12" : "Type your answer…"}
       data-cy={FIELD_CY[field]}
-      className={`${lineInput} text-2xl`}
+      className={`${lineInput} text-xl sm:text-2xl`}
     />
   );
 };
