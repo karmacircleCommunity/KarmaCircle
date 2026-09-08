@@ -157,9 +157,20 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
             <img
               src={(user?.profileImage as string | undefined) || profileImage}
               alt=""
-              className="hidden size-7.5 cursor-pointer rounded-full max-430px:block"
+              role="button"
+              tabIndex={0}
+              aria-label="Open account menu"
+              aria-haspopup="true"
+              aria-expanded={isNavbarOpen}
+              className="hidden size-7.5 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-430px:block"
               onClick={() => {
                 toggleNavbar();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleNavbar();
+                }
               }}
             />
           ) : (
@@ -205,13 +216,17 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
                     </div>
                   )}
                   <div>
+                    {/* Always "Dashboard" — it always points to /dashboard,
+                        regardless of account type. "Your Profile" (below, in
+                        the desktop dropdown) is the separate, distinctly
+                        named link to /user/:handle; the two used to share
+                        the ambiguous label "Profile" for individual
+                        accounts. See docs/specs/layout-navigation.md. */}
                     <Link
                       className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
                       to={"/dashboard"}
                     >
-                      {user?.userType === "individual"
-                        ? "Profile"
-                        : "Dashboard"}
+                      Dashboard
                     </Link>
                   </div>
                   <div>
@@ -277,10 +292,6 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
                 Your Events
               </Link>
             ) : null}
-            {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
-            <Link className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]">
-              Settings
-            </Link>
           </div>
           <div className="flex flex-col justify-center">
             <div
@@ -288,11 +299,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
               aria-orientation="horizontal"
               className="h-px w-full bg-[#e2e5e883]"
             ></div>
-            {/* @ts-expect-error — see above. */}
-            <Link className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]">
-              Support
-            </Link>
-            {/* @ts-expect-error — see above. */}
+            {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
             <Link
               onClick={() => {
                 handleLogout();

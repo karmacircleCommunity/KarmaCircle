@@ -247,6 +247,12 @@ export interface OrganizationSetupFieldSpec {
   type: "text" | "number" | "email" | "url" | "tel";
   placeholder?: string;
   hint?: string;
+  /** Which on-screen keyboard a phone gets - `tel` for a keypad, `url` and
+   *  `email` for the row of shortcut keys each of those wants. */
+  inputMode?: "text" | "tel" | "url" | "email" | "numeric";
+  /** The browser's own autofill hint, so a contact detail the user has
+   *  already given some other site can be filled in one tap. */
+  autoComplete?: string;
   /** Mirrors this field's Zod `.max()` in `updateOrganizationSchema` (the
    *  API's `organization.validation.ts`) so a save can't fail on a length
    *  the field itself never stopped someone from typing. */

@@ -15,7 +15,10 @@ import {
 } from "../constants/organizationSetup";
 import { useLocateCity } from "../hooks/useLocateCity";
 import { useOrganizationSetup } from "../hooks/useOrganizationSetup";
-import { outstandingFields } from "../utils/organizationSetupForm";
+import {
+  invalidFields,
+  outstandingFields,
+} from "../utils/organizationSetupForm";
 
 /**
  * The organization's own setup page, routed at `/organization/setup`.
@@ -84,12 +87,16 @@ const OrganizationSetup = () => {
   // `useLocateCity`.
   const locate = useLocateCity((key, value) => setField(key, value));
 
+  /** This question's badly-formed answers, keyed by field. */
+  const invalidOn = (target: typeof question) =>
+    target ? invalidFields(form, target.fields) : {};
+
   const badge = (
     <span
       className={`inline-block rounded-full px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] uppercase ${
         organization?.isLive
           ? "border border-brand/25 bg-brand/8 text-brand"
-          : "border border-amber-500/30 bg-amber-500/10 text-amber-700"
+          : "border border-warning/30 bg-warning/10 text-warning"
       }`}
     >
       {organization?.isLive ? "Live" : "Draft — not visible yet"}
@@ -110,6 +117,16 @@ const OrganizationSetup = () => {
 
   /** Saves whatever step is on screen, then leaves for the rest of the app. */
   const leave = async () => {
+    // Leaving is free, but it still saves — so a malformed answer has to be
+    // fixed or cleared first, or the exit ends in a 400 the user is no
+    // longer on screen to read. Handled by showing the same per-field
+    // message Continue would, rather than by leaving without saving: a
+    // silently dropped answer is the worse of the two.
+    if (question && Object.keys(invalidOn(question)).length > 0) {
+      setBlockedOn(question.id);
+      return;
+    }
+
     if (step) {
       const updated = await saveStep(step.id);
       if (!updated) return;
@@ -194,6 +211,24 @@ const OrganizationSetup = () => {
     .map((field) => FIELD_SPECS[field]?.label.toLowerCase() ?? field)
     .join(" and ");
 
+  // Badly-formed answers on this screen — a website with no dot in it, an
+  // email missing its `@`, half a phone number. Separate from `unanswered`
+  // because they are the opposite problem: these fields are optional, so
+  // leaving them blank is fine and filling them in wrongly is not. Checked
+  // here rather than only by the API because a 400 arrives *after* the
+  // save, on a step that has already scrolled away, saying "Invalid url"
+  // without saying which field it means.
+  const invalid = invalidOn(question);
+  const firstInvalid = question.fields.find((field) => invalid[field]);
+
+  // Whether Continue may actually be pressed. Unlike the refusal below —
+  // which exists to *explain* a blocked advance — this keeps the button
+  // from ever presenting itself as pressable when nothing behind it would
+  // succeed: a required field left blank, or an answer that's filled in but
+  // malformed. Recomputed on every render, so it tracks typing live rather
+  // than only updating on blur or a refused submit.
+  const canContinue = unanswered.length === 0 && !firstInvalid;
+
   /**
    * Puts the cursor back on the answer a refused Continue was about — the
    * field itself where there is one, or the first option where the answer
@@ -250,6 +285,20 @@ const OrganizationSetup = () => {
               return;
             }
 
+            // Same refusal, different reason: an answer that is filled in
+            // but can't be what it claims to be. The message sits under the
+            // field itself (SetupQuestion), so all this has to do is stop
+            // and put the cursor back on the first one.
+            if (firstInvalid) {
+              setBlockedOn(question.id);
+              document
+                .querySelector<HTMLElement>(
+                  `[data-cy="${FIELD_CY[firstInvalid]}"]`,
+                )
+                ?.focus();
+              return;
+            }
+
             setBlockedOn(null);
             advance();
           }}
@@ -293,7 +342,7 @@ const OrganizationSetup = () => {
                     <>
                       {" "}
                       <span
-                        className="align-top text-xl text-red-500"
+                        className="align-top text-xl text-error"
                         aria-hidden="true"
                       >
                         *
@@ -324,6 +373,8 @@ const OrganizationSetup = () => {
               setField={setField}
               taxonomy={taxonomy}
               locate={locate}
+              errors={invalid}
+              showErrors={blockedOn === question.id}
             />
 
             {/* Sits under the field it is about. It used to hang off the
@@ -338,7 +389,7 @@ const OrganizationSetup = () => {
               <p
                 data-cy="setup-required-note"
                 role="alert"
-                className="mt-3 font-outfit text-caption text-red-500"
+                className="mt-3 font-outfit text-caption text-error"
               >
                 {question.kind === "group"
                   ? `Fill in ${unansweredLabels} to continue.`
@@ -350,7 +401,7 @@ const OrganizationSetup = () => {
           {isLastQuestion &&
             !organization.isLive &&
             stillMissing.length > 0 && (
-              <p className="mt-8 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 font-outfit text-body text-amber-800">
+              <p className="mt-8 rounded-xl border border-warning/25 bg-warning/8 px-4 py-3 font-outfit text-body text-warning">
                 Still needed before you can go live: {stillMissing.join(", ")}.
                 Saving now keeps everything else.
               </p>
@@ -370,7 +421,14 @@ const OrganizationSetup = () => {
             <Button
               type="submit"
               isLoading={saving}
-              disabled={saving}
+              disabled={saving || !canContinue}
+              title={
+                !canContinue
+                  ? unanswered.length > 0
+                    ? "Fill this in to continue."
+                    : "Fix the highlighted answer to continue."
+                  : undefined
+              }
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3 font-poppins text-[15px] font-semibold shadow-[0_8px_20px_-8px_rgba(168,98,62,0.5)] transition-all hover:-translate-y-0.5 sm:w-auto"
               cypressfield="org-save"
             >

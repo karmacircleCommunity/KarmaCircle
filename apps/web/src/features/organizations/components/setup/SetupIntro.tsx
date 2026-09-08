@@ -80,12 +80,18 @@ const SetupIntro = ({
 
       {/* Deliberately understated — a centred text link, not a button.
           Setup is not mandatory, so this stays reachable, but it should
-          read as a footnote to the CTA rather than an equal choice. */}
+          read as a footnote to the CTA rather than an equal choice.
+          `text-ink/65` (not the lighter `/40` this used to be) keeps that de-
+          emphasis without dropping below the WCAG AA 4.5:1 floor for text
+          this size (10px, `text-caption` — needs 4.5:1, not the 3:1 "large
+          text" threshold). The padding + matching negative margin grows the
+          hit area past the 24×24 AA minimum without changing how much
+          visual space the link takes up. */}
       <button
         type="button"
         onClick={onLater}
         data-cy="setup-later"
-        className="cursor-pointer border-none bg-transparent p-0 font-outfit text-caption text-ink/40 underline-offset-2 transition-colors hover:text-ink/70 hover:underline"
+        className="-mx-4 -my-2.5 cursor-pointer border-none bg-transparent px-4 py-2.5 font-outfit text-caption text-ink/65 underline-offset-2 transition-colors hover:text-ink/80 hover:underline"
       >
         Maybe later
       </button>

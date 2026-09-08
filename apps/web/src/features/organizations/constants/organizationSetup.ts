@@ -37,9 +37,38 @@ export const FIELD_SPECS: Partial<
 > = {
   city: { label: "City", type: "text", maxLength: 120 },
   state: { label: "State or region", type: "text", maxLength: 120 },
-  website: { label: "Website", type: "text", placeholder: "karmacircle.org" },
-  contactEmail: { label: "Contact email", type: "email" },
-  contactPhone: { label: "Contact phone", type: "tel", maxLength: 30 },
+  /**
+   * `type: "text"`, not `"url"` - the field accepts a bare host
+   * (`karmacircle.org`, what people actually type) and `normalizeWebsite`
+   * adds the scheme on save, whereas a native URL field would reject it
+   * with a browser-worded message no one can style or translate. The shape
+   * is checked by `validateSetupField` instead, which knows about that
+   * normalisation.
+   */
+  website: {
+    label: "Website",
+    type: "text",
+    placeholder: "karmacircle.org",
+    inputMode: "url",
+    autoComplete: "url",
+    maxLength: 2000,
+  },
+  contactEmail: {
+    label: "Contact email",
+    type: "email",
+    placeholder: "hello@karmacircle.org",
+    inputMode: "email",
+    autoComplete: "email",
+    maxLength: 254,
+  },
+  contactPhone: {
+    label: "Contact phone",
+    type: "tel",
+    placeholder: "+91 98300 00000",
+    inputMode: "tel",
+    autoComplete: "tel",
+    maxLength: 30,
+  },
   fundsRaised: {
     label: "Raised so far",
     type: "number",

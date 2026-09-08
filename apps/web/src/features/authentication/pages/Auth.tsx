@@ -237,7 +237,7 @@ const Auth = () => {
                 }}
               />
               {errors.email && (
-                <p className="mt-1 font-outfit text-body text-red-500">
+                <p className="mt-1 font-outfit text-body text-error">
                   {errors.email}
                 </p>
               )}
@@ -343,7 +343,7 @@ const Auth = () => {
                 )}
               </div>
               {errors.password && (
-                <p className="mt-1 font-outfit text-body text-red-500">
+                <p className="mt-1 font-outfit text-body text-error">
                   {errors.password}
                 </p>
               )}
@@ -432,7 +432,7 @@ const Auth = () => {
                   }}
                 />
                 {errors.name && (
-                  <p className="mt-1 font-outfit text-body text-red-500">
+                  <p className="mt-1 font-outfit text-body text-error">
                     {errors.name}
                   </p>
                 )}
@@ -492,7 +492,7 @@ const Auth = () => {
                   </div>
                 )}
                 {errors.password ? (
-                  <p className="mt-1 font-outfit text-body text-red-500">
+                  <p className="mt-1 font-outfit text-body text-error">
                     {errors.password}
                   </p>
                 ) : (

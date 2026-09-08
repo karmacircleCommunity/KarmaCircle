@@ -116,7 +116,7 @@ const ResetPassword = () => {
             </p>
 
             {errors.token && (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 font-outfit text-body text-red-600">
+              <p className="mt-4 rounded-lg border border-error/20 bg-error/8 px-3.5 py-2.5 font-outfit text-body text-error">
                 {errors.token}{" "}
                 <Link
                   to="/auth/forgot-password"
@@ -182,7 +182,7 @@ const ResetPassword = () => {
                   </div>
                 )}
                 {errors.newPassword ? (
-                  <p className="mt-1 font-outfit text-body text-red-500">
+                  <p className="mt-1 font-outfit text-body text-error">
                     {errors.newPassword}
                   </p>
                 ) : (
@@ -215,7 +215,7 @@ const ResetPassword = () => {
                   }}
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1 font-outfit text-body text-red-500">
+                  <p className="mt-1 font-outfit text-body text-error">
                     {errors.confirmPassword}
                   </p>
                 )}

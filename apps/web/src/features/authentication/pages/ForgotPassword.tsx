@@ -118,7 +118,7 @@ const ForgotPassword = () => {
                   }}
                 />
                 {error && (
-                  <p className="mt-1 font-outfit text-body text-red-500">{error}</p>
+                  <p className="mt-1 font-outfit text-body text-error">{error}</p>
                 )}
               </div>
 

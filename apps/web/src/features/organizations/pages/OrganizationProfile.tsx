@@ -111,7 +111,12 @@ const OrganizationProfileView = ({
   const [following, setFollowing] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
 
-  useSectionReveal(pageRef);
+  // Keyed on the fetched record, matching Organizations.tsx/Events.tsx: this
+  // page's content arrives asynchronously (the GET /organizations/{handle}
+  // fetch in the parent `OrganizationProfile`), and without a dependency
+  // array the reveal setup could run before layout settles, leaving every
+  // `data-reveal` element stuck at its pre-animation opacity indefinitely.
+  useSectionReveal(pageRef, [organization.userName]);
 
   const hasMainColumnSections =
     organization.activeDrives.length > 0 || organization.milestones.length > 0;

@@ -10,7 +10,7 @@ export const inputClasses =
 // HTML's own `required` attribute/validation, which each form already
 // handles itself via its own `errors` state + submit gate.
 export const RequiredMark = () => (
-  <span className="ml-0.5 align-top text-xs text-red-500" aria-hidden="true">
+  <span className="ml-0.5 align-top text-xs text-error" aria-hidden="true">
     *
   </span>
 );

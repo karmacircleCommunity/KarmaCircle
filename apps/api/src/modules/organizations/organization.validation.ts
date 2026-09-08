@@ -29,6 +29,19 @@ export const organizationHandleParamSchema = z.object({
  * `followers`, `handle` and `ownerEmail` are absent on purpose: none of
  * them are the organization's to set.
  */
+/**
+ * A phone number as people write one: digits, an optional leading `+`, and
+ * the separators keyboards offer (space, dash, dot, brackets). Between 7
+ * and 15 digits - the shortest real subscriber number, and E.164's ceiling.
+ *
+ * The web form checks the same shape before it saves
+ * (`validateSetupField`), but the rule lives here too: this route is the
+ * only thing standing between a direct PATCH and a profile whose one
+ * contact detail is unusable.
+ */
+const CONTACT_PHONE = /^\+?[0-9 ()\-.]{6,29}$/;
+const CONTACT_PHONE_DIGITS = /^\D*(?:\d\D*){7,15}$/;
+
 export const updateOrganizationSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
@@ -40,7 +53,14 @@ export const updateOrganizationSchema = z
     state: z.string().trim().max(120).optional(),
     website: z.string().trim().url().or(z.literal("")).optional(),
     contactEmail: z.string().trim().email().or(z.literal("")).optional(),
-    contactPhone: z.string().trim().max(30).optional(),
+    contactPhone: z
+      .string()
+      .trim()
+      .max(30)
+      .regex(CONTACT_PHONE, "contactPhone must be a phone number")
+      .regex(CONTACT_PHONE_DIGITS, "contactPhone must have 7 to 15 digits")
+      .or(z.literal(""))
+      .optional(),
     logo: z.string().trim().max(2000).optional(),
     cover: z.string().trim().max(2000).optional(),
     gallery: z.array(z.string().trim().max(2000)).max(12).optional(),

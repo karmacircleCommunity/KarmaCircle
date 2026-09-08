@@ -30,6 +30,15 @@ A logo is **not** on the required list, on purpose: there is no upload endpoint 
 `verified` is an admin-only flag (there is no admin route for it yet); `followers` is a counted number, not a claimed one.
 `fundsRaised` **is** the organization's own claim, and is named so it can sit alongside a counted figure later rather than being overwritten by one — the frontend labels it "stated" wherever it renders.
 
+### What a contact detail has to look like
+
+`website` and `contactEmail` have always been `.url()` / `.email()`, each with `.or(z.literal(""))` so clearing one is a save rather than a `400`.
+`contactPhone` was only length-capped until now, so `8245034+======` stored fine and reached the public profile as the one way to reach that organization.
+It is now checked as digits, separators (space, dash, dot, brackets) and an optional leading `+`, with 7 to 15 digits — the shortest real subscriber number, and E.164's ceiling — and the same empty-string escape hatch as the other two.
+
+The web setup form checks the same shapes before it saves (`validateSetupField` in `apps/web/src/features/organizations/utils/organizationSetupForm.ts`) so the message names the field and appears under it.
+That is a nicety, not the guarantee: this schema is the only thing standing between a direct `PATCH` and an unusable contact detail, so the rule lives in both places on purpose.
+
 ## Routes
 
 | Route | Auth | Notes |

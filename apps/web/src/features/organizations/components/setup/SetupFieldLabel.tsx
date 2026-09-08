@@ -23,7 +23,7 @@ const SetupFieldLabel = ({
   >
     {children}
     {required && (
-      <span className="ml-0.5 align-top text-xs text-red-500">*</span>
+      <span className="ml-0.5 align-top text-xs text-error">*</span>
     )}
   </label>
 );

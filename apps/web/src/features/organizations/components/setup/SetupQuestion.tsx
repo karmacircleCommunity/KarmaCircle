@@ -284,6 +284,8 @@ const SetupQuestion = ({
           const spec = FIELD_SPECS[field];
           if (!spec) return null;
           const required = question.requiredFields.includes(field);
+          const error =
+            touched[field] || showErrors ? errors[field] : undefined;
 
           return (
             <div key={field} className="flex flex-col gap-1">
@@ -301,16 +303,51 @@ const SetupQuestion = ({
                 type={spec.type}
                 min={spec.type === "number" ? 0 : undefined}
                 maxLength={spec.maxLength}
+                inputMode={spec.inputMode}
+                autoComplete={spec.autoComplete}
                 placeholder={spec.placeholder}
                 value={form[field] as string}
-                onChange={(event) => setText(field, event.target.value)}
+                // Sanitised on the way in, so a character that can never be
+                // part of this answer never appears in it - the phone field
+                // used to take `+======` happily and only object at save
+                // time, on a screen that had already moved on.
+                onChange={(event) =>
+                  setText(field, sanitizeSetupValue(field, event.target.value))
+                }
+                onBlur={() =>
+                  setTouched((prev) => ({ ...prev, [field]: true }))
+                }
+                aria-invalid={error ? true : undefined}
+                aria-describedby={
+                  error
+                    ? `org-field-${field}-error`
+                    : spec.hint
+                      ? `org-field-${field}-hint`
+                      : undefined
+                }
                 data-cy={FIELD_CY[field]}
-                className={`${lineInput} text-body-lg`}
+                className={`${lineInput} text-body-lg ${
+                  error ? "border-error/70 focus:border-error" : ""
+                }`}
               />
-              {spec.hint && (
-                <span className="font-outfit text-caption text-ink/45">
-                  {spec.hint}
+              {error ? (
+                <span
+                  id={`org-field-${field}-error`}
+                  role="alert"
+                  data-cy={`${FIELD_CY[field]}-error`}
+                  className="font-outfit text-caption text-error"
+                >
+                  {error}
                 </span>
+              ) : (
+                spec.hint && (
+                  <span
+                    id={`org-field-${field}-hint`}
+                    className="font-outfit text-caption text-ink/45"
+                  >
+                    {spec.hint}
+                  </span>
+                )
               )}
             </div>
           );
@@ -356,7 +393,7 @@ const SetupQuestion = ({
           aria-hidden="true"
           data-cy="org-description-count"
           className={`pointer-events-none absolute right-3.5 bottom-3 font-outfit text-caption tabular-nums ${
-            nearLimit ? "text-amber-600" : "text-ink/45"
+            nearLimit ? "text-warning" : "text-ink/45"
           }`}
         >
           {count}/{DESCRIPTION_MAX}

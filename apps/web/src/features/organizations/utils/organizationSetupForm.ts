@@ -192,7 +192,17 @@ export function sanitizeSetupValue(
   field: OrganizationSetupField,
   value: string,
 ): string {
-  return field === "contactPhone" ? value.replace(PHONE_ALLOWED, "") : value;
+  if (field !== "contactPhone") return value;
+
+  const kept = value.replace(PHONE_ALLOWED, "");
+
+  // A `+` only means anything in front of a country code, so only the
+  // leading one survives. Dropping the rest as they're typed is quieter
+  // than accepting them and then explaining afterwards where the character
+  // should have gone.
+  return kept.startsWith("+")
+    ? `+${kept.slice(1).replace(/\+/g, "")}`
+    : kept.replace(/\+/g, "");
 }
 
 /**
@@ -227,15 +237,15 @@ export function validateSetupField(
     }
 
     case "contactPhone": {
+      // No character check here: `sanitizeSetupValue` already keeps
+      // anything that isn't part of a phone number out of the field, so all
+      // that's left to be wrong is how many digits there are.
       const digits = value.replace(/\D/g, "");
       if (digits.length < PHONE_MIN_DIGITS) {
         return "Enter a full phone number, including the area or country code.";
       }
       if (digits.length > PHONE_MAX_DIGITS) {
         return "That's more digits than a phone number has.";
-      }
-      if (value.includes("+") && !value.startsWith("+")) {
-        return "The + belongs at the front, before the country code.";
       }
       return null;
     }

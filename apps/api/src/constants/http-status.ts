@@ -28,7 +28,7 @@ export const STATUS_CODE = {
 export const STATUS_MESSAGE = {
   LOGIN_SUCCESS: "Logged in !",
   LOGIN_FAILED: "Login failed !",
-  LOGOUT_SUCCESS: "Logged out sucessfully !",
+  LOGOUT_SUCCESS: "Logged out successfully !",
   LOGOUT_FAILED: "Logout failed !",
   SIGNUP_SUCCESS: "Signed up !",
   SIGNUP_FAILED: "Signup failed !",

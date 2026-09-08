@@ -146,6 +146,40 @@ describe("Organizations", () => {
     });
   });
 
+  describe("contact details", () => {
+    it("accepts a phone number written the ordinary way", async () => {
+      const { cookie } = await signUpOrganization();
+
+      const res = await request(app)
+        .patch("/organizations/me")
+        .set("Cookie", cookie)
+        .send({
+          website: "https://helpinghands.org",
+          contactEmail: "hello@helpinghands.org",
+          contactPhone: "+91 98300 00000",
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.organization.contactPhone).toBe("+91 98300 00000");
+    });
+
+    it.each([
+      ["punctuation that is not a separator", "8245034+======"],
+      ["too few digits", "82450"],
+      ["more digits than E.164 allows", "1234567890123456"],
+      ["letters", "call me maybe"],
+    ])("rejects a contactPhone with %s", async (_case, contactPhone) => {
+      const { cookie } = await signUpOrganization();
+
+      const res = await request(app)
+        .patch("/organizations/me")
+        .set("Cookie", cookie)
+        .send({ contactPhone });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("GET /organizations/taxonomy", () => {
     it("serves the tag and domain lists the setup form renders", async () => {
       const res = await request(app).get("/organizations/taxonomy");

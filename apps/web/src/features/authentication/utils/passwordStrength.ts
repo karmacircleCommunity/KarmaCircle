@@ -23,20 +23,20 @@ export const PASSWORD_STRENGTH_META: Record<
 > = {
   weak: {
     label: "Weak",
-    barColor: "bg-red-500",
-    textColor: "text-red-500",
+    barColor: "bg-error",
+    textColor: "text-error",
     barWidth: "w-1/3",
   },
   medium: {
     label: "Medium",
-    barColor: "bg-amber-500",
-    textColor: "text-amber-600",
+    barColor: "bg-warning",
+    textColor: "text-warning",
     barWidth: "w-2/3",
   },
   strong: {
     label: "Strong",
-    barColor: "bg-green-600",
-    textColor: "text-green-600",
+    barColor: "bg-success",
+    textColor: "text-success",
     barWidth: "w-full",
   },
 };
