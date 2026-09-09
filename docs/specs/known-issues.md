@@ -4,6 +4,12 @@ A single catalog of the cross-cutting bugs, dead code, and unresolved duplicatio
 Each item also appears inline in its relevant feature spec; this file exists so an agent can get the full picture in one read before making changes near any of these areas.
 Treat entries here as **things to be aware of**, not necessarily things to fix unless you were asked to — several are large enough in scope that they deserve their own ticket/PR.
 
+## Design system drift
+
+Every UI-level deviation - a raw hex where a token exists, a raw `text-red-600` where `text-error` exists, a stale pre-rebrand color, a dead Tailwind class, a broken icon reference - is catalogued separately in [design-system/14-drift-register.md](./design-system/14-drift-register.md), with file, line and the exact fix.
+That register is the one place those live; do not duplicate them here.
+Read it before touching any component, and delete an entry there in the same commit that fixes it.
+
 ## Build / config
 
 - **Root `npm run dev` doesn't work — it runs `turbo run dev`, but `turbo` isn't installed.** The monorepo migration added `turbo` as a root devDependency and pointed the root `dev`/`build`/`lint`/`type-check`/`test` scripts at it, but there's no unified orchestration actually wired up yet (see [docs/LocalDevSetup.md](../../docs/LocalDevSetup.md), which has each app run its own `npm run dev` in a separate terminal instead). Running `npm run dev` from the repo root fails with `turbo: command not found` unless you separately `npm install` turbo at the root. Fix: either install/use turbo properly with real pipeline config, or drop the root scripts until that's done so they don't imply a workflow that doesn't exist. `.claude/launch.json`'s `karmacircle-dev` config hit this directly and now runs `npm --prefix apps/web run dev` instead of the root script.

@@ -149,7 +149,7 @@ const OpenSource = () => {
             <h2
               id="open-source-heading"
               data-reveal
-              className="leading-1.12 mt-6 max-w-xl font-outfit text-[2rem] font-semibold tracking-tight text-white sm:text-4xl"
+              className="leading-[1.12] mt-6 max-w-xl font-outfit text-[2rem] font-semibold tracking-tight text-white sm:text-4xl"
             >
               Built in the open, by{" "}
               <span className="text-brand">the people using it.</span>

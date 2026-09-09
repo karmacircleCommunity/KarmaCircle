@@ -288,7 +288,7 @@ const DrivesRail = () => {
         <h2
           id="drives-heading"
           data-reveal
-          className="leading-1.1 mt-6 max-w-xl font-outfit text-[2rem] font-semibold tracking-tight text-brand-secondary sm:text-4xl lg:text-[2.75rem]"
+          className="leading-[1.1] mt-6 max-w-xl font-outfit text-[2rem] font-semibold tracking-tight text-brand-secondary sm:text-4xl lg:text-[2.75rem]"
         >
           Blankets in Kolkata. Books in Kajiado.{" "}
           <span className="text-brand">One feed.</span>

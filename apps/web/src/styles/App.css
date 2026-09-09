@@ -1,4 +1,4 @@
 ::selection {
-  background: #e26959;
+  background: var(--color-brand);
   color: white;
 }

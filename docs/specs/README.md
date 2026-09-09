@@ -20,7 +20,7 @@ This directory (`docs/specs/`) covers `apps/web` only; there is no server-side c
 - **SWR** (`useSWR`) for server-state fetching/caching in most read paths; a few older call sites use raw `axios` in `useEffect` instead.
 - **`@tanstack/react-query`**'s `QueryClientProvider` wraps the whole app but is not actually used by any query hooks yet — see [known-issues.md](./known-issues.md).
 - **MUI** (`@mui/material`, `@mui/x-date-pickers`) for the event-creation date/time pickers and a few form controls.
-- **Tailwind CSS v4** for all component styling (via `@tailwindcss/vite`), plus a small amount of hand-written global CSS in `apps/web/src/styles/index.css` for things Tailwind's class scanner can't reach — react-select/MUI-generated class names, a `<input type="radio">`-driven pseudo-element toggle switch, and Bootstrap's `.container` replicated for a few not-yet-Tailwind files. See [ui-kit.md](./ui-kit.md).
+- **Tailwind CSS v4** for all component styling (via `@tailwindcss/vite`), plus a small amount of hand-written global CSS in `apps/web/src/styles/index.css` for things Tailwind's class scanner can't reach — react-select/MUI-generated class names, a `<input type="radio">`-driven pseudo-element toggle switch, and Bootstrap's `.container` replicated for a few not-yet-Tailwind files. See [design-system/04-spacing-layout.md](./design-system/04-spacing-layout.md).
 - **Cypress** for end-to-end tests (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`).
 
 ## Folder structure
@@ -72,7 +72,8 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |
-| [ui-kit.md](./ui-kit.md) | Shared `Button`, `AuthButton`, card components, the styling conventions behind them, and a pointer to the design system site (brand.karmacircle.org, a separate repo) |
+| [design-system/](./design-system/README.md) | **The design system.** A root index plus 14 files covering every token, hex, font size, letter-spacing, radius, shadow, breakpoint, component pixel spec, canonical recipe, and the register of deviations still in the code. Written for an AI agent to read before touching any UI |
+| [ui-kit.md](./ui-kit.md) | A navigation map into `design-system/`, kept because other specs link to its section anchors. Do not add content here |
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay); the Shop and Trending placeholder pages were deleted |
 | [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.tsx` |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs, dead code, and inconsistencies found while writing these specs — read this before touching adjacent code |

@@ -84,7 +84,7 @@ const HowItWorks = () => {
             <h2
               id="how-it-works-heading"
               data-reveal
-              className="leading-1.1 mt-6 font-outfit text-[2rem] font-semibold tracking-tight text-brand-secondary sm:text-4xl lg:text-5xl"
+              className="leading-[1.1] mt-6 font-outfit text-[2rem] font-semibold tracking-tight text-brand-secondary sm:text-4xl lg:text-5xl"
             >
               From “someone should do something” to{" "}
               <span className="text-brand">done.</span>

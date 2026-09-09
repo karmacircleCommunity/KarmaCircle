@@ -136,13 +136,13 @@ const Landing = () => {
             <>
               <h1
                 data-hero-reveal
-                className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
+                className="leading-[1.05] z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
               >
                 We connect NGOs,
               </h1>
               <h1
                 data-hero-reveal
-                className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
+                className="leading-[1.05] z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
               >
                 Charities and <span className="text-brand">you.</span>
               </h1>
@@ -150,7 +150,7 @@ const Landing = () => {
           ) : (
             <h1
               data-hero-reveal
-              className="leading-1.05 z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
+              className="leading-[1.05] z-3 m-0 text-center font-outfit text-6xl font-semibold tracking-tight text-brand-secondary max-500px:w-full max-500px:text-start max-500px:text-[2.7rem]"
             >
               We connect NGOs, charities and{" "}
               <span className="text-brand">you.</span>
