@@ -9,6 +9,9 @@ node_modules
 # testing
 /coverage
 
+# Turborepo's local build/task cache — regenerated on every run, machine-specific.
+.turbo
+
 # production
 /build
 /dist

@@ -38,7 +38,6 @@
     "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.7.7",
     "clsx": "^2.1.1",
-    "cypress": "^15.20.1",
     "dayjs": "^1.11.10",
     "dotenv": "^17.4.2",
     "gsap": "^3.15.0",
@@ -65,10 +64,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "docker-frontend": "docker-compose -f docker-compose.dev.yaml up --build",
-    "cypress:walkthrough": "cypress run --env NO_COMMAND_LOG=1 --config specPattern=cypress/walkthrough/**/*.spec.js,video=true,viewportWidth=1440,viewportHeight=900"
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "docker-frontend": "docker-compose -f docker-compose.dev.yaml up --build"
   },
   "browserslist": {
     "production": [
@@ -84,6 +84,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^26.2.0",
@@ -91,7 +92,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.39.5",
-    "eslint-plugin-cypress": "^6.4.0",
+    "eslint-plugin-playwright": "^2.11.0",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-tailwindcss": "^4.2.0",
     "globals": "^17.11.0",

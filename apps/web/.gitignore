@@ -1,6 +1,8 @@
 .vercel
 .env*
 
-# Cypress run artifacts — regenerated on every run, never committed.
-cypress/videos/
-cypress/screenshots/
+# Playwright run artifacts — regenerated on every run, never committed.
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/e2e/.auth/

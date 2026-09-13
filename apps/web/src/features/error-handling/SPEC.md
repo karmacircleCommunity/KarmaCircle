@@ -70,12 +70,9 @@ On mount, immediately full-page-redirects the browser to Google — this would o
 
 **Any code that calls `checkInternetConnection()` directly** (not through `showSuccessToast`/`showErrorToast`) — e.g. `useAuth.ts`'s `authenticateUser`, see [authentication/SPEC.md](../authentication/SPEC.md) — gets this same connectivity toast for free as its only offline feedback; there's no additional field-level or contextual messaging layered on top in those call sites.
 
-## Cypress E2E (lives outside this feature folder, but is this app's only automated test tooling)
+## Playwright E2E (lives outside this feature folder, but is this app's only automated test tooling)
 
-`cypress/e2e/smoke.spec.js` is a minimal smoke test (there's also `organizationSetup.spec.js`, covering the organization setup flow).
-`cypress/support/commands.js` and `cypress/support/e2e.js` are the default Cypress scaffolding, largely unmodified.
-`cypress/fixtures/example.json` is the default Cypress example fixture, unused by the one real spec.
-There is no CI-side unit test runner configured (no `test` script in `package.json`) — Cypress (`npm run cypress:open` / `cypress:run`) is the only automated test tooling in this repo today. If you're asked to add test coverage for anything in this feature (or any feature), there's no existing unit-test pattern in this repo to follow — you'd either extend the one Cypress spec or introduce a unit-test runner as a separate decision, not something to do incidentally while fixing a bug elsewhere.
+See [docs/specs/testing.md](../../../../docs/specs/testing.md) for the full picture — this repo's Cypress suite was replaced with Playwright (September 2026). Briefly: `apps/web/e2e/smoke.spec.ts` is a minimal smoke test, `apps/web/e2e/organization-setup.spec.ts` covers the full organization setup flow end to end, and `pnpm test` runs them headlessly against a self-contained stack (its own dedicated ports, its own in-memory MongoDB) — nothing needs to be running beforehand, and nothing here touches a developer's real local dev servers. There is still no separate unit-test runner in this repo (no component/hook-level tests) — Playwright's E2E suite is the only automated test tooling for `apps/web`. If you're asked to add coverage for anything in this feature (or any feature), there's no unit-test pattern to follow yet — you'd either extend the E2E suite or introduce a unit-test runner as a separate decision, not something to do incidentally while fixing a bug elsewhere.
 
 ## Types
 

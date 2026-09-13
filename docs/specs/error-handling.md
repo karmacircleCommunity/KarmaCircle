@@ -26,11 +26,9 @@ Network/API errors are instead surfaced per-call via toasts — see [Toasts.ts c
 [apps/web/src/features/error-handling/pages/Test.tsx](../../apps/web/src/features/error-handling/pages/Test.tsx) is **not** wired into `routesConfig.tsx`, so it isn't reachable via any path, but it does still exist in the tree: on mount it immediately redirects the browser to `https://www.google.com`.
 Almost certainly a debugging scratch file — safe to delete unless someone confirms otherwise, but flag it rather than silently removing it if you weren't specifically asked to clean up dead files.
 
-## Cypress E2E
+## Playwright E2E
 
-`cypress/e2e/smoke.spec.js` is a minimal smoke test (there's also `organizationSetup.spec.js`, covering the organization setup flow).
-`cypress/support/commands.js` and `e2e.js` are the default Cypress scaffolding, largely unmodified.
-There is no CI-side unit test runner configured (no `test` script in `apps/web/package.json`); Cypress (`npm run cypress:open` / `cypress:run`) is the only automated test tooling in this repo today.
+See [testing.md](./testing.md) — the full picture (both apps, how the e2e API server and the two dedicated ports work, migration notes from Cypress) now lives there rather than here. Briefly: `e2e/smoke.spec.ts` is a minimal smoke test, `e2e/organization-setup.spec.ts` covers the full organization setup flow, and `pnpm test` (from `apps/web` or the repo root) runs them headlessly against a self-contained stack — nothing needs to be running beforehand.
 
 ## Types
 

@@ -79,12 +79,6 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 - Swagger's `@openapi` JSDoc blocks are hand-maintained next to each route and are not derived from (or checked against) the Zod validation schemas sitting right next to them in the same module — the two can silently drift; don't treat the `/docs` UI as authoritative over actually reading a module's `.validation.ts` file.
 
-## Test coverage
-
-`auth`, `events`, `organizations`, `products`, and `users` have test files (`tests/auth.test.ts`, `tests/events.test.ts`, `tests/organizations.test.ts`, `tests/products.test.ts`, `tests/users.test.ts`). `directory`, `payments`, and `reports` are completely untested — a change to any of them is only checked by `typecheck`/`lint`, not by CI-run behavioral tests, until coverage is added. See [architecture.md](./architecture.md#testing).
-
-`apiLimiter`/`authLimiter` ([rate-limit.ts](../../src/middleware/rate-limit.ts)) are skipped when `NODE_ENV=test` — they weren't originally, and a test file making enough `/auth/*` calls across its whole suite (as `tests/auth.test.ts` does once its session-revocation tests were added) would start getting genuine `429`s partway through a run, unrelated to whatever behavior that test was actually checking. If you're ever debugging a mysteriously-failing test that looks like a state-leak between `it` blocks, check the response status/body before assuming it — a `429` disguised as a missing `Set-Cookie` header is exactly what this looked like before it was traced down.
-
 ## Keep this file honest
 
 If you fix something this file calls out, remove that entry (and the matching note in the relevant module spec) in the same change. If a fix touches a cross-repo contract break, update the frontend's own specs too — see [api-contract.md](./api-contract.md#keeping-this-file-honest). If you notice something new and wrong while working nearby, add it here rather than leaving it undocumented.

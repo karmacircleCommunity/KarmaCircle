@@ -1,6 +1,6 @@
 const js = require("@eslint/js");
 const react = require("eslint-plugin-react");
-const cypress = require("eslint-plugin-cypress");
+const playwright = require("eslint-plugin-playwright");
 const globals = require("globals");
 const tseslint = require("typescript-eslint");
 const tailwindcss = require("eslint-plugin-tailwindcss");
@@ -56,8 +56,8 @@ module.exports = [
     },
   },
   {
-    files: ["cypress/**/*.js"],
-    ...cypress.configs.recommended,
+    files: ["e2e/**/*.ts"],
+    ...playwright.configs["flat/recommended"],
   },
   {
     files: ["**/*.{js,jsx,ts,tsx}"],

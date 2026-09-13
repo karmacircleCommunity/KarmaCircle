@@ -68,6 +68,24 @@ export function createApp(): Express {
     });
   });
 
+  /**
+   * Test-only, gated behind NODE_ENV==="test" so it can never exist in a
+   * real deployment. Wipes every collection in the connected Mongo instance
+   * — Playwright's global setup calls this between spec files instead of
+   * restarting the whole e2e server, the same isolation Jest's own
+   * `afterEach` gets for free from an in-process app. See
+   * apps/api/tests/e2e/server.ts and docs/specs/testing.md (apps/web).
+   * apiLimiter above already `skip`s for NODE_ENV==="test", so this isn't
+   * rate-limited either.
+   */
+  if (env.NODE_ENV === "test") {
+    app.post("/__test__/reset", async (_req, res) => {
+      const collections = mongoose.connection.collections;
+      await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
+      res.status(204).end();
+    });
+  }
+
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   app.use(routes);

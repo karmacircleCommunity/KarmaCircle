@@ -21,7 +21,7 @@ This directory (`docs/specs/`) covers `apps/web` only; there is no server-side c
 - **`@tanstack/react-query`**'s `QueryClientProvider` wraps the whole app but is not actually used by any query hooks yet — see [known-issues.md](./known-issues.md).
 - **MUI** (`@mui/material`, `@mui/x-date-pickers`) for the event-creation date/time pickers and a few form controls.
 - **Tailwind CSS v4** for all component styling (via `@tailwindcss/vite`), plus a small amount of hand-written global CSS in `apps/web/src/styles/index.css` for things Tailwind's class scanner can't reach — react-select/MUI-generated class names, a `<input type="radio">`-driven pseudo-element toggle switch, and Bootstrap's `.container` replicated for a few not-yet-Tailwind files. See [design-system/04-spacing-layout.md](./design-system/04-spacing-layout.md).
-- **Cypress** for end-to-end tests (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`).
+- **Playwright** for end-to-end tests (`e2e/smoke.spec.ts`, `e2e/organization-setup.spec.ts`), replacing Cypress (September 2026) — see [testing.md](./testing.md).
 
 ## Folder structure
 
@@ -76,6 +76,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [ui-kit.md](./ui-kit.md) | A navigation map into `design-system/`, kept because other specs link to its section anchors. Do not add content here |
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay); the Shop and Trending placeholder pages were deleted |
 | [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.tsx` |
+| [testing.md](./testing.md) | The Playwright E2E suite (`apps/web/e2e/`) — full-stack, real browser against a real API, isolated from local dev — and how it fits with `apps/api`'s Jest suite. Read before adding or changing any test |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs, dead code, and inconsistencies found while writing these specs — read this before touching adjacent code |
 
 ## Deeper, colocated specs
