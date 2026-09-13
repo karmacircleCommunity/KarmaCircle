@@ -11337,8 +11337,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/server.ts",
       "source_location": "L10",
       "weight": 1.0,
-      "_src": "app_createapp",
-      "_tgt": "server_main",
+      "_src": "server_main",
+      "_tgt": "app_createapp",
       "source": "server_main",
       "target": "app_createapp"
     },
