@@ -27,6 +27,31 @@ function getResendClient(): Resend {
   return resend;
 }
 
+/**
+ * Test-only outbox. `sendPasswordResetEmail` short-circuits into this
+ * instead of calling the real Resend API whenever `NODE_ENV === "test"`.
+ * Jest never reaches this branch — `tests/*.test.ts` `jest.mock()`s this
+ * whole module (see `payments.test.ts`'s comment on the same pattern for
+ * `razorpay`) — but the standalone e2e server (`tests/e2e/server.ts`)
+ * executes this file for real, and its placeholder `RESEND_API_KEY`
+ * would otherwise fail every send. Exposed read-only via
+ * `GET /__test__/last-reset-url` in `app.ts`, so Playwright can complete a
+ * real password-reset journey without a real mail provider.
+ */
+interface TestOutboxEntry {
+  to: string;
+  resetUrl: string;
+}
+const testOutbox: TestOutboxEntry[] = [];
+
+export function getLastTestResetUrl(to: string): string | undefined {
+  return [...testOutbox].reverse().find((entry) => entry.to === to)?.resetUrl;
+}
+
+export function clearTestOutbox(): void {
+  testOutbox.length = 0;
+}
+
 function resetEmailHtml(resetUrl: string): string {
   return `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
@@ -42,6 +67,11 @@ export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string,
 ): Promise<void> {
+  if (env.NODE_ENV === "test") {
+    testOutbox.push({ to, resetUrl });
+    return;
+  }
+
   const client = getResendClient();
 
   const { error } = await client.emails.send({

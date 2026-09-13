@@ -71,7 +71,6 @@ These exist, work as isolated units, and appear to be intended for future/finish
 
 ## Smaller one-off issues
 
-- `Profile.tsx` renders its Subscribe/Sponsor/Edit/Logout button block twice in a row (copy-paste duplication, not an intentional repeated layout).
 - `Profile.tsx`'s map `<iframe>` reads `user?.iframe` (the viewer's own Redux state) instead of `details?.iframe` (the profile being viewed).
 - `Dashboard.tsx` has a stray `console.log` in its "Edit Profile" click handler.
 - `useEvent.ts`'s `submitCallback` checks a module-scope `errors` object populated by the *last* `validateEvent()` call rather than re-validating the event being submitted right now — callers must call `validateEvent()` immediately beforehand to keep these in sync (which `CreateEvents.tsx` does today, but it's an easy thing to break).

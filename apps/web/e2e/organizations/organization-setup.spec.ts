@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { E2E_API_URL } from "./env";
+import { E2E_API_URL } from "../env";
 
 /**
  * Off by default: the flow is a regression test first, and a screenshot on

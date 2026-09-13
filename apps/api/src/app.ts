@@ -8,6 +8,7 @@ import pinoHttp from "pino-http";
 import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
+import { clearTestOutbox, getLastTestResetUrl } from "./config/mailer";
 import passport from "./config/passport";
 import { swaggerSpec } from "./config/swagger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
@@ -82,7 +83,25 @@ export function createApp(): Express {
     app.post("/__test__/reset", async (_req, res) => {
       const collections = mongoose.connection.collections;
       await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
+      clearTestOutbox();
       res.status(204).end();
+    });
+
+    /**
+     * Reads back the reset URL `sendPasswordResetEmail` would otherwise
+     * have emailed, from the in-memory outbox `config/mailer.ts` fills
+     * instead of calling Resend when NODE_ENV==="test" — see that file's
+     * comment. Lets Playwright complete a real forgot/reset-password
+     * journey without a real mail provider.
+     */
+    app.get("/__test__/last-reset-url", (req, res) => {
+      const to = String(req.query.email ?? "");
+      const resetUrl = getLastTestResetUrl(to);
+      if (!resetUrl) {
+        res.status(404).json({ message: "No reset email sent to this address yet." });
+        return;
+      }
+      res.json({ resetUrl });
     });
   }
 
