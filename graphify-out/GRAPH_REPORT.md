@@ -1,7 +1,7 @@
 # Graph Report - /Users/tamalcodes/Gh/KarmaCircle  (2026-09-14)
 
 ## Corpus Check
-- 238 files · ~428,726 words
+- 238 files · ~430,773 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -261,8 +261,8 @@
   index.html → docs/FrontendSetup.md
 - `Frontend Tech Stack` --semantically_similar_to--> `Frontend Techstack Overview`  [INFERRED] [semantically similar]
   README.md → docs/FrontendSetup.md
-- `handleLogout()` --calls--> `remove()`  [INFERRED]
-  /Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/Navbar.tsx → /Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLeadershipEditor.tsx
+- `remove()` --calls--> `handleLogout()`  [INFERRED]
+  /Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLeadershipEditor.tsx → /Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/Navbar.tsx
 - `milanhub.org (production URL)` --conceptually_related_to--> `robots.txt (crawl policy)`  [INFERRED]
   index.html → public/robots.txt
 
