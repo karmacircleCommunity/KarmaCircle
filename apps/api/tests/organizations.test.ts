@@ -180,6 +180,71 @@ describe("Organizations", () => {
     });
   });
 
+  describe("public presence fields", () => {
+    it("round-trips socialLinks, leadership, sponsorship and location extras", async () => {
+      const { cookie, userName } = await signUpOrganization();
+
+      const presence = {
+        address: "12 MG Road",
+        mapIframe: "https://maps.example.com/embed?q=12+MG+Road",
+        socialLinks: {
+          instagram: "https://instagram.com/helpinghands",
+          twitter: "https://x.com/helpinghands",
+        },
+        leadership: [
+          { name: "Asha Verma", title: "Founder", bio: "Started it all in 2020." },
+        ],
+        sponsorship: { enabled: true },
+      };
+
+      const res = await request(app)
+        .patch("/organizations/me")
+        .set("Cookie", cookie)
+        .send({ ...completeProfile, ...presence });
+
+      expect(res.status).toBe(200);
+      expect(res.body.organization.sponsorship).toEqual({ enabled: true });
+      expect(res.body.organization.leadership).toHaveLength(1);
+
+      const profile = await request(app).get(`/organizations/${userName}`);
+      expect(profile.status).toBe(200);
+      expect(profile.body.location.address).toBe(presence.address);
+      expect(profile.body.location.mapIframe).toBe(presence.mapIframe);
+      expect(profile.body.socialLinks).toEqual(presence.socialLinks);
+      expect(profile.body.leadership).toEqual(presence.leadership);
+      expect(profile.body.sponsorship).toEqual({ enabled: true });
+      // Never credited by anything but a verified payment — see payments.test.ts.
+      expect(profile.body.raisedViaPlatform).toBe(0);
+    });
+
+    it("caps leadership at 8 entries", async () => {
+      const { cookie } = await signUpOrganization();
+
+      const leadership = Array.from({ length: 9 }, (_, i) => ({
+        name: `Person ${i}`,
+        title: "Volunteer",
+      }));
+
+      const res = await request(app)
+        .patch("/organizations/me")
+        .set("Cookie", cookie)
+        .send({ leadership });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects an unknown socialLinks platform (schema is .strict())", async () => {
+      const { cookie } = await signUpOrganization();
+
+      const res = await request(app)
+        .patch("/organizations/me")
+        .set("Cookie", cookie)
+        .send({ socialLinks: { myspace: "https://myspace.com/x" } });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("GET /organizations/taxonomy", () => {
     it("serves the tag and domain lists the setup form renders", async () => {
       const res = await request(app).get("/organizations/taxonomy");

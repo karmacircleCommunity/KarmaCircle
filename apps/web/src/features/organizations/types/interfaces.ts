@@ -1,13 +1,11 @@
 import type { UserType } from "@/types/user";
-import type { Cause, OrganizationSetupStepId } from "./types";
+import type { OrganizationSetupStepId } from "./types";
 
 /**
  * An organization record as rendered by `OrganizationCard.tsx`.
  * Per `organizations/SPEC.md`, the real shape returned by `GET /organizations`
- * is unverified from this repo (no backend code lives here) — this type
- * covers exactly the fields the fixture in
- * `constants/organizationDirectory.ts` reads today, plus an open index
- * signature so a real backend response with extra fields doesn't need a
+ * is unverified from this repo (no backend code lives here) — an open index
+ * signature means a real backend response with extra fields doesn't need a
  * type change to pass through. Tighten this once the backend's
  * `/organizations` response is confirmed.
  */
@@ -59,16 +57,31 @@ export interface OrganizationMilestone {
   body: string;
 }
 
+/** One public "Our team" entry — separate from the private `members`
+ *  permissions list the API also carries on `MyOrganization`; this is
+ *  display copy, not an access grant. */
+export interface LeadershipMember {
+  name: string;
+  title: string;
+  photo?: string;
+  bio?: string;
+}
+
+export interface SocialLinks {
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  linkedin?: string;
+  youtube?: string;
+}
+
 /**
- * Everything the directory card and the public profile actually render.
- *
- * Split out from `DirectoryOrganization` (which is now only the sample
- * fixture's shape) so both surfaces can be handed either a fixture record
- * or a live one mapped from `GET /organizations` — see
- * `utils/toDisplayOrganization.ts`. Fields a freshly signed-up
- * organization has no way to fill yet (`cover`, `activeDrives`,
- * `milestones`) are optional or empty rather than faked: a section with no
- * data does not render at all.
+ * Everything the directory card and the public profile actually render,
+ * mapped from a live `GET /organizations` record by
+ * `utils/toDisplayOrganization.ts`. Fields a freshly signed-up organization
+ * has no way to fill yet (`cover`, `activeDrives`, `milestones`) are
+ * optional or empty rather than faked: a section with no data does not
+ * render at all.
  */
 export interface DisplayOrganization {
   _id: string;
@@ -92,6 +105,9 @@ export interface DisplayOrganization {
    *  header both fall back to an accent band with the monogram on it. */
   cover?: string;
   coverAlt?: string;
+  /** A small logo/lettermark, distinct from `cover` — renders in the
+   *  card's corner badge and the profile header when present. */
+  logo?: string;
   focusAreas: string[];
   about: string[];
   stats: OrganizationStat[];
@@ -100,22 +116,19 @@ export interface DisplayOrganization {
   website: string;
   contactEmail: string;
   address: string;
-}
-
-/**
- * A record from the sample fixture in `constants/organizationDirectory.ts`.
- * Kept as its own type because the fixture guarantees fields (a real cover
- * photo, a `Cause` from the closed union) that a live record does not.
- */
-export interface DirectoryOrganization extends Omit<
-  DisplayOrganization,
-  "cause" | "cover" | "coverAlt"
-> {
-  cause: Cause;
-  cover: string;
-  coverAlt: string;
-  email?: string;
-  userType?: UserType;
+  /** A pasted map embed URL — same convention as an event's `mapIframe`. */
+  mapIframe?: string;
+  /** Optional rather than defaulted to `{}`/`[]` in the type itself:
+   *  `toDisplayOrganization` always fills these in from a live record, but
+   *  a freshly-drafted organization's record may genuinely have none of
+   *  them yet. */
+  socialLinks?: SocialLinks;
+  leadership?: LeadershipMember[];
+  sponsorship?: { enabled: boolean };
+  /** Counted, not stated — the sum of every verified payment made through
+   *  this platform's own sponsorship flow. Never merged with
+   *  `fundsRaised` (the organization's own claim) into one number. */
+  raisedViaPlatform?: number;
 }
 
 /**
@@ -132,14 +145,18 @@ export interface ApiOrganization {
   domains: string[];
   description?: string;
   teamSize?: number;
-  location: { city?: string; state?: string };
+  location: { city?: string; state?: string; address?: string; mapIframe?: string };
   website?: string;
   contactEmail?: string;
   logo?: string;
   cover?: string;
   gallery: string[];
+  socialLinks?: SocialLinks;
+  leadership?: LeadershipMember[];
+  sponsorship?: { enabled: boolean };
   fundsRaised?: number;
   fundsGoal?: number;
+  raisedViaPlatform?: number;
   followers: number;
   verified: boolean;
   createdAt: string;
@@ -186,6 +203,10 @@ export interface OrganizationAccent {
 
 export interface OrganizationCardProps {
   organization: DisplayOrganization;
+  /** Renders the small "Featured" badge for the directory's featured strip
+   *  — see `Organizations.tsx`. Purely presentational; it doesn't change
+   *  what data the card reads. */
+  featured?: boolean;
 }
 
 /**
@@ -209,6 +230,17 @@ export interface OrganizationSetupForm {
   contactPhone: string;
   fundsRaised: string;
   fundsGoal: string;
+  address: string;
+  mapIframe: string;
+  logo: string;
+  cover: string;
+  socialInstagram: string;
+  socialFacebook: string;
+  socialTwitter: string;
+  socialLinkedin: string;
+  socialYoutube: string;
+  sponsorshipEnabled: boolean;
+  leadership: LeadershipMember[];
 }
 
 export type OrganizationSetupField = keyof OrganizationSetupForm;
@@ -219,7 +251,18 @@ export type OrganizationSetupField = keyof OrganizationSetupForm;
  * a small group of related boxes.
  */
 export type OrganizationSetupQuestionKind =
-  "text" | "textarea" | "number" | "choice" | "chips" | "group";
+  | "text"
+  | "textarea"
+  | "number"
+  | "choice"
+  | "chips"
+  | "group"
+  /** A repeatable card editor — today only `leadership`. Doesn't fit
+   *  "group" (a fixed set of fields asked once) since the whole point is
+   *  an unknown number of rows. */
+  | "list"
+  /** A single on/off switch — today only `sponsorshipEnabled`. */
+  | "toggle";
 
 /**
  * One screen of the setup flow: a headline, and the field (or the tight

@@ -1,11 +1,58 @@
 /**
- * Formatting for the numbers and spans on the event detail page.
- *
- * Date/time formatting deliberately stays in `constants/eventDirectory.ts`
- * alongside `formatEventDate`/`formatEventBadge`, which the card already
- * imports from there - splitting the two halves of "format an event" across
- * two folders would be worse than the mild inconsistency of leaving them.
+ * Formatting for the dates, numbers and spans this feature renders -
+ * one home for "format an event" instead of split across two files.
+ * `formatEventDate`/`formatEventBadge`/`formatEventTime` used to live in
+ * the now-retired `constants/eventDirectory.ts` fixture; they moved here
+ * once that file's sample events were replaced by live `GET /events` data.
  */
+
+/**
+ * "Sat 12 Sep · 9:00 pm" in the visitor's own locale.
+ *
+ * The long form, for surfaces that show the date once - the detail page
+ * hero. `EventCard` uses `formatEventBadge` + `formatEventTime` instead,
+ * because it shows both and the two would otherwise print the same day
+ * number twice.
+ *
+ * Deliberately not `getFormattedDate.ts` (this feature's other date
+ * helper): that one takes the API's `{ date, time }` string pair, while
+ * this one takes a real ISO timestamp, which is what a live `Event`
+ * record's `startTime` actually is.
+ */
+export const formatEventDate = (startsAt: string) =>
+  new Date(startsAt)
+    .toLocaleString(undefined, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+    .replace(", ", " · ");
+
+/** Short form for the badge on the cover: "12 SEP". */
+export const formatEventBadge = (startsAt: string) =>
+  new Date(startsAt).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+
+/**
+ * "Sat · 9:00 pm" - weekday and start time, no day number.
+ *
+ * The companion to `formatEventBadge` on a card that shows both: the badge
+ * carries the date, this carries the part the badge can't fit.
+ */
+export const formatEventTime = (startsAt: string) => {
+  const date = new Date(startsAt);
+
+  return `${date.toLocaleDateString(undefined, {
+    weekday: "short",
+  })} · ${date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  })}`;
+};
 
 /**
  * "₹4,50,000", "KES 620,000" - whichever the runtime's locale data can do.

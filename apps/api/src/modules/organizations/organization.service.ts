@@ -64,14 +64,22 @@ export function toPublic(organization: IOrganization) {
     location: {
       city: organization.location?.city,
       state: organization.location?.state,
+      address: organization.location?.address,
+      mapIframe: organization.location?.mapIframe,
     },
     website: organization.website,
     contactEmail: organization.contactEmail,
     logo: organization.logo,
     cover: organization.cover,
     gallery: organization.gallery ?? [],
+    socialLinks: organization.socialLinks ?? {},
+    leadership: organization.leadership ?? [],
+    sponsorship: { enabled: organization.sponsorship?.enabled ?? false },
     fundsRaised: organization.fundsRaised,
     fundsGoal: organization.fundsGoal,
+    // Rupees, rounded down — paise is Razorpay's unit and has no business
+    // reaching a screen. See the field's own doc comment on the model.
+    raisedViaPlatform: Math.floor((organization.raisedViaPlatformPaise ?? 0) / 100),
     followers: organization.followers ?? 0,
     verified: organization.verified,
     createdAt: organization.createdAt,
@@ -149,12 +157,14 @@ export async function findOrCreateForOwner(owner: {
 }
 
 function toUpdate(data: UpdateOrganizationInput) {
-  const { city, state, ...rest } = data;
+  const { city, state, address, mapIframe, ...rest } = data;
 
   return {
     ...rest,
     ...(city !== undefined && { "location.city": city }),
     ...(state !== undefined && { "location.state": state }),
+    ...(address !== undefined && { "location.address": address }),
+    ...(mapIframe !== undefined && { "location.mapIframe": mapIframe }),
   };
 }
 
@@ -214,7 +224,12 @@ export async function findLive(
 
   const [data, total] = await Promise.all([
     Organization.find(query)
-      .sort({ verified: -1, createdAt: -1 })
+      // An organization that has opted into sponsorship surfaces first —
+      // it's what feeds the directory's "Featured organizations" strip —
+      // then verified, then newest. Sponsorship is a real opt-in (a
+      // dashboard toggle), not a paid-placement auction, so this ordering
+      // has no fairness implications to worry about yet.
+      .sort({ "sponsorship.enabled": -1, verified: -1, createdAt: -1 })
       .skip(pagination.skip)
       .limit(pagination.limit),
     Organization.countDocuments(query),

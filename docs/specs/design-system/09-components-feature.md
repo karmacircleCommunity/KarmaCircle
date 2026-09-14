@@ -47,11 +47,12 @@ A 300px target beats a 32px one, and it removes the old markup's nested-interact
 Additions over the shared skeleton:
 
 - **No-cover fallback**: an accent band, `linear-gradient(135deg, from, to)` from `ORGANIZATION_ACCENTS[accent % 6]`, with the monogram at `font-outfit text-4xl font-semibold text-white/90`. Not one shared stock banner, which is what made the old grid read as twenty copies of one record.
+- **Featured badge** (September 2026): `featured` prop only — a small uppercase pill (`bg-white/95 text-brand`) top-right on the cover, for `Organizations.tsx`'s featured strip. Never set for any other reason.
 - **Verified tick**: `MdVerified` at `size-4 shrink-0 text-brand`, `role="img"`, `aria-label="Verified organization"`.
 - **Arrow**: `FiArrowUpRight`, `ml-auto size-5 shrink-0 text-brand-secondary/35 ... group-hover:text-brand motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5`. Decorative, `aria-hidden`.
 - `min-w-0` on the title is what lets it truncate instead of pushing the tick and arrow out of the card.
-- **Meta row**: `mt-2.5 inline-flex items-center gap-1.5 font-poppins text-caption tracking-wide text-ink/55` with `FiMapPin` at `size-3.5`, a `text-ink/25` bullet separator, and `Since {founded}`.
-- **Stat row**: `mt-auto grid grid-cols-3 gap-2 border-t border-border-subtle pt-3.5 font-outfit`. `<dt>` `font-poppins text-caption tracking-wide text-ink/50 uppercase`, `<dd>` `m-0 mt-0.5 text-body font-semibold text-brand-secondary`. Three stats: Followers, Team, Focus areas.
+- **Meta row**: `mt-2.5 flex items-center gap-1.5 font-poppins text-caption tracking-wide text-ink/55` with `FiMapPin` at `size-3.5`, and `Since {founded}`. The separator (September 2026) is a drawn `size-1 rounded-full bg-ink/25` dot, not a `•` character — a text bullet's vertical position varies by font/renderer and read noticeably high against the pin icon and the digits either side of it under close zoom; a fixed-size circle centers identically everywhere.
+- **Stat row**: `mt-auto grid grid-cols-3 gap-2 border-t border-border-subtle pt-3.5 font-outfit`. `<dt>`/`<dd>` both carry `truncate` (September 2026) so a longer label ("Focus areas") can't wrap to two lines while its neighbours stay on one, which used to throw the row's baseline off between columns. `<dt>` `font-poppins text-caption tracking-wide text-ink/50 uppercase`, `<dd>` `m-0 mt-0.5 text-body font-semibold text-brand-secondary`. Three stats: Followers, Team, Focus areas.
 
 The monogram was removed from the cover when real per-organization photos landed; over a photo it read as clutter, and it survives on the profile header where a profile picture belongs.
 

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import type { ReactNode } from "react";
 import {
   FiArrowLeft,
@@ -11,17 +11,27 @@ import {
   FiMapPin,
   FiUsers,
 } from "react-icons/fi";
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaXTwitter,
+  FaYoutube,
+} from "react-icons/fa6";
 import { MdVerified } from "react-icons/md";
 import { Link, useParams } from "react-router-dom";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
 import { useSectionReveal } from "@hooks";
-import { organizationEndpoints } from "@services/ApiEndpoints";
+import { eventEndpoints, organizationEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
 import {
   ORGANIZATION_ACCENTS,
   formatCount,
-} from "../constants/organizationDirectory";
+} from "../constants/organizationDisplay";
+import OrganizationEventsList from "../components/OrganizationEventsList";
+import type { HostedEvent } from "../components/OrganizationEventsList";
+import SponsorOrganizationModal from "../components/SponsorOrganizationModal";
 import { monogram } from "../utils/monogram";
 import { toDisplayOrganization } from "../utils/toDisplayOrganization";
 import type { ApiOrganization, DisplayOrganization } from "../types";
@@ -109,17 +119,74 @@ const OrganizationProfileView = ({
   // press beats a control that looks live and does nothing, which is what
   // `Profile.tsx`'s Subscribe/Sponsor pair does.
   const [following, setFollowing] = useState(false);
+  const [sponsorOpen, setSponsorOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
 
-  // Keyed on the fetched record, matching Organizations.tsx/Events.tsx: this
-  // page's content arrives asynchronously (the GET /organizations/{handle}
-  // fetch in the parent `OrganizationProfile`), and without a dependency
-  // array the reveal setup could run before layout settles, leaving every
-  // `data-reveal` element stuck at its pre-animation opacity indefinitely.
-  useSectionReveal(pageRef, [organization.userName]);
+  // The real link (Event.organizerHandle, falling back to the legacy
+  // hostUsername match) — see event.service.ts#findAll. Not gated behind
+  // anything: an unpublished-events organization just gets an empty array
+  // and the section below doesn't render.
+  const { data: eventsData } = useSWR<{ data: HostedEvent[] }>(
+    eventEndpoints.byHost(organization.userName),
+    fetcher,
+  );
+  const events = eventsData?.data ?? [];
+
+  // Keyed on the fetched record *and* on the events fetch resolving:
+  // "Events hosted"'s own `data-reveal` elements don't exist yet when this
+  // effect would otherwise run right after the org record loads, since
+  // that second fetch lands later — the same "async content needs its
+  // result in the dependency array" case this page's own history already
+  // has one regression for (see the note this replaced, and
+  // Organizations.tsx's `useSectionReveal(gridRef, [results.length, ...])`).
+  useSectionReveal(pageRef, [organization.userName, events.length]);
+  const mostRecentEvent = [...events].sort(
+    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+  )[0];
+
+  const socialLinks = [
+    organization.socialLinks?.instagram && {
+      key: "instagram",
+      href: organization.socialLinks.instagram,
+      Icon: FaInstagram,
+      label: `${organization.name} on Instagram`,
+    },
+    organization.socialLinks?.facebook && {
+      key: "facebook",
+      href: organization.socialLinks.facebook,
+      Icon: FaFacebook,
+      label: `${organization.name} on Facebook`,
+    },
+    organization.socialLinks?.twitter && {
+      key: "twitter",
+      href: organization.socialLinks.twitter,
+      Icon: FaXTwitter,
+      label: `${organization.name} on X`,
+    },
+    organization.socialLinks?.linkedin && {
+      key: "linkedin",
+      href: organization.socialLinks.linkedin,
+      Icon: FaLinkedin,
+      label: `${organization.name} on LinkedIn`,
+    },
+    organization.socialLinks?.youtube && {
+      key: "youtube",
+      href: organization.socialLinks.youtube,
+      Icon: FaYoutube,
+      label: `${organization.name} on YouTube`,
+    },
+  ].filter(Boolean) as Array<{
+    key: string;
+    href: string;
+    Icon: typeof FaInstagram;
+    label: string;
+  }>;
 
   const hasMainColumnSections =
-    organization.activeDrives.length > 0 || organization.milestones.length > 0;
+    organization.activeDrives.length > 0 ||
+    organization.milestones.length > 0 ||
+    (organization.leadership?.length ?? 0) > 0 ||
+    events.length > 0;
 
   const metaChips = [
     organization.city && {
@@ -185,16 +252,27 @@ const OrganizationProfileView = ({
                   photo it is supposed to overlap, however negative its
                   margin. */}
               <div className="relative -mt-12 flex flex-wrap items-end gap-4 sm:-mt-14">
-                <span
-                  aria-hidden="true"
-                  className="flex size-24 items-center justify-center rounded-3xl border-4 border-white font-outfit text-3xl font-semibold shadow-[0_10px_24px_-16px_var(--color-brand-secondary)] sm:size-28 sm:text-4xl"
-                  style={{
-                    backgroundColor: `color-mix(in srgb, ${accent.from} 16%, white)`,
-                    color: accent.ink,
-                  }}
-                >
-                  {monogram(organization.name)}
-                </span>
+                {organization.logo ? (
+                  <span className="flex size-24 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-white shadow-[0_10px_24px_-16px_var(--color-brand-secondary)] sm:size-28">
+                    <img
+                      src={organization.logo}
+                      alt=""
+                      aria-hidden="true"
+                      className="size-full object-cover"
+                    />
+                  </span>
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex size-24 items-center justify-center rounded-3xl border-4 border-white font-outfit text-3xl font-semibold shadow-[0_10px_24px_-16px_var(--color-brand-secondary)] sm:size-28 sm:text-4xl"
+                    style={{
+                      backgroundColor: `color-mix(in srgb, ${accent.from} 16%, white)`,
+                      color: accent.ink,
+                    }}
+                  >
+                    {monogram(organization.name)}
+                  </span>
+                )}
               </div>
 
               <div className="mt-5 lg:flex lg:items-start lg:justify-between lg:gap-8">
@@ -243,6 +321,30 @@ const OrganizationProfileView = ({
                       </li>
                     ))}
                   </ul>
+
+                  {/* Only the platforms this organization actually filled
+                      in render — same "nothing invented" rule the rest of
+                      this page follows for drives/milestones. */}
+                  {socialLinks.length > 0 && (
+                    <ul
+                      data-reveal
+                      className="mt-4 flex list-none flex-wrap items-center gap-3 p-0"
+                    >
+                      {socialLinks.map(({ key, href, Icon, label }) => (
+                        <li key={key}>
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={label}
+                            className="flex size-9 items-center justify-center rounded-full border border-brand-secondary/12 text-ink/55 no-underline transition-colors duration-200 hover:border-brand/35 hover:text-brand"
+                          >
+                            <Icon aria-hidden="true" className="size-4" />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div
@@ -339,21 +441,18 @@ const OrganizationProfileView = ({
                       : "What we work on"
                   }
                   id="about"
+                  reveal={false}
                 >
                   {organization.about.map((paragraph, index) => (
                     <p
                       key={index}
-                      data-reveal
                       className="mt-4 font-poppins text-body leading-7 text-ink/75 first:mt-0 sm:text-body-lg sm:leading-8"
                     >
                       {paragraph}
                     </p>
                   ))}
 
-                  <ul
-                    data-reveal
-                    className="mt-6 flex list-none flex-wrap gap-2 p-0"
-                  >
+                  <ul className="mt-6 flex list-none flex-wrap gap-2 p-0">
                     {organization.focusAreas.map((area) => (
                       <li
                         key={area}
@@ -363,6 +462,24 @@ const OrganizationProfileView = ({
                       </li>
                     ))}
                   </ul>
+
+                  {mostRecentEvent && (
+                    <Link
+                      to={`/events/${mostRecentEvent.uid}`}
+                      className="mt-6 flex items-center gap-3 rounded-2xl border border-brand-secondary/8 bg-surface-warm px-4 py-3 no-underline transition-colors duration-200 hover:border-brand/30"
+                    >
+                      <FiCalendar
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-brand"
+                      />
+                      <p className="min-w-0 truncate font-poppins text-body text-ink/70">
+                        Most recently:{" "}
+                        <span className="font-medium text-brand-secondary">
+                          {mostRecentEvent.name}
+                        </span>
+                      </p>
+                    </Link>
+                  )}
                 </Section>
               )}
 
@@ -447,6 +564,52 @@ const OrganizationProfileView = ({
                   </ol>
                 </Section>
               )}
+
+              {(organization.leadership?.length ?? 0) > 0 && (
+                <Section title="Our team" id="team">
+                  <ul className="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2">
+                    {organization.leadership!.map((leader) => (
+                      <li
+                        key={leader.name}
+                        data-reveal
+                        className="flex gap-4 rounded-2xl border border-brand-secondary/8 bg-white p-4"
+                      >
+                        <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-secondary/10 font-outfit text-body-lg font-semibold text-brand-secondary/70">
+                          {leader.photo ? (
+                            <img
+                              src={leader.photo}
+                              alt=""
+                              aria-hidden="true"
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            monogram(leader.name)
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-outfit text-body-lg font-semibold tracking-tight text-brand-secondary">
+                            {leader.name}
+                          </p>
+                          <p className="font-poppins text-caption tracking-wide text-brand uppercase">
+                            {leader.title}
+                          </p>
+                          {leader.bio && (
+                            <p className="mt-1.5 font-poppins text-body leading-6 text-ink/65">
+                              {leader.bio}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {events.length > 0 && (
+                <Section title="Events hosted" id="events-hosted">
+                  <OrganizationEventsList events={events} />
+                </Section>
+              )}
             </main>
 
             {/* ---------- Sidebar ---------- */}
@@ -455,36 +618,48 @@ const OrganizationProfileView = ({
                 hasMainColumnSections ? "lg:sticky lg:top-24 lg:mt-0" : ""
               }`}
             >
-              <div
-                data-reveal
-                className="overflow-hidden rounded-2xl bg-surface-dark p-6"
-              >
+              {/* Not `data-reveal`: this card sits beside "About us", which
+                  is itself exempt from the scroll entrance for the same
+                  reason — see the note on `Section`'s `reveal` prop. */}
+              <div className="overflow-hidden rounded-2xl bg-surface-dark p-6">
                 <h2 className="font-outfit text-xl font-semibold tracking-tight text-white">
                   Back {organization.name}
                 </h2>
                 <p className="mt-2 font-poppins text-body leading-6 text-white/60">
-                  Every rupee, naira or pound goes to the drive you pick.
-                  KarmaCircle takes no cut of what moves.
+                  {organization.sponsorship?.enabled
+                    ? "Support goes straight to this organization through Razorpay. KarmaCircle takes no cut of what moves."
+                    : "Every rupee, naira or pound goes to the drive you pick. KarmaCircle takes no cut of what moves."}
                 </p>
-                {organization.activeDrives.length > 0 && (
+                {/* The real payment flow, when this organization has turned
+                    it on, takes priority over the drives-scroll button —
+                    `activeDrives` is always empty for a live record today
+                    (no drives endpoint exists yet), so this button used to
+                    render for nobody. */}
+                {organization.sponsorship?.enabled ? (
                   <Button
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border-none px-6 py-3 font-poppins text-body font-medium"
-                    onClickfunction={() => {
-                      document.getElementById("drives")?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }}
+                    onClickfunction={() => setSponsorOpen(true)}
                   >
-                    <FiHeart aria-hidden="true" /> Sponsor a drive
+                    <FiHeart aria-hidden="true" /> Support {organization.name}
                   </Button>
+                ) : (
+                  organization.activeDrives.length > 0 && (
+                    <Button
+                      className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border-none px-6 py-3 font-poppins text-body font-medium"
+                      onClickfunction={() => {
+                        document.getElementById("drives")?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                      }}
+                    >
+                      <FiHeart aria-hidden="true" /> Sponsor a drive
+                    </Button>
+                  )
                 )}
               </div>
 
-              <div
-                data-reveal
-                className="rounded-2xl border border-brand-secondary/8 bg-white p-6"
-              >
+              <div className="rounded-2xl border border-brand-secondary/8 bg-white p-6">
                 <h2 className="font-outfit text-body-lg font-semibold tracking-tight text-brand-secondary">
                   Get in touch
                 </h2>
@@ -544,6 +719,18 @@ const OrganizationProfileView = ({
                     </div>
                   </div>
                 </dl>
+
+                {organization.mapIframe && (
+                  <div className="mt-4 aspect-16/9 w-full overflow-hidden rounded-xl border border-brand-secondary/8">
+                    <iframe
+                      src={organization.mapIframe}
+                      title={`Map showing ${organization.name}'s location`}
+                      className="size-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                )}
               </div>
             </aside>
           </div>
@@ -551,18 +738,46 @@ const OrganizationProfileView = ({
       </div>
 
       <Footer />
+
+      {sponsorOpen && (
+        <SponsorOrganizationModal
+          handle={organization.userName}
+          name={organization.name}
+          logo={organization.logo}
+          onClose={() => setSponsorOpen(false)}
+          onSponsored={() => {
+            // Revalidates the profile fetch so the "Raised via KarmaCircle"
+            // stat reflects the payment that was just verified, without
+            // this component owning a second copy of that number.
+            globalMutate(organizationEndpoints.byHandle(organization.userName));
+          }}
+        />
+      )}
     </>
   );
 };
 
-/** Section shell — one heading rule, used three times down the main column. */
+/**
+ * Section shell — one heading rule, used down the main column.
+ *
+ * `reveal` defaults to true (the scroll-entrance `useSectionReveal` treats
+ * this heading like every other `data-reveal` element). The first section
+ * ("About us") opts out with `reveal={false}`: it sits right under the
+ * hero, inside or barely past the first viewport on most screen sizes, so
+ * gating it behind a scroll-triggered fade made the page read as blank on
+ * first load — nothing below the hero card appeared until the visitor
+ * scrolled. Sections further down the column stay on the reveal, where it
+ * reads as an entrance rather than a missing page.
+ */
 const Section = ({
   title,
   id,
+  reveal = true,
   children,
 }: {
   title: string;
   id: string;
+  reveal?: boolean;
   children: ReactNode;
 }) => (
   <section
@@ -572,7 +787,7 @@ const Section = ({
   >
     <h2
       id={`${id}-heading`}
-      data-reveal
+      data-reveal={reveal || undefined}
       className="mb-5 font-outfit text-2xl font-semibold tracking-tight text-brand-secondary sm:text-[1.75rem]"
     >
       {title}

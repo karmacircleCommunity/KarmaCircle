@@ -39,7 +39,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | `<name>.controller.ts` | Thin HTTP layer — reads `req`, calls the service, shapes the response. No business logic. |
 | `<name>.service.ts` | Business logic and all Mongoose queries |
 | `<name>.validation.ts` | Zod schemas + their inferred `z.infer` types, used by both `validate()` middleware and the controller's request-body casts |
-| `<name>.model.ts` | Mongoose `Schema`/`model`, only in modules that own a collection (`users`, `organizations`, `events`, `products`, `reports` — `directory`/`auth`/`payments` don't have one; see below) |
+| `<name>.model.ts` | Mongoose `Schema`/`model`, only in modules that own a collection (`users`, `organizations`, `events`, `products`, `reports`, and — since September 2026, for its `Order` model — `payments`; `directory`/`auth` don't have one; see below) |
 
 `src/config/` (env, database, logger, passport, swagger), `src/middleware/` (auth, error-handler, rate-limit, validate), `src/constants/` (`STATUS_CODE`/`STATUS_MESSAGE`), and `src/utils/` (`asyncHandler`, `pagination`) hold everything shared across modules — see [architecture.md](./architecture.md) for what each does.
 `src/routes/index.ts` mounts every module's router onto its base path; `src/app.ts` assembles the whole Express app (middleware stack + mounted routes); `src/server.ts` and `api/index.ts` are the two ways that app actually gets served (see [architecture.md](./architecture.md#two-entry-points)).
@@ -55,7 +55,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | [organizations.md](./organizations.md) | The organization's own record: public directory + profile, owner-only setup/edit, the draft→live gate, the tag/domain taxonomy; plus the legacy account-lookup and dashboard branches | ✅ `Organization` (its own collection, owned by a `users` login) | `GET/PATCH /organizations/me`, `GET /organizations/dashboard` |
 | [directory.md](./directory.md) | Public, unfiltered "list every user" / "list every organization" endpoints — no pagination, no auth | reuses `users`' `User` model | no |
 | [events.md](./events.md) | List all events / one event by `uid`, create an event as the authenticated host | ✅ `Event` | `POST /events/create` only |
-| [payments.md](./payments.md) | Create a Razorpay order (amount → order id) | — (Razorpay is the system of record) | no |
+| [payments.md](./payments.md) | Create a Razorpay order (amount → order id); an organization's real "Support" flow with signature-verified persistence | ✅ `Order` (the sponsorship flow only — the original generic route still persists nothing) | no |
 | [products.md](./products.md) | Add a product, list/get products, add a product to a user's cart (writes into `User.cart`) | ✅ `Product` | `POST /product/cart/add` only |
 | [reports.md](./reports.md) | "Report a problem" form submission, rate-limited per email | ✅ `ReportProblem` | no |
 | [api-contract.md](./api-contract.md) | Every route this API exposes, cross-referenced against exactly what the frontend calls (`src/services/ApiEndpoints.ts` / `KarmaCircleApi.ts` in the KarmaCircle repo) — **read this before changing any route path, method, or response shape** | — | — |

@@ -90,7 +90,7 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
 
   return (
     <nav>
-      <div className="sticky z-99 mx-8 flex items-center justify-between px-28 py-[0.8rem] max-430px:px-6">
+      <div className="sticky z-99 mx-auto flex max-w-6xl items-center justify-between px-9 py-[0.8rem] sm:px-10 lg:px-12">
         <Link
           to={"/"}
           className="group z-10 flex items-center gap-2 no-underline"
@@ -175,9 +175,20 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
             />
           ) : (
             <GiHamburgerMenu
-              className="hidden size-7.5 cursor-pointer text-heading max-430px:block"
+              role="button"
+              tabIndex={0}
+              aria-label="Open menu"
+              aria-haspopup="true"
+              aria-expanded={isNavbarOpen}
+              className="hidden size-7.5 cursor-pointer text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-430px:block"
               onClick={() => {
                 toggleNavbar();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleNavbar();
+                }
               }}
             />
           ))}
@@ -186,9 +197,18 @@ const Navbar = ({ hideSignUpForHeroCta = false }: NavbarProps) => {
           <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/[0.867] transition-all duration-300 ease-in-out">
             <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in">
               <RxCross2
-                className="absolute top-2.5 right-2.5 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                aria-label="Close menu"
+                className="absolute top-2.5 right-2.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 onClick={() => {
                   toggleNavbar();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    toggleNavbar();
+                  }
                 }}
               />
 

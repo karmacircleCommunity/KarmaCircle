@@ -20,9 +20,10 @@ const ALL = "All";
  * **Live data**, as of the organization model landing: `GET /organizations`
  * returns only organizations whose profile is complete enough to publish —
  * a half-finished signup is invisible here by design, not by accident (see
- * `docs/specs/organizations.md`). The sample fixture this page used to
- * render still exists in `constants/organizationDirectory.ts` but nothing
- * reads its records any more.
+ * `docs/specs/organizations.md`). The twelve-organization sample fixture
+ * this page used to render (`constants/organizationDirectory.ts`) is
+ * deleted, not just unused — real demo data lives in
+ * `apps/api/scripts/seed-demo-data.ts` now.
  *
  * Both the search term and the cause chip are sent to the backend rather
  * than applied to the fetched page — see the `useSWR` key below. The chrome
@@ -59,6 +60,22 @@ const Organizations = () => {
     () => (data?.data ?? []).map(toDisplayOrganization),
     [data],
   );
+
+  // "Featured" means only what it says: an organization that actually
+  // turned sponsorship on, never just "whichever came first" — this app's
+  // own convention is not to invent significance a record doesn't have
+  // (see the profile's "sections with nothing behind them don't render"
+  // rule). The backend already sorts these first (organization.service.ts
+  // #findLive), so this is a filter over an existing order, not a second
+  // query. Only on the unfiltered view: a search or a domain filter is the
+  // visitor asking a specific question, and a strip above the answer would
+  // read as the page ignoring them.
+  const isUnfiltered = query.trim() === "" && domain === ALL;
+  const featured = isUnfiltered
+    ? results.filter((org) => org.sponsorship?.enabled).slice(0, 2)
+    : [];
+  const featuredIds = new Set(featured.map((org) => org._id));
+  const rest = results.filter((org) => !featuredIds.has(org._id));
 
   const domainFilters = useMemo(
     () => [ALL, ...(taxonomy?.domains ?? [])],
@@ -146,16 +163,32 @@ const Organizations = () => {
             </button>
           </div>
         ) : (
-          <div
-            ref={gridRef}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
-          >
-            {results.map((organization) => (
-              <OrganizationCard
-                organization={organization}
-                key={organization._id}
-              />
-            ))}
+          <div ref={gridRef}>
+            {featured.length > 0 && (
+              <div className="mb-10">
+                <h2 className="mb-4 font-outfit text-caption font-semibold tracking-[0.14em] text-ink/45 uppercase">
+                  Featured organizations
+                </h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  {featured.map((organization) => (
+                    <OrganizationCard
+                      organization={organization}
+                      featured
+                      key={organization._id}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {rest.map((organization) => (
+                <OrganizationCard
+                  organization={organization}
+                  key={organization._id}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

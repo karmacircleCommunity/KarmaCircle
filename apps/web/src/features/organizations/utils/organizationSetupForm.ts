@@ -18,7 +18,28 @@ export const EMPTY_SETUP_FORM: OrganizationSetupForm = {
   contactPhone: "",
   fundsRaised: "",
   fundsGoal: "",
+  address: "",
+  mapIframe: "",
+  logo: "",
+  cover: "",
+  socialInstagram: "",
+  socialFacebook: "",
+  socialTwitter: "",
+  socialLinkedin: "",
+  socialYoutube: "",
+  sponsorshipEnabled: false,
+  leadership: [],
 };
+
+/** The five flat form fields that reassemble into one `socialLinks` object
+ *  on save — see `toStepPayload` below. */
+const SOCIAL_FIELDS = [
+  "socialInstagram",
+  "socialFacebook",
+  "socialTwitter",
+  "socialLinkedin",
+  "socialYoutube",
+] as const;
 
 /** Fields the API wants as numbers and the form holds as strings. */
 const NUMERIC_FIELDS = new Set<OrganizationSetupField>([
@@ -45,6 +66,17 @@ export function toSetupForm(
       ? String(organization.fundsRaised)
       : "",
     fundsGoal: organization.fundsGoal ? String(organization.fundsGoal) : "",
+    address: organization.location?.address ?? "",
+    mapIframe: organization.location?.mapIframe ?? "",
+    logo: organization.logo ?? "",
+    cover: organization.cover ?? "",
+    socialInstagram: organization.socialLinks?.instagram ?? "",
+    socialFacebook: organization.socialLinks?.facebook ?? "",
+    socialTwitter: organization.socialLinks?.twitter ?? "",
+    socialLinkedin: organization.socialLinks?.linkedin ?? "",
+    socialYoutube: organization.socialLinks?.youtube ?? "",
+    sponsorshipEnabled: organization.sponsorship?.enabled ?? false,
+    leadership: organization.leadership ?? [],
   };
 }
 
@@ -72,6 +104,7 @@ export function toStepPayload(
   fields: OrganizationSetupField[],
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
+  let includeSocialLinks = false;
 
   for (const field of fields) {
     if (field === "domains") {
@@ -79,7 +112,33 @@ export function toStepPayload(
       continue;
     }
 
-    const value = form[field].trim();
+    // Always sent, whole-array, same reasoning as `domains` above: removing
+    // the last person is a real edit, not "untouched".
+    if (field === "leadership") {
+      payload.leadership = form.leadership;
+      continue;
+    }
+
+    // A toggle is always in a defined state — there is no "untouched"
+    // reading of it the way an empty text field has.
+    if (field === "sponsorshipEnabled") {
+      payload.sponsorship = { enabled: form.sponsorshipEnabled };
+      continue;
+    }
+
+    // The five social fields are one PATCH-body object on the backend
+    // (`socialLinks`), which `.set()`s the whole subdocument at once — so
+    // this step always sends all five together (blank ones omitted, which
+    // is how a field gets cleared), never one key at a time. Handled once,
+    // after the loop, rather than per-field here.
+    if ((SOCIAL_FIELDS as readonly string[]).includes(field)) {
+      includeSocialLinks = true;
+      continue;
+    }
+
+    const raw = form[field];
+    if (typeof raw !== "string") continue;
+    const value = raw.trim();
     if (!value) continue;
 
     if (NUMERIC_FIELDS.has(field)) {
@@ -91,6 +150,16 @@ export function toStepPayload(
     }
   }
 
+  if (includeSocialLinks) {
+    payload.socialLinks = {
+      instagram: form.socialInstagram.trim() || undefined,
+      facebook: form.socialFacebook.trim() || undefined,
+      twitter: form.socialTwitter.trim() || undefined,
+      linkedin: form.socialLinkedin.trim() || undefined,
+      youtube: form.socialYoutube.trim() || undefined,
+    };
+  }
+
   return payload;
 }
 
@@ -100,7 +169,11 @@ export function isFieldFilled(
   field: OrganizationSetupField,
 ): boolean {
   const value = form[field];
-  return Array.isArray(value) ? value.length > 0 : value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  // A toggle is always in a defined state — "filled" isn't a meaningful
+  // question for it, and nothing here ever puts it in `requiredFields`.
+  if (typeof value === "boolean") return true;
+  return value.trim().length > 0;
 }
 
 /**
@@ -127,10 +200,22 @@ export function isStepDirty(
     const next = form[field];
     const previous = saved[field];
 
-    return Array.isArray(next) && Array.isArray(previous)
-      ? next.length !== previous.length ||
-          next.some((item, index) => item !== previous[index])
-      : next !== previous;
+    if (Array.isArray(next) && Array.isArray(previous)) {
+      if (next.length !== previous.length) return true;
+      // `domains` holds strings (`!==` is exact); `leadership` holds
+      // objects the editor always rebuilds fresh (add/remove/edit all
+      // return a new array of new objects), so a reference check would
+      // report every visit as dirty even with identical content — compare
+      // by value for those instead.
+      return next.some((item, index) => {
+        const other = previous[index];
+        return typeof item === "object" && item !== null
+          ? JSON.stringify(item) !== JSON.stringify(other)
+          : item !== other;
+      });
+    }
+
+    return next !== previous;
   });
 }
 
@@ -236,6 +321,23 @@ export function validateSetupField(
       return null;
     }
 
+    // These are pasted links, not typed hosts — no `normalizeWebsite`-style
+    // scheme insertion for any of them, so the scheme has to already be
+    // there for the pasted value to be worth anything.
+    case "logo":
+    case "cover":
+    case "mapIframe":
+    case "socialInstagram":
+    case "socialFacebook":
+    case "socialTwitter":
+    case "socialLinkedin":
+    case "socialYoutube": {
+      if (!/^https?:\/\/\S+$/i.test(value)) {
+        return "Enter a full link starting with https://";
+      }
+      return null;
+    }
+
     case "contactPhone": {
       // No character check here: `sanitizeSetupValue` already keeps
       // anything that isn't part of a phone number out of the field, so all
@@ -268,7 +370,7 @@ export function invalidFields(
 
   for (const field of fields) {
     const value = form[field];
-    if (Array.isArray(value)) continue;
+    if (typeof value !== "string") continue;
 
     const error = validateSetupField(field, value);
     if (error) errors[field] = error;

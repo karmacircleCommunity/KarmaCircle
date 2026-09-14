@@ -75,6 +75,38 @@ export const FIELD_SPECS: Partial<
     hint: "Your own figure, shown as stated by you",
   },
   fundsGoal: { label: "Trying to raise", type: "number" },
+  logo: {
+    label: "Logo URL",
+    type: "url",
+    placeholder: "https://…",
+    hint: "A square image works best. Direct upload is coming later — paste a link for now.",
+    maxLength: 2000,
+  },
+  cover: {
+    label: "Cover photo URL",
+    type: "url",
+    placeholder: "https://…",
+    hint: "Wide (16:9) — this is what shows on your directory card.",
+    maxLength: 2000,
+  },
+  address: {
+    label: "Street address",
+    type: "text",
+    placeholder: "14 MG Road",
+    maxLength: 200,
+  },
+  mapIframe: {
+    label: "Map embed URL",
+    type: "url",
+    placeholder: "https://www.google.com/maps/embed?…",
+    hint: "From a map's own \"Share → Embed\" option.",
+    maxLength: 2000,
+  },
+  socialInstagram: { label: "Instagram", type: "url", placeholder: "https://instagram.com/…" },
+  socialFacebook: { label: "Facebook", type: "url", placeholder: "https://facebook.com/…" },
+  socialTwitter: { label: "X (Twitter)", type: "url", placeholder: "https://x.com/…" },
+  socialLinkedin: { label: "LinkedIn", type: "url", placeholder: "https://linkedin.com/company/…" },
+  socialYoutube: { label: "YouTube", type: "url", placeholder: "https://youtube.com/@…" },
 };
 
 /**
@@ -101,6 +133,17 @@ export const FIELD_CY: Record<OrganizationSetupField, string> = {
   contactPhone: "org-contact-phone",
   fundsRaised: "org-funds-raised",
   fundsGoal: "org-funds-goal",
+  address: "org-address",
+  mapIframe: "org-map-iframe",
+  logo: "org-logo",
+  cover: "org-cover",
+  socialInstagram: "org-social-instagram",
+  socialFacebook: "org-social-facebook",
+  socialTwitter: "org-social-twitter",
+  socialLinkedin: "org-social-linkedin",
+  socialYoutube: "org-social-youtube",
+  sponsorshipEnabled: "org-sponsorship-enabled",
+  leadership: "org-leadership",
 };
 
 /**
@@ -185,6 +228,62 @@ const REACH_QUESTIONS: OrganizationSetupQuestion[] = [
   },
 ];
 
+/**
+ * Everything here is optional — none of it joins `REQUIRED_FIELDS`
+ * (organization.service.ts), the same precedent `logo` already set before
+ * this step existed: an organization can go live with none of this filled
+ * in, and fill it in later from the same wizard (it doubles as the edit
+ * flow — see organizations.md).
+ */
+const PRESENCE_QUESTIONS: OrganizationSetupQuestion[] = [
+  {
+    id: "logoCover",
+    kind: "group",
+    headline: "Add a logo and a cover photo",
+    hint: "Both optional, and both just a pasted image URL for now.",
+    fields: ["logo", "cover"],
+    requiredFields: [],
+  },
+  {
+    id: "socials",
+    kind: "group",
+    headline: "Where can people find you online?",
+    hint: "All optional — only the ones you fill in show up on your profile.",
+    fields: [
+      "socialInstagram",
+      "socialFacebook",
+      "socialTwitter",
+      "socialLinkedin",
+      "socialYoutube",
+    ],
+    requiredFields: [],
+  },
+  {
+    id: "addressMap",
+    kind: "group",
+    headline: "Add a street address or a map",
+    hint: "Optional, beyond the city and state you already gave.",
+    fields: ["address", "mapIframe"],
+    requiredFields: [],
+  },
+  {
+    id: "leadership",
+    kind: "list",
+    headline: "Who leads this organization?",
+    hint: "Optional — introduce up to 8 people on your public profile.",
+    fields: ["leadership"],
+    requiredFields: [],
+  },
+  {
+    id: "sponsorship",
+    kind: "toggle",
+    headline: "Accept direct support through KarmaCircle?",
+    hint: "Turns on a real \"Support\" button on your profile, paid through Razorpay.",
+    fields: ["sponsorshipEnabled"],
+    requiredFields: [],
+  },
+];
+
 /** Flattens a step's questions into the field lists the rest of the app uses. */
 function toStep(
   id: OrganizationSetupStepId,
@@ -221,6 +320,12 @@ export const SETUP_STEPS: OrganizationSetupStep[] = [
     "Where you are, and how to reach you",
     "Location, size, contact details and funding.",
     REACH_QUESTIONS,
+  ),
+  toStep(
+    "presence",
+    "Round out your profile",
+    "Logo, cover, socials, your team, and support.",
+    PRESENCE_QUESTIONS,
   ),
 ];
 

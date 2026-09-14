@@ -37,6 +37,29 @@ export interface IOrganizationMember {
   addedAt: Date;
 }
 
+/**
+ * A public-facing leader/team member — deliberately a *different* array
+ * from `members` above. `members` is the private, email-keyed permissions
+ * list (who can edit this record); this is who a visitor sees on the
+ * profile ("Our team"). Conflating the two would mean either exposing
+ * every editor's email on a public page, or gating "who leads us" behind
+ * having a platform login, neither of which is what either feature needs.
+ */
+export interface IOrganizationLeader {
+  name: string;
+  title: string;
+  photo?: string;
+  bio?: string;
+}
+
+export interface IOrganizationSocialLinks {
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  linkedin?: string;
+  youtube?: string;
+}
+
 export interface IOrganization extends Document {
   handle: string;
   name: string;
@@ -54,6 +77,9 @@ export interface IOrganization extends Document {
   location: {
     city?: string;
     state?: string;
+    address?: string;
+    /** A pasted `<iframe>` embed src, same convention as `Event.mapIframe`. */
+    mapIframe?: string;
   };
   website?: string;
   contactEmail?: string;
@@ -61,6 +87,17 @@ export interface IOrganization extends Document {
   logo?: string;
   cover?: string;
   gallery: string[];
+  socialLinks?: IOrganizationSocialLinks;
+  leadership: IOrganizationLeader[];
+  /**
+   * Whether this organization accepts direct payments through the
+   * platform's own Razorpay integration (see the `payments` module's
+   * `Order` model). Off by default — an organization opts in explicitly
+   * rather than every live profile growing a "Support" button.
+   */
+  sponsorship: {
+    enabled: boolean;
+  };
   /**
    * Typed in by the organization, and labelled as such everywhere it is
    * rendered. Once donations run through the platform the counted figure
@@ -69,6 +106,16 @@ export interface IOrganization extends Document {
    */
   fundsRaised?: number;
   fundsGoal?: number;
+  /**
+   * The counted figure `fundsRaised` above is explicitly not: the sum, in
+   * paise, of every `Order` (see the `payments` module) that has actually
+   * cleared Razorpay's signature check for this organization. Written in
+   * exactly one place — `payment.service.ts#verifySponsorshipPayment` —
+   * immediately after that check passes, never by anything the client
+   * sends directly. Kept in paise (Razorpay's own unit) so no rounding
+   * happens until the one place this is displayed.
+   */
+  raisedViaPlatformPaise: number;
   followers: number;
   status: OrganizationStatus;
   /** Set by platform admins only — never writable through the org's own routes. */
@@ -92,6 +139,27 @@ const memberSchema = new Schema<IOrganizationMember>(
   { _id: false },
 );
 
+const leaderSchema = new Schema<IOrganizationLeader>(
+  {
+    name: { type: String, required: true, trim: true },
+    title: { type: String, required: true, trim: true },
+    photo: { type: String, trim: true },
+    bio: { type: String, trim: true },
+  },
+  { _id: false },
+);
+
+const socialLinksSchema = new Schema<IOrganizationSocialLinks>(
+  {
+    instagram: { type: String, trim: true },
+    facebook: { type: String, trim: true },
+    twitter: { type: String, trim: true },
+    linkedin: { type: String, trim: true },
+    youtube: { type: String, trim: true },
+  },
+  { _id: false },
+);
+
 const organizationSchema = new Schema<IOrganization>(
   {
     // Unlike `User.userName` (application-level uniqueness only — see
@@ -107,6 +175,8 @@ const organizationSchema = new Schema<IOrganization>(
     location: {
       city: { type: String, trim: true },
       state: { type: String, trim: true },
+      address: { type: String, trim: true },
+      mapIframe: { type: String, trim: true },
     },
     website: { type: String, trim: true },
     contactEmail: { type: String, trim: true },
@@ -114,8 +184,18 @@ const organizationSchema = new Schema<IOrganization>(
     logo: { type: String, trim: true },
     cover: { type: String, trim: true },
     gallery: [{ type: String, trim: true }],
+    socialLinks: { type: socialLinksSchema, default: () => ({}) },
+    leadership: { type: [leaderSchema], default: [] },
+    sponsorship: {
+      type: new Schema(
+        { enabled: { type: Boolean, default: false } },
+        { _id: false },
+      ),
+      default: () => ({ enabled: false }),
+    },
     fundsRaised: { type: Number, min: 0 },
     fundsGoal: { type: Number, min: 0 },
+    raisedViaPlatformPaise: { type: Number, min: 0, default: 0 },
     followers: { type: Number, default: 0 },
     status: {
       type: String,

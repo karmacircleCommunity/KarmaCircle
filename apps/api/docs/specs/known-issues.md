@@ -67,8 +67,9 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 ## Payments
 
-- No `Order`/`Payment` model — a Razorpay order is created but never persisted on this side, so there's no server-side record connecting an order to a user, product, or event, and no way to build "my order history" from this API alone.
-- No webhook endpoint to receive Razorpay's payment-confirmation callback — this backend has no server-side way to know whether an order it minted was ever actually paid; whatever confirms success today is entirely client-side.
+- **`Order`/`Payment` model: resolved for the organization sponsorship flow (September 2026).** `POST /payment/organizations/:handle/order` + `.../verify` persist an `Order` per attempt and only credit `Organization.raisedViaPlatformPaise` after verifying Razorpay's own signature — see [payments.md](./payments.md#the-organization-sponsorship-flow--order-model-september-2026). The original, still-uncalled `POST /payment/razorpay` route is unchanged: it still mints a Razorpay order with nothing persisted on this side. No "my order history" feature exists yet either way — the model exists now, but nothing reads it back as a list.
+- **No webhook endpoint, still.** The sponsorship flow's verification is client-callback-driven (Razorpay Checkout's `handler` calling `.../verify`), which is cryptographically real (a client can't forge the HMAC signature) but has one gap: a payment that succeeds after the browser closes or loses connectivity before `.../verify` fires leaves its `Order` stuck at `"created"` forever, with no way for this API to learn otherwise. A `POST /payment/webhook/razorpay` listening for Razorpay's `payment.captured` event (verified against `RAZORPAY_WEBHOOK_SECRET`) would close this gap and is the natural next step, deliberately not built in this pass to keep it scoped to the client-driven flow.
+- Real file upload for organization logos/covers/team photos also doesn't exist — see [organizations.md](./organizations.md#what-a-real-file-upload-would-still-need) / the frontend's own known-issues entry. Every image field across the app (`logo`, `cover`, `gallery`, leadership `photo`) is a pasted URL, by deliberate choice, not because it's forgotten.
 - Currency is hardcoded to `"INR"` throughout — no multi-currency support.
 
 ## Reports

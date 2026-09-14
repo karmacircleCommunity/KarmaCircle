@@ -88,9 +88,8 @@ const routesConfig: RouteConfigEntry[] = [
   { path: "/organization/:userName", element: <OrganizationProfile /> },
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/events", element: <Events /> },
-  // The event a visitor opens from a directory card. `:eventId` is
-  // `DirectoryEvent.id` (a slug today, whatever the API keys events by
-  // later) - see features/events/pages/DetailedEvent.tsx.
+  // The event a visitor opens from a directory card. `:eventId` is a real
+  // event's `uid` - see features/events/pages/DetailedEvent.tsx.
   { path: "/events/:eventId", element: <DetailedEvent /> },
   { path: "*", element: <Error404 /> },
 ];

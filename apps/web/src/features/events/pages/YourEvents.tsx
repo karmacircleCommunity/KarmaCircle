@@ -6,7 +6,7 @@ import fetcher from "@utils/Fetcher";
 import { FiArrowUpRight, FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import useSWR from "swr";
-import { formatEventDate } from "../constants/eventDirectory";
+import { formatEventDate } from "../utils/formatEventFacts";
 import type { ApiEventList } from "../types";
 
 /**

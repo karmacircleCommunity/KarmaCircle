@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import {
   ORGANIZATION_ACCENTS,
   formatCount,
-} from "../constants/organizationDirectory";
+} from "../constants/organizationDisplay";
 import { monogram } from "../utils/monogram";
 import type { OrganizationCardProps } from "../types";
 
@@ -34,8 +34,13 @@ import type { OrganizationCardProps } from "../types";
  * Carries `data-reveal` for the grid's `useSectionReveal` scope, and the
  * app-standard card hover (lift + brand-token glow) - see
  * `docs/specs/ui-kit.md#card-components`.
+ *
+ * `featured` adds a small "Featured" badge in the cover's top-right corner
+ * for `Organizations.tsx`'s featured strip - purely presentational, and
+ * only ever true for an organization that actually has
+ * `sponsorship.enabled`, never just "whichever came first".
  */
-const OrganizationCard = ({ organization }: OrganizationCardProps) => {
+const OrganizationCard = ({ organization, featured }: OrganizationCardProps) => {
   const accent =
     ORGANIZATION_ACCENTS[organization.accent % ORGANIZATION_ACCENTS.length];
 
@@ -80,6 +85,11 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => {
         <span className="absolute bottom-2.5 left-4 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
           {organization.cause}
         </span>
+        {featured && (
+          <span className="absolute top-2.5 right-2.5 rounded-full bg-white/95 px-2.5 py-1 font-outfit text-[0.65rem] font-semibold tracking-[0.08em] text-brand uppercase shadow-[0_2px_10px_-4px_rgba(0,0,0,0.35)]">
+            Featured
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
@@ -108,16 +118,30 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => {
           {organization.tagLine}
         </p>
 
-        <p className="mt-2.5 inline-flex items-center gap-1.5 font-poppins text-caption tracking-wide text-ink/55">
+        {/* A drawn dot rather than a "•" glyph for the separator: a text
+          bullet's vertical position varies by font/renderer (it reads
+          noticeably high against the pin icon and digits on close
+          inspection), where a fixed-size circle centers the same way
+          everywhere. */}
+        {/* `mb-4` here, not just `mt-auto` on the rule below: `mt-auto` only
+          fills *leftover* flex space, which can collapse close to nothing
+          on a short card (a one-line tagline, no other content between this
+          row and the stats) — the rule ends up sitting almost on top of
+          this text. The explicit bottom margin guarantees a minimum gap
+          regardless of how much slack the card actually has, while
+          `mt-auto` still pins the rule to the bottom edge for alignment
+          across a row of cards whenever there *is* slack to fill. */}
+        <p className="mt-2.5 mb-4 flex items-center gap-1.5 font-poppins text-caption tracking-wide text-ink/55">
           <FiMapPin aria-hidden="true" className="size-3.5 shrink-0" />
-          {organization.city}
-          <span aria-hidden="true" className="text-ink/25">
-            •
-          </span>
-          Since {organization.founded}
+          <span className="truncate">{organization.city}</span>
+          <span
+            aria-hidden="true"
+            className="size-1 shrink-0 rounded-full bg-ink/25"
+          />
+          <span className="shrink-0">Since {organization.founded}</span>
         </p>
 
-        <dl className="mt-auto grid grid-cols-3 gap-2 border-t border-border-subtle pt-3.5 font-outfit">
+        <dl className="mt-auto grid grid-cols-3 gap-2 border-t border-border-subtle pt-4 font-outfit">
           {[
             { label: "Followers", value: formatCount(organization.followers) },
             { label: "Team", value: formatCount(organization.volunteers) },
@@ -126,11 +150,14 @@ const OrganizationCard = ({ organization }: OrganizationCardProps) => {
               value: String(organization.focusAreas.length),
             },
           ].map((stat) => (
-            <div key={stat.label}>
-              <dt className="font-poppins text-caption tracking-wide text-ink/50 uppercase">
+            <div key={stat.label} className="min-w-0">
+              {/* `truncate` keeps every label on one line — "Focus areas"
+                wrapping to two while its neighbours stay on one is what
+                threw the row's baseline off between columns. */}
+              <dt className="truncate font-poppins text-caption tracking-wide text-ink/50 uppercase">
                 {stat.label}
               </dt>
-              <dd className="m-0 mt-0.5 text-body font-semibold text-brand-secondary">
+              <dd className="m-0 mt-0.5 truncate text-body font-semibold text-brand-secondary">
                 {stat.value}
               </dd>
             </div>

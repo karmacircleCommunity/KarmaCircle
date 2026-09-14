@@ -14,6 +14,7 @@ import type {
 import type { LocateCity } from "../../hooks/useLocateCity";
 import { sanitizeSetupValue } from "../../utils/organizationSetupForm";
 import SetupFieldLabel from "./SetupFieldLabel";
+import SetupLeadershipEditor from "./SetupLeadershipEditor";
 import SetupLocationFields from "./SetupLocationFields";
 
 /**
@@ -353,6 +354,43 @@ const SetupQuestion = ({
           );
         })}
       </div>
+    );
+  }
+
+  if (question.kind === "list") {
+    return <SetupLeadershipEditor form={form} setField={setField} />;
+  }
+
+  if (question.kind === "toggle") {
+    const field = question.fields[0];
+    const enabled = Boolean(form[field]);
+
+    return (
+      <button
+        type="button"
+        onClick={() => setField(field as "sponsorshipEnabled", !enabled)}
+        aria-pressed={enabled}
+        data-cy={FIELD_CY[field]}
+        className={`flex w-full max-w-sm cursor-pointer items-center justify-between gap-4 rounded-xl border px-5 py-4 text-left font-outfit text-body-lg transition-colors duration-200 ${
+          enabled
+            ? "border-brand bg-brand/8 text-brand"
+            : "border-brand-secondary/15 bg-white text-ink/70 hover:border-brand/35"
+        }`}
+      >
+        <span>{enabled ? "Yes, turn it on" : "Not right now"}</span>
+        <span
+          aria-hidden="true"
+          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
+            enabled ? "bg-brand" : "bg-ink/15"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform duration-200 ${
+              enabled ? "translate-x-5" : "translate-x-0.5"
+            }`}
+          />
+        </span>
+      </button>
     );
   }
 

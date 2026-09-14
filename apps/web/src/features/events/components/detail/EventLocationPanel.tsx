@@ -10,11 +10,19 @@ import type { EventLocationPanelProps } from "../../types";
  * actually turn up?") with two answers, and `event.mode` already decides
  * which. The map is a plain search link, not an embed: an iframe here would
  * mean a third-party script and a cookie banner for a single address.
+ *
+ * Reads flat fields straight off `DisplayEvent`/`EventDetailContent`
+ * (`event.address`/`city`/`platform`/`platformLink`,
+ * `detail.gettingThere`/`linkDelivery`/`joinRequirements`) rather than a
+ * nested `venue`/`onlineAccess` object the old fixture data used to carry -
+ * that shape doesn't exist on a live `Event` record, and there's nothing to
+ * gain by reconstructing it in a mapping function just to destructure it
+ * straight back out again here.
  */
 const EventLocationPanel = ({ event, detail }: EventLocationPanelProps) => {
-  const { venue, onlineAccess } = detail;
+  if (event.mode === "Online") {
+    if (!event.platform && !detail.linkDelivery) return null;
 
-  if (event.mode === "Online" && onlineAccess) {
     return (
       <div
         data-reveal
@@ -25,23 +33,44 @@ const EventLocationPanel = ({ event, detail }: EventLocationPanelProps) => {
           Joining
         </p>
         <h3 className="mt-2 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
-          On {onlineAccess.platform}
+          {event.platform ? `On ${event.platform}` : "Joining online"}
         </h3>
         <p className="mt-3 font-poppins text-body leading-7 text-ink/75">
-          {onlineAccess.linkDelivery}
+          {detail.linkDelivery ??
+            "The organizer will share the join link closer to the date."}
         </p>
-        <p className="mt-4 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
-          <FiInfo
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-brand"
-          />
-          {onlineAccess.requirements}
-        </p>
+        {detail.joinRequirements && (
+          <p className="mt-4 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
+            <FiInfo
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-brand"
+            />
+            {detail.joinRequirements}
+          </p>
+        )}
+        {event.platformLink && (
+          <a
+            href={event.platformLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mt-5 inline-flex items-center gap-2 rounded-full border border-brand-secondary/15 px-5 py-2.5 font-poppins text-body font-medium text-brand-secondary no-underline transition-colors duration-200 hover:border-brand/45 hover:text-brand"
+          >
+            Open the join link
+            <FiArrowUpRight
+              aria-hidden="true"
+              className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+            />
+          </a>
+        )}
       </div>
     );
   }
 
-  if (!venue) return null;
+  const addressLines = [event.address, event.city, event.state, event.country]
+    .filter(Boolean)
+    .join(", ");
+
+  if (!addressLines) return null;
 
   return (
     <div
@@ -52,31 +81,26 @@ const EventLocationPanel = ({ event, detail }: EventLocationPanelProps) => {
         <FiMapPin aria-hidden="true" className="size-3.5 text-brand" />
         Venue
       </p>
-      <h3 className="mt-2 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
-        {venue.name}
-      </h3>
 
       <address className="mt-2 font-poppins text-body leading-7 text-ink/75 not-italic">
-        {venue.addressLines.map((line) => (
-          <span key={line} className="block">
-            {line}
-          </span>
-        ))}
+        {event.address && <span className="block">{event.address}</span>}
         <span className="block">
-          {event.city}, {event.country}
+          {[event.city, event.state, event.country].filter(Boolean).join(", ")}
         </span>
       </address>
 
-      <p className="mt-4 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
-        <FiInfo
-          aria-hidden="true"
-          className="mt-0.5 size-4 shrink-0 text-brand"
-        />
-        {venue.gettingThere}
-      </p>
+      {detail.gettingThere && (
+        <p className="mt-4 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
+          <FiInfo
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-brand"
+          />
+          {detail.gettingThere}
+        </p>
+      )}
 
       <a
-        href={mapsUrl(venue.mapQuery)}
+        href={mapsUrl(addressLines)}
         target="_blank"
         rel="noopener noreferrer"
         className="group mt-5 inline-flex items-center gap-2 rounded-full border border-brand-secondary/15 px-5 py-2.5 font-poppins text-body font-medium text-brand-secondary no-underline transition-colors duration-200 hover:border-brand/45 hover:text-brand"

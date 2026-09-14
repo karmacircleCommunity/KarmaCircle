@@ -8,6 +8,7 @@ import {
   authEndpoints,
   organizationEndpoints,
   eventEndpoints,
+  paymentEndpoints,
   userEndpoints,
 } from "./ApiEndpoints";
 
@@ -100,6 +101,45 @@ export const UpdateMyOrganization = async (details: unknown) => {
       withCredentials: true,
     });
 
+    return response;
+  } catch (error) {
+    return (error as AxiosError).response;
+  }
+};
+
+// CREATE A RAZORPAY ORDER TO SUPPORT ONE ORGANIZATION — public, no auth: a
+// supporter need not have a KarmaCircle account to sponsor one.
+export const CreateSponsorshipOrder = async (
+  handle: string,
+  payload: { amount: number; supporterName?: string; supporterEmail?: string },
+) => {
+  try {
+    const response = await Axios.post(
+      paymentEndpoints.sponsorshipOrder(handle),
+      payload,
+    );
+    return response;
+  } catch (error) {
+    return (error as AxiosError).response;
+  }
+};
+
+// VERIFY A COMPLETED RAZORPAY CHECKOUT PAYMENT — only this call, not the
+// browser's own "it said success", is what credits the organization. See
+// apps/api/src/modules/payments/payment.service.ts#verifySponsorshipPayment.
+export const VerifySponsorshipPayment = async (
+  handle: string,
+  payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  },
+) => {
+  try {
+    const response = await Axios.post(
+      paymentEndpoints.sponsorshipVerify(handle),
+      payload,
+    );
     return response;
   } catch (error) {
     return (error as AxiosError).response;

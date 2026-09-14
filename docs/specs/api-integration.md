@@ -30,10 +30,13 @@ All endpoint URL strings/builders live here, grouped by domain, and are imported
 
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
-organizationEndpoints:  all, details(userName), createEvent, dashboard
-eventEndpoints: all, create
+organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, byHandle(handle), directory({...})
+eventEndpoints: all, create, byHost(handle)
+paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)
 authEndpoints:  signin, signup, googleLogin, googleLoginSuccess, logout
 ```
+
+This list was itself out of date before the September 2026 pass that added `paymentEndpoints` — `organizationEndpoints.mine`/`taxonomy`/`byHandle`/`directory` and `eventEndpoints.byHost` had already shipped (August 2026, organizations.md) without this file being updated alongside them. Corrected here rather than left compounding; the SWR call-site table below is narrower on purpose (see its own intro) and wasn't re-audited beyond adding the one new sponsorship-flow entry.
 
 Note `userEndpoints.update` and `userEndpoints.updateProfile` both exist and point to different URLs (`/user/update/profile` vs `/user/update`) — only `updateProfile` is actually referenced (`ProfileUpdate.tsx`/`useValidation`-adjacent flows).
 `organizationEndpoints.details(userName)` is queried with `?userName=` but is used for both individual users and organizations (see [onboarding-profile.md](./onboarding-profile.md) — `Profile.tsx` calls `organizationEndpoints.details` even on the `/user/:userName` route).
@@ -51,6 +54,7 @@ SWR call sites:
 | `Dashboard.tsx` | `userEndpoints.profile` | Loads the logged-in organization/org's own profile; `onSuccess` re-syncs Redux |
 | `Profile.tsx` | `organizationEndpoints.details(userName)` | Loads a profile by username for `/user/:userName` (`/organization/:userName` moved to `features/organizations` in August 2026 and fetches nothing yet) |
 | `UserProfile.tsx` | `userEndpoints.details(slug)` | Loads a public profile by slug (a second, mostly-unused profile page — see [onboarding-profile.md](./onboarding-profile.md)) |
+| `OrganizationProfile.tsx` | `eventEndpoints.byHost(handle)` | New (September 2026) — the profile's "Events hosted" section; a second, independent fetch alongside the page's own `organizationEndpoints.byHandle` call, which is why `useSectionReveal`'s dependency array needed `events.length` added too |
 
 `useEvent.ts`'s `submitCallback` calls `mutate(eventEndpoints.all)` from `useSWRConfig()` after a successful event creation, to invalidate any cached `eventEndpoints.all` SWR key — but no component currently fetches `eventEndpoints.all` via SWR, so this revalidation currently has no listener.
 

@@ -1,4 +1,4 @@
-import { ORGANIZATION_ACCENTS } from "../constants/organizationDirectory";
+import { ORGANIZATION_ACCENTS } from "../constants/organizationDisplay";
 import type { ApiOrganization, DisplayOrganization } from "../types";
 
 /**
@@ -53,6 +53,18 @@ export function toDisplayOrganization(
     });
   }
 
+  // Counted, not claimed — the sum of payments this platform's own
+  // Razorpay flow actually verified (payment.service.ts
+  // #verifySponsorshipPayment). Kept as its own stat rather than merged
+  // into "Funds raised (stated)" above, same rule the model itself draws
+  // between `fundsRaised` and `raisedViaPlatformPaise`.
+  if (organization.raisedViaPlatform) {
+    stats.push({
+      label: "Raised via KarmaCircle",
+      value: `₹${formatAmount(organization.raisedViaPlatform)}`,
+    });
+  }
+
   const description = organization.description?.trim() ?? "";
   const paragraphs = description ? description.split(/\n{2,}/) : [];
 
@@ -87,8 +99,18 @@ export function toDisplayOrganization(
     milestones: [],
     website: organization.website ?? "",
     contactEmail: organization.contactEmail ?? "",
-    address: [organization.location?.city, organization.location?.state]
+    address: [
+      organization.location?.address,
+      organization.location?.city,
+      organization.location?.state,
+    ]
       .filter(Boolean)
       .join(", "),
+    mapIframe: organization.location?.mapIframe || undefined,
+    logo: organization.logo || undefined,
+    socialLinks: organization.socialLinks ?? {},
+    leadership: organization.leadership ?? [],
+    sponsorship: organization.sponsorship ?? { enabled: false },
+    raisedViaPlatform: organization.raisedViaPlatform ?? 0,
   };
 }

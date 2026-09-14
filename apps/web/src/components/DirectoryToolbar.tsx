@@ -56,25 +56,39 @@ const DirectoryToolbar = <T extends string>({
           className="size-4.5 shrink-0 text-ink/35 transition-colors duration-200 group-focus-within:text-brand"
         />
         <input
-          type="search"
+          // Deliberately `type="text"` with `role="searchbox"`, not
+          // `type="search"`: this component already renders its own icon
+          // and clear button, but `type="search"` still draws browser-native
+          // chrome on top of that — a magnifier/clear glyph in some
+          // browsers, and specifically a native clear "×" in Firefox that
+          // `::-webkit-search-cancel-button` (Chrome/Safari-only) never
+          // touches. Two clear controls appearing/disappearing at slightly
+          // different times is what read as "a weird animation" — not this
+          // component's own transitions, which are unchanged.
+          type="text"
+          role="searchbox"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder={searchPlaceholder}
           aria-label={searchLabel}
-          // Safari draws its own clear affordance on type="search"; this
-          // component renders its own so the two don't stack.
-          className="min-w-0 flex-1 border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35 [&::-webkit-search-cancel-button]:hidden"
+          className="min-w-0 flex-1 border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35"
         />
-        {query && (
-          <button
-            type="button"
-            onClick={() => onQueryChange("")}
-            aria-label="Clear search"
-            className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-ink/40 transition-colors duration-200 hover:text-brand"
-          >
-            <FiX className="size-4" />
-          </button>
-        )}
+        {/* Rendered at all times (not conditionally mounted) so it fades in
+          rather than popping into existence and nudging the field's
+          content — `invisible` still removes it from the tab order via
+          `aria-hidden`/`tabIndex`, it just doesn't unmount. */}
+        <button
+          type="button"
+          onClick={() => onQueryChange("")}
+          aria-label="Clear search"
+          aria-hidden={!query}
+          tabIndex={query ? 0 : -1}
+          className={`flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-ink/40 transition-[opacity,color] duration-200 hover:text-brand ${
+            query ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
+          <FiX className="size-4" />
+        </button>
       </div>
 
       {action}

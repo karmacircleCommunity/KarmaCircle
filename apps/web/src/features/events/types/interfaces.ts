@@ -70,48 +70,48 @@ export interface EventRecord {
 }
 
 /**
- * A directory-grade event: everything `EventCard.tsx` renders, and the
- * shape `constants/eventDirectory.ts` holds.
- *
- * Distinct from `EventRecord` above on purpose. `EventRecord` is the loose,
- * unverified guess at what `GET /events` returns; this one is the shape the
- * UI actually needs, so the two meeting in a mapping function is the point
- * where the fixture gets swapped for the API.
- *
- * `cause` is the organizations feature's taxonomy, not a second one - the
- * two directories filter by the same chips, and a drive is run by an
- * organization that already declared its cause.
+ * What `EventCard` needs to render one event in the `/events` grid. Mapped
+ * from a live `ApiEvent` by `utils/toDisplayEvent.ts` — every optional
+ * field here (`cause`, `going`, `spotsLeft`, `cover`/`coverAlt`,
+ * `organizerUserName`) is one a real `GET /events` record either never has
+ * at all (no cause taxonomy, no capacity tracking) or only has
+ * conditionally (a cover photo, an `organizerHandle`). Nothing is invented
+ * to fill the gap — the card quietly omits what isn't there.
  */
-export interface DirectoryEvent {
+export interface EventCardEvent {
   id: string;
   title: string;
-  /** Display name of the organization running it. */
   organizer: string;
-  /** That organization's `userName`, so the card can link to its profile. */
-  organizerUserName: string;
-  cause: Cause;
+  organizerUserName?: string;
+  cause?: Cause;
   summary: string;
-  /** Cover photo, imported so Vite fingerprints it. Placeholder imagery
-   *  standing in for what an organizer would upload for the event. */
-  cover: string;
-  /** Describes the photo itself; the event's own text is already in the card. */
-  coverAlt: string;
+  cover?: string;
+  coverAlt?: string;
   mode: EventMode;
-  /** Offline events only. */
   city?: string;
   country?: string;
-  /** Online events only - "Zoom", "Google Meet", matching `OnlinePlatform.ts`. */
   platform?: string;
-  /** Real ISO timestamp, formatted at render. Not a pre-formatted string:
-   *  the card needs to compare and sort by it too. */
   startsAt: string;
-  going: number;
-  /** 0 means the event is full; the card says so instead of showing a zero. */
-  spotsLeft: number;
+  going?: number;
+  spotsLeft?: number;
+  /**
+   * A trust badge, not a real government integration — see the backend's
+   * `event.model.ts` for why this can't be self-declared by the event's
+   * own creator. `undefined`/`false` both render as "no badge"; the card
+   * never shows a badge for a falsy value either way.
+   */
+  isGovernmentSponsored?: boolean;
+  /** When set, the card shows an "Invite only" pill rather than implying
+   *  anyone can just turn up. */
+  inviteOnly?: boolean;
+  /** Which `ORGANIZATION_ACCENTS` gradient to fall back to when `cover` is
+   *  unset — same "stable per record, not stored" derivation as
+   *  `organizations/utils/toDisplayOrganization.ts#accentFor`. */
+  accent?: number;
 }
 
 export interface EventCardProps {
-  event: DirectoryEvent;
+  event: EventCardEvent;
 }
 
 /** One line of the run sheet on the event detail page. */
@@ -123,40 +123,21 @@ export interface EventAgendaItem {
   detail?: string;
 }
 
-/** Where an offline event physically happens. */
-export interface EventVenue {
-  name: string;
-  /** Street lines, printed one per row above the city. */
-  addressLines: string[];
-  /** How to actually arrive - the nearest metro, which gate, where to park. */
-  gettingThere: string;
-  /** Fed to a maps search URL; kept as text so no map SDK is needed. */
-  mapQuery: string;
-}
-
-/** How an online event is joined. */
-export interface EventOnlineAccess {
-  /** "Zoom", "Google Meet" - the same vocabulary as `DirectoryEvent.platform`. */
-  platform: string;
-  /** When and how the link reaches an attendee. */
-  linkDelivery: string;
-  /** Anything they need working before they turn up. */
-  requirements: string;
-}
-
 /**
  * What an event costs to attend.
  *
- * Absent on a `DirectoryEvent`'s detail means free, which is the case for
- * almost every event on the circle - these are nonprofit drives, and a
- * price is the exception worth spelling out. The optional `note` covers
- * the middle ground: free to attend, but bring your own boots.
+ * Absent on the event means free, which is the case for almost every event
+ * on the circle - these are nonprofit drives, and a price is the exception
+ * worth spelling out. The `note` covers the middle ground: free to attend,
+ * but bring your own boots. Never set `amount: 0` for a free event — omit
+ * `cost` entirely instead, so the UI's "Free to attend" copy is the one
+ * true free-event state rather than a zero that reads as a data bug.
  */
 export interface EventCost {
   amount: number;
   currency: string;
   /** What the money is for, shown next to the amount. */
-  note: string;
+  note?: string;
 }
 
 /**
@@ -177,27 +158,61 @@ export interface EventFundraiser {
 }
 
 /**
- * Everything the detail page shows that a directory card does not.
- *
- * Kept separate from `DirectoryEvent` rather than bolted onto it: the grid
- * needs none of this, and a real API will almost certainly serve the list
- * and the single event from two endpoints. `constants/eventDetails.ts`
- * holds one of these per directory event, keyed by `DirectoryEvent.id`.
+ * Everything the event detail page (`DetailedEvent.tsx`) renders about the
+ * event itself — mapped from a live `ApiEvent` by
+ * `utils/toDisplayEventDetail.ts`, the same way `EventCardEvent` is mapped
+ * by `toDisplayEvent.ts`. A near-superset of `EventCardEvent`'s fields plus
+ * the ones only the detail page needs (`address`/`state`, `platformLink`,
+ * `endsAt`, the two trust/access flags spelled out as always-boolean since
+ * the page renders a badge/pill off them directly rather than checking for
+ * `undefined` first).
  */
-export interface EventDetail {
-  /** Long-form description, one paragraph per entry. */
-  about: string[];
-  /** Real ISO timestamp, so the page can print a duration rather than
-   *  asking the reader to subtract two times. */
+export interface DisplayEvent {
+  id: string;
+  title: string;
+  summary: string;
+  organizer: string;
+  organizerUserName?: string;
+  cover?: string;
+  coverAlt?: string;
+  mode: EventMode;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  platform?: string;
+  platformLink?: string;
+  /** Real ISO timestamps, not pre-formatted strings — the page needs to
+   *  compute a duration from the two, not just print them. */
+  startsAt: string;
   endsAt: string;
+  going?: number;
+  spotsLeft?: number;
+  isGovernmentSponsored: boolean;
+  inviteOnly: boolean;
+}
+
+/**
+ * Everything the detail page shows that the card does not - long-form
+ * content and the mode-specific "how do I actually get there" block.
+ * Kept separate from `DisplayEvent` rather than merged into it, matching
+ * `ApiEvent`'s own split on the backend: these are the fields a section
+ * renders conditionally and omits, never invents, when a real event has
+ * none of them.
+ */
+export interface EventDetailContent {
+  /** Long-form description, one paragraph per entry. Empty — the "About
+   *  this event" section simply doesn't render. */
+  about: string[];
   agenda: EventAgendaItem[];
   /** What an attendee should turn up with, or be ready for. */
   bringAlong: string[];
-  /** Offline events. Exactly one of `venue`/`onlineAccess` is set, matching
-   *  `DirectoryEvent.mode`. */
-  venue?: EventVenue;
-  /** Online events. */
-  onlineAccess?: EventOnlineAccess;
+  /** Offline events - directions, alongside `DisplayEvent.address`/`city`. */
+  gettingThere?: string;
+  /** Online events - how/when the join link reaches an attendee. */
+  linkDelivery?: string;
+  /** Online events - anything needed before joining. */
+  joinRequirements?: string;
   /** Omitted for the free events, which is most of them. */
   cost?: EventCost;
   fundraiser?: EventFundraiser;
@@ -205,13 +220,14 @@ export interface EventDetail {
   languages: string[];
   /** Set only where there is a real restriction. */
   minimumAge?: number;
-  contactEmail: string;
+  contactEmail?: string;
 }
 
-/** A directory event joined to its detail record - what the page renders. */
+/** The joined record the detail page actually renders - mirrors
+ *  `OrganizationProfile.tsx`'s `{ organization }` prop shape. */
 export interface DetailedEventRecord {
-  event: DirectoryEvent;
-  detail: EventDetail;
+  event: DisplayEvent;
+  detail: EventDetailContent;
 }
 
 export interface EventAgendaProps {
@@ -229,13 +245,8 @@ export interface EventJoinPanelProps extends DetailedEventRecord {
 
 /**
  * One event exactly as `GET /events` returns it — the raw Mongoose
- * document, not the fixture's `DirectoryEvent` shape. Mirrors `IEvent` in
- * apps/api/src/modules/events/event.model.ts; the two must change
- * together.
- *
- * Deliberately separate from `DirectoryEvent`: a live record has no cover
- * photo guarantee, no cause and no capacity, which is exactly why the
- * directory's card can't render one yet. See docs/specs/events.md.
+ * document. Mirrors `IEvent` in `apps/api/src/modules/events/event.model.ts`;
+ * the two must change together.
  */
 export interface ApiEvent {
   _id: string;
@@ -244,16 +255,35 @@ export interface ApiEvent {
   description: string;
   hostUsername: string;
   hostName: string;
+  /** Set by the server from the host's own `Organization` record — absent
+   *  for an individual host (event.model.ts). */
+  organizerHandle?: string;
   coverImage?: string;
   mode: "Online" | "Offline";
+  address?: string;
   city?: string;
   state?: string;
   country?: string;
+  mapIframe?: string;
   platform?: string;
+  platformLink?: string;
   startDate: string;
   endDate: string;
   startTime: string;
   endTime: string;
+  isGovernmentSponsored: boolean;
+  inviteOnly: boolean;
+  about?: string[];
+  agenda?: EventAgendaItem[];
+  bringAlong?: string[];
+  gettingThere?: string;
+  linkDelivery?: string;
+  joinRequirements?: string;
+  cost?: EventCost;
+  fundraiser?: EventFundraiser;
+  languages?: string[];
+  minimumAge?: number;
+  contactEmail?: string;
 }
 
 /** `GET /events` — the paginated list response. */

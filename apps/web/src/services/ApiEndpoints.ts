@@ -39,6 +39,19 @@ const organizationEndpoints = {
   },
 };
 
+const paymentEndpoints = {
+  razorpay: `${API}/payment/razorpay`,
+  /** Creates a Razorpay order for one organization's "Support" button —
+   *  404s for an unknown/non-live handle, 403s if it hasn't turned
+   *  sponsorship on. See apps/api/docs/specs/payments.md. */
+  sponsorshipOrder: (handle: string) =>
+    `${API}/payment/organizations/${handle}/order`,
+  /** Verifies the three fields Razorpay Checkout's success handler hands
+   *  back, and credits the organization's counted total on a match. */
+  sponsorshipVerify: (handle: string) =>
+    `${API}/payment/organizations/${handle}/verify`,
+};
+
 const eventEndpoints = {
   all: `${API}/events`,
   create: `${API}/events/create`,
@@ -49,6 +62,25 @@ const eventEndpoints = {
    */
   byHost: (handle: string) =>
     `${API}/events?host=${encodeURIComponent(handle)}`,
+  /**
+   * One event's full record, for the detail page (`DetailedEvent.tsx`).
+   * There's no dedicated `GET /events/:uid` route — the same `GET /events`
+   * endpoint returns a bare event object instead of a page whenever `uid`
+   * is set (`event.controller.ts#listEvents`), so this reuses that branch
+   * rather than adding a new one. Mirrors `organizationEndpoints.byHandle`.
+   */
+  byUid: (uid: string) => `${API}/events?uid=${encodeURIComponent(uid)}`,
+  /**
+   * The public directory. Unlike `organizationEndpoints.directory()`,
+   * `GET /events` has no server-side `search`/domain filter to send
+   * (`listEventsQuerySchema` — apps/api/src/modules/events/event.validation.ts
+   * — only knows `uid`/`slug`/`host`/pagination), so `Events.tsx` filters
+   * the fetched page in the browser instead. `limit` is set generously high
+   * (the API caps it at 100) rather than left at the default 20, so that
+   * client-side filtering isn't quietly hiding events sitting on a second
+   * page it never fetched.
+   */
+  directory: (limit = 100) => `${API}/events?limit=${limit}`,
 };
 
 const authEndpoints = {
@@ -62,4 +94,10 @@ const authEndpoints = {
   logout: `${API}/auth/logout`,
 };
 
-export { authEndpoints, organizationEndpoints, eventEndpoints, userEndpoints };
+export {
+  authEndpoints,
+  organizationEndpoints,
+  eventEndpoints,
+  paymentEndpoints,
+  userEndpoints,
+};

@@ -42,6 +42,34 @@ export const organizationHandleParamSchema = z.object({
 const CONTACT_PHONE = /^\+?[0-9 ()\-.]{6,29}$/;
 const CONTACT_PHONE_DIGITS = /^\D*(?:\d\D*){7,15}$/;
 
+/** An empty string is a save (clearing the field), same escape hatch every
+ *  other optional URL field on this schema already uses. */
+const optionalUrl = () => z.string().trim().url().or(z.literal(""));
+
+const socialLinksSchema = z
+  .object({
+    instagram: optionalUrl().optional(),
+    facebook: optionalUrl().optional(),
+    twitter: optionalUrl().optional(),
+    linkedin: optionalUrl().optional(),
+    youtube: optionalUrl().optional(),
+  })
+  .strict();
+
+/**
+ * One public "Our team" entry. Deliberately separate from anything on
+ * `members` (organization.model.ts) — this is display copy, not a
+ * permissions grant, so it has no `email`/`role` and no auth implication.
+ */
+const leaderSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    title: z.string().trim().min(1).max(80),
+    photo: z.string().trim().max(2000).optional(),
+    bio: z.string().trim().max(300).optional(),
+  })
+  .strict();
+
 export const updateOrganizationSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
@@ -51,6 +79,8 @@ export const updateOrganizationSchema = z
     teamSize: z.coerce.number().int().min(1).max(1000000).optional(),
     city: z.string().trim().max(120).optional(),
     state: z.string().trim().max(120).optional(),
+    address: z.string().trim().max(200).optional(),
+    mapIframe: z.string().trim().max(2000).optional(),
     website: z.string().trim().url().or(z.literal("")).optional(),
     contactEmail: z.string().trim().email().or(z.literal("")).optional(),
     contactPhone: z
@@ -64,6 +94,11 @@ export const updateOrganizationSchema = z
     logo: z.string().trim().max(2000).optional(),
     cover: z.string().trim().max(2000).optional(),
     gallery: z.array(z.string().trim().max(2000)).max(12).optional(),
+    socialLinks: socialLinksSchema.optional(),
+    // Capped at 8, same reasoning as `domains`' cap of 5: a list that keeps
+    // growing without bound is how a "team" section turns into a wall.
+    leadership: z.array(leaderSchema).max(8).optional(),
+    sponsorship: z.object({ enabled: z.boolean() }).strict().optional(),
     fundsRaised: z.coerce.number().min(0).optional(),
     fundsGoal: z.coerce.number().min(0).optional(),
   })

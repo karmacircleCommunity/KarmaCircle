@@ -58,4 +58,7 @@ export const STATUS_MESSAGE = {
   ORGANIZATION_NOT_FOUND: "Organization not found !",
   ORGANIZATION_UPDATE_SUCCESS: "Organization Updated Successfully",
   NOT_AN_ORGANIZATION: "This account is not an organization !",
+  SPONSORSHIP_NOT_ENABLED: "This organization is not accepting payments yet !",
+  PAYMENT_ORDER_NOT_FOUND: "No matching payment order was found !",
+  PAYMENT_VERIFICATION_FAILED: "Payment verification failed !",
 } as const;

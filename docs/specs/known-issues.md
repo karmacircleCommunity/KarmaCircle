@@ -16,6 +16,31 @@ Read it before touching any component, and delete an entry there in the same com
 - **`docs/DockerSetup.md` lists backend env vars for what is actually a frontend-only `docker-compose.dev.yaml`.** The guide's "Step 3 - Add env variables" lists `MONGO_URI`, `RAZORPAY_KEY_ID`, `KEY_ID`, `KEY_SECRET` — none of which the frontend container reads (it only needs `VITE_API_URL`/`VITE_RAZORPAY_KEY_ID`, per `apps/web/.env.example`). Predates the monorepo migration; likely copy-pasted from backend docs at some point. Fix: rewrite that section to match what `apps/web`'s own `.env.example` actually documents.
 - **`QueryClientProvider` (`@tanstack/react-query`) wraps the whole app but nothing uses it.** All data fetching goes through SWR or raw `axios`. Either start using it deliberately or remove the wrapper/dependency to reduce confusion for future contributors.
 
+## Local dev database can accumulate test-generated organizations
+
+`apps/web/e2e/organizations/organization-setup.spec.ts` creates a fresh
+`"Riverbank Relief <SUFFIX>"` organization every run (`<SUFFIX>` is that
+run's `Date.now()` timestamp, digit-mapped through `"ABCDEFGHIJ"`). This is
+meant to run against the isolated in-memory e2e server, but if it's ever run
+against a real local dev database instead (`E2E_API_URL` pointed at `apps/api`
+directly), those organizations land in the real `organizations` collection
+and show up in `/organizations` looking like garbled test data. `apps/api/scripts/clean-e2e-orgs.ts`
+(September 2026) finds and, with `--force`, removes them by that exact name
+pattern — dry-run by default. Not a code bug, but worth knowing about if a
+local directory ever looks unexpectedly full of near-identical
+"Riverbank Relief" cards.
+
+## Real file upload still doesn't exist
+
+`Organization.logo`/`cover`/`gallery` and each `leadership[].photo` (see
+[organizations.md](./organizations.md#leadership-social-links-sponsorship-and-events-september-2026))
+are all plain pasted URLs, matching the pattern `website` already used —
+this was an explicit, deliberate choice (not an oversight) when the
+leadership/social/sponsorship fields were added in September 2026, made
+because building a real upload endpoint needs a storage decision (disk vs.
+Mongo GridFS vs. a cloud bucket) that pass didn't make. It's on the backlog
+as a real follow-up, not quietly dropped.
+
 ## Routing
 
 - **`/donate` has no route**, even though `apps/web/src/features/donate-shop-trending/pages/Donate.tsx` exists (and that file is separately broken — see below).
@@ -41,14 +66,19 @@ Read it before touching any component, and delete an entry there in the same com
 ## Hardcoded/placeholder data standing in for real API data
 
 The landing page's `DrivesRail.tsx` has the same shape of problem (its drive cards are sample records from `constants/landingContent.ts`), though there it's stated on the page rather than passed off as live.
-**Organizations: fixed (August 2026).** `/organizations` and `/organization/:handle` now fetch live records, and only organizations whose profile is complete are published — see [organizations.md](./organizations.md). `Events.tsx` still renders fixture records instead of calling `getEvents()` (`apps/web/src/features/events/services/Events.ts`).
-`features/organizations/constants/organizationDirectory.ts` still holds the twelve sample organizations but **nothing renders them any more** — its remaining live exports are `ORGANIZATION_ACCENTS`, `CAUSES` (still read by `Events.tsx`) and `formatCount()`. It is kept as the reference shape for a seed script that would put demo organizations in the database instead of in the bundle; until that exists, an empty local database means an empty directory. The Follow button on the profile is still local state with no endpoint behind it.
-`EventCard` now renders entirely from its `event` prop, over twelve distinct sample events in `features/events/constants/eventDirectory.ts` (August 2026) — the fetch is still not wired, and nothing on the page says the events, the attendee counts or the "spots left" are fixtures. `FeaturedEventCard`/`FeaturedEventImage`/`EventSlider` were deleted in the same pass.
+**Organizations: fixed (August 2026), and demo data now flows through the real models (September 2026).** `/organizations` and `/organization/:handle` fetch live records, and only organizations whose profile is complete are published — see [organizations.md](./organizations.md). What was still hardcoded/placeholder as of August — leadership, social links, sponsorship, an actual logo image, a real events-hosted list — is now real backend data as of September 2026 (same doc, "Leadership, social links, sponsorship and events" section); a rewritten `apps/api/scripts/seed-demo-data.ts` populates the real `organizations` collection (its previous version only ever wrote the `users` login half, so `/organizations` never showed seed data before now).
+**Events: fixed (September 2026), directory and detail page both.** `Events.tsx` fetches `GET /events` via `useSWR` (`eventEndpoints.directory()`) and maps through `utils/toDisplayEvent.ts`. A real event has no cause taxonomy and no capacity/attendee tracking at all (`event.model.ts`), so those are not invented: the cause filter chips became an Upcoming/Past split (a real, date-based distinction), the card drops its "N going / spots left" row entirely rather than fabricate one, and results are grouped into same-day sections instead of one flat grid. `DetailedEvent.tsx` (`/events/:eventId`) fetches `GET /events?uid={id}` (`eventEndpoints.byUid()`) and maps through `utils/toDisplayEventDetail.ts` — the twelve-event fixture (`constants/eventDirectory.ts`/`eventDetails.ts`) and its cover-photo assets are deleted, not just unused. `event.model.ts` grew the fields the detail page needs (`about`, `agenda`, `bringAlong`, `gettingThere`/`linkDelivery`/`joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`) plus two flags, `isGovernmentSponsored` (server/seed-only, mirrors `Organization.verified`) and `inviteOnly` (organizer-settable) — see [events.md](./events.md).
+`features/organizations/constants/organizationDirectory.ts` (the twelve-organization sample fixture, `CAUSES`, `findOrganization()`) and its placeholder cover photos are **deleted, September 2026** — nothing had rendered its records since both organization pages went live, so keeping the file around as an unread "reference shape" (an earlier version of this entry, and of `organizations.md`, described it that way) no longer bought anything. Its two genuinely-live exports, `ORGANIZATION_ACCENTS` (also read by `events/utils/toDisplayEvent.ts`/`toDisplayEventDetail.ts`, for a live event's no-cover fallback) and `formatCount()`, moved to the smaller `constants/organizationDisplay.ts`. Until organizations are seeded (`apps/api/scripts/seed-demo-data.ts`), an empty local database means an empty directory — there is no frontend fallback content any more, by design. The Follow button on the profile is still local state with no endpoint behind it.
+
 `Dashboard.tsx`'s cover photo, profile photo, and follower/event counts are static.
 `OrganizationCard` now renders entirely from its `organization` prop (this used to be the entry: one shared banner image and hardcoded follower/event counts on every card).
 `Landing.tsx`'s "Trusted by 300+ users" avatars are static.
 `TrackSection`'s analytics numbers are static and its tab-switcher isn't wired to anything.
 See the relevant feature spec ([organizations.md](./organizations.md), [events.md](./events.md), [dashboard.md](./dashboard.md), [landing-home.md](./landing-home.md)) for exactly which fields would need to become dynamic.
+
+## Events — RSVP and attendee capacity (future scope, deliberately not built)
+
+`EventCard`/`EventFacts`/`EventJoinPanel` show a "going"/"spots left" row only when both numbers are actually present (`hasCapacity` checks), and a real `Event` document never has them — `event.model.ts` has no capacity, RSVP, or attendee-list concept at all. This is a **deliberate non-goal for now**, not an oversight: inventing plausible attendee counts would be exactly the kind of fabricated data this codebase has repeatedly had to walk back elsewhere (see "Hardcoded/placeholder data" above). Real capacity tracking would need, at minimum: a `capacity`/`maxAttendees` field on `Event`, a write endpoint for joining/leaving (`POST /events/:uid/rsvp` or similar) behind `requireAuth`, and an attendee collection or embedded array to back the count — a materially bigger, separate piece of work from the trust/detail fields (`isGovernmentSponsored`, `inviteOnly`, `about`, `agenda`, etc.) added alongside the rest of the event detail page in September 2026. Flagged here so a future pass doesn't have to rediscover the gap; not scheduled.
 
 ## Validation that doesn't actually block submission
 
@@ -66,7 +96,7 @@ These exist, work as isolated units, and appear to be intended for future/finish
 - `Header.tsx` + `HeaderData.ts` — has ready-made "organizations"/"events" copy, but `Organizations.tsx`/`Events.tsx` both build their own inline header instead of using it.
 - `PatchFetcher.ts` — an SWR-style PATCH fetcher, unused (mutations go through direct `KarmaCircleApi.ts` calls + `mutate()` instead).
 - `ClickAwayListener.tsx` — unused generic utility.
-- `getEvents()` (`apps/web/src/features/events/services/Events.ts`) — a real fetcher, unused because `Events.tsx` still renders a hardcoded array.
+- `getEvents()` (`apps/web/src/features/events/services/Events.ts`) — still unused, and now for the same reason as `getOrganizations()` below: `Events.tsx` fetches through `useSWR` + `eventEndpoints.directory()` (the convention in this repo), not through the `ApiConnector` layer this helper wraps.
 - `getOrganizations()` (`apps/web/src/features/organizations/services/Organizations.ts`) — still unused, but now for a different reason: `Organizations.tsx` fetches through `useSWR` + `organizationEndpoints.directory()` (the convention in this repo), not through the `ApiConnector` layer this helper wraps.
 
 ## Smaller one-off issues

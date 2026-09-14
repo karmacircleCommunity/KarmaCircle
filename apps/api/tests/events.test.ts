@@ -79,6 +79,46 @@ describe("Events", () => {
     expect(theirs.body.data).toHaveLength(0);
   });
 
+  it("sets organizerHandle from the host's organization record, not the request body", async () => {
+    const signup = await request(app).post("/auth/signup").send({
+      email: "org-host@example.com",
+      password: "hunter2",
+      name: "Org Host",
+      userType: "organization",
+    });
+    const cookie = signup.headers["set-cookie"][0];
+    const orgHandle = signup.body.user.userName;
+
+    const res = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      // A client-supplied organizerHandle must be ignored — the value only
+      // ever comes from the authenticated host's own organization record.
+      .send({ ...validOnlineEvent, uid: "org-hosted-event", organizerHandle: "someone-else" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.savedEvent.organizerHandle).toBe(orgHandle);
+
+    // The real link also answers ?host= alongside the legacy hostUsername
+    // match, with no backfill needed for events that predate this field.
+    const byHost = await request(app).get("/events").query({ host: orgHandle });
+    expect(byHost.body.data.map((e: { uid: string }) => e.uid)).toContain(
+      "org-hosted-event",
+    );
+  });
+
+  it("leaves organizerHandle unset for an individual host", async () => {
+    const cookie = await signupAndGetCookie();
+
+    const res = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({ ...validOnlineEvent, uid: "individual-hosted-event" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.savedEvent.organizerHandle).toBeUndefined();
+  });
+
   it("rejects an Offline event missing location fields with 400", async () => {
     const cookie = await signupAndGetCookie();
 
@@ -165,5 +205,57 @@ describe("Events", () => {
   it("returns 404 for an unknown event uid", async () => {
     const res = await request(app).get("/events?uid=does-not-exist");
     expect(res.status).toBe(404);
+  });
+
+  it("defaults inviteOnly/isGovernmentSponsored to false and lets the client set inviteOnly", async () => {
+    const cookie = await signupAndGetCookie();
+
+    const defaulted = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({ ...validOnlineEvent, uid: "invite-default-event" });
+    expect(defaulted.body.savedEvent.inviteOnly).toBe(false);
+    expect(defaulted.body.savedEvent.isGovernmentSponsored).toBe(false);
+
+    const inviteOnly = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({ ...validOnlineEvent, uid: "invite-only-event", inviteOnly: true });
+    expect(inviteOnly.status).toBe(201);
+    expect(inviteOnly.body.savedEvent.inviteOnly).toBe(true);
+  });
+
+  it("silently strips a client-supplied isGovernmentSponsored rather than persisting it", async () => {
+    // Same trust rule as `Organization.verified` — a self-declared
+    // government backing would be trivially fake-able, so createEventSchema
+    // never accepts this field at all; Zod strips it rather than the
+    // service having to remember to overwrite it.
+    const cookie = await signupAndGetCookie();
+
+    const res = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({
+        ...validOnlineEvent,
+        uid: "govt-spoof-event",
+        isGovernmentSponsored: true,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.savedEvent.isGovernmentSponsored).toBe(false);
+  });
+
+  it("includes the detail-page fields on a single-event fetch", async () => {
+    const cookie = await signupAndGetCookie();
+    await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({ ...validOnlineEvent, uid: "detail-fields-event", inviteOnly: true });
+
+    const res = await request(app).get("/events?uid=detail-fields-event");
+
+    expect(res.status).toBe(200);
+    expect(res.body.inviteOnly).toBe(true);
+    expect(res.body.isGovernmentSponsored).toBe(false);
   });
 });

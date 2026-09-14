@@ -282,8 +282,8 @@ Root: `mt-8 lg:mt-10`.
 Row 1, `flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6`:
 - Field: `group flex flex-1 items-center gap-3 border-b border-brand-secondary/15 pb-3 transition-colors duration-200 focus-within:border-brand/55`.
 - `FiSearch` at `size-4.5` (18px), `text-ink/35`, `group-focus-within:text-brand`.
-- `<input type="search">`: `min-w-0 flex-1 border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35 [&::-webkit-search-cancel-button]:hidden`. Safari's own clear affordance is hidden because the component renders its own.
-- Clear button, only while `query` is non-empty: `size-6 rounded-full text-ink/40 hover:text-brand` with `FiX` at `size-4`, `aria-label="Clear search"`.
+- `<input type="text" role="searchbox">`: `min-w-0 flex-1 border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35`. Deliberately not `type="search"` — that draws browser-native chrome on top of this component's own icon/clear button (Chrome/Safari's magnifier styling, and specifically a native clear "×" in Firefox that `::-webkit-search-cancel-button` never reaches), which read as a stray, half-hidden second control popping in and out. `role="searchbox"` keeps the accessible semantics `type="search"` would have given for free.
+- Clear button: always mounted (not conditionally rendered) so it fades rather than pops into existence — `opacity-0 pointer-events-none` plus `aria-hidden`/`tabIndex={-1}` while `query` is empty, `size-6 rounded-full text-ink/40 hover:text-brand transition-[opacity,color] duration-200` with `FiX` at `size-4`, `aria-label="Clear search"`.
 - `action` slot.
 
 Row 2, `mt-6 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8`:

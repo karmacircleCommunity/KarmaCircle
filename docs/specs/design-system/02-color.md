@@ -44,14 +44,14 @@ Two of these also appear a second time outside the token block:
 
 | Hex | Second location | Status |
 | --- | --- | --- |
-| `#a8623e` | `features/organizations/constants/organizationDirectory.ts:52` (accent gradient `from`) | Legal. It is data, not styling: the first entry of the `ORGANIZATION_ACCENTS` gradient table. |
+| `#a8623e` | `features/organizations/constants/organizationDisplay.ts:26` (accent gradient `from`) | Legal. It is data, not styling: the first entry of the `ORGANIZATION_ACCENTS` gradient table. |
 | `#0e0906` | tokenized; no stray literal remains | Legal. |
 | `#fffcf7` | tokenized; components use `bg-surface` | Legal. |
 
 ### Data palette — organization accent gradients
 
-[features/organizations/constants/organizationDirectory.ts:52-57](../../../apps/web/src/features/organizations/constants/organizationDirectory.ts#L52).
-Six `{ from, to, ink }` triples, used only as a fallback band behind a monogram when an organization has no cover photo.
+[features/organizations/constants/organizationDisplay.ts:25-30](../../../apps/web/src/features/organizations/constants/organizationDisplay.ts#L25).
+Six `{ from, to, ink }` triples, used as a fallback band behind a monogram (organizations) or a calendar mark (events) when a record has no cover photo.
 This is content data keyed by `organization.accent % 6`, not a design token, and is correctly a literal.
 
 | # | from | to | ink |
