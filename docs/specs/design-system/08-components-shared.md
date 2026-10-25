@@ -268,12 +268,16 @@ A hollow aesthetic panel wants **depth behind the words** (an `asideDecor` motif
 
 [components/DirectoryToolbar.tsx](../../../apps/web/src/components/DirectoryToolbar.tsx).
 The search + filter + count + primary-action chrome above `/events` and `/organizations`.
-Generic over the filter option type (`<T extends string>`); each page passes its own taxonomy and owns its own filtering state and `useMemo`.
+Generic over the filter option type (`<T extends string, U extends string = string>`); each page passes its own taxonomy/taxonomies and owns its own filtering state and `useMemo`.
 The component owns presentation only.
 
 ### Props
 
-`query`, `onQueryChange`, `searchPlaceholder`, `searchLabel`, `options` (the taxonomy including the `"All"` pseudo-option), `active`, `onSelect`, `filterLabel` (rendered visually now, not just as an `aria-label` — see below), `summary` (a `ReactNode`, e.g. `12 events in Relief`), `action` (the page's single primary button), `suggestions?` (new, September 2026 — see below).
+`query`, `onQueryChange`, `searchPlaceholder`, `searchLabel`, `options` (the primary taxonomy including the `"All"` pseudo-option), `active`, `onSelect`, `filterLabel` (rendered visually now, not just as an `aria-label` — see below), `summary` (a `ReactNode`, e.g. `12 events in Relief`), `action` (the page's single primary button), `suggestions?` (September 2026 - see below), `secondaryFilter?` (September 2026 - see below).
+
+### `secondaryFilter`, a second independent `FilterDropdown`
+
+`{ options: readonly U[], active: U, onSelect, filterLabel }` - same shape as the primary `options`/`active`/`onSelect`/`filterLabel`, but its own generic `U`, since the two taxonomies are unrelated string unions. Omitted by `/organizations` (one filterable dimension: cause). `/events` passes one for its `TypeFilter` (`All`/`Invite only`/`Open to all`/`Online`/`Offline`, over `event.model.ts`'s `inviteOnly`/`mode` fields) alongside the primary Upcoming/Past filter - see [events.md](../../events.md). Rendered as a second `FilterDropdown` immediately after the first, before `action`; each stays independently single-select, so the two facets can't combine into one choice, only sit side by side.
 
 ### `suggestions`, the opt-in live-suggestions dropdown
 
@@ -311,7 +315,9 @@ Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/45 upper
 1. **Multi-facet panel** (Faire's "All Filters", Dribbble's "Filters" modal, Homerun): one trigger opens a panel holding *several* independent facets (price, location, rating, …) at once, each needing its own "Apply"/"Clear all". Fits when a listing has more than one filterable dimension.
 2. **Single-facet dropdown** (Whop's "Business Type", Polywork's "Topics", Semrush's per-column `Select ▾`, Dropbox's `Folder ▾`/`People ▾`): a pill button that always displays the *current* value, opening a small listbox of the taxonomy on click — no "Apply" step, because choosing a row is the whole action.
 
-`/organizations` and `/events` each have exactly one filterable dimension (cause; Upcoming/Past), so pattern 2 is the fit — pattern 1 would add an unneeded panel-plus-apply step for a single choice. Replaced the always-visible chip row (and the trailing-edge fade and horizontal scroller it needed once a taxonomy like `/organizations`' ten causes stopped fitting on one line — both now moot, there's nothing left to scroll) with [`FilterDropdown`](#filterdropdown), reusing `Combobox`'s own listbox geometry (radius, border, shadow, `motion-safe:animate-pop-in`) so it reads as the same product rather than a third distinct control. The `FiFilter` + `filterLabel` caption the fourth pass relocated into Row 1 is now the dropdown's own trigger button instead of adjacent decoration — one control, not two.
+`/organizations` and `/events` each had exactly one filterable dimension at the time (cause; Upcoming/Past), so pattern 2 is the fit — pattern 1 would add an unneeded panel-plus-apply step for a single choice. Replaced the always-visible chip row (and the trailing-edge fade and horizontal scroller it needed once a taxonomy like `/organizations`' ten causes stopped fitting on one line — both now moot, there's nothing left to scroll) with [`FilterDropdown`](#filterdropdown), reusing `Combobox`'s own listbox geometry (radius, border, shadow, `motion-safe:animate-pop-in`) so it reads as the same product rather than a third distinct control. The `FiFilter` + `filterLabel` caption the fourth pass relocated into Row 1 is now the dropdown's own trigger button instead of adjacent decoration — one control, not two.
+
+**Superseded in part, September 2026:** `/events` grew a second dimension (`TypeFilter`, over `inviteOnly`/`mode`). Rather than switching that page to pattern 1's multi-facet panel, `DirectoryToolbar` gained a second, independent `secondaryFilter` slot (see `DirectoryToolbar`'s own Props above) - two pattern-2 dropdowns side by side, each still single-select. This holds only while a page has a small, fixed number of dimensions that don't need to combine through one "Apply"; a third dimension, or a need to filter by more than one facet at once (e.g. "online AND invite-only"), would be the point to revisit pattern 1 instead of adding a third dropdown.
 
 ---
 

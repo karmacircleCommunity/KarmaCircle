@@ -243,6 +243,13 @@ export interface EventJoinPanelProps extends DetailedEventRecord {
   onToggleJoin: () => void;
 }
 
+/** The "Hosted by" sidebar card - just the organizer fields off
+ *  `DisplayEvent`, not the whole detail record (`EventLocationPanel`'s own
+ *  `EventDetailContent` half has nothing this card needs). */
+export interface EventOrganizerPanelProps {
+  event: DisplayEvent;
+}
+
 /**
  * One event exactly as `GET /events` returns it — the raw Mongoose
  * document. Mirrors `IEvent` in `apps/api/src/modules/events/event.model.ts`;

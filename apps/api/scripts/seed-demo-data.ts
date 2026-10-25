@@ -358,7 +358,12 @@ async function seed() {
     inviteOnly?: boolean;
     about: string[];
     agenda: { time: string; title: string; detail?: string }[];
-    bringAlong: string[];
+    // Optional, not required - matches IEvent/ApiEvent's own optional
+    // bringAlong (event.model.ts). Every Online event below omits it (there
+    // is nothing physical to bring to a video call), and
+    // toDisplayEventDetail.ts already falls back to `[]` for a missing
+    // value, so there is nothing to backfill here.
+    bringAlong?: string[];
     gettingThere?: string;
     linkDelivery?: string;
     joinRequirements?: string;
@@ -908,6 +913,38 @@ async function seed() {
       gettingThere: "The home is a five-minute walk from the FC Road bus stop, opposite the petrol pump.",
       languages: ["Marathi", "Hindi", "English"],
       contactEmail: "care@silveryears.example.com",
+    },
+    {
+      name: "NGO Leadership Roundtable (Closed Session)",
+      uid: "evt-leadership-roundtable-018",
+      description: "A closed-door roundtable for partner NGO directors on this year's grant cycle, hosted over video call.",
+      host: DEMO_ORGS[1], // shiksha_seva
+      mode: "Online",
+      platform: "Zoom",
+      platformLink: "https://zoom.example.com/j/demo-leadership-roundtable",
+      // A third past event - the other two (`evt-riverbank-rebuild-004`,
+      // `evt-blanket-distribution-015`) are both Offline and open-to-all,
+      // hosted by the same org. This one is Online, invite-only and
+      // hosted by a different org, so the "Completed" treatment
+      // (EventCard/EventHero/EventJoinPanel/EventMobileActionBar) has a
+      // real example of every one of those combinations to render.
+      startsIn: -5,
+      startHour: 18,
+      endsIn: -5,
+      endHour: 19,
+      inviteOnly: true,
+      about: [
+        "An annual closed session for the directors of our five partner NGOs to compare notes on the grant cycle just closed, before the next one opens - not open registration, by design.",
+        "Recordings aren't shared afterward; this was a working session for the people already in the room, not a public webinar.",
+      ],
+      agenda: [
+        { time: "6:00 pm", title: "Grant cycle recap, org by org" },
+        { time: "6:30 pm", title: "Shared pain points and what worked" },
+        { time: "6:50 pm", title: "Planning the next cycle's calendar" },
+      ],
+      linkDelivery: "Zoom link sent directly to invited directors, never published anywhere public.",
+      languages: ["English", "Hindi"],
+      contactEmail: "hello@shikshaseva.example.com",
     },
   ];
 

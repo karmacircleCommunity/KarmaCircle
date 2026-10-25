@@ -16,7 +16,21 @@ interface SuggestionsConfig {
   noun?: string;
 }
 
-interface DirectoryToolbarProps<T extends string> {
+/**
+ * A second, independent `FilterDropdown` rendered right after the first -
+ * for a page with more than one filterable dimension (e.g. `/events`'
+ * Upcoming/Past time split plus an invite/mode taxonomy). Its own generic
+ * `U`, not reused from the primary filter's `T`: the two taxonomies are
+ * unrelated string unions.
+ */
+interface SecondaryFilterConfig<U extends string> {
+  options: readonly U[];
+  active: U;
+  onSelect: (option: U) => void;
+  filterLabel: string;
+}
+
+interface DirectoryToolbarProps<T extends string, U extends string = string> {
   query: string;
   onQueryChange: (value: string) => void;
   searchPlaceholder: string;
@@ -26,6 +40,10 @@ interface DirectoryToolbarProps<T extends string> {
   active: T;
   onSelect: (option: T) => void;
   filterLabel: string;
+  /** A second, independent filter dropdown - omitted by `/organizations`
+   *  (one dimension: cause). `/events` passes one for its invite/mode
+   *  taxonomy, alongside the primary Upcoming/Past filter. */
+  secondaryFilter?: SecondaryFilterConfig<U>;
   /**
    * Live result count, e.g. `12 events in Relief`. Optional — omitted by
    * `/organizations` (September 2026, direct feedback that a bare count
@@ -58,14 +76,19 @@ interface DirectoryToolbarProps<T extends string> {
  * rest (that token is the design system's own documented "input/panel
  * background" — see [01-tokens.md](../../../docs/specs/design-system/01-tokens.md)),
  * no shadow until it actually has focus, where it lifts to a white surface
- * with a brand border and one purposeful shadow. Filters: a single dropdown
+ * with a brand border and one purposeful shadow. Filters: a dropdown
  * trigger in the search row, not a row of always-visible chips — see
  * [`FilterDropdown`](./inputs/FilterDropdown.tsx) and the research behind
- * that switch. See
+ * that switch. `/organizations` passes one (cause); `/events` passes two,
+ * `options`/`active`/`onSelect` for Upcoming/Past plus `secondaryFilter`
+ * for its invite/mode taxonomy (September 2026) - both are still
+ * single-select `FilterDropdown`s, just two independent ones rather than
+ * a multi-facet panel, since the two questions ("when" and "what kind")
+ * don't need to combine through one control. See
  * [08-components-shared.md](../../../docs/specs/design-system/08-components-shared.md#directorytoolbar)
  * for the full rationale and exact classes.
  */
-const DirectoryToolbar = <T extends string>({
+const DirectoryToolbar = <T extends string, U extends string = string>({
   query,
   onQueryChange,
   searchPlaceholder,
@@ -77,7 +100,8 @@ const DirectoryToolbar = <T extends string>({
   summary,
   action,
   suggestions,
-}: DirectoryToolbarProps<T>) => (
+  secondaryFilter,
+}: DirectoryToolbarProps<T, U>) => (
   <div className="mt-8 lg:mt-10">
     {/* Search + filter dropdown + primary action. One row from `sm` up; on
         a phone each drops onto its own line rather than squeezing down. */}
@@ -157,6 +181,15 @@ const DirectoryToolbar = <T extends string>({
         active={active}
         onSelect={onSelect}
       />
+
+      {secondaryFilter && (
+        <FilterDropdown
+          label={secondaryFilter.filterLabel}
+          options={secondaryFilter.options}
+          active={secondaryFilter.active}
+          onSelect={secondaryFilter.onSelect}
+        />
+      )}
 
       {action}
     </div>

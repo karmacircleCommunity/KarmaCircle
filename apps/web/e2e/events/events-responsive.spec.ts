@@ -5,8 +5,10 @@ import { E2E_API_URL } from "../env";
  * Responsive/behavior coverage for `/events` (September 2026 rewrite —
  * see `docs/specs/events.md`): live `GET /events` data instead of the
  * `constants/eventDirectory.ts` fixture, an Upcoming/Past filter instead
- * of a cause taxonomy (a live event has no cause field at all), and
- * same-day grouped sections instead of one flat grid.
+ * of a cause taxonomy (a live event has no cause field at all), a second
+ * invite/mode `TypeFilter`, and one flat grid rather than same-day grouped
+ * sections (grouping removed the same month it shipped, once the seed
+ * data's real date spread showed most day-sections holding one event).
  *
  * Test events are created via a direct authenticated `POST /events/create`
  * call, not through either "create event" UI component — both are
@@ -47,6 +49,7 @@ async function createEvent(
     mode: EventMode;
     startDate: Date;
     city?: string;
+    inviteOnly?: boolean;
   },
 ) {
   const res = await page.request.post(`${E2E_API_URL}/events/create`, {
@@ -60,6 +63,7 @@ async function createEvent(
       endDate: opts.startDate.toISOString(),
       startTime: opts.startDate.toISOString(),
       endTime: opts.startDate.toISOString(),
+      inviteOnly: opts.inviteOnly,
       ...(opts.mode === "Offline"
         ? {
             city: opts.city ?? "Guwahati",
@@ -87,7 +91,7 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(scrollX, "the page itself must not be horizontally scrollable").toBe(0);
 }
 
-test("the directory renders both an upcoming and a past event, grouped and filterable, with no horizontal overflow at mobile or desktop", async ({
+test("the directory renders both an upcoming and a past event, filterable by time, with no horizontal overflow at mobile or desktop", async ({
   page,
 }) => {
   const stamp = Date.now() + Math.floor(Math.random() * 1_000_000);
@@ -119,10 +123,9 @@ test("the directory renders both an upcoming and a past event, grouped and filte
   await expect(heading).toBeVisible();
 
   // Default filter is Upcoming — the future event shows, the past one
-  // doesn't, and it's grouped under a real day heading, not a flat grid.
+  // doesn't.
   await expect(page.getByText(`Riverbank Cleanup ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Past Fundraiser ${stamp}`)).toHaveCount(0);
-  await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
 
   // The time filter is a dropdown (`FilterDropdown`), not a bare chip — its
   // trigger always shows the current selection ("Upcoming" here) as its own
@@ -181,4 +184,47 @@ test("search narrows the directory by city", async ({ page }) => {
   await page.getByRole("searchbox", { name: "Search events" }).fill("Mumbai");
   await expect(page.getByText(`Mumbai Drive ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Delhi Drive ${stamp}`)).toHaveCount(0);
+});
+
+test("the type filter narrows by invite-only/open-to-all and online/offline", async ({
+  page,
+}) => {
+  const stamp = Date.now() + Math.floor(Math.random() * 1_000_000);
+  await signUpOrganization(page, stamp);
+
+  const soon = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+  await createEvent(page, {
+    uid: `evt-e2e-invite-${stamp}`,
+    name: `Founders Preview ${stamp}`,
+    description: "Offline, invite-only regression-test event.",
+    mode: "Offline",
+    startDate: soon(3),
+    city: "Pune",
+    inviteOnly: true,
+  });
+  await createEvent(page, {
+    uid: `evt-e2e-open-online-${stamp}`,
+    name: `Open Webinar ${stamp}`,
+    description: "Online, open-to-all regression-test event.",
+    mode: "Online",
+    startDate: soon(4),
+    inviteOnly: false,
+  });
+
+  await page.goto("/events");
+  await expect(page.getByText(`Founders Preview ${stamp}`)).toBeVisible();
+  await expect(page.getByText(`Open Webinar ${stamp}`)).toBeVisible();
+
+  // Same dropdown pattern as "Filter by time" - the trigger's own text is
+  // the current selection ("All" by default).
+  await page.getByRole("button", { name: "Filter by type" }).click();
+  await page.getByRole("option", { name: "Invite only" }).click();
+  await expect(page.getByText(`Founders Preview ${stamp}`)).toBeVisible();
+  await expect(page.getByText(`Open Webinar ${stamp}`)).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Filter by type" }).click();
+  await page.getByRole("option", { name: "Online" }).click();
+  await expect(page.getByText(`Open Webinar ${stamp}`)).toBeVisible();
+  await expect(page.getByText(`Founders Preview ${stamp}`)).toHaveCount(0);
 });

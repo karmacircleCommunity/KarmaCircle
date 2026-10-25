@@ -1,5 +1,6 @@
-import { FiCheck, FiMail, FiUserPlus } from "react-icons/fi";
-import { formatMoney } from "../../utils/formatEventFacts";
+import { FiArrowRight, FiCheck, FiMail, FiUserPlus } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { formatMoney, isEventPast } from "../../utils/formatEventFacts";
 import type { EventJoinPanelProps } from "../../types";
 
 /**
@@ -57,6 +58,15 @@ import type { EventJoinPanelProps } from "../../types";
  * `OrganizationCard`/`EventCard`'s hover state already uses, not a raw hex.
  * The button and pills inside stay fully opaque - the glass effect is the
  * surface they float on, not something they need to share.
+ *
+ * **Completed event (September 2026, `isEventPast`).** Cost/spots-left and
+ * the Join button stop meaning anything once the event's `startsAt` has
+ * passed, so both sides of the bar swap: "Completed" plus a pointer to the
+ * organizer's page on the left, and a "Visit" link straight to
+ * `/organization/:handle` on the right (an "Ended" pill instead, for a
+ * pre-existing record with no organizer link at all). This takes priority
+ * over the invite-only branch below it - a past invite-only event is still
+ * past, not still asking to be invited to.
  */
 const EventMobileActionBar = ({
   event,
@@ -65,6 +75,7 @@ const EventMobileActionBar = ({
   onToggleJoin,
   hidden,
 }: EventJoinPanelProps & { hidden: boolean }) => {
+  const past = isEventPast(event.startsAt);
   const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
   const spotsLeft = hasCapacity
     ? Math.max(0, event.spotsLeft! - (joined ? 1 : 0))
@@ -81,20 +92,45 @@ const EventMobileActionBar = ({
     >
       <div className="min-w-0">
         <p className="m-0 truncate font-outfit text-body-lg font-semibold text-brand-secondary">
-          {detail.cost ? formatMoney(detail.cost.amount, detail.cost.currency) : "Free"}
+          {past
+            ? "Completed"
+            : detail.cost
+              ? formatMoney(detail.cost.amount, detail.cost.currency)
+              : "Free"}
         </p>
         {/* Zero spots is said once, by the button below ("Full") - not
             repeated here as "0 spots left", which the rest of this feature
             (EventCard, EventFacts) treats as a data-bug-looking string to
             avoid. */}
-        {hasCapacity && spotsLeft! > 0 && (
+        {past ? (
           <p className="m-0 truncate font-poppins text-caption text-ink/55">
-            {spotsLeft} spots left
+            Updates on the organizer&apos;s page
           </p>
+        ) : (
+          hasCapacity &&
+          spotsLeft! > 0 && (
+            <p className="m-0 truncate font-poppins text-caption text-ink/55">
+              {spotsLeft} spots left
+            </p>
+          )
         )}
       </div>
 
-      {event.inviteOnly ? (
+      {past ? (
+        event.organizerUserName ? (
+          <Link
+            to={`/organization/${event.organizerUserName}`}
+            tabIndex={hidden ? -1 : undefined}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border-none bg-brand px-5 py-2.5 font-poppins text-body font-medium text-white no-underline shadow-[0_10px_26px_-14px_var(--color-brand)]"
+          >
+            Visit <FiArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        ) : (
+          <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/60">
+            Ended
+          </span>
+        )
+      ) : event.inviteOnly ? (
         detail.contactEmail ? (
           <a
             href={`mailto:${detail.contactEmail}?subject=${encodeURIComponent(event.title)}`}

@@ -103,9 +103,9 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
   }
 
   return (
-    // Sticky + glass live on `<nav>` itself, not the `max-w-6xl` div inside
-    // it — `<nav>` is the full-viewport-width block, so the blur/tint/hairline
-    // span edge to edge while the link row still lines up with every other
+    // Sticky lives on `<nav>` itself, not the `max-w-6xl` div inside it —
+    // `<nav>` is the full-viewport-width block, so the border/shadow span
+    // edge to edge while the link row still lines up with every other
     // page's own `max-w-6xl` content (see layout-navigation.md). The inner
     // div keeps `relative`, which it also needs as `.nav_dropdown`'s
     // positioning root (that `absolute`, unlike the mobile sheet's `fixed`,
@@ -127,150 +127,136 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
     // now conditional on `isSticky` (computed above) rather than always
     // on — see that computation for the actual per-page/per-auth rule.
     //
-    // **Material, real refraction (September 2026, supersedes the first
-    // pass below).** The first cut of this reused `EventMobileActionBar`'s
-    // recipe verbatim — `backdrop-blur` + `backdrop-saturate` over a
-    // translucent white, nothing else — and on review read as flat
-    // "glassmorphism": a frosted, tinted pane, not glass with any actual
-    // thickness or bend to it. Real (Apple "Liquid Glass") refraction comes
-    // from displacing the pixels behind the material, not just blurring
-    // them, so `<nav>` now sits over an SVG `feDisplacementMap` filter
-    // (`#nav-glass-refraction`, defined just below, hidden) fed by a
-    // heavily-blurred `feTurbulence` noise field — the noise alone reads as
-    // static/water; blurring it first (`feGaussianBlur` on the `noise`
-    // result, *before* it drives the displacement) is what turns that into
-    // the smooth, large-scale bend real glass has. Verified live against
-    // this page's own busiest backdrop (`DrivesRail`'s photo cards) —
-    // their top edges visibly warp passing under the bar, which a flat
-    // blur can never produce since `backdrop-filter` blur has no notion of
-    // "bend."
+    // **Solid, not glass (October 2026) — supersedes the liquid-glass
+    // material this bar carried September-October 2026.** That material
+    // (an SVG `feDisplacementMap` refraction filter over a near-zero white
+    // tint, added to fix the first pass's own "flat glassmorphism"
+    // complaint) ended up reading as a rendering glitch rather than
+    // deliberate glass once live — this app's own pages are themselves
+    // near-white, so there was rarely enough contrast behind the bar for
+    // blur/refraction to read as anything. The bar also carries the one
+    // CTA ("Sign Up") that has to stay at full contrast regardless of
+    // what's scrolling underneath, which a transparent material works
+    // against by design. Checked how other companies solve this before
+    // reverting: Stripe's header is plain solid white, no blur — the
+    // pattern `Navbar` now matches; Linear and Vercel lean glass/
+    // transparent, but on higher-contrast dark surfaces or with a
+    // scroll-triggered solid swap, neither of which fits a straight
+    // revert here as well as Stripe's simpler, more common pattern does.
+    // Full history of the glass material — why it existed, the refraction
+    // technique, the npm libraries considered and rejected — stays in
+    // [layout-navigation.md](../../docs/specs/layout-navigation.md#navbar)
+    // and
+    // [design-system/06-radius-elevation.md](../../docs/specs/design-system/06-radius-elevation.md#liquid-glass)
+    // rather than inline here, since none of it is live behavior anymore.
     //
-    // `style`, not a Tailwind utility, carries `backdropFilter`: Tailwind
-    // v4's `backdrop-blur-*`/`backdrop-saturate-*` utilities compose into
-    // one shared property behind the scenes, which doesn't leave a clean
-    // way to splice in a `url(#id)` filter reference ahead of them — same
-    // multi-value `backdrop-filter` grammar, just written directly since
-    // this is the one place in the app that needs the full grammar. Every
-    // other visual property (border, tint, shadow) stays a plain
-    // className, unchanged from the first pass.
-    //
-    // **Degrades safely.** Safari and older Firefox don't resolve an SVG
-    // filter referenced from `backdrop-filter` — confirmed as a live,
-    // current gap in every OSS "Liquid Glass" implementation checked
-    // while researching this (rdev/liquid-glass-react's own README flags
-    // the identical limitation), not something this file's approach
-    // introduces. Per the CSS Filter Effects spec, an unresolvable filter
-    // *function* in a list is dropped, not the whole property — so those
-    // browsers still render the `blur`/`saturate` behind it, same result
-    // as the first pass; only the extra bend is Chromium/Blink-only today.
-    <>
-      {/* Hidden — `id` only, referenced by `<nav>`'s own `backdropFilter`
-          below. `width`/`height: 0` plus `overflow: hidden` keeps it from
-          taking any layout space or painting anything itself; SVG `filter`
-          defs render nothing on their own regardless. */}
-      <svg
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          width: 0,
-          height: 0,
-          overflow: "hidden",
-        }}
-      >
-        <defs>
-          <filter
-            id="nav-glass-refraction"
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.006 0.025"
-              numOctaves={2}
-              seed={7}
-              result="noise"
-            />
-            <feGaussianBlur in="noise" stdDeviation={6} result="smoothNoise" />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="smoothNoise"
-              scale={12}
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-      <nav
-        ref={ref}
-        style={{
-          backdropFilter: "url(#nav-glass-refraction) blur(16px) saturate(1.7)",
-        }}
-        className={`z-99 border-b border-white/40 bg-white/55 shadow-[0_20px_40px_-30px_color-mix(in_srgb,var(--color-brand-secondary)_45%,transparent),inset_0_1px_0_0_rgba(255,255,255,0.65)] ${isSticky ? "sticky top-0" : ""}`}
-      >
-        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-9 py-[0.8rem] sm:px-10 lg:px-12">
-          <Link
-            to={"/"}
-            className="group z-10 flex items-center gap-2 no-underline"
-          >
-            {/* The dot is the app's one recurring mark (it reappears in
+    // **No ambient shadow (October 2026).** The shared "liquid glass"
+    // elevation shadow (see the link above) stuck around through the solid
+    // revert above and, on review, was the thing actually making this bar
+    // feel like it was fighting the page rather than sitting quietly on
+    // top of it — direct feedback was that it "stood out" the way a
+    // minimal, text-forward marketing nav shouldn't. Checked Stripe's
+    // header again specifically for this: `box-shadow: none`, a plain
+    // hairline only. `Navbar`'s `border-b border-brand-secondary/10` does
+    // the entire job of separating the bar from scrolled content now;
+    // dropping the shadow is this component opting out of the shared
+    // elevation shadow, not a change to that shared recipe itself — see
+    // [design-system/06-radius-elevation.md](../../docs/specs/design-system/06-radius-elevation.md#liquid-glass)
+    // for why every other shadow in the system still follows it.
+    <nav
+      ref={ref}
+      className={`z-99 border-b border-brand-secondary/10 bg-surface ${isSticky ? "sticky top-0" : ""}`}
+    >
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between px-9 py-[0.8rem] sm:px-10 lg:px-12">
+        <Link
+          to={"/"}
+          className="group z-10 flex items-center gap-2 no-underline"
+        >
+          {/* The dot is the app's one recurring mark (it reappears in
               OpenSource.tsx's "Open source" badge). It grows on hover of the
               whole logo, not of itself — a 8px hit target isn't a hover
               affordance, the wordmark next to it is. */}
-            <span
-              aria-hidden="true"
-              className="inline-block size-2 rounded-full bg-brand transition-transform duration-300 ease-out group-hover:scale-125 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
-            />
-            <span className="font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary transition-colors duration-300 group-hover:text-brand">
-              KarmaCircle
-            </span>
-          </Link>
+          <span
+            aria-hidden="true"
+            className="inline-block size-2 rounded-full bg-brand transition-transform duration-300 ease-out group-hover:scale-125 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
+          />
+          <span className="font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary transition-colors duration-300 group-hover:text-brand">
+            KarmaCircle
+          </span>
+        </Link>
 
-          <div className="hidden items-center gap-8 min-[900px]:flex">
-            {/* No active-route underline: that's an app-internal-tab
+        {/* No `gap-*` here (October 2026, was `gap-8`) — the Sign Up
+            button now animates its own `margin-left` shut when hidden (see
+            below) rather than just going transparent in place; a fixed gap
+            here would keep reserving that same dead space the margin
+            animation is meant to close. The logged-in Profile trigger,
+            which has no such hidden state, carries its own constant
+            `ml-8` instead — same 32px the shared gap used to give it. */}
+        <div className="hidden items-center min-[900px]:flex">
+          {/* No active-route underline: that's an app-internal-tab
               pattern, not a marketing-nav one — a visitor already knows
               which page they're on from the page itself. Hover gets a
               colour shift plus a rule that wipes in from the left and, on
               leaving, continues out to the right (`origin-left` on hover,
               `origin-right` at rest) rather than retracting the way it
               came — the directional version reads as a swipe instead of a
-              rubber band. */}
-            <div className="z-1 flex items-center gap-7">
-              {Links.map((item, index) => (
-                <Link
-                  key={index}
-                  className="relative font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:text-brand-secondary hover:after:origin-left hover:after:scale-x-100 motion-reduce:after:transition-none"
-                  to={item.link}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-            {isLoggedIn ? (
-              <p
-                onClick={() => {
-                  document
-                    .querySelector(".nav_dropdown")
-                    ?.classList.toggle("nav_dropdown_visible");
-                }}
-                className="group m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+              rubber band.
+              `gap-10`, not the original `gap-7` (October 2026, direct
+              feedback the link row read as cramped) — a deliberate, scroll-
+              independent spacing change; see the Sign Up button below for
+              the separate scroll-driven slide/reveal. */}
+          <div className="z-1 flex items-center gap-10">
+            {Links.map((item, index) => (
+              <Link
+                key={index}
+                className="relative font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:text-brand-secondary hover:after:origin-left hover:after:scale-x-100 motion-reduce:after:transition-none"
+                to={item.link}
               >
-                Profile{" "}
-                <RxCaretDown className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none" />
-              </p>
-            ) : (
-              <Button
-                to="/auth/signup"
-                className={`z-3 flex w-auto items-center justify-around gap-2.5 rounded-5px border-none px-5 py-2 font-outfit text-base font-normal not-italic transition-all duration-300 ease-in-out hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] motion-safe:hover:-translate-y-0.5 ${hideSignUpForHeroCta ? "pointer-events-none opacity-0" : "opacity-100"}`}
-              >
-                <span>Sign Up</span>
-              </Button>
-            )}
+                {item.name}
+              </Link>
+            ))}
           </div>
+          {isLoggedIn ? (
+            <p
+              onClick={() => {
+                document
+                  .querySelector(".nav_dropdown")
+                  ?.classList.toggle("nav_dropdown_visible");
+              }}
+              className="group m-0 ml-8 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+            >
+              Profile{" "}
+              <RxCaretDown className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none" />
+            </p>
+          ) : (
+            // Collapses to zero width/margin when `hideSignUpForHeroCta`
+            // is true (October 2026 — supersedes the original "opacity
+            // only, kept in layout so nothing shifts" choice documented in
+            // layout-navigation.md). That choice left a permanent dead gap
+            // the width of this button whenever it was hidden — direct
+            // feedback was that it read as a layout bug, not a deliberate
+            // empty space. Animating `max-width`/`margin-left`/`padding`
+            // shut instead (alongside the existing `opacity`) means the
+            // link row above has nowhere to flow but right while hidden,
+            // and — since it shares a `justify-between` row with the logo
+            // — visibly slides left as this button grows back in on
+            // scroll, which is the reveal this was asked for, not
+            // something bolted on separately. `max-w-40` is comfortably
+            // past this button's real content width (~110px with its
+            // padding), so the growth settles before the transition ends
+            // rather than the button overshooting its own text.
+            // `overflow-hidden`/`whitespace-nowrap` keep "Sign Up" clipped
+            // cleanly instead of wrapping while the width is still small.
+            <Button
+              to="/auth/signup"
+              className={`z-3 flex items-center justify-around gap-2.5 overflow-hidden rounded-5px border-none py-2 font-outfit text-base font-normal whitespace-nowrap not-italic transition-all duration-300 ease-in-out hover:shadow-[0px_0px_1.17px_0px_var(--color-brand),0px_0px_8.191px_0px_var(--color-brand),0px_0px_28.084px_0px_var(--color-brand)] motion-safe:hover:-translate-y-0.5 ${hideSignUpForHeroCta ? "pointer-events-none ml-0 max-w-0 px-0 opacity-0" : "ml-8 max-w-40 px-5 opacity-100"}`}
+            >
+              <span>Sign Up</span>
+            </Button>
+          )}
+        </div>
 
-          {/* Caught mid-mobile-QA (September 2026, unrelated to the sticky/
+        {/* Caught mid-mobile-QA (September 2026, unrelated to the sticky/
               glass work above): this trigger and the desktop link row two
               blocks up used mismatched breakpoints — the row only appears
               at `min-[900px]`, but this used to switch on at `max-430px`,
@@ -282,17 +268,55 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
               hamburger icon"); the code just didn't match it. Fixed by
               matching this to the same 900px line the row above already
               uses. */}
-          {!isNavbarOpen &&
-            (isLoggedIn ? (
-              <img
-                src={(user?.profileImage as string | undefined) || profileImage}
-                alt=""
+        {!isNavbarOpen &&
+          (isLoggedIn ? (
+            <img
+              src={(user?.profileImage as string | undefined) || profileImage}
+              alt=""
+              role="button"
+              tabIndex={0}
+              aria-label="Open account menu"
+              aria-haspopup="true"
+              aria-expanded={isNavbarOpen}
+              className="hidden size-7.5 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[899px]:block"
+              onClick={() => {
+                toggleNavbar();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleNavbar();
+                }
+              }}
+            />
+          ) : (
+            <GiHamburgerMenu
+              role="button"
+              tabIndex={0}
+              aria-label="Open menu"
+              aria-haspopup="true"
+              aria-expanded={isNavbarOpen}
+              className="hidden size-7.5 cursor-pointer text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[899px]:block"
+              onClick={() => {
+                toggleNavbar();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleNavbar();
+                }
+              }}
+            />
+          ))}
+
+        {isNavbarOpen && (
+          <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/[0.867] transition-all duration-300 ease-in-out">
+            <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in">
+              <RxCross2
                 role="button"
                 tabIndex={0}
-                aria-label="Open account menu"
-                aria-haspopup="true"
-                aria-expanded={isNavbarOpen}
-                className="hidden size-7.5 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[899px]:block"
+                aria-label="Close menu"
+                className="absolute top-2.5 right-2.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 onClick={() => {
                   toggleNavbar();
                 }}
@@ -303,166 +327,127 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                   }
                 }}
               />
-            ) : (
-              <GiHamburgerMenu
-                role="button"
-                tabIndex={0}
-                aria-label="Open menu"
-                aria-haspopup="true"
-                aria-expanded={isNavbarOpen}
-                className="hidden size-7.5 cursor-pointer text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[899px]:block"
-                onClick={() => {
-                  toggleNavbar();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    toggleNavbar();
-                  }
-                }}
-              />
-            ))}
 
-          {isNavbarOpen && (
-            <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/[0.867] transition-all duration-300 ease-in-out">
-              <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in">
-                <RxCross2
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Close menu"
-                  className="absolute top-2.5 right-2.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  onClick={() => {
-                    toggleNavbar();
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      toggleNavbar();
-                    }
-                  }}
-                />
+              {Links.map((item, index) => (
+                <Link
+                  key={index}
+                  className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink no-underline transition-colors duration-200 hover:text-brand motion-safe:active:scale-97"
+                  to={item.link}
+                >
+                  {item.name}
+                </Link>
+              ))}
 
-                {Links.map((item, index) => (
-                  <Link
-                    key={index}
-                    className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink no-underline transition-colors duration-200 hover:text-brand motion-safe:active:scale-97"
-                    to={item.link}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-
-                {isLoggedIn ? (
-                  <>
-                    {isDraft && organization && (
-                      <div>
-                        <Link
-                          className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-brand no-underline"
-                          to={resumeSetupPath(organization.missingFields)}
-                          onClick={() => setIsNavbarOpen(false)}
-                        >
-                          Finish setting up
-                        </Link>
-                      </div>
-                    )}
+              {isLoggedIn ? (
+                <>
+                  {isDraft && organization && (
                     <div>
-                      {/* Always "Dashboard" — it always points to /dashboard,
+                      <Link
+                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-brand no-underline"
+                        to={resumeSetupPath(organization.missingFields)}
+                        onClick={() => setIsNavbarOpen(false)}
+                      >
+                        Finish setting up
+                      </Link>
+                    </div>
+                  )}
+                  <div>
+                    {/* Always "Dashboard" — it always points to /dashboard,
                         regardless of account type. "Your Profile" (below, in
                         the desktop dropdown) is the separate, distinctly
                         named link to /user/:handle; the two used to share
                         the ambiguous label "Profile" for individual
                         accounts. See docs/specs/layout-navigation.md. */}
-                      <Link
-                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                        to={"/dashboard"}
-                      >
-                        Dashboard
-                      </Link>
-                    </div>
-                    <div>
-                      <p
-                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                        onClick={() => {
-                          handleLogout();
-                          setIsNavbarOpen(false);
-                        }}
-                      >
-                        Logout
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <Button
-                    to={"/auth/signup"}
-                    className="flex w-auto items-center gap-1.25 px-4 py-2 font-outfit text-body-lg no-underline"
-                  >
-                    <span>Sign Up</span>
-                    <FaChevronRight />
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="nav_dropdown absolute top-10 right-17.75 z-10 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
-            <div className="flex flex-col justify-center">
-              <span className="mb-1.25 p-2.5 font-outfit text-base">
-                Hello @{user?.userName}
-              </span>
-              <div
-                role="separator"
-                aria-orientation="horizontal"
-                className="h-px w-full bg-[#e2e5e883]"
-              ></div>
-              {isDraft && organization && (
-                <Link
-                  to={resumeSetupPath(organization.missingFields)}
-                  data-cy="nav-finish-setup"
-                  className="flex items-center justify-between gap-2 rounded-5px p-2.5 font-outfit text-base leading-none font-medium text-brand no-underline hover:bg-brand/8"
+                    <Link
+                      className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
+                      to={"/dashboard"}
+                    >
+                      Dashboard
+                    </Link>
+                  </div>
+                  <div>
+                    <p
+                      className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
+                      onClick={() => {
+                        handleLogout();
+                        setIsNavbarOpen(false);
+                      }}
+                    >
+                      Logout
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <Button
+                  to={"/auth/signup"}
+                  className="flex w-auto items-center gap-1.25 px-4 py-2 font-outfit text-body-lg no-underline"
                 >
-                  Finish setting up
-                  <span className="size-1.5 shrink-0 rounded-full bg-brand" />
-                </Link>
+                  <span>Sign Up</span>
+                  <FaChevronRight />
+                </Button>
               )}
-              <Link
-                to={
-                  user?.userType === "individual"
-                    ? `/user/${user?.userName}`
-                    : `/dashboard`
-                }
-                className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
-              >
-                {user?.userType === "individual" ? "Your Profile" : "Dashboard"}
-              </Link>
-              {user?.userType === "organization" ? (
-                <Link
-                  to={"/organization/events"}
-                  className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
-                >
-                  Your Events
-                </Link>
-              ) : null}
-            </div>
-            <div className="flex flex-col justify-center">
-              <div
-                role="separator"
-                aria-orientation="horizontal"
-                className="h-px w-full bg-[#e2e5e883]"
-              ></div>
-              {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
-              <Link
-                onClick={() => {
-                  handleLogout();
-                }}
-                className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
-              >
-                Logout
-              </Link>
             </div>
           </div>
+        )}
+
+        <div className="nav_dropdown absolute top-10 right-17.75 z-10 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
+          <div className="flex flex-col justify-center">
+            <span className="mb-1.25 p-2.5 font-outfit text-base">
+              Hello @{user?.userName}
+            </span>
+            <div
+              role="separator"
+              aria-orientation="horizontal"
+              className="h-px w-full bg-[#e2e5e883]"
+            ></div>
+            {isDraft && organization && (
+              <Link
+                to={resumeSetupPath(organization.missingFields)}
+                data-cy="nav-finish-setup"
+                className="flex items-center justify-between gap-2 rounded-5px p-2.5 font-outfit text-base leading-none font-medium text-brand no-underline hover:bg-brand/8"
+              >
+                Finish setting up
+                <span className="size-1.5 shrink-0 rounded-full bg-brand" />
+              </Link>
+            )}
+            <Link
+              to={
+                user?.userType === "individual"
+                  ? `/user/${user?.userName}`
+                  : `/dashboard`
+              }
+              className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+            >
+              {user?.userType === "individual" ? "Your Profile" : "Dashboard"}
+            </Link>
+            {user?.userType === "organization" ? (
+              <Link
+                to={"/organization/events"}
+                className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+              >
+                Your Events
+              </Link>
+            ) : null}
+          </div>
+          <div className="flex flex-col justify-center">
+            <div
+              role="separator"
+              aria-orientation="horizontal"
+              className="h-px w-full bg-[#e2e5e883]"
+            ></div>
+            {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
+            <Link
+              onClick={() => {
+                handleLogout();
+              }}
+              className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+            >
+              Logout
+            </Link>
+          </div>
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 });
 

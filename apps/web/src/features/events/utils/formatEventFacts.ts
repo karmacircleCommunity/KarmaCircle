@@ -100,3 +100,22 @@ export const formatDuration = (startsAt: string, endsAt: string) => {
 /** A maps search URL for a venue - no map SDK, no API key, no tracker. */
 export const mapsUrl = (query: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+/**
+ * Whether an event counts as "completed" - used by `EventCard`'s
+ * "Completed" pill and the detail page's join-panel swap
+ * (`EventHero`/`EventJoinPanel`/`EventMobileActionBar`) to match the same
+ * `startsAt` cut `Events.tsx` already sorts Upcoming/Past by (that page
+ * pins its own `Date.now()` once per page load rather than calling this,
+ * so a card doesn't hop tabs mid-scroll - see its own comment).
+ *
+ * Deliberately `startsAt`, not `endsAt`, even on the detail page where
+ * `endsAt` is available and would be the more literally correct signal
+ * ("has this actually finished"). `EventCardEvent` (the directory card's
+ * shape) doesn't carry `endsAt` at all, so using a stricter cut only on
+ * the detail page would let a card sitting in the Past tab open into a
+ * detail page that still offered to Join, or vice versa - one shared,
+ * slightly looser definition beats two disagreeing correct ones.
+ */
+export const isEventPast = (startsAt: string) =>
+  new Date(startsAt).getTime() < Date.now();

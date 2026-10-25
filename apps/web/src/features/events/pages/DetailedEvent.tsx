@@ -15,6 +15,7 @@ import EventHero from "../components/detail/EventHero";
 import EventJoinPanel from "../components/detail/EventJoinPanel";
 import EventLocationPanel from "../components/detail/EventLocationPanel";
 import EventMobileActionBar from "../components/detail/EventMobileActionBar";
+import EventOrganizerPanel from "../components/detail/EventOrganizerPanel";
 import EventSection from "../components/detail/EventSection";
 import { toDisplayEventDetail } from "../utils/toDisplayEventDetail";
 import type { ApiEvent, DetailedEventRecord } from "../types";
@@ -33,6 +34,13 @@ import type { ApiEvent, DetailedEventRecord } from "../types";
  *
  * Everything below is unchanged from the fixture-driven version - mapping
  * happens once, in `utils/toDisplayEventDetail.ts`, not inline in JSX.
+ *
+ * **`EventOrganizerPanel` (September 2026).** A dedicated "Hosted by" card
+ * in the sidebar, right below `EventJoinPanel` - every event is now
+ * guaranteed a real organization behind it (`event.service.ts#createEvent`
+ * rejects a non-organization host), so this is always a real, working link
+ * to `/organization/:handle`, not just `EventHero`'s smaller inline
+ * "Hosted by [name]" text under the title.
  */
 const DetailedEvent = () => {
   const { eventId } = useParams();
@@ -251,6 +259,8 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                   onToggleJoin={() => setJoined((previous) => !previous)}
                 />
               </div>
+
+              <EventOrganizerPanel event={event} />
 
               {/* Most events raise nothing, and the page simply has no
                   fundraiser section when they don't. */}

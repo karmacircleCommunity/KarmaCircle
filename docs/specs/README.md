@@ -72,6 +72,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |
+| [user-flows.md](./user-flows.md) | Mermaid flowcharts of the real page-to-page navigation, redirects, and gated states - the visual complement to the specs below, not a replacement for them |
 | [design-system/](./design-system/README.md) | **The design system.** A root index plus 14 files covering every token, hex, font size, letter-spacing, radius, shadow, breakpoint, component pixel spec, canonical recipe, and the register of deviations still in the code. Written for an AI agent to read before touching any UI |
 | [security.md](./security.md) | Security audit (September 2026): what was found, what was fixed, what is still open, and the rules for CI workflows. Read before touching `.github/workflows/`, auth, payments, or any `VITE_` env var |
 | [ui-kit.md](./ui-kit.md) | A navigation map into `design-system/`, kept because other specs link to its section anchors. Do not add content here |

@@ -41,7 +41,7 @@ router.get(
  * @openapi
  * /events/create:
  *   post:
- *     summary: Create a new event, hosted by the authenticated user
+ *     summary: Create a new event, hosted by the authenticated organization
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     requestBody:
@@ -70,6 +70,7 @@ router.get(
  *       201: { description: Event created }
  *       400: { description: Validation failed }
  *       401: { description: Unauthorized }
+ *       403: { description: The authenticated account is not an organization }
  *       409: { description: uid already exists }
  */
 router.post(

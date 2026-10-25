@@ -102,49 +102,45 @@ Set once through the CSS variable, not per-toast:
 
 This is the correct, rethemeable form. Copy this shape.
 
-### Liquid glass (September 2026)
+### Liquid glass (September 2026) — now `EventMobileActionBar` only
 
 ```
 bg-white/55 border border-white/50 backdrop-blur-2xl backdrop-saturate-150
-shadow-[<ambient>,inset_0_1px_0_0_rgba(255,255,255,0.65)]
+shadow-[0_20px_45px_-18px_color-mix(in_srgb,var(--color-brand-secondary)_50%,transparent),inset_0_1px_0_0_rgba(255,255,255,0.65)]
 ```
 
-Two occupants: `EventMobileActionBar` (the event page's floating mobile join
-capsule, first) and `Navbar` (September 2026, made this way — see
-[layout-navigation.md](../layout-navigation.md#navbar)). `backdrop-blur`
-alone flattens and grays out whatever scrolls underneath it; the paired
-`backdrop-saturate-150` is what keeps that see-through content looking like
-glass rather than frosted paper — never ship one without the other. The
-`inset_0_1px_0_0_rgba(255,255,255,0.65)` top rim-light is shared unchanged
-between both; the ambient shadow's shape depends on how the surface sits:
+`EventMobileActionBar` (the event page's floating mobile join capsule) is
+the one surface still carrying this. `backdrop-blur` alone flattens and
+grays out whatever scrolls underneath it; the paired `backdrop-saturate-150`
+is what keeps that see-through content looking like glass rather than
+frosted paper — never ship one without the other. It's a small floating
+capsule, not an edge-to-edge bar sitting over the page's full visual
+variety, so the flat tint/blur/shadow recipe above still reads fine there
+with no further material work (no refraction — see below).
 
-| Surface | Ambient shadow | Border |
-| --- | --- | --- |
-| Floating capsule (`EventMobileActionBar`) | `0_20px_45px_-18px_color-mix(in_srgb,var(--color-brand-secondary)_50%,transparent)` — cast on all sides, it floats clear of every edge | `border` on all four sides |
-| Edge-to-edge bar (`Navbar`) | `0_20px_40px_-30px_color-mix(in_srgb,var(--color-brand-secondary)_45%,transparent)` — smaller and softer, cast only downward onto the content scrolling under it | `border-b` only — a full border would draw fake vertical lines down the left/right viewport edges on a bar this wide |
-
-Both still follow the elevation shape rule above: warm-tinted, Y-offset only,
+Border on all four sides (it floats clear of every edge, so a full border
+reads correctly, unlike an edge-to-edge bar — see `Navbar`'s history
+below). Follows the elevation shape rule above: warm-tinted, Y-offset only,
 `color-mix` against `--color-brand-secondary` rather than a frozen hex.
 
-**`Navbar` alone goes one step further: real refraction, not just blur
-(September 2026, revised).** The table above is still exactly
-`EventMobileActionBar`'s recipe — flat blur/tint/shadow, no bend, which on
-review read as plain "glassmorphism" rather than Apple-style "Liquid
-Glass." `Navbar` layers an SVG `feDisplacementMap` filter
-(`#nav-glass-refraction`, defined inline in `Navbar.tsx`) into its
-`backdrop-filter`, fed by Gaussian-blurred `feTurbulence` noise, so the
-backdrop visibly bends passing under the bar rather than just softening —
-confirmed live against `DrivesRail`'s photo cards, whose top edges warp
-crossing the boundary. This needs `style={{ backdropFilter: "url(#id)
-blur(16px) saturate(1.7)" }}` rather than the `backdrop-blur-2xl
-backdrop-saturate-150` utilities in the code block above — Tailwind v4
-composes those into one shared property behind the scenes, which leaves
-no clean way to splice a `url(#id)` filter reference ahead of them.
-`EventMobileActionBar` was deliberately **not** upgraded to match — it's a
-small floating capsule with little backdrop variety under it most of the
-time, where the extra SVG filter cost buys little; do this per-surface,
-not as a blanket rule. Full reasoning, including why an npm "Liquid Glass"
-library was researched and rejected in favor of building this directly:
+**`Navbar` carried this material September-October 2026, then reverted to
+solid.** It went through two revisions trying to make the flat recipe
+above read as actual glass rather than a tinted pane — first an SVG
+`feDisplacementMap` refraction filter (`feTurbulence` noise, Gaussian-
+blurred, driving the displacement) layered into its `backdrop-filter` to
+give it real bend, then a tint dropped from `bg-white/55` down to
+`bg-white/10` once the refraction pass alone still read as a painted-on
+bar. Neither fixed it: on this app's own near-white pages there usually
+wasn't enough contrast behind the bar for blur/refraction to read as
+anything, and it carries the one CTA ("Sign Up") that has to stay at full
+contrast regardless of what's under it — a transparent material works
+against that by design. `Navbar` is now solid (`bg-surface`, a
+`border-brand-secondary/10` hairline, no `backdrop-filter`, no shadow —
+see "Others in the inventory" below for why it also dropped the ambient
+shadow this table's other surfaces still use), matching Stripe's plain
+solid header rather than Linear's/Vercel's glass/transparent patterns.
+Full blow-by-blow (why the glass material existed, the refraction
+technique, the npm libraries considered, and the solid-revert reasoning):
 [layout-navigation.md#navbar](../layout-navigation.md#navbar).
 
 ### Others in the inventory
@@ -158,11 +154,19 @@ Two legacy ones do not: `shadow-[0px_3px_5px_0px_#e8e8e8]` (CreateEvent), `shado
 There is no neutral gray drop shadow anywhere in the design.
 Do not introduce one.
 
+`Navbar` is the one surface with no shadow at all (October 2026 — see its
+solid-revert note above): a hairline border does the whole job of
+separating it from scrolled content, and the shared ambient shadow read as
+the bar fighting the page rather than sitting quietly on it. That's an
+exception to "every surface gets the shared glow," not a second shadow
+style — don't read it as license to drop the shadow elsewhere too.
+
 ## Borders
 
 | Utility | Where |
 | --- | --- |
 | `border border-brand-secondary/8` | The card border |
+| `border-b border-brand-secondary/10` | `Navbar`'s hairline (its only separation from scrolled content — see above) |
 | `border-brand-secondary/15` | Field underline at rest, combobox panel |
 | `border-b border-brand-secondary/15 ... focus-within:border-brand/55` | The search field |
 | `border-b-2 border-brand` | The active directory filter |

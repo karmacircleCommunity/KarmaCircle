@@ -3,11 +3,18 @@ import { buildTestApp } from "./helpers/test-app";
 
 const app = buildTestApp();
 
+// Organization, not individual - `event.service.ts#createEvent` rejects a
+// non-organization host outright (September 2026: every event on the
+// circle is an NGO-run drive), so this is the only account type any of
+// these tests can successfully create an event with. See the dedicated
+// "rejects event creation from an individual host" test below for the
+// rejection path itself.
 async function signupAndGetCookie() {
   const res = await request(app).post("/auth/signup").send({
     email: "host@example.com",
     password: "hunter2",
     name: "Test Host",
+    userType: "organization",
   });
 
   const cookie = res.headers["set-cookie"]?.[0];
@@ -107,16 +114,21 @@ describe("Events", () => {
     );
   });
 
-  it("leaves organizerHandle unset for an individual host", async () => {
-    const cookie = await signupAndGetCookie();
+  it("rejects event creation from an individual (non-organization) host", async () => {
+    const signup = await request(app).post("/auth/signup").send({
+      email: "individual-host@example.com",
+      password: "hunter2",
+      name: "Individual Host",
+    });
+    const cookie = signup.headers["set-cookie"][0];
 
     const res = await request(app)
       .post("/events/create")
       .set("Cookie", cookie)
       .send({ ...validOnlineEvent, uid: "individual-hosted-event" });
 
-    expect(res.status).toBe(201);
-    expect(res.body.savedEvent.organizerHandle).toBeUndefined();
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe("This account is not an organization !");
   });
 
   it("rejects an Offline event missing location fields with 400", async () => {

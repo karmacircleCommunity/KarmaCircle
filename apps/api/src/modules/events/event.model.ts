@@ -46,7 +46,10 @@ export interface IEvent extends Document {
    * creation time from the authenticated host's own organization record
    * (never client-supplied) — `hostUsername`/`hostName` above are the
    * pre-existing free-text snapshot and stay unchanged for backward
-   * compatibility. Absent for an event created by an individual host.
+   * compatibility. `event.service.ts#createEvent` rejects a non-organization
+   * host outright (September 2026 - every event is an NGO-run drive), so
+   * this is never unset for a newly created event; still optional on the
+   * schema only for defensive typing against pre-existing/malformed data.
    */
   organizerHandle?: string;
   coverImage?: string;

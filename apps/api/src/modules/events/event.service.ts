@@ -1,7 +1,7 @@
 import { FilterQuery } from "mongoose";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
-import { findByOwnerEmail } from "../organizations/organization.service";
+import { findOrCreateForOwner } from "../organizations/organization.service";
 import { findByEmail } from "../users/user.service";
 import { CreateEventInput } from "./event.validation";
 import { Event, IEvent } from "./event.model";
@@ -52,18 +52,35 @@ export async function createEvent(
     throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
   }
 
-  // Real link, not string matching: looked up from the host's own
-  // organization record rather than trusted off the request body. `null`
-  // for an individual host — findByOwnerEmail only ever matches an
-  // organization's own collection.
-  const organization =
-    host.userType === "organization" ? await findByOwnerEmail(email) : null;
+  // Every event on the circle is an NGO-run drive, not something a plain
+  // individual account hosts - so `organizerHandle` below must never be
+  // unset for a newly created event (September 2026; see events.md). This
+  // was previously optional (`organization?.handle`, `null` for a
+  // non-organization host), which meant a card/detail page for one of
+  // those events had no way to link back anywhere.
+  if (host.userType !== "organization") {
+    throw new AppError(
+      STATUS_CODE.FORBIDDEN,
+      STATUS_MESSAGE.NOT_AN_ORGANIZATION,
+    );
+  }
+
+  // `findOrCreateForOwner`, not `findByOwnerEmail` - backfills the
+  // Organization document for an account that predates that collection,
+  // the same guarantee `organization.controller.ts#getMine`/`updateMine`
+  // already rely on, so this never resolves to nothing for a real
+  // organization host.
+  const organization = await findOrCreateForOwner({
+    email,
+    userName: host.userName,
+    name: host.name,
+  });
 
   const event = new Event({
     ...data,
     hostName: host.name,
     hostUsername: host.userName,
-    organizerHandle: organization?.handle,
+    organizerHandle: organization.handle,
   });
 
   return event.save();

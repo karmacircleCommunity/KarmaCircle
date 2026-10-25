@@ -1,7 +1,7 @@
-import { FiCalendar, FiClock, FiMapPin, FiShield, FiUserCheck, FiVideo } from "react-icons/fi";
+import { FiCalendar, FiCheckCircle, FiClock, FiMapPin, FiShield, FiUserCheck, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import { formatEventBadge, formatEventTime } from "../utils/formatEventFacts";
+import { formatEventBadge, formatEventTime, isEventPast } from "../utils/formatEventFacts";
 import type { EventCardProps } from "../types";
 
 /**
@@ -39,19 +39,29 @@ import type { EventCardProps } from "../types";
  * then the time). That repetition, plus a 6px gap between the two meta
  * lines, is also what made the block read as cramped/"weird" rather than
  * as two clearly separate facts — both loosened below.
+ *
+ * **"Completed" (September 2026, `isEventPast`).** A card whose `startsAt`
+ * has passed gets a grayscale-tinted cover plus a "Completed" label in the
+ * cover's bottom-left scrim - the one place a live event's own `cause`
+ * would render if it had one, which it never does (see above). This is
+ * cosmetic only; whether the card actually shows up here at all is decided
+ * by `Events.tsx`'s Upcoming/Past filter, using the same `startsAt` cut.
  */
 const EventCard = ({ event }: EventCardProps) => {
   const online = event.mode === "Online";
   const full = event.spotsLeft === 0;
   const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
   const accent = ORGANIZATION_ACCENTS[(event.accent ?? 0) % ORGANIZATION_ACCENTS.length];
+  const past = isEventPast(event.startsAt);
 
   return (
     <article
       data-reveal
       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-secondary/8 bg-white shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1"
     >
-      <div className="relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10">
+      <div
+        className={`relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10 ${past ? "grayscale-[45%]" : ""}`}
+      >
         {event.cover ? (
           <img
             src={event.cover}
@@ -108,6 +118,25 @@ const EventCard = ({ event }: EventCardProps) => {
             />
             <span className="absolute bottom-2.5 left-4 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
               {event.cause}
+            </span>
+          </>
+        )}
+        {/* "Completed" (September 2026) - a live event has no `cause` at
+            all (see the type's own comment), so this slot is otherwise
+            always empty for real data; reused here rather than adding a
+            third scrim. Grayscale on the cover above plus this label is
+            the same "this already happened" treatment Eventbrite/Meetup
+            use, so a visitor scanning the Past tab doesn't have to read
+            every date to tell which cards are done. */}
+        {past && (
+          <>
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent"
+            />
+            <span className="absolute bottom-2.5 left-4 inline-flex items-center gap-1.5 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
+              <FiCheckCircle aria-hidden="true" className="size-3" />
+              Completed
             </span>
           </>
         )}

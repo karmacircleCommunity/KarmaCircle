@@ -1,6 +1,7 @@
 import {
   FiArrowLeft,
   FiCalendar,
+  FiCheckCircle,
   FiClock,
   FiMapPin,
   FiShield,
@@ -9,7 +10,7 @@ import {
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import { formatEventDate, formatDuration } from "../../utils/formatEventFacts";
+import { formatEventDate, formatDuration, isEventPast } from "../../utils/formatEventFacts";
 import type { EventHeroProps } from "../../types";
 
 /** Same derivation as `EventCard`/`toDisplayEvent.ts#accentFor` - a stable,
@@ -32,9 +33,15 @@ function accentFor(id: string): number {
  * The cover is a fixed-height crop rather than the card's 16:9 aspect box,
  * matching `OrganizationProfile.tsx`'s header: at page width a 16:9 photo
  * would push everything below the fold.
+ *
+ * **"Completed" (September 2026, `isEventPast`)** joins the trust/access
+ * badge row when the event's `startsAt` has passed - same definition
+ * `EventCard`'s own pill and `EventJoinPanel`'s wrap-up copy use, so this
+ * page never disagrees with the card that opened it.
  */
 const EventHero = ({ event }: EventHeroProps) => {
   const online = event.mode === "Online";
+  const past = isEventPast(event.startsAt);
   const accent = ORGANIZATION_ACCENTS[accentFor(event.id)];
 
   const facts = [
@@ -90,8 +97,14 @@ const EventHero = ({ event }: EventHeroProps) => {
         </div>
 
         <div className="p-6 sm:p-8">
-          {(event.isGovernmentSponsored || event.inviteOnly) && (
+          {(past || event.isGovernmentSponsored || event.inviteOnly) && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
+              {past && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-ink/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-ink/65 uppercase">
+                  <FiCheckCircle aria-hidden="true" className="size-3.5" />
+                  Completed
+                </span>
+              )}
               {event.isGovernmentSponsored && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand uppercase">
                   <FiShield aria-hidden="true" className="size-3.5" />
