@@ -182,15 +182,6 @@
       "norm_label": "smoke.spec.ts"
     },
     {
-      "label": "debug-resize-race.spec.ts",
-      "file_type": "code",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/debug-resize-race.spec.ts",
-      "source_location": "L1",
-      "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_debug_resize_race_spec_ts",
-      "community": 123,
-      "norm_label": "debug-resize-race.spec.ts"
-    },
-    {
       "label": "global-setup.ts",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/global-setup.ts",
@@ -214,7 +205,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/env.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_env_ts",
-      "community": 124,
+      "community": 123,
       "norm_label": "env.ts"
     },
     {
@@ -223,7 +214,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/organizations/organizations-responsive.spec.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_organizations_organizations_responsive_spec_ts",
-      "community": 29,
+      "community": 31,
       "norm_label": "organizations-responsive.spec.ts"
     },
     {
@@ -232,7 +223,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/organizations/organizations-responsive.spec.ts",
       "source_location": "L62",
       "id": "organizations_responsive_spec_publishliveorganization",
-      "community": 29,
+      "community": 31,
       "norm_label": "publishliveorganization()"
     },
     {
@@ -241,7 +232,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/organizations/organizations-responsive.spec.ts",
       "source_location": "L122",
       "id": "organizations_responsive_spec_expectnohorizontaloverflow",
-      "community": 29,
+      "community": 31,
       "norm_label": "expectnohorizontaloverflow()"
     },
     {
@@ -250,7 +241,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/organizations/organizations-responsive.spec.ts",
       "source_location": "L145",
       "id": "organizations_responsive_spec_expectheaderalignedtocontent",
-      "community": 29,
+      "community": 31,
       "norm_label": "expectheaderalignedtocontent()"
     },
     {
@@ -295,7 +286,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/landing-home/sections.spec.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_landing_home_sections_spec_ts",
-      "community": 125,
+      "community": 124,
       "norm_label": "sections.spec.ts"
     },
     {
@@ -304,7 +295,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/landing-home/hero.spec.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_landing_home_hero_spec_ts",
-      "community": 126,
+      "community": 125,
       "norm_label": "hero.spec.ts"
     },
     {
@@ -313,35 +304,44 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
-      "community": 30,
+      "community": 24,
       "norm_label": "events-responsive.spec.ts"
     },
     {
       "label": "signUpOrganization()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
-      "source_location": "L21",
+      "source_location": "L23",
       "id": "events_responsive_spec_signuporganization",
-      "community": 30,
+      "community": 24,
       "norm_label": "signuporganization()"
     },
     {
       "label": "createEvent()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
-      "source_location": "L41",
+      "source_location": "L43",
       "id": "events_responsive_spec_createevent",
-      "community": 30,
+      "community": 24,
       "norm_label": "createevent()"
     },
     {
       "label": "expectNoHorizontalOverflow()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
-      "source_location": "L82",
+      "source_location": "L86",
       "id": "events_responsive_spec_expectnohorizontaloverflow",
-      "community": 30,
+      "community": 24,
       "norm_label": "expectnohorizontaloverflow()"
+    },
+    {
+      "label": "soon()",
+      "file_type": "code",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
+      "source_location": "L195",
+      "id": "events_responsive_spec_soon",
+      "community": 24,
+      "norm_label": "soon()"
     },
     {
       "label": "signin.spec.ts",
@@ -349,7 +349,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/authentication/signin.spec.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_authentication_signin_spec_ts",
-      "community": 42,
+      "community": 43,
       "norm_label": "signin.spec.ts"
     },
     {
@@ -358,7 +358,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/authentication/signin.spec.ts",
       "source_location": "L13",
       "id": "signin_spec_uniqueemail",
-      "community": 42,
+      "community": 43,
       "norm_label": "uniqueemail()"
     },
     {
@@ -367,7 +367,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/authentication/signin.spec.ts",
       "source_location": "L17",
       "id": "signin_spec_seedaccount",
-      "community": 42,
+      "community": 43,
       "norm_label": "seedaccount()"
     },
     {
@@ -376,7 +376,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/authentication/signup.spec.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_e2e_authentication_signup_spec_ts",
-      "community": 43,
+      "community": 44,
       "norm_label": "signup.spec.ts"
     },
     {
@@ -385,7 +385,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/authentication/signup.spec.ts",
       "source_location": "L14",
       "id": "signup_spec_uniqueemail",
-      "community": 43,
+      "community": 44,
       "norm_label": "uniqueemail()"
     },
     {
@@ -394,7 +394,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/authentication/signup.spec.ts",
       "source_location": "L63",
       "id": "signup_spec_reachsignupstep",
-      "community": 43,
+      "community": 44,
       "norm_label": "reachsignupstep()"
     },
     {
@@ -403,7 +403,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/types/user/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_types_user_index_ts",
-      "community": 127,
+      "community": 126,
       "norm_label": "index.ts"
     },
     {
@@ -412,7 +412,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/types/user/enums.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_types_user_enums_ts",
-      "community": 128,
+      "community": 127,
       "norm_label": "enums.ts"
     },
     {
@@ -421,7 +421,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/types/user/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_types_user_interfaces_ts",
-      "community": 129,
+      "community": 128,
       "norm_label": "interfaces.ts"
     },
     {
@@ -430,7 +430,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/types/api/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_types_api_index_ts",
-      "community": 130,
+      "community": 129,
       "norm_label": "index.ts"
     },
     {
@@ -439,7 +439,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/types/api/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_types_api_interfaces_ts",
-      "community": 131,
+      "community": 130,
       "norm_label": "interfaces.ts"
     },
     {
@@ -448,7 +448,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/statics/CountryList.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_statics_countrylist_ts",
-      "community": 132,
+      "community": 131,
       "norm_label": "countrylist.ts"
     },
     {
@@ -457,7 +457,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/statics/IndiaStates.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_statics_indiastates_ts",
-      "community": 133,
+      "community": 132,
       "norm_label": "indiastates.ts"
     },
     {
@@ -466,7 +466,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/statics/Constants.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_statics_constants_ts",
-      "community": 134,
+      "community": 133,
       "norm_label": "constants.ts"
     },
     {
@@ -475,7 +475,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/statics/OnlinePlatform.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_statics_onlineplatform_ts",
-      "community": 135,
+      "community": 134,
       "norm_label": "onlineplatform.ts"
     },
     {
@@ -484,7 +484,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/statics/IndiaCities.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_statics_indiacities_ts",
-      "community": 136,
+      "community": 135,
       "norm_label": "indiacities.ts"
     },
     {
@@ -493,7 +493,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/index.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_app_index_tsx",
-      "community": 137,
+      "community": 136,
       "norm_label": "index.tsx"
     },
     {
@@ -502,7 +502,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/App.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_app_app_tsx",
-      "community": 138,
+      "community": 137,
       "norm_label": "app.tsx"
     },
     {
@@ -529,7 +529,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/routes/route.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_app_routes_route_ts",
-      "community": 139,
+      "community": 138,
       "norm_label": "route.ts"
     },
     {
@@ -538,7 +538,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/store/useAuth.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_app_store_useauth_ts",
-      "community": 140,
+      "community": 139,
       "norm_label": "useauth.ts"
     },
     {
@@ -547,7 +547,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/store/store.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_app_store_store_ts",
-      "community": 141,
+      "community": 140,
       "norm_label": "store.ts"
     },
     {
@@ -556,7 +556,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/store/slices/userSlice.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_app_store_slices_userslice_ts",
-      "community": 44,
+      "community": 45,
       "norm_label": "userslice.ts"
     },
     {
@@ -565,7 +565,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/store/slices/userSlice.ts",
       "source_location": "L32",
       "id": "userslice_selectisloggedin",
-      "community": 44,
+      "community": 45,
       "norm_label": "selectisloggedin()"
     },
     {
@@ -574,7 +574,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/app/store/slices/userSlice.ts",
       "source_location": "L33",
       "id": "userslice_selectuser",
-      "community": 44,
+      "community": 45,
       "norm_label": "selectuser()"
     },
     {
@@ -583,7 +583,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/types/types.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_types_types_ts",
-      "community": 142,
+      "community": 141,
       "norm_label": "types.ts"
     },
     {
@@ -592,7 +592,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/types/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_types_index_ts",
-      "community": 143,
+      "community": 142,
       "norm_label": "index.ts"
     },
     {
@@ -601,7 +601,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/types/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_types_interfaces_ts",
-      "community": 144,
+      "community": 143,
       "norm_label": "interfaces.ts"
     },
     {
@@ -646,7 +646,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/constants/organizationSetup.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_constants_organizationsetup_ts",
-      "community": 45,
+      "community": 46,
       "norm_label": "organizationsetup.ts"
     },
     {
@@ -655,7 +655,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/constants/organizationSetup.ts",
       "source_location": "L288",
       "id": "organizationsetup_tostep",
-      "community": 45,
+      "community": 46,
       "norm_label": "tostep()"
     },
     {
@@ -664,7 +664,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/constants/organizationSetup.ts",
       "source_location": "L347",
       "id": "organizationsetup_describemissingfields",
-      "community": 45,
+      "community": 46,
       "norm_label": "describemissingfields()"
     },
     {
@@ -673,7 +673,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/toDisplayOrganization.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_utils_todisplayorganization_ts",
-      "community": 31,
+      "community": 32,
       "norm_label": "todisplayorganization.ts"
     },
     {
@@ -682,7 +682,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/toDisplayOrganization.ts",
       "source_location": "L11",
       "id": "todisplayorganization_accentfor",
-      "community": 31,
+      "community": 32,
       "norm_label": "accentfor()"
     },
     {
@@ -691,7 +691,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/toDisplayOrganization.ts",
       "source_location": "L20",
       "id": "todisplayorganization_formatamount",
-      "community": 31,
+      "community": 32,
       "norm_label": "formatamount()"
     },
     {
@@ -700,7 +700,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/toDisplayOrganization.ts",
       "source_location": "L40",
       "id": "todisplayorganization_todisplayorganization",
-      "community": 31,
+      "community": 32,
       "norm_label": "todisplayorganization()"
     },
     {
@@ -709,7 +709,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_utils_organizationsetupform_ts",
-      "community": 9,
+      "community": 8,
       "norm_label": "organizationsetupform.ts"
     },
     {
@@ -718,7 +718,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L51",
       "id": "organizationsetupform_tosetupform",
-      "community": 9,
+      "community": 8,
       "norm_label": "tosetupform()"
     },
     {
@@ -727,7 +727,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L88",
       "id": "organizationsetupform_normalizewebsite",
-      "community": 9,
+      "community": 8,
       "norm_label": "normalizewebsite()"
     },
     {
@@ -736,7 +736,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L102",
       "id": "organizationsetupform_tosteppayload",
-      "community": 9,
+      "community": 8,
       "norm_label": "tosteppayload()"
     },
     {
@@ -745,7 +745,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L167",
       "id": "organizationsetupform_isfieldfilled",
-      "community": 9,
+      "community": 8,
       "norm_label": "isfieldfilled()"
     },
     {
@@ -754,7 +754,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L186",
       "id": "organizationsetupform_outstandingfields",
-      "community": 9,
+      "community": 8,
       "norm_label": "outstandingfields()"
     },
     {
@@ -763,7 +763,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L194",
       "id": "organizationsetupform_isstepdirty",
-      "community": 9,
+      "community": 8,
       "norm_label": "isstepdirty()"
     },
     {
@@ -772,7 +772,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L231",
       "id": "organizationsetupform_resumesetuppath",
-      "community": 9,
+      "community": 8,
       "norm_label": "resumesetuppath()"
     },
     {
@@ -781,7 +781,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L276",
       "id": "organizationsetupform_sanitizesetupvalue",
-      "community": 9,
+      "community": 8,
       "norm_label": "sanitizesetupvalue()"
     },
     {
@@ -790,7 +790,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L301",
       "id": "organizationsetupform_validatesetupfield",
-      "community": 9,
+      "community": 8,
       "norm_label": "validatesetupfield()"
     },
     {
@@ -799,7 +799,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/utils/organizationSetupForm.ts",
       "source_location": "L365",
       "id": "organizationsetupform_invalidfields",
-      "community": 9,
+      "community": 8,
       "norm_label": "invalidfields()"
     },
     {
@@ -826,7 +826,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/SponsorOrganizationModal.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_sponsororganizationmodal_tsx",
-      "community": 24,
+      "community": 25,
       "norm_label": "sponsororganizationmodal.tsx"
     },
     {
@@ -835,7 +835,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/SponsorOrganizationModal.tsx",
       "source_location": "L39",
       "id": "sponsororganizationmodal_sponsororganizationmodal",
-      "community": 24,
+      "community": 25,
       "norm_label": "sponsororganizationmodal()"
     },
     {
@@ -844,7 +844,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/OrganizationCard.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_organizationcard_tsx",
-      "community": 145,
+      "community": 144,
       "norm_label": "organizationcard.tsx"
     },
     {
@@ -853,7 +853,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/OrganizationSetupGate.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_organizationsetupgate_tsx",
-      "community": 146,
+      "community": 145,
       "norm_label": "organizationsetupgate.tsx"
     },
     {
@@ -880,7 +880,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/OrganizationEventsList.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_organizationeventslist_tsx",
-      "community": 12,
+      "community": 10,
       "norm_label": "organizationeventslist.tsx"
     },
     {
@@ -889,7 +889,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/OrganizationEventsList.tsx",
       "source_location": "L82",
       "id": "organizationeventslist_formateventbadge",
-      "community": 12,
+      "community": 10,
       "norm_label": "formateventbadge()"
     },
     {
@@ -898,7 +898,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLocateButton.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setuplocatebutton_tsx",
-      "community": 147,
+      "community": 146,
       "norm_label": "setuplocatebutton.tsx"
     },
     {
@@ -907,7 +907,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLeadershipEditor.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setupleadershipeditor_tsx",
-      "community": 7,
+      "community": 17,
       "norm_label": "setupleadershipeditor.tsx"
     },
     {
@@ -916,7 +916,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLeadershipEditor.tsx",
       "source_location": "L33",
       "id": "setupleadershipeditor_update",
-      "community": 7,
+      "community": 17,
       "norm_label": "update()"
     },
     {
@@ -925,7 +925,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLeadershipEditor.tsx",
       "source_location": "L40",
       "id": "setupleadershipeditor_remove",
-      "community": 7,
+      "community": 17,
       "norm_label": "remove()"
     },
     {
@@ -934,7 +934,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLeadershipEditor.tsx",
       "source_location": "L47",
       "id": "setupleadershipeditor_add",
-      "community": 7,
+      "community": 17,
       "norm_label": "add()"
     },
     {
@@ -943,7 +943,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupFieldLabel.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setupfieldlabel_tsx",
-      "community": 148,
+      "community": 147,
       "norm_label": "setupfieldlabel.tsx"
     },
     {
@@ -952,7 +952,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLocationFields.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setuplocationfields_tsx",
-      "community": 9,
+      "community": 8,
       "norm_label": "setuplocationfields.tsx"
     },
     {
@@ -961,7 +961,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLocationFields.tsx",
       "source_location": "L62",
       "id": "setuplocationfields_onmac",
-      "community": 9,
+      "community": 8,
       "norm_label": "onmac()"
     },
     {
@@ -970,7 +970,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLocationFields.tsx",
       "source_location": "L74",
       "id": "setuplocationfields_failurecopy",
-      "community": 9,
+      "community": 8,
       "norm_label": "failurecopy()"
     },
     {
@@ -979,7 +979,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupQuestion.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setupquestion_tsx",
-      "community": 23,
+      "community": 26,
       "norm_label": "setupquestion.tsx"
     },
     {
@@ -988,7 +988,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupQuestion.tsx",
       "source_location": "L108",
       "id": "setupquestion_autogrow",
-      "community": 23,
+      "community": 26,
       "norm_label": "autogrow()"
     },
     {
@@ -997,7 +997,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupQuestion.tsx",
       "source_location": "L140",
       "id": "setupquestion_settext",
-      "community": 23,
+      "community": 26,
       "norm_label": "settext()"
     },
     {
@@ -1006,7 +1006,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupQuestion.tsx",
       "source_location": "L179",
       "id": "setupquestion_choose",
-      "community": 23,
+      "community": 26,
       "norm_label": "choose()"
     },
     {
@@ -1015,7 +1015,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupQuestion.tsx",
       "source_location": "L199",
       "id": "setupquestion_onkeydown",
-      "community": 23,
+      "community": 26,
       "norm_label": "onkeydown()"
     },
     {
@@ -1024,7 +1024,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupIntro.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setupintro_tsx",
-      "community": 149,
+      "community": 148,
       "norm_label": "setupintro.tsx"
     },
     {
@@ -1033,7 +1033,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/components/setup/SetupLayout.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_components_setup_setuplayout_tsx",
-      "community": 150,
+      "community": 149,
       "norm_label": "setuplayout.tsx"
     },
     {
@@ -1078,7 +1078,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useOrganizationSetup.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_hooks_useorganizationsetup_ts",
-      "community": 17,
+      "community": 18,
       "norm_label": "useorganizationsetup.ts"
     },
     {
@@ -1087,7 +1087,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useOrganizationSetup.ts",
       "source_location": "L30",
       "id": "useorganizationsetup_isstepid",
-      "community": 17,
+      "community": 18,
       "norm_label": "isstepid()"
     },
     {
@@ -1096,7 +1096,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useOrganizationSetup.ts",
       "source_location": "L41",
       "id": "useorganizationsetup_wait",
-      "community": 17,
+      "community": 18,
       "norm_label": "wait()"
     },
     {
@@ -1105,7 +1105,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useOrganizationSetup.ts",
       "source_location": "L44",
       "id": "useorganizationsetup_prefersreducedmotion",
-      "community": 17,
+      "community": 18,
       "norm_label": "prefersreducedmotion()"
     },
     {
@@ -1114,7 +1114,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useOrganizationSetup.ts",
       "source_location": "L77",
       "id": "useorganizationsetup_useorganizationsetup",
-      "community": 17,
+      "community": 18,
       "norm_label": "useorganizationsetup()"
     },
     {
@@ -1123,7 +1123,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useOrganizationSetup.ts",
       "source_location": "L305",
       "id": "useorganizationsetup_pick",
-      "community": 17,
+      "community": 18,
       "norm_label": "pick()"
     },
     {
@@ -1132,7 +1132,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useRazorpayCheckout.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_hooks_userazorpaycheckout_ts",
-      "community": 24,
+      "community": 25,
       "norm_label": "userazorpaycheckout.ts"
     },
     {
@@ -1141,7 +1141,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useRazorpayCheckout.ts",
       "source_location": "L20",
       "id": "userazorpaycheckout_loadcheckoutscript",
-      "community": 24,
+      "community": 25,
       "norm_label": "loadcheckoutscript()"
     },
     {
@@ -1150,7 +1150,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/hooks/useRazorpayCheckout.ts",
       "source_location": "L51",
       "id": "userazorpaycheckout_userazorpaycheckout",
-      "community": 24,
+      "community": 25,
       "norm_label": "userazorpaycheckout()"
     },
     {
@@ -1231,7 +1231,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_pages_organizationprofile_tsx",
-      "community": 9,
+      "community": 8,
       "norm_label": "organizationprofile.tsx"
     },
     {
@@ -1240,7 +1240,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
       "source_location": "L40",
       "id": "organizationprofile_tohref",
-      "community": 9,
+      "community": 8,
       "norm_label": "tohref()"
     },
     {
@@ -1249,7 +1249,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
       "source_location": "L43",
       "id": "organizationprofile_tolabel",
-      "community": 9,
+      "community": 8,
       "norm_label": "tolabel()"
     },
     {
@@ -1258,7 +1258,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/pages/OrganizationProfile.tsx",
       "source_location": "L61",
       "id": "organizationprofile_organizationprofile",
-      "community": 9,
+      "community": 8,
       "norm_label": "organizationprofile()"
     },
     {
@@ -1267,7 +1267,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/services/Organizations.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_organizations_services_organizations_ts",
-      "community": 18,
+      "community": 19,
       "norm_label": "organizations.ts"
     },
     {
@@ -1276,7 +1276,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/organizations/services/Organizations.ts",
       "source_location": "L13",
       "id": "organizations_getorganizations",
-      "community": 18,
+      "community": 19,
       "norm_label": "getorganizations()"
     },
     {
@@ -1285,7 +1285,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/error-handling/pages/Test.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_error_handling_pages_test_tsx",
-      "community": 9,
+      "community": 8,
       "norm_label": "test.tsx"
     },
     {
@@ -1294,7 +1294,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/error-handling/pages/Test.tsx",
       "source_location": "L8",
       "id": "test_test",
-      "community": 9,
+      "community": 8,
       "norm_label": "test()"
     },
     {
@@ -1321,7 +1321,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/types/types.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_onboarding_profile_types_types_ts",
-      "community": 151,
+      "community": 150,
       "norm_label": "types.ts"
     },
     {
@@ -1330,7 +1330,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/types/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_onboarding_profile_types_index_ts",
-      "community": 152,
+      "community": 151,
       "norm_label": "index.ts"
     },
     {
@@ -1339,7 +1339,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/types/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_onboarding_profile_types_interfaces_ts",
-      "community": 153,
+      "community": 152,
       "norm_label": "interfaces.ts"
     },
     {
@@ -1348,7 +1348,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/constants/ProfileElements.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_onboarding_profile_constants_profileelements_ts",
-      "community": 154,
+      "community": 153,
       "norm_label": "profileelements.ts"
     },
     {
@@ -1357,7 +1357,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/constants/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_onboarding_profile_constants_index_ts",
-      "community": 155,
+      "community": 154,
       "norm_label": "index.ts"
     },
     {
@@ -1366,7 +1366,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/utils/getProfileFields.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_onboarding_profile_utils_getprofilefields_ts",
-      "community": 32,
+      "community": 33,
       "norm_label": "getprofilefields.ts"
     },
     {
@@ -1375,7 +1375,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/utils/getProfileFields.ts",
       "source_location": "L10",
       "id": "getprofilefields_getmissingelements",
-      "community": 32,
+      "community": 33,
       "norm_label": "getmissingelements()"
     },
     {
@@ -1384,7 +1384,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/utils/getProfileFields.ts",
       "source_location": "L24",
       "id": "getprofilefields_geteditablefields",
-      "community": 32,
+      "community": 33,
       "norm_label": "geteditablefields()"
     },
     {
@@ -1393,7 +1393,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/onboarding-profile/utils/getProfileFields.ts",
       "source_location": "L34",
       "id": "getprofilefields_getprofilefields",
-      "community": 32,
+      "community": 33,
       "norm_label": "getprofilefields()"
     },
     {
@@ -1555,7 +1555,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/donate-shop-trending/types/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_donate_shop_trending_types_index_ts",
-      "community": 156,
+      "community": 155,
       "norm_label": "index.ts"
     },
     {
@@ -1564,7 +1564,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/donate-shop-trending/types/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_donate_shop_trending_types_interfaces_ts",
-      "community": 157,
+      "community": 156,
       "norm_label": "interfaces.ts"
     },
     {
@@ -1618,7 +1618,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/dashboard/types/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_dashboard_types_index_ts",
-      "community": 158,
+      "community": 157,
       "norm_label": "index.ts"
     },
     {
@@ -1627,7 +1627,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/dashboard/types/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_dashboard_types_interfaces_ts",
-      "community": 159,
+      "community": 158,
       "norm_label": "interfaces.ts"
     },
     {
@@ -1672,7 +1672,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/dashboard/pages/Dashboard.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_dashboard_pages_dashboard_tsx",
-      "community": 160,
+      "community": 159,
       "norm_label": "dashboard.tsx"
     },
     {
@@ -1681,7 +1681,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/types/types.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_landing_home_types_types_ts",
-      "community": 161,
+      "community": 160,
       "norm_label": "types.ts"
     },
     {
@@ -1690,7 +1690,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/types/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_landing_home_types_index_ts",
-      "community": 162,
+      "community": 161,
       "norm_label": "index.ts"
     },
     {
@@ -1699,7 +1699,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/types/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_landing_home_types_interfaces_ts",
-      "community": 163,
+      "community": 162,
       "norm_label": "interfaces.ts"
     },
     {
@@ -1708,7 +1708,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/constants/landingContent.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_landing_home_constants_landingcontent_ts",
-      "community": 164,
+      "community": 163,
       "norm_label": "landingcontent.ts"
     },
     {
@@ -1735,7 +1735,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/OpenSource.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_landing_home_components_opensource_tsx",
-      "community": 165,
+      "community": 164,
       "norm_label": "opensource.tsx"
     },
     {
@@ -1744,7 +1744,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/DrivesRail.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_landing_home_components_drivesrail_tsx",
-      "community": 19,
+      "community": 20,
       "norm_label": "drivesrail.tsx"
     },
     {
@@ -1753,7 +1753,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/DrivesRail.tsx",
       "source_location": "L176",
       "id": "drivesrail_measureloop",
-      "community": 19,
+      "community": 20,
       "norm_label": "measureloop()"
     },
     {
@@ -1762,7 +1762,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/DrivesRail.tsx",
       "source_location": "L188",
       "id": "drivesrail_pause",
-      "community": 19,
+      "community": 20,
       "norm_label": "pause()"
     },
     {
@@ -1771,7 +1771,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/DrivesRail.tsx",
       "source_location": "L192",
       "id": "drivesrail_resume",
-      "community": 19,
+      "community": 20,
       "norm_label": "resume()"
     },
     {
@@ -1780,7 +1780,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/DrivesRail.tsx",
       "source_location": "L198",
       "id": "drivesrail_resumeafteridle",
-      "community": 19,
+      "community": 20,
       "norm_label": "resumeafteridle()"
     },
     {
@@ -1789,7 +1789,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/landing-home/components/DrivesRail.tsx",
       "source_location": "L203",
       "id": "drivesrail_tick",
-      "community": 19,
+      "community": 20,
       "norm_label": "tick()"
     },
     {
@@ -1852,7 +1852,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/types/types.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_types_types_ts",
-      "community": 166,
+      "community": 165,
       "norm_label": "types.ts"
     },
     {
@@ -1861,7 +1861,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/types/index.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_types_index_ts",
-      "community": 167,
+      "community": 166,
       "norm_label": "index.ts"
     },
     {
@@ -1870,7 +1870,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/types/interfaces.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_types_interfaces_ts",
-      "community": 168,
+      "community": 167,
       "norm_label": "interfaces.ts"
     },
     {
@@ -1879,7 +1879,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/convertToBase64.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_converttobase64_ts",
-      "community": 46,
+      "community": 47,
       "norm_label": "converttobase64.ts"
     },
     {
@@ -1888,7 +1888,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/convertToBase64.ts",
       "source_location": "L11",
       "id": "converttobase64_converter",
-      "community": 46,
+      "community": 47,
       "norm_label": "converter()"
     },
     {
@@ -1897,35 +1897,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/convertToBase64.ts",
       "source_location": "L28",
       "id": "converttobase64_converttobase64",
-      "community": 46,
+      "community": 47,
       "norm_label": "converttobase64()"
-    },
-    {
-      "label": "groupEventsByDay.ts",
-      "file_type": "code",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/groupEventsByDay.ts",
-      "source_location": "L1",
-      "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_groupeventsbyday_ts",
-      "community": 47,
-      "norm_label": "groupeventsbyday.ts"
-    },
-    {
-      "label": "dayLabel()",
-      "file_type": "code",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/groupEventsByDay.ts",
-      "source_location": "L12",
-      "id": "groupeventsbyday_daylabel",
-      "community": 47,
-      "norm_label": "daylabel()"
-    },
-    {
-      "label": "groupEventsByDay()",
-      "file_type": "code",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/groupEventsByDay.ts",
-      "source_location": "L43",
-      "id": "groupeventsbyday_groupeventsbyday",
-      "community": 47,
-      "norm_label": "groupeventsbyday()"
     },
     {
       "label": "getFormattedDate.ts",
@@ -1951,7 +1924,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_formateventfacts_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "formateventfacts.ts"
     },
     {
@@ -1960,7 +1933,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L22",
       "id": "formateventfacts_formateventdate",
-      "community": 12,
+      "community": 10,
       "norm_label": "formateventdate()"
     },
     {
@@ -1969,7 +1942,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L34",
       "id": "formateventfacts_formateventbadge",
-      "community": 12,
+      "community": 10,
       "norm_label": "formateventbadge()"
     },
     {
@@ -1978,7 +1951,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L46",
       "id": "formateventfacts_formateventtime",
-      "community": 12,
+      "community": 10,
       "norm_label": "formateventtime()"
     },
     {
@@ -1987,7 +1960,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L63",
       "id": "formateventfacts_formatmoney",
-      "community": 12,
+      "community": 10,
       "norm_label": "formatmoney()"
     },
     {
@@ -1996,7 +1969,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L72",
       "id": "formateventfacts_fundedpercent",
-      "community": 12,
+      "community": 10,
       "norm_label": "fundedpercent()"
     },
     {
@@ -2005,7 +1978,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L81",
       "id": "formateventfacts_formatduration",
-      "community": 12,
+      "community": 10,
       "norm_label": "formatduration()"
     },
     {
@@ -2014,8 +1987,17 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
       "source_location": "L101",
       "id": "formateventfacts_mapsurl",
-      "community": 12,
+      "community": 10,
       "norm_label": "mapsurl()"
+    },
+    {
+      "label": "isEventPast()",
+      "file_type": "code",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
+      "source_location": "L120",
+      "id": "formateventfacts_iseventpast",
+      "community": 10,
+      "norm_label": "iseventpast()"
     },
     {
       "label": "toDisplayEventDetail.ts",
@@ -2023,7 +2005,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/toDisplayEventDetail.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_todisplayeventdetail_ts",
-      "community": 20,
+      "community": 21,
       "norm_label": "todisplayeventdetail.ts"
     },
     {
@@ -2032,7 +2014,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/toDisplayEventDetail.ts",
       "source_location": "L16",
       "id": "todisplayeventdetail_todisplayeventdetail",
-      "community": 20,
+      "community": 21,
       "norm_label": "todisplayeventdetail()"
     },
     {
@@ -2113,7 +2095,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/HostedEvents.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_hostedevents_tsx",
-      "community": 169,
+      "community": 168,
       "norm_label": "hostedevents.tsx"
     },
     {
@@ -2149,7 +2131,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/EventsMarqueeCards.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_eventsmarqueecards_tsx",
-      "community": 170,
+      "community": 169,
       "norm_label": "eventsmarqueecards.tsx"
     },
     {
@@ -2158,8 +2140,17 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/EventCard.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_eventcard_tsx",
-      "community": 171,
+      "community": 170,
       "norm_label": "eventcard.tsx"
+    },
+    {
+      "label": "EventOrganizerPanel.tsx",
+      "file_type": "code",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventOrganizerPanel.tsx",
+      "source_location": "L1",
+      "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_detail_eventorganizerpanel_tsx",
+      "community": 171,
+      "norm_label": "eventorganizerpanel.tsx"
     },
     {
       "label": "EventSection.tsx",
@@ -2185,7 +2176,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventFundraiserPanel.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_detail_eventfundraiserpanel_tsx",
-      "community": 12,
+      "community": 10,
       "norm_label": "eventfundraiserpanel.tsx"
     },
     {
@@ -2194,7 +2185,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventFundraiserPanel.tsx",
       "source_location": "L20",
       "id": "eventfundraiserpanel_eventfundraiserpanel",
-      "community": 12,
+      "community": 10,
       "norm_label": "eventfundraiserpanel()"
     },
     {
@@ -2228,7 +2219,7 @@
       "label": "share()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventJoinPanel.tsx",
-      "source_location": "L44",
+      "source_location": "L55",
       "id": "eventjoinpanel_share",
       "community": 3,
       "norm_label": "share()"
@@ -2239,7 +2230,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventFacts.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_detail_eventfacts_tsx",
-      "community": 12,
+      "community": 10,
       "norm_label": "eventfacts.tsx"
     },
     {
@@ -2248,7 +2239,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventFacts.tsx",
       "source_location": "L25",
       "id": "eventfacts_eventfacts",
-      "community": 12,
+      "community": 10,
       "norm_label": "eventfacts()"
     },
     {
@@ -2264,7 +2255,7 @@
       "label": "accentFor()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventHero.tsx",
-      "source_location": "L18",
+      "source_location": "L19",
       "id": "eventhero_accentfor",
       "community": 78,
       "norm_label": "accentfor()"
@@ -2320,34 +2311,34 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_pages_detailedevent_tsx",
-      "community": 20,
+      "community": 21,
       "norm_label": "detailedevent.tsx"
     },
     {
       "label": "DetailedEvent()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
-      "source_location": "L37",
+      "source_location": "L45",
       "id": "detailedevent_detailedevent",
-      "community": 20,
+      "community": 21,
       "norm_label": "detailedevent()"
     },
     {
       "label": "checkNearFooter()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
-      "source_location": "L143",
+      "source_location": "L151",
       "id": "detailedevent_checknearfooter",
-      "community": 20,
+      "community": 21,
       "norm_label": "checknearfooter()"
     },
     {
       "label": "onScrollOrResize()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
-      "source_location": "L147",
+      "source_location": "L155",
       "id": "detailedevent_onscrollorresize",
-      "community": 20,
+      "community": 21,
       "norm_label": "onscrollorresize()"
     },
     {
@@ -2356,7 +2347,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/services/Events.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_services_events_ts",
-      "community": 18,
+      "community": 19,
       "norm_label": "events.ts"
     },
     {
@@ -2365,7 +2356,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/services/Events.ts",
       "source_location": "L11",
       "id": "events_getevents",
-      "community": 18,
+      "community": 19,
       "norm_label": "getevents()"
     },
     {
@@ -2410,7 +2401,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/authentication/utils/validateEmail.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_authentication_utils_validateemail_ts",
-      "community": 9,
+      "community": 6,
       "norm_label": "validateemail.ts"
     },
     {
@@ -2419,7 +2410,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/authentication/utils/validateEmail.ts",
       "source_location": "L15",
       "id": "validateemail_validateemail",
-      "community": 9,
+      "community": 6,
       "norm_label": "validateemail()"
     },
     {
@@ -2527,7 +2518,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/authentication/hooks/useValidation.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_features_authentication_hooks_usevalidation_ts",
-      "community": 9,
+      "community": 8,
       "norm_label": "usevalidation.ts"
     },
     {
@@ -2536,7 +2527,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/authentication/hooks/useValidation.ts",
       "source_location": "L12",
       "id": "usevalidation_usevalidation",
-      "community": 9,
+      "community": 8,
       "norm_label": "usevalidation()"
     },
     {
@@ -2887,7 +2878,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/SmoothScroll.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_components_smoothscroll_tsx",
-      "community": 25,
+      "community": 27,
       "norm_label": "smoothscroll.tsx"
     },
     {
@@ -2896,7 +2887,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/SmoothScroll.tsx",
       "source_location": "L9",
       "id": "smoothscroll_prefersreducedmotion",
-      "community": 25,
+      "community": 27,
       "norm_label": "prefersreducedmotion()"
     },
     {
@@ -2905,7 +2896,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/SmoothScroll.tsx",
       "source_location": "L27",
       "id": "smoothscroll_preferscoarsepointer",
-      "community": 25,
+      "community": 27,
       "norm_label": "preferscoarsepointer()"
     },
     {
@@ -2914,7 +2905,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/SmoothScroll.tsx",
       "source_location": "L39",
       "id": "smoothscroll_lenisgsapbridge",
-      "community": 25,
+      "community": 27,
       "norm_label": "lenisgsapbridge()"
     },
     {
@@ -2923,7 +2914,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/SmoothScroll.tsx",
       "source_location": "L86",
       "id": "smoothscroll_smoothscroll",
-      "community": 25,
+      "community": 27,
       "norm_label": "smoothscroll()"
     },
     {
@@ -3040,7 +3031,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/buttons/BacktoTop.tsx",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_components_buttons_backtotop_tsx",
-      "community": 33,
+      "community": 35,
       "norm_label": "backtotop.tsx"
     },
     {
@@ -3049,7 +3040,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/buttons/BacktoTop.tsx",
       "source_location": "L13",
       "id": "backtotop_gotobtn",
-      "community": 33,
+      "community": 35,
       "norm_label": "gotobtn()"
     },
     {
@@ -3058,7 +3049,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/buttons/BacktoTop.tsx",
       "source_location": "L22",
       "id": "backtotop_listentoscroll",
-      "community": 33,
+      "community": 35,
       "norm_label": "listentoscroll()"
     },
     {
@@ -3067,7 +3058,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/components/buttons/BacktoTop.tsx",
       "source_location": "L33",
       "id": "backtotop_debounce",
-      "community": 33,
+      "community": 35,
       "norm_label": "debounce()"
     },
     {
@@ -3418,7 +3409,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/services/ApiConnector.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_web_src_services_apiconnector_ts",
-      "community": 18,
+      "community": 19,
       "norm_label": "apiconnector.ts"
     },
     {
@@ -3427,7 +3418,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/services/ApiConnector.ts",
       "source_location": "L14",
       "id": "apiconnector_apiconnector",
-      "community": 18,
+      "community": 19,
       "norm_label": "apiconnector()"
     },
     {
@@ -3515,7 +3506,7 @@
       "label": "signupAndGetCookie()",
       "file_type": "code",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/tests/events.test.ts",
-      "source_location": "L6",
+      "source_location": "L12",
       "id": "events_test_signupandgetcookie",
       "community": 96,
       "norm_label": "signupandgetcookie()"
@@ -3697,7 +3688,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/scripts/seed-demo-data.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_scripts_seed_demo_data_ts",
-      "community": 21,
+      "community": 22,
       "norm_label": "seed-demo-data.ts"
     },
     {
@@ -3706,7 +3697,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/scripts/seed-demo-data.ts",
       "source_location": "L48",
       "id": "seed_demo_data_logourl",
-      "community": 21,
+      "community": 22,
       "norm_label": "logourl()"
     },
     {
@@ -3715,7 +3706,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/scripts/seed-demo-data.ts",
       "source_location": "L50",
       "id": "seed_demo_data_coverurl",
-      "community": 21,
+      "community": 22,
       "norm_label": "coverurl()"
     },
     {
@@ -3724,7 +3715,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/scripts/seed-demo-data.ts",
       "source_location": "L52",
       "id": "seed_demo_data_galleryurl",
-      "community": 21,
+      "community": 22,
       "norm_label": "galleryurl()"
     },
     {
@@ -3733,7 +3724,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/scripts/seed-demo-data.ts",
       "source_location": "L54",
       "id": "seed_demo_data_avatarurl",
-      "community": 21,
+      "community": 22,
       "norm_label": "avatarurl()"
     },
     {
@@ -3742,7 +3733,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/scripts/seed-demo-data.ts",
       "source_location": "L216",
       "id": "seed_demo_data_seed",
-      "community": 21,
+      "community": 22,
       "norm_label": "seed()"
     },
     {
@@ -3796,7 +3787,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/middleware/error-handler.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_middleware_error_handler_ts",
-      "community": 26,
+      "community": 28,
       "norm_label": "error-handler.ts"
     },
     {
@@ -3805,7 +3796,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/middleware/error-handler.ts",
       "source_location": "L7",
       "id": "error_handler_apperror",
-      "community": 26,
+      "community": 28,
       "norm_label": "apperror"
     },
     {
@@ -3814,7 +3805,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/middleware/error-handler.ts",
       "source_location": "L11",
       "id": "error_handler_apperror_constructor",
-      "community": 26,
+      "community": 28,
       "norm_label": ".constructor()"
     },
     {
@@ -3823,7 +3814,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/middleware/error-handler.ts",
       "source_location": "L18",
       "id": "error_handler_notfoundhandler",
-      "community": 26,
+      "community": 28,
       "norm_label": "notfoundhandler()"
     },
     {
@@ -3832,7 +3823,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/middleware/error-handler.ts",
       "source_location": "L23",
       "id": "error_handler_errorhandler",
-      "community": 26,
+      "community": 28,
       "norm_label": "errorhandler()"
     },
     {
@@ -4075,7 +4066,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_organizations_organization_service_ts",
-      "community": 7,
+      "community": 1,
       "norm_label": "organization.service.ts"
     },
     {
@@ -4084,7 +4075,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L35",
       "id": "organization_service_missingrequiredfields",
-      "community": 7,
+      "community": 1,
       "norm_label": "missingrequiredfields()"
     },
     {
@@ -4093,7 +4084,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L55",
       "id": "organization_service_topublic",
-      "community": 7,
+      "community": 1,
       "norm_label": "topublic()"
     },
     {
@@ -4102,7 +4093,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L93",
       "id": "organization_service_toprivate",
-      "community": 7,
+      "community": 1,
       "norm_label": "toprivate()"
     },
     {
@@ -4111,7 +4102,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L107",
       "id": "organization_service_findbyowneremail",
-      "community": 7,
+      "community": 1,
       "norm_label": "findbyowneremail()"
     },
     {
@@ -4120,7 +4111,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L111",
       "id": "organization_service_findlivebyhandle",
-      "community": 7,
+      "community": 1,
       "norm_label": "findlivebyhandle()"
     },
     {
@@ -4129,7 +4120,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L118",
       "id": "organization_service_createforowner",
-      "community": 7,
+      "community": 1,
       "norm_label": "createforowner()"
     },
     {
@@ -4138,7 +4129,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L142",
       "id": "organization_service_findorcreateforowner",
-      "community": 7,
+      "community": 1,
       "norm_label": "findorcreateforowner()"
     },
     {
@@ -4147,7 +4138,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L159",
       "id": "organization_service_toupdate",
-      "community": 7,
+      "community": 1,
       "norm_label": "toupdate()"
     },
     {
@@ -4156,7 +4147,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.service.ts",
       "source_location": "L179",
       "id": "organization_service_updateforowner",
-      "community": 7,
+      "community": 1,
       "norm_label": "updateforowner()"
     },
     {
@@ -4192,7 +4183,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_organizations_organization_controller_ts",
-      "community": 7,
+      "community": 1,
       "norm_label": "organization.controller.ts"
     },
     {
@@ -4210,7 +4201,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L45",
       "id": "organization_controller_taxonomy",
-      "community": 7,
+      "community": 1,
       "norm_label": "taxonomy()"
     },
     {
@@ -4219,7 +4210,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L57",
       "id": "organization_controller_getmine",
-      "community": 7,
+      "community": 1,
       "norm_label": "getmine()"
     },
     {
@@ -4228,7 +4219,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L82",
       "id": "organization_controller_updatemine",
-      "community": 7,
+      "community": 1,
       "norm_label": "updatemine()"
     },
     {
@@ -4237,7 +4228,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L119",
       "id": "organization_controller_getbyhandle",
-      "community": 7,
+      "community": 1,
       "norm_label": "getbyhandle()"
     },
     {
@@ -4246,7 +4237,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L135",
       "id": "organization_controller_dashboard",
-      "community": 7,
+      "community": 1,
       "norm_label": "dashboard()"
     },
     {
@@ -4309,7 +4300,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.service.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_payments_payment_service_ts",
-      "community": 7,
+      "community": 17,
       "norm_label": "payment.service.ts"
     },
     {
@@ -4318,7 +4309,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.service.ts",
       "source_location": "L20",
       "id": "payment_service_getrazorpayclient",
-      "community": 7,
+      "community": 17,
       "norm_label": "getrazorpayclient()"
     },
     {
@@ -4327,7 +4318,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.service.ts",
       "source_location": "L38",
       "id": "payment_service_createorder",
-      "community": 7,
+      "community": 17,
       "norm_label": "createorder()"
     },
     {
@@ -4336,7 +4327,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.service.ts",
       "source_location": "L64",
       "id": "payment_service_createsponsorshiporder",
-      "community": 7,
+      "community": 17,
       "norm_label": "createsponsorshiporder()"
     },
     {
@@ -4345,7 +4336,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.service.ts",
       "source_location": "L134",
       "id": "payment_service_verifysponsorshippayment",
-      "community": 7,
+      "community": 17,
       "norm_label": "verifysponsorshippayment()"
     },
     {
@@ -4354,7 +4345,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.controller.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_payments_payment_controller_ts",
-      "community": 35,
+      "community": 36,
       "norm_label": "payment.controller.ts"
     },
     {
@@ -4363,7 +4354,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.controller.ts",
       "source_location": "L11",
       "id": "payment_controller_createorder",
-      "community": 35,
+      "community": 36,
       "norm_label": "createorder()"
     },
     {
@@ -4372,7 +4363,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.controller.ts",
       "source_location": "L17",
       "id": "payment_controller_createsponsorshiporder",
-      "community": 35,
+      "community": 36,
       "norm_label": "createsponsorshiporder()"
     },
     {
@@ -4381,7 +4372,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/payments/payment.controller.ts",
       "source_location": "L30",
       "id": "payment_controller_verifysponsorshippayment",
-      "community": 35,
+      "community": 36,
       "norm_label": "verifysponsorshippayment()"
     },
     {
@@ -4507,7 +4498,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_auth_auth_controller_ts",
-      "community": 1,
+      "community": 11,
       "norm_label": "auth.controller.ts"
     },
     {
@@ -4516,7 +4507,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L22",
       "id": "auth_controller_signup",
-      "community": 1,
+      "community": 11,
       "norm_label": "signup()"
     },
     {
@@ -4525,7 +4516,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L34",
       "id": "auth_controller_signin",
-      "community": 1,
+      "community": 11,
       "norm_label": "signin()"
     },
     {
@@ -4543,7 +4534,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L63",
       "id": "auth_controller_updatepassword",
-      "community": 1,
+      "community": 11,
       "norm_label": "updatepassword()"
     },
     {
@@ -4552,7 +4543,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L78",
       "id": "auth_controller_forgotpassword",
-      "community": 1,
+      "community": 11,
       "norm_label": "forgotpassword()"
     },
     {
@@ -4561,7 +4552,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L87",
       "id": "auth_controller_resetpassword",
-      "community": 1,
+      "community": 11,
       "norm_label": "resetpassword()"
     },
     {
@@ -4570,7 +4561,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L96",
       "id": "auth_controller_googleinitiate",
-      "community": 1,
+      "community": 11,
       "norm_label": "googleinitiate()"
     },
     {
@@ -4579,7 +4570,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L119",
       "id": "auth_controller_issueoauthsession",
-      "community": 1,
+      "community": 11,
       "norm_label": "issueoauthsession()"
     },
     {
@@ -4588,7 +4579,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L124",
       "id": "auth_controller_googlecallback",
-      "community": 1,
+      "community": 11,
       "norm_label": "googlecallback()"
     },
     {
@@ -4597,7 +4588,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.controller.ts",
       "source_location": "L140",
       "id": "auth_controller_loginfailed",
-      "community": 1,
+      "community": 11,
       "norm_label": "loginfailed()"
     },
     {
@@ -4732,7 +4723,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.cookies.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_auth_auth_cookies_ts",
-      "community": 1,
+      "community": 11,
       "norm_label": "auth.cookies.ts"
     },
     {
@@ -4741,7 +4732,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.cookies.ts",
       "source_location": "L31",
       "id": "auth_cookies_basecookieoptions",
-      "community": 1,
+      "community": 11,
       "norm_label": "basecookieoptions()"
     },
     {
@@ -4750,7 +4741,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.cookies.ts",
       "source_location": "L45",
       "id": "auth_cookies_httponlycookieoptions",
-      "community": 1,
+      "community": 11,
       "norm_label": "httponlycookieoptions()"
     },
     {
@@ -4759,7 +4750,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.cookies.ts",
       "source_location": "L58",
       "id": "auth_cookies_readablecookieoptions",
-      "community": 1,
+      "community": 11,
       "norm_label": "readablecookieoptions()"
     },
     {
@@ -4768,7 +4759,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/auth/auth.cookies.ts",
       "source_location": "L66",
       "id": "auth_cookies_clearedcookieoptions",
-      "community": 1,
+      "community": 11,
       "norm_label": "clearedcookieoptions()"
     },
     {
@@ -4867,7 +4858,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/users/user.controller.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_users_user_controller_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "user.controller.ts"
     },
     {
@@ -4885,7 +4876,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/users/user.controller.ts",
       "source_location": "L34",
       "id": "user_controller_updateprofile",
-      "community": 1,
+      "community": 5,
       "norm_label": "updateprofile()"
     },
     {
@@ -4903,7 +4894,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/users/user.controller.ts",
       "source_location": "L69",
       "id": "user_controller_completeprofile",
-      "community": 1,
+      "community": 5,
       "norm_label": "completeprofile()"
     },
     {
@@ -5047,7 +5038,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/events/event.service.ts",
       "source_location": "L38",
       "id": "event_service_createevent",
-      "community": 5,
+      "community": 1,
       "norm_label": "createevent()"
     },
     {
@@ -5110,7 +5101,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/reports/report.controller.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_reports_report_controller_ts",
-      "community": 27,
+      "community": 29,
       "norm_label": "report.controller.ts"
     },
     {
@@ -5119,7 +5110,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/reports/report.controller.ts",
       "source_location": "L6",
       "id": "report_controller_createreport",
-      "community": 27,
+      "community": 29,
       "norm_label": "createreport()"
     },
     {
@@ -5137,7 +5128,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/reports/report.service.ts",
       "source_location": "L1",
       "id": "users_tamalcodes_gh_karmacircle_apps_api_src_modules_reports_report_service_ts",
-      "community": 27,
+      "community": 29,
       "norm_label": "report.service.ts"
     },
     {
@@ -5146,7 +5137,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/reports/report.service.ts",
       "source_location": "L5",
       "id": "report_service_hasreportedrecently",
-      "community": 27,
+      "community": 29,
       "norm_label": "hasreportedrecently()"
     },
     {
@@ -5155,7 +5146,7 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/reports/report.service.ts",
       "source_location": "L15",
       "id": "report_service_createreport",
-      "community": 27,
+      "community": 29,
       "norm_label": "createreport()"
     },
     {
@@ -5324,7 +5315,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "ngoworld app shell (index.html)",
       "id": "index_ngoworld_app"
     },
@@ -5337,7 +5328,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "milanhub.org (production url)",
       "id": "index_milanhub_org"
     },
@@ -5350,7 +5341,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "bootstrap 5.2.3 cdn",
       "id": "index_bootstrap_cdn"
     },
@@ -5363,7 +5354,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "google fonts (montserrat, ubuntu, open sans, poppins, outfit)",
       "id": "index_google_fonts"
     },
@@ -5376,7 +5367,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "manifest.json (pwa manifest)",
       "id": "index_manifest_json"
     },
@@ -5389,7 +5380,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "src/index.jsx (app entry module)",
       "id": "index_src_index_jsx"
     },
@@ -5402,7 +5393,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "changelog v0.3.7",
       "id": "changelog_v0_3_7"
     },
@@ -5415,7 +5406,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "changelog v0.3.6",
       "id": "changelog_v0_3_6"
     },
@@ -5428,7 +5419,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "changelog v0.3.5",
       "id": "changelog_v0_3_5"
     },
@@ -5441,7 +5432,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "changelog v0.3.4",
       "id": "changelog_v0_3_4"
     },
@@ -5454,7 +5445,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "changelog v0.3.3",
       "id": "changelog_v0_3_3"
     },
@@ -5467,7 +5458,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "iamtamal/milan github repo",
       "id": "changelog_iamtamal_milan_repo"
     },
@@ -5480,7 +5471,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "ngoworld project overview",
       "id": "readme_ngoworld_overview"
     },
@@ -5506,7 +5497,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "production release (milanhub.vercel.app)",
       "id": "readme_production_release"
     },
@@ -5519,7 +5510,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "ngoworld-backend repo",
       "id": "readme_ngoworld_backend_repo"
     },
@@ -5532,7 +5523,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "mit license",
       "id": "readme_license_mit"
     },
@@ -5545,7 +5536,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "commit message format",
       "id": "contributing_commit_message_format"
     },
@@ -5558,7 +5549,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "eslint & prettier",
       "id": "contributing_eslint_prettier"
     },
@@ -5571,7 +5562,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "pre-commit hooks (husky/lint-staged)",
       "id": "contributing_pre_commit_hooks"
     },
@@ -5584,7 +5575,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "issues guidelines",
       "id": "contributing_issues_guidelines"
     },
@@ -5597,7 +5588,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "pull requests",
       "id": "contributing_pull_requests"
     },
@@ -5610,7 +5601,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "pull request title format",
       "id": "contributing_pr_title_format"
     },
@@ -5623,7 +5614,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "reviewing a pull request (dos/don'ts)",
       "id": "contributing_pr_review_guidelines"
     },
@@ -5662,7 +5653,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "backend boundary",
       "id": "agents_backend_boundary"
     },
@@ -5727,7 +5718,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "ngoworld-backend repo (frontend/backend split)",
       "id": "agents_ngoworld_backend_repo"
     },
@@ -5740,7 +5731,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "src/integrations/apiendpoints.js",
       "id": "agents_api_endpoints_js"
     },
@@ -5857,7 +5848,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "coding conventions for this repo",
       "id": "claude_coding_conventions"
     },
@@ -5870,7 +5861,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "import aliases convention",
       "id": "claude_import_aliases"
     },
@@ -5883,7 +5874,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "api calls convention",
       "id": "claude_api_calls_convention"
     },
@@ -5896,7 +5887,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "src/service/milanapi.js",
       "id": "claude_milan_api_js"
     },
@@ -5909,7 +5900,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "src/integrations/* + apiconnector (dead-end layer)",
       "id": "claude_api_connector_deadend"
     },
@@ -5922,7 +5913,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "useswr / fetcher.js convention",
       "id": "claude_reads_useswr"
     },
@@ -5935,7 +5926,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "statuscode constants convention",
       "id": "claude_status_codes_convention"
     },
@@ -5948,7 +5939,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "toasts convention (showsuccesstoast/showerrortoast)",
       "id": "claude_toasts_convention"
     },
@@ -5961,7 +5952,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "shared button component convention",
       "id": "claude_buttons_convention"
     },
@@ -5974,7 +5965,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "scss styling convention",
       "id": "claude_styling_convention"
     },
@@ -5987,7 +5978,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "validation-on-submit convention",
       "id": "claude_validation_on_submit"
     },
@@ -6013,7 +6004,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "why: match majority pattern instead of a third pattern",
       "id": "claude_conventions_rationale"
     },
@@ -6052,7 +6043,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "installing dependencies",
       "id": "frontendsetup_installing_dependencies"
     },
@@ -6078,7 +6069,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "service workers (dev vs prod)",
       "id": "frontendsetup_service_workers"
     },
@@ -6091,7 +6082,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "frontend coding standards",
       "id": "frontendsetup_coding_standards"
     },
@@ -6117,7 +6108,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "frontend setup next steps",
       "id": "frontendsetup_next_steps"
     },
@@ -6130,7 +6121,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "docker desktop prerequisite",
       "id": "dockersetup_prerequisite"
     },
@@ -6143,7 +6134,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 110,
+      "community": 111,
       "norm_label": "docker setup: clone repository",
       "id": "dockersetup_clone_step"
     },
@@ -6156,7 +6147,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 111,
+      "community": 110,
       "norm_label": "docker setup: env variables (port, mongo_uri, razorpay_*)",
       "id": "dockersetup_env_variables"
     },
@@ -6169,7 +6160,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "docker-compose up --build",
       "id": "dockersetup_docker_compose"
     },
@@ -6182,7 +6173,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 111,
+      "community": 110,
       "norm_label": "razorpay api docs",
       "id": "dockersetup_razorpay_docs"
     },
@@ -6195,7 +6186,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "forking guide",
       "id": "clonesetup_forking"
     },
@@ -6208,7 +6199,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "beta development branch",
       "id": "clonesetup_beta_branch"
     },
@@ -6221,7 +6212,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 110,
+      "community": 111,
       "norm_label": "cloning guide",
       "id": "clonesetup_cloning"
     },
@@ -6234,7 +6225,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "clone setup next steps",
       "id": "clonesetup_next_steps"
     },
@@ -6247,7 +6238,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "why: uncheck 'copy the main branch only' when forking",
       "id": "clonesetup_multi_branch_rationale"
     },
@@ -6260,7 +6251,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "robots.txt (crawl policy)",
       "id": "robots_txt"
     },
@@ -6273,7 +6264,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "sitemap.txt (indexed urls)",
       "id": "sitemap_txt"
     },
@@ -6507,7 +6498,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/index.jsx (app entry point)",
       "id": "architecture_index_jsx"
     },
@@ -6520,7 +6511,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/app.jsx (route/provider shell)",
       "id": "architecture_app_jsx"
     },
@@ -6533,7 +6524,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "redux <provider> wrapper",
       "id": "architecture_redux_provider"
     },
@@ -6546,7 +6537,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "<helmetprovider> (react-helmet-async)",
       "id": "architecture_helmetprovider"
     },
@@ -6559,7 +6550,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "redux-persist <persistgate>",
       "id": "architecture_persistgate"
     },
@@ -6572,7 +6563,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "<queryclientprovider> (@tanstack/react-query, unused)",
       "id": "architecture_queryclientprovider"
     },
@@ -6585,7 +6576,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "mui <localizationprovider> (date/time pickers)",
       "id": "architecture_localizationprovider"
     },
@@ -6598,7 +6589,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "global <toastcontainer /> (react-toastify)",
       "id": "architecture_toastcontainer"
     },
@@ -6611,7 +6602,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/utils/routesconfig.jsx (route table)",
       "id": "architecture_routesconfig"
     },
@@ -6624,7 +6615,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/pages/route.js (page barrel file)",
       "id": "architecture_route_js"
     },
@@ -6650,7 +6641,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 112,
+      "community": 113,
       "norm_label": "src/pages/events/detailed/detailedevent.jsx (unrouted stub)",
       "id": "architecture_detailedevent_jsx"
     },
@@ -6689,7 +6680,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 113,
+      "community": 112,
       "norm_label": ".env.example (documents stale vite_milanapi)",
       "id": "architecture_env_example"
     },
@@ -6897,7 +6888,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 38,
       "norm_label": "showsuccesstoast / showerrortoast (src/utils/toasts.js)",
       "id": "api_integration_toasts"
     },
@@ -6988,7 +6979,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/redux/store.js (root reducer + redux-persist)",
       "id": "state_management_redux_store"
     },
@@ -7014,7 +7005,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "redux-persist persistreducer (key 'root', localstorage, v1, no migrations)",
       "id": "state_management_redux_persist"
     },
@@ -7144,7 +7135,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 113,
+      "community": 112,
       "norm_label": "issue: .env.example documents vite_milanapi instead of vite_api_url",
       "id": "known_issues_env_example_wrong_var"
     },
@@ -7157,7 +7148,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "issue: queryclientprovider wraps app but nothing uses react-query",
       "id": "known_issues_queryclientprovider_unused"
     },
@@ -7183,7 +7174,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 112,
+      "community": 113,
       "norm_label": "issue: /events/:id-equivalent has no route despite detailedevent.jsx stub",
       "id": "known_issues_detailedevent_route_missing"
     },
@@ -7690,7 +7681,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/pages/error/error404.jsx (404 catch-all page, no helmet/seo)",
       "id": "error_handling_error404"
     },
@@ -7703,7 +7694,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 38,
       "norm_label": "no react error boundary anywhere in the app",
       "id": "error_handling_no_error_boundary"
     },
@@ -7716,7 +7707,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 38,
       "norm_label": "src/utils/checkinternetconnection.js (suppresses toasts when offline)",
       "id": "error_handling_checkinternetconnection"
     },
@@ -7729,7 +7720,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/pages/test.jsx (unrouted dev leftover, redirects to google.com)",
       "id": "error_handling_test_jsx"
     },
@@ -7755,7 +7746,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 38,
       "norm_label": "rationale: suppress toasts offline on assumption an offline banner would be more useful (none exists)",
       "id": "error_handling_rationale_toast_suppression"
     },
@@ -7859,7 +7850,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "src/components/shared/buttons/backtotopbutton/backtotop.jsx (global scroll-to-top button)",
       "id": "layout_navigation_backtotop"
     },
@@ -7872,7 +7863,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 0,
       "norm_label": "src/utils/clickawaylistener.jsx (unused generic click-away wrapper)",
       "id": "layout_navigation_clickawaylistener"
     },
@@ -8535,7 +8526,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 28,
+      "community": 30,
       "norm_label": "donate.jsx (unroutable, broken imports, near-full rewrite needed)",
       "id": "donate_shop_trending_donate_jsx"
     },
@@ -8548,7 +8539,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 28,
+      "community": 30,
       "norm_label": "paymentgateway.js / displayrazorpay() (post /payment/razorpay)",
       "id": "donate_shop_trending_paymentgateway"
     },
@@ -8561,7 +8552,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "shop.jsx (/shop, comingsoon placeholder)",
       "id": "donate_shop_trending_shop_jsx"
     },
@@ -8574,7 +8565,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "trending.jsx (/trending, comingsoon placeholder)",
       "id": "donate_shop_trending_trending_jsx"
     },
@@ -8587,7 +8578,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "comingsoon shared component",
       "id": "donate_shop_trending_comingsoon"
     },
@@ -8600,7 +8591,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 28,
+      "community": 30,
       "norm_label": "getallclubs() (milanapi.js, get /clubs)",
       "id": "donate_shop_trending_getallclubs"
     },
@@ -8613,7 +8604,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 28,
+      "community": 30,
       "norm_label": "cookies.get('isloggedin') gate that can never pass (unused cookie)",
       "id": "donate_shop_trending_islogged_in_cookie_bug"
     },
@@ -8626,7 +8617,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 28,
+      "community": 30,
       "norm_label": "hardcoded prefill (app author's own name/email/phone) in razorpay checkout",
       "id": "donate_shop_trending_prefill_hardcoded_bug"
     },
@@ -8639,7 +8630,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "rationale: shop/trending deliberately left as comingsoon placeholders, no feature built yet",
       "id": "donate_shop_trending_placeholder_rationale"
     },
@@ -8652,7 +8643,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 40,
       "norm_label": "app icon (512x512): two open hands cradling a red heart, line-art style with beige/cream hand fill and coral heart, on transparent background \u2014 depicts care, giving, and solidarity as the karmacircle app/pwa icon",
       "id": "icon_512x512_image"
     },
@@ -8665,7 +8656,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 40,
       "norm_label": "bell notification icon (svg, 'bell_on' group): a ringing/active bell glyph rendered via currentcolor stroke+fill for a ui notifications button",
       "id": "bell_image"
     },
@@ -8678,7 +8669,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 40,
       "norm_label": "default profile picture placeholder: flat-illustration circular avatar of a woman with brown hair, teal background, worn as a fallback/default user avatar image",
       "id": "profilepicture_image"
     },
@@ -8691,7 +8682,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 40,
       "norm_label": "solidarity illustration: two open hands cradling a red heart, same line-art style as the app icon, used to convey community support/karma/charity concept in the app ui",
       "id": "solidarity_image"
     },
@@ -8704,7 +8695,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 41,
       "norm_label": "comingsoon.svg - coming soon illustration",
       "id": "comingsoon_image"
     },
@@ -8717,7 +8708,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 41,
       "norm_label": "error404.svg - 404 not found illustration",
       "id": "error404_image"
     },
@@ -8730,7 +8721,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 41,
       "norm_label": "profileplaceholderimage.png - default avatar placeholder",
       "id": "profileplaceholderimage_image"
     },
@@ -8743,7 +8734,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 41,
       "norm_label": "milannavbrand.svg - milan/karmacircle navbar brand logo",
       "id": "milannavbrand_image"
     },
@@ -8808,7 +8799,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 42,
       "norm_label": "milanconnect.svg - flat-illustration graphic of two people holding cardboard 'donation' boxes and two people video-calling/handshaking through phone screens with a heart icon, in an orange/pink/coral palette",
       "id": "milanconnect_image"
     },
@@ -8821,7 +8812,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 42,
       "norm_label": "vector.png - decorative dark graph-paper/grid pattern background asset (black background with thin white and orange gridlines)",
       "id": "vector_image"
     },
@@ -8834,7 +8825,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 42,
       "norm_label": "milanseo.svg - bold comic-style open graph/social-share banner reading 'connecting charities, n[gos], help & yo[u]' with speech-bubble bursts in teal, coral and pink",
       "id": "milanseo_image"
     },
@@ -8847,7 +8838,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 42,
       "norm_label": "clubbanner.jpg - real photograph of a volunteer woman sitting outdoors with a large group of smiling children in red-checked school uniforms under blue tarp shelters",
       "id": "clubbanner_image"
     },
@@ -8955,7 +8946,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
-      "source_location": "L21",
+      "source_location": "L23",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
       "_tgt": "events_responsive_spec_signuporganization",
@@ -8967,7 +8958,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
-      "source_location": "L41",
+      "source_location": "L43",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
       "_tgt": "events_responsive_spec_createevent",
@@ -8979,12 +8970,24 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
-      "source_location": "L82",
+      "source_location": "L86",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
       "_tgt": "events_responsive_spec_expectnohorizontaloverflow",
       "source": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
       "target": "events_responsive_spec_expectnohorizontaloverflow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/e2e/events/events-responsive.spec.ts",
+      "source_location": "L195",
+      "weight": 1.0,
+      "_src": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
+      "_tgt": "events_responsive_spec_soon",
+      "source": "users_tamalcodes_gh_karmacircle_apps_web_e2e_events_events_responsive_spec_ts",
+      "target": "events_responsive_spec_soon",
       "confidence_score": 1.0
     },
     {
@@ -10502,42 +10505,6 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/groupEventsByDay.ts",
-      "source_location": "L12",
-      "weight": 1.0,
-      "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_groupeventsbyday_ts",
-      "_tgt": "groupeventsbyday_daylabel",
-      "source": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_groupeventsbyday_ts",
-      "target": "groupeventsbyday_daylabel",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/groupEventsByDay.ts",
-      "source_location": "L43",
-      "weight": 1.0,
-      "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_groupeventsbyday_ts",
-      "_tgt": "groupeventsbyday_groupeventsbyday",
-      "source": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_groupeventsbyday_ts",
-      "target": "groupeventsbyday_groupeventsbyday",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/groupEventsByDay.ts",
-      "source_location": "L47",
-      "weight": 1.0,
-      "_src": "groupeventsbyday_groupeventsbyday",
-      "_tgt": "groupeventsbyday_daylabel",
-      "source": "groupeventsbyday_daylabel",
-      "target": "groupeventsbyday_groupeventsbyday",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/getFormattedDate.ts",
       "source_location": "L7",
       "weight": 1.0,
@@ -10629,6 +10596,18 @@
       "_tgt": "formateventfacts_mapsurl",
       "source": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_formateventfacts_ts",
       "target": "formateventfacts_mapsurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/utils/formatEventFacts.ts",
+      "source_location": "L120",
+      "weight": 1.0,
+      "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_formateventfacts_ts",
+      "_tgt": "formateventfacts_iseventpast",
+      "source": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_utils_formateventfacts_ts",
+      "target": "formateventfacts_iseventpast",
       "confidence_score": 1.0
     },
     {
@@ -10839,7 +10818,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventJoinPanel.tsx",
-      "source_location": "L44",
+      "source_location": "L55",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_detail_eventjoinpanel_tsx",
       "_tgt": "eventjoinpanel_share",
@@ -10887,7 +10866,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/components/detail/EventHero.tsx",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_components_detail_eventhero_tsx",
       "_tgt": "eventhero_accentfor",
@@ -10911,7 +10890,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
-      "source_location": "L37",
+      "source_location": "L45",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_pages_detailedevent_tsx",
       "_tgt": "detailedevent_detailedevent",
@@ -10923,7 +10902,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
-      "source_location": "L143",
+      "source_location": "L151",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_pages_detailedevent_tsx",
       "_tgt": "detailedevent_checknearfooter",
@@ -10935,7 +10914,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/web/src/features/events/pages/DetailedEvent.tsx",
-      "source_location": "L147",
+      "source_location": "L155",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_web_src_features_events_pages_detailedevent_tsx",
       "_tgt": "detailedevent_onscrollorresize",
@@ -12147,7 +12126,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/tests/events.test.ts",
-      "source_location": "L6",
+      "source_location": "L12",
       "weight": 1.0,
       "_src": "users_tamalcodes_gh_karmacircle_apps_api_tests_events_test_ts",
       "_tgt": "events_test_signupandgetcookie",
@@ -13102,6 +13081,18 @@
       "_tgt": "organization_controller_updatemine",
       "source": "organization_service_findorcreateforowner",
       "target": "organization_controller_updatemine"
+    },
+    {
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/events/event.service.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "_src": "event_service_createevent",
+      "_tgt": "organization_service_findorcreateforowner",
+      "source": "organization_service_findorcreateforowner",
+      "target": "event_service_createevent"
     },
     {
       "relation": "calls",
