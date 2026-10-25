@@ -4,6 +4,7 @@ import {
   inputClasses,
 } from "@features/authentication/components/AuthFieldKit";
 import AuthLayout from "@features/authentication/components/AuthLayout";
+import type { ResetPasswordResponse } from "@features/authentication/types";
 import {
   PASSWORD_STRENGTH_META,
   getPasswordStrength,
@@ -67,9 +68,18 @@ const ResetPassword = () => {
     setLoading(false);
 
     if (response?.status === STATUSCODE.OK) {
-      showSuccessToast(response.data?.message);
+      const data = response.data as ResetPasswordResponse | undefined;
+      showSuccessToast(data?.message);
       setSucceeded(true);
-      setTimeout(() => navigate("/auth/signin"), 1500);
+      // `email` is the account the token resolved to server-side (this
+      // page only ever had the opaque token) — carried the same way
+      // Auth.tsx's "signin" step already carries its own email forward to
+      // ForgotPassword, so /auth/signin can open straight to the password
+      // field instead of asking for the email a second time.
+      setTimeout(
+        () => navigate("/auth/signin", { state: { email: data?.email } }),
+        1500,
+      );
     } else if (response?.status === STATUSCODE.BAD_REQUEST) {
       setErrors((prev) => ({
         ...prev,

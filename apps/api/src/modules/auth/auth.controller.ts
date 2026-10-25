@@ -86,11 +86,11 @@ export async function forgotPassword(req: Request, res: Response) {
 
 export async function resetPassword(req: Request, res: Response) {
   const { token, newPassword } = req.body as ResetPasswordInput;
-  await authService.resetPassword(token, newPassword);
+  const email = await authService.resetPassword(token, newPassword);
 
   res
     .status(STATUS_CODE.OK)
-    .json({ message: STATUS_MESSAGE.PASSWORD_RESET_SUCCESS });
+    .json({ message: STATUS_MESSAGE.PASSWORD_RESET_SUCCESS, email });
 }
 
 export function googleInitiate(req: Request, res: Response) {

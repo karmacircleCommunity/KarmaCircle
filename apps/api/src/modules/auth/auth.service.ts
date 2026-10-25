@@ -220,7 +220,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
 export async function resetPassword(
   rawToken: string,
   newPassword: string,
-): Promise<void> {
+): Promise<string> {
   const existingUser = await User.findOne({
     resetPasswordToken: hashResetToken(rawToken),
     resetPasswordExpires: { $gt: new Date() },
@@ -242,6 +242,13 @@ export async function resetPassword(
   // never leave pre-existing sessions alive.
   existingUser.tokenVersion += 1;
   await existingUser.save();
+
+  // Handed back to the controller so it can tell the frontend which
+  // account this was, letting `/auth/signin` open straight to the
+  // password field instead of asking for the email a second time — the
+  // token itself is opaque to the caller, so there's no other way for it
+  // to know.
+  return existingUser.email;
 }
 
 export async function findOrCreateGoogleUser(params: {

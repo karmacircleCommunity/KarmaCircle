@@ -45,6 +45,15 @@ export interface ResetPasswordPayload {
   newPassword: string;
 }
 
+/** Response body for `ResetPassword()` — `email` is the account the token
+ * resolved to server-side (the frontend never had it on hand). Carried to
+ * `/auth/signin` via router `state` so that page can open straight to
+ * `Auth.tsx`'s `"signin"` step instead of the blank email step. */
+export interface ResetPasswordResponse {
+  message: string;
+  email: string;
+}
+
 /* ---------------------------------------------------------------------
  * hooks/useValidation.js — the fuller, unused validator.
  * ------------------------------------------------------------------- */

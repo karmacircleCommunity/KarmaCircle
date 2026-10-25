@@ -232,6 +232,7 @@ describe("Auth", () => {
           .post("/auth/reset-password")
           .send({ token, newPassword: "new-password-1" });
         expect(resetRes.status).toBe(200);
+        expect(resetRes.body.email).toBe(credentials.email);
 
         const oldSignin = await request(app)
           .post("/auth/signin")

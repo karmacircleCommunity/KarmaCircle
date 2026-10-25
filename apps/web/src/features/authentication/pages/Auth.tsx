@@ -39,10 +39,22 @@ type FlowStep = "email" | "signin" | "signup";
 const Auth = () => {
   const location = useLocation();
 
-  const [step, setStep] = useState<FlowStep>("email");
+  // Carried over from ResetPassword.tsx's post-reset redirect — same
+  // router-state convention the "signin" step below uses to carry *its*
+  // own email forward to ForgotPassword. A string here only ever means a
+  // real, existing account (the backend resolved it off a single-use
+  // reset token), so skip straight to "signin" with it locked in rather
+  // than re-running CheckEmailExists on an email we already know exists.
+  const carriedEmail = (location.state as { email?: unknown } | null)?.email;
+  const hasCarriedEmail =
+    typeof carriedEmail === "string" && carriedEmail.length > 0;
+
+  const [step, setStep] = useState<FlowStep>(
+    hasCarriedEmail ? "signin" : "email",
+  );
   const [credentials, setCredentials] = useState<Credentials>({
     name: "",
-    email: "",
+    email: hasCarriedEmail ? carriedEmail : "",
     password: "",
     userType: authTypeOptions[0],
   });

@@ -38,7 +38,7 @@ Do not assume both are exercised by any given change.
 | `components/AuthButton.tsx` | Unused alternate submit-button + "switch mode" component | ❌ no |
 | `components/RenderErrorMessage.tsx` | Unused helper for rendering `useValidation`-shaped error arrays | ❌ no (only meaningful once `useValidation` is wired in) |
 | `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (`Auth.tsx`/`ResetPassword.tsx` inline their own toggle logic instead) |
-| `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState`/`ForgotPasswordPayload`/`ResetPasswordPayload` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
+| `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState`/`ForgotPasswordPayload`/`ResetPasswordPayload`/`ResetPasswordResponse` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
 
 Five of the fourteen non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
 Per [known-issues.md](../../../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller organization-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live page at all today, and this scaffolding is the closest thing to a spec for it.
@@ -46,7 +46,7 @@ Per [known-issues.md](../../../../../docs/specs/known-issues.md), treat these as
 ## Types
 
 This folder is fully TypeScript (`.ts`/`.tsx`) as of the auth+organizations conversion pass — see `tsconfig.json` at the repo root.
-`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), `Auth.tsx`'s `Credentials`/`AuthErrors` shapes, `ForgotPasswordPayload`/`ResetPasswordPayload` (the request bodies `ForgotPassword()`/`ResetPassword()` in `KarmaCircleApi.ts` send — `ResetPassword.tsx` builds a `ResetPasswordPayload`-shaped object locally rather than importing the type there, since `KarmaCircleApi.ts` is shared code and shouldn't import a feature-specific type back), and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`OrganizationFormState`/`SignupFormState` shapes.
+`types/index.ts` holds everything specific to this feature: the `AuthType` enum (`SignIn`/`SignUp`, passed into `useAuth`), `Auth.tsx`'s `Credentials`/`AuthErrors` shapes, `ForgotPasswordPayload`/`ResetPasswordPayload` (the request bodies `ForgotPassword()`/`ResetPassword()` in `KarmaCircleApi.ts` send — `ResetPassword.tsx` builds a `ResetPasswordPayload`-shaped object locally rather than importing the type there, since `KarmaCircleApi.ts` is shared code and shouldn't import a feature-specific type back), `ResetPasswordResponse` (the `POST /auth/reset-password` response shape — `ResetPassword.tsx` casts `response.data` to it locally for the same reason, rather than typing `KarmaCircleApi.ts`'s `Axios.post` generic), and the unused system's `ValidationError`/`ValidationResult`/`ValidatableCredentials`/`IndividualFormState`/`OrganizationFormState`/`SignupFormState` shapes.
 `UserType` (the `"individual" | "organization"` enum) and `AuthTypeOption` (the react-select option shape) live in `src/types/user.ts` instead, since `organizations` needs `UserType` too.
 This feature's shared dependencies are all typed directly now, following the app shell and shared-layer conversion passes (see `docs/specs/architecture.md#typescript`): `src/statics/Constants.ts` (`authTypeOptions` types as `AuthTypeOption[]`), `src/utils/Toasts.ts`/`CheckInternetConnection.ts`, `src/services/KarmaCircleApi.ts`, the shared `Button` component, and the Redux `userSlice.ts`/Zustand `useAuth.ts` store.
 
@@ -118,7 +118,7 @@ Default export, function component, no props, routed at `/auth/reset-password/:t
 
 **Local state:** `newPassword`, `confirmPassword`, `errors` (`{ newPassword?, confirmPassword?, token? }` — `token` doubles as the "this whole attempt failed" slot, rendered as a banner above the form rather than under a specific field, since an invalid/expired token isn't about either password field), `showPassword`, `loading`, `succeeded`.
 
-**Submit (`handleSubmit`):** `passwordRegex.test(newPassword)` (same rule `useAuth.ts`'s `"signup"` branch uses) → on failure, `errors.newPassword`, stop. `newPassword !== confirmPassword` → `errors.confirmPassword`, stop. Neither check makes a network call. Otherwise `ResetPassword({ token, newPassword })` (`KarmaCircleApi.ts`, `POST /auth/reset-password`). On `STATUSCODE.OK`: `showSuccessToast`, `succeeded = true`, then a **1500ms `setTimeout`** navigates to `/auth/signin` (deliberately longer than `useAuth.ts`'s 1000ms — this page's success state is a full-sentence confirmation, not just a toast, so it gets a beat longer on screen before the redirect). On `STATUSCODE.BAD_REQUEST` (invalid/expired/already-used token — see `apps/api/docs/specs/auth.md`): `errors.token` is set from the backend's message, rendered in the banner alongside a "Request a new link" link back to `/auth/forgot-password`. Any other status falls into the same `errors.token` banner with a generic message.
+**Submit (`handleSubmit`):** `passwordRegex.test(newPassword)` (same rule `useAuth.ts`'s `"signup"` branch uses) → on failure, `errors.newPassword`, stop. `newPassword !== confirmPassword` → `errors.confirmPassword`, stop. Neither check makes a network call. Otherwise `ResetPassword({ token, newPassword })` (`KarmaCircleApi.ts`, `POST /auth/reset-password`). On `STATUSCODE.OK`: `showSuccessToast`, `succeeded = true`, then a **1500ms `setTimeout`** navigates to `/auth/signin` (deliberately longer than `useAuth.ts`'s 1000ms — this page's success state is a full-sentence confirmation, not just a toast, so it gets a beat longer on screen before the redirect), passing `response.data?.email` through router `state` (October 2026) — the backend resolves this off the token and hands it back in the same `200` response, since this page otherwise never has the visitor's email on hand. `Auth.tsx` reads that state and opens straight to its `"signin"` step with the email locked in, instead of the blank `"email"` step a bare `navigate("/auth/signin")` used to land on. On `STATUSCODE.BAD_REQUEST` (invalid/expired/already-used token — see `apps/api/docs/specs/auth.md`): `errors.token` is set from the backend's message, rendered in the banner alongside a "Request a new link" link back to `/auth/forgot-password`. Any other status falls into the same `errors.token` banner with a generic message.
 
 Renders the same live password-strength meter as `Auth.tsx`'s `"signup"` step (`getPasswordStrength`/`PASSWORD_STRENGTH_META`, now shared via `utils/passwordStrength.ts` — see below), under the "New password" field only, plus a second, unmeddled "Confirm new password" field. `Auth.tsx`'s own signup step still has no confirm-password field; this page adds one specifically because a mistyped brand-new password here has no immediate way to notice (there's no existing password to double against, and the "fix" is having to request an entirely new reset link) — a UX gap the signup step doesn't share, since a mistyped signup password just fails the next sign-in attempt.
 
@@ -239,11 +239,20 @@ ResetPassword.tsx  (/auth/reset-password/:token)
         ▼
 ResetPassword({ token, newPassword })  [KarmaCircleApi.ts, POST /auth/reset-password]
         │
-status OK ────► showSuccessToast → succeeded = true → setTimeout 1500ms → navigate("/auth/signin")
+status OK ────► showSuccessToast → succeeded = true → setTimeout 1500ms →
+                navigate("/auth/signin", { state: { email: response.data?.email } })
         │
 400 ─────────► errors.token banner (message from the backend) + "Request a new link" → /auth/forgot-password
         │
 else ────────► errors.token banner (generic message)
+
+[Auth.tsx mounts at /auth/signin with that router state]
+        ▼
+location.state.email is a non-empty string ──► step starts at "signin",
+                                                 credentials.email pre-filled
+                                                 (CheckEmailExists is skipped —
+                                                 a successful reset already
+                                                 proves the account exists)
 ```
 
 Neither page dispatches anything to Redux or sets a cookie — resetting a password doesn't sign the visitor in, it only lets them sign in normally afterward at `/auth/signin`. See [auth.md](../../../../../apps/api/docs/specs/auth.md) for the backend half of this flow (the reset token's lifetime, single-use behavior, and why the response shape is identical for a registered vs. unregistered email).
