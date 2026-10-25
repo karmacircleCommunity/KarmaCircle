@@ -13089,8 +13089,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/events/event.service.ts",
       "source_location": "L73",
       "weight": 1.0,
-      "_src": "event_service_createevent",
-      "_tgt": "organization_service_findorcreateforowner",
+      "_src": "organization_service_findorcreateforowner",
+      "_tgt": "event_service_createevent",
       "source": "organization_service_findorcreateforowner",
       "target": "event_service_createevent"
     },
