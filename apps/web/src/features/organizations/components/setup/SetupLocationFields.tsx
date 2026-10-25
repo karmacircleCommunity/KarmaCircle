@@ -7,13 +7,13 @@ import {
   suggestStates,
 } from "@utils/locationSuggest";
 import type { CitySuggestion, LocateFailure } from "@utils/locationSuggest";
-import type { LocateCity } from "../../hooks/useLocateCity";
+import type { LocateCity } from "@hooks/useLocateCity";
 import { FIELD_CY, FIELD_SPECS } from "../../constants/organizationSetup";
 import type {
   OrganizationSetupForm,
   OrganizationSetupQuestion,
 } from "../../types";
-import SetupFieldLabel from "./SetupFieldLabel";
+import SetupFieldLabel from "@components/setup/SetupFieldLabel";
 
 /**
  * "Where are you based?" - the one grouped question that knows what its

@@ -5,15 +5,15 @@ import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiX } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { showSuccessToast } from "@utils/Toasts";
 import SetupIntro from "../components/setup/SetupIntro";
-import SetupLayout from "../components/setup/SetupLayout";
-import SetupLocateButton from "../components/setup/SetupLocateButton";
+import SetupLayout from "@components/setup/SetupLayout";
+import SetupLocateButton from "@components/setup/SetupLocateButton";
 import SetupQuestion from "../components/setup/SetupQuestion";
 import {
   FIELD_CY,
   FIELD_SPECS,
   REQUIRED_LABELS,
 } from "../constants/organizationSetup";
-import { useLocateCity } from "../hooks/useLocateCity";
+import { useLocateCity } from "@hooks/useLocateCity";
 import { useOrganizationSetup } from "../hooks/useOrganizationSetup";
 import {
   invalidFields,

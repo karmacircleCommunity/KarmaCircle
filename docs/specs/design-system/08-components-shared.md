@@ -101,8 +101,7 @@ max-[525px]:w-[89vw] max-[525px]:min-w-55 max-[525px]:text-center
 
 Prop: `hideSignUpForHeroCta?: boolean` (default `false`). `Landing.tsx` passes it from its own ScrollTrigger to hide the nav CTA while a bigger, redundant hero CTA is on screen. Every other page renders `<Navbar />` bare.
 
-Bar: `sticky z-99 mx-8 flex items-center justify-between px-28 py-[0.8rem] max-430px:px-6`.
-`mx-8` = 32px, `px-28` = **112px**, `py-[0.8rem]` = 12.8px, `max-430px:px-6` = 24px.
+Bar (October 2026 — corrects a stale description that no longer matched the code): `<nav>` itself is `z-99 border-b border-brand-secondary/10 bg-surface`, conditionally `sticky top-0` (see `isSticky` above). The inner content row is a separate `relative mx-auto flex max-w-6xl items-center justify-between px-9 py-[0.8rem] sm:px-10 lg:px-12` div — `mx-auto` + `max-w-6xl` center it and cap its width, matching every other page's own content container, while the border/sticky live on the full-viewport-width `<nav>` so they span edge to edge (see [layout-navigation.md](../layout-navigation.md)). `px-9` = 36px, `sm:px-10` = 40px, `lg:px-12` = 48px, `py-[0.8rem]` = 12.8px.
 
 Nav entries are `Organizations` and `Events` only. There is deliberately **no "Home"**: the logo already links there, which is the standard marketing-site convention.
 
@@ -114,7 +113,7 @@ group z-10 flex items-center gap-2 no-underline
 - Dot: `inline-block size-2 rounded-full bg-brand transition-transform duration-300 ease-out group-hover:scale-125 motion-reduce:transition-none motion-reduce:group-hover:transform-none`. **8px**, `aria-hidden`.
 - Wordmark: `font-outfit text-xl leading-none font-medium tracking-tight text-brand-secondary transition-colors duration-300 group-hover:text-brand`. **20px / 500 / -0.025em**.
 
-### Desktop (`windowWidth > 900`)
+### Desktop (`min-[900px]`, i.e. ≥ 900px — pure CSS, not a `windowWidth` state; see [layout-navigation.md](../layout-navigation.md))
 
 - Link row: `z-1 flex items-center gap-7` (28px).
 - Link: `relative font-outfit text-body-lg leading-none font-normal text-ink/65 ... hover:text-brand-secondary`, with the directional underline (`after:-bottom-1.5 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:duration-300 hover:after:origin-left hover:after:scale-x-100`).
@@ -125,21 +124,21 @@ group z-10 flex items-center gap-2 no-underline
 ### Account dropdown
 
 ```
-nav_dropdown absolute top-10 right-17.75 z-10 hidden w-50 flex-col justify-center
+nav_dropdown absolute top-full right-0 z-10 mt-2 hidden w-50 flex-col justify-center
 rounded-md bg-white shadow-[...color-mix(...12.5%...)] transition-all duration-1000 ease-in-out
 ```
-`top-10` = 40px, `right-17.75` = 71px, `w-50` = 200px, radius 6px.
+Positioned off a `relative` wrapper around the "Profile" trigger itself (October 2026 — supersedes a fixed `top-10 right-17.75` anchored to the whole nav row's own `relative`). That fixed offset was calibrated for one specific nav padding and drifted out from under the trigger at other widths — confirmed live, the panel's right edge landing tens of pixels inside the trigger's own right edge rather than flush with it. `top-full right-0 mt-2` tracks the trigger exactly at every width instead, nav padding included, with no magic number to keep in sync. `w-50` = 200px, radius 6px. The `.nav_dropdown_visible` class (below) no longer carries its own `top` override for the same reason — `top-full` already does that job correctly.
 Rows: `flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary hover:bg-black/[3.5%]`.
-Separators: `h-px w-full bg-[#e2e5e883]`, `role="separator"`.
+Separators: `h-px w-full bg-black/5`, `role="separator"` (October 2026 — was the drifted `bg-[#e2e5e883]`; see [02-color.md](./02-color.md)).
 Draft-organization row is `text-brand`, `font-medium`, `hover:bg-brand/8`, with a trailing `size-1.5` brand dot, `data-cy="nav-finish-setup"`.
 
 Label rule: the mobile sheet always says **"Dashboard"** because it always points at `/dashboard`.
 The desktop dropdown's **"Your Profile"** is a distinctly named link to `/user/:handle`.
 The two used to share the ambiguous label "Profile" for individual accounts.
 
-### Mobile (`max-430px`)
+### Mobile (`max-[900px]`, i.e. < 900px)
 
-- Trigger: logged out `GiHamburgerMenu` at `size-7.5` (30px) `text-heading`; logged in the avatar at `size-7.5 rounded-full` with `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`, `role="button"`, `tabIndex=0`, Enter/Space handled.
+- Trigger: logged out `GiHamburgerMenu` at `size-7.5` (30px) `text-heading`; logged in the avatar at `size-7.5 rounded-full` with `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`, `role="button"`, `tabIndex=0`, Enter/Space handled. Both are `max-[900px]:block` (October 2026 — was `max-[899px]:block`, which Tailwind v4 compiles to the *exclusive* `width < 899px` and left a real 1px gap at exactly 899px where neither this trigger nor the desktop link row rendered; `max-[900px]` pairs with the link row's `min-[900px]` with zero gap and zero overlap — see `Navbar.tsx`'s own comment).
 - Scrim: `fixed inset-0 z-20 bg-black/[0.867]`.
 - Sheet: `absolute top-[20%] w-[80vw] flex-wrap gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in`.
 - Close: `RxCross2` at `top-2.5 right-2.5`.

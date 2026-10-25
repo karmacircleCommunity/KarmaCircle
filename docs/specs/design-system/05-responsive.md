@@ -32,9 +32,8 @@ That alone covers 4K/5K in most cases without extra breakpoints.
 The arbitrary tiers (`540`, `991`, `525`, `767`) are legacy and each exists in exactly one component family.
 `900px` is meaningful: it is where `SplitPanelLayout` drops its left panel, and it is deliberately not a token for the same reason 430/500 are not (see [01-tokens.md](./01-tokens.md#custom-variants-not-breakpoints)).
 
-Two components additionally branch in **JavaScript** on `window.innerWidth`, re-measured on `resize`:
+Two components additionally branch in **JavaScript** on `window.innerWidth`, re-measured on `resize` (`Navbar.tsx` is *not* one of these, despite an earlier version of this file claiming otherwise — its 900px split is pure CSS, `min-[900px]:flex`/`max-[900px]:block`; see [layout-navigation.md](../layout-navigation.md)):
 
-- [Navbar.tsx:50,111](../../../apps/web/src/components/Navbar.tsx#L111) — desktop nav renders only above 900px.
 - [Footer.tsx:30,78](../../../apps/web/src/components/footer/Footer.tsx#L78) — parallax gated to `matchMedia("(min-width: 1024px)")`.
 - [Header.tsx:39](../../../apps/web/src/components/header/Header.tsx#L39) reads `window.innerWidth < 800` **once at render, with no resize listener**. It does not react to a resize. Do not copy this.
 
@@ -94,7 +93,7 @@ The `useGSAP` dependency array must be keyed on `windowWidth` state for the gate
 
 | Component | Below | Above |
 | --- | --- | --- |
-| `Navbar` | < 900px: links hidden; hamburger (logged out) or avatar (logged in) at `max-430px:block`; full-screen sheet | >= 900px: inline links, dropdown |
+| `Navbar` | < 900px: links hidden; hamburger (logged out) or avatar (logged in) at `max-[900px]:block`; full-screen sheet | >= 900px: inline links, dropdown |
 | `SplitPanelLayout` | < 900px: left panel not rendered at all; wordmark moves inline above the form | >= 900px: sticky 44% left panel, `top-0`, `h-screen` |
 | `Footer` | stacked, `px-9 py-10`, divider between brand and links, no parallax | `lg:flex-row`, `lg:px-12 lg:py-16`, parallax on |
 | `DirectoryToolbar` | search field then button stacked; filters scroll horizontally; count on its own row | `sm:flex-row`; filters still scroll horizontally (never wrap); count pinned to the same row |

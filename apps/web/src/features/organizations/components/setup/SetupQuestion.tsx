@@ -11,9 +11,9 @@ import type {
   OrganizationSetupQuestion,
   OrganizationTaxonomy,
 } from "../../types";
-import type { LocateCity } from "../../hooks/useLocateCity";
+import type { LocateCity } from "@hooks/useLocateCity";
 import { sanitizeSetupValue } from "../../utils/organizationSetupForm";
-import SetupFieldLabel from "./SetupFieldLabel";
+import SetupFieldLabel from "@components/setup/SetupFieldLabel";
 import SetupLeadershipEditor from "./SetupLeadershipEditor";
 import SetupLocationFields from "./SetupLocationFields";
 

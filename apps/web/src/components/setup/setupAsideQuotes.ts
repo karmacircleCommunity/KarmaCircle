@@ -9,7 +9,8 @@ export type SetupAsideQuote = {
 
 /**
  * Real, publicly-attributed lines on giving and collective action, shown one
- * at a time on the setup flow's left panel and re-picked at random on every
+ * at a time on a setup flow's left panel (`SetupAside.tsx`, shared by
+ * organization setup and profile setup) and re-picked at random on every
  * page load (`pickSetupAsideQuote`).
  *
  * These are deliberately NOT customer testimonials, and there are no

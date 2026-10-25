@@ -115,7 +115,7 @@ These four things are therefore hand-written global CSS in `index.css`, correctl
 1. **react-select** generated class names: `.css-13cymwt-control`.
 2. **MUI** generated/internal class names: `.MuiMenuItem-root`, `.css-o4b71y-MuiAccordionSummary-content`, `.CreateEvents_date_range .MuiFormControl-root`, `.MuiInputBase-input`.
 3. **The signup Individual/Organization toggle** (`.custom-checkbox`), an `input:checked`-driven pseudo-element switch using `content: attr(...)`. Fixed geometry: 250 x 40px, 15px, `border-radius: 20px` on the wrapper and `8px` on the switch, thumb inset 3px, `transition: all 0.3s ease`.
-4. **The Navbar account dropdown** visibility class (`.nav_dropdown_visible`), toggled by `Navbar.tsx` through direct `classList` manipulation rather than React state. Sets `display:flex; top:60px; z-index:100`.
+4. **The Navbar account dropdown** visibility class (`.nav_dropdown_visible`), toggled by `Navbar.tsx` through direct `classList` manipulation rather than React state. Sets `display:flex; z-index:100` (October 2026 — dropped its own `top:60px`, now that `.nav_dropdown` positions off a `relative` wrapper around its own trigger instead of a fixed offset; see [08-components-shared.md](./08-components-shared.md#account-dropdown)).
 
 Also global, and not stylable any other way:
 

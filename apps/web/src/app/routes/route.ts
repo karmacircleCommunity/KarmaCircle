@@ -17,6 +17,7 @@ export { default as DetailedEvent } from "@features/events/pages/DetailedEvent";
 export { default as YourEvents } from "@features/events/pages/YourEvents";
 
 export { default as Profile } from "@features/onboarding-profile/pages/Profile";
+export { default as ProfileSetup } from "@features/onboarding-profile/pages/ProfileSetup";
 
 // Not found page
 export { default as Error404 } from "@features/error-handling/pages/Error404";

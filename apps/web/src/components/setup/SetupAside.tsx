@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { pickSetupAsideQuote } from "../../constants/setupAsideQuotes";
+import { pickSetupAsideQuote } from "./setupAsideQuotes";
 
 /**
- * The setup flow's left panel — the same on the intro and on every question
- * screen, so the two stages read as one flow.
+ * A setup flow's left panel — the same on the intro and on every question
+ * screen, so the two stages read as one flow. Shared by organization setup
+ * and profile setup; see `@components/setup` for the rest of the pieces.
  *
- * It is a single rotating quote (see `constants/setupAsideQuotes.ts`): an
- * oversized brand quotation mark set behind the line as a watermark, the
- * line itself, then a monogram + name + role beneath it. A fresh quote is
- * picked on every mount, so a refresh gives a new one; it is held in state
- * so re-renders during the flow don't reshuffle it. The atmosphere behind
- * it (the slow aura and orbit) is the panel's `asideDecor`, wired in
- * `SetupLayout.tsx` — it lives at panel scope so it can sit in the corners
- * without colliding with this copy.
+ * It is a single rotating quote (see `setupAsideQuotes.ts`): an oversized
+ * brand quotation mark set behind the line as a watermark, the line itself,
+ * then a monogram + name + role beneath it. A fresh quote is picked on every
+ * mount, so a refresh gives a new one; it is held in state so re-renders
+ * during the flow don't reshuffle it. The atmosphere behind it (the slow
+ * aura and orbit) is the panel's `asideDecor`, wired in `SetupLayout.tsx` —
+ * it lives at panel scope so it can sit in the corners without colliding
+ * with this copy.
  *
  * There is deliberately no step counter here: wayfinding lives entirely in
  * the right-hand progress bar ("What your organization does · 2 of 8"), and

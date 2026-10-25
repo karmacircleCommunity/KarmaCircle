@@ -74,7 +74,6 @@ Rendered as `linear-gradient(135deg, ${from}, ${to})` ([OrganizationCard.tsx:67]
 | `#e1e2e7` | [CreateEvent.tsx:358,391](../../../apps/web/src/features/events/components/CreateEvent.tsx#L358) | Drift. Near `--color-border-muted` (`#e0e0e0`). Use `border-border-muted`. |
 | `#646a79` | [CreateEvent.tsx:369,402](../../../apps/web/src/features/events/components/CreateEvent.tsx#L369) | Drift. A mid gray for helper text. Use `text-gray-500` or `text-ink/60`. |
 | `#e8e8e8` | [CreateEvent.tsx:358,391](../../../apps/web/src/features/events/components/CreateEvent.tsx#L358) | Drift, inside a `shadow-[0px_3px_5px_0px_#e8e8e8]`. |
-| `#e2e5e883` | [Navbar.tsx:265,300](../../../apps/web/src/components/Navbar.tsx#L265) | Drift. The account-dropdown separator hairline. Use `bg-black/5`. |
 | `#e26959` | [styles/App.css:2](../../../apps/web/src/styles/App.css#L2) | **Stale.** The pre-rebrand saturated orange, in the `::selection` rule. It exists nowhere else in the palette. |
 | `#ff5b31` | `apps/web/index.html` (`theme-color` and three vendor variants) | **Stale.** Pre-rebrand orange in the browser/PWA chrome color. |
 | `#fbfbfb`, `#28183b` | `features/onboarding-profile/pages/UserProfile.css` | Legacy page CSS. `#28183b` duplicates `--color-heading`. |
@@ -138,5 +137,5 @@ Both have tokens (`error`, `warning`). See [14-drift-register.md](./14-drift-reg
 
 - Status color reaches the UI in exactly two ways: the four `--color-*` tokens, and the `--toastify-*` overrides that map onto them.
 - For a tinted status background use the opacity modifier on the same token (`bg-error/10 text-error`). Do not add a separate tint token.
-- The required-field asterisk is `text-error` at `text-xs`, `aria-hidden`, `align-top`, `ml-0.5` ([AuthFieldKit.tsx:12](../../../apps/web/src/features/authentication/components/AuthFieldKit.tsx#L12), [SetupFieldLabel.tsx:26](../../../apps/web/src/features/organizations/components/setup/SetupFieldLabel.tsx#L26)).
+- The required-field asterisk is `text-error` at `text-xs`, `aria-hidden`, `align-top`, `ml-0.5` ([AuthFieldKit.tsx:12](../../../apps/web/src/features/authentication/components/AuthFieldKit.tsx#L12), [SetupFieldLabel.tsx:26](../../../apps/web/src/components/setup/SetupFieldLabel.tsx#L26)).
 - `--color-warning` and `--color-info` have no API-triggered call site yet; the helpers exist so a future need does not reintroduce react-toastify's stock palette.

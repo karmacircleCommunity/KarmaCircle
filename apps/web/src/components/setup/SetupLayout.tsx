@@ -1,25 +1,26 @@
 import SplitPanelLayout from "@components/layouts/SplitPanelLayout";
 import type { ReactNode } from "react";
-import type {
-  OrganizationSetupStage,
-  OrganizationSetupStepStatus,
-} from "../../types";
+import type { SetupStepStatus } from "@/types/setup";
 import SetupAside from "./SetupAside";
 
 /**
- * The setup flow's shell. Same frame as the auth pages (`SplitPanelLayout`).
+ * A setup flow's shell. Same frame as the auth pages (`SplitPanelLayout`).
+ * Shared by organization setup (`@features/organizations`) and profile
+ * setup (`@features/onboarding-profile`) — `stage`/`steps` only need to
+ * satisfy `SetupStepStatus` (`@/types/setup`), not any one flow's own
+ * richer step type.
  *
  * The left panel is a rotating quote (`SetupAside`) — identical on the intro
  * and on every question screen, with a slow aura/orbit behind it (the
  * panel's `asideDecor`). It used to be a step rail; wayfinding now lives
  * entirely in the right-hand progress bar below — one count, not two. The
- * bar's denominator, the URL and the save boundary all still read the step
- * list, so a third step is a change in `constants/organizationSetup.ts`
- * alone.
+ * bar's denominator, the URL and the save boundary all still read each
+ * flow's own step list, so adding a step/question is a change in that
+ * flow's own constants file alone.
  */
 type SetupLayoutProps = {
-  stage: OrganizationSetupStage;
-  steps: OrganizationSetupStepStatus[];
+  stage: string;
+  steps: SetupStepStatus[];
   /** The draft/live badge and the exit affordance, pinned above the form. */
   topBar?: ReactNode;
   /** 1-based position across the whole flow. Absent on the intro. */

@@ -24,9 +24,10 @@ interface ProfileUpdateCredentials {
 }
 
 /**
- * Modal: profile editing, triggered from `Dashboard.tsx`. Fully
- * separate, parallel implementation of the same shape as
- * `useProfileCompletion.ts` — not a reuse of it. See SPEC.md.
+ * Modal: profile editing, triggered from `Dashboard.tsx` and from
+ * `Profile.tsx`'s "Edit profile" button. Fully separate, parallel
+ * implementation of the same shape as `useProfileCompletion.ts` — not a
+ * reuse of it. See SPEC.md.
  */
 const ProfileUpdate = ({
   setOpenModal,
@@ -154,6 +155,10 @@ const ProfileUpdate = ({
     }
 
     setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      return false;
+    }
 
     const data = await updateUserProfile({
       credentials,

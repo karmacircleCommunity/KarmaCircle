@@ -106,13 +106,14 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
     // Sticky lives on `<nav>` itself, not the `max-w-6xl` div inside it —
     // `<nav>` is the full-viewport-width block, so the border/shadow span
     // edge to edge while the link row still lines up with every other
-    // page's own `max-w-6xl` content (see layout-navigation.md). The inner
-    // div keeps `relative`, which it also needs as `.nav_dropdown`'s
-    // positioning root (that `absolute`, unlike the mobile sheet's `fixed`,
-    // resolves against the nearest positioned ancestor — it has to stay
-    // `<nav>`'s child, not `<nav>` itself, or the dropdown would anchor to
-    // the full-width bar instead of the centered content edge it sits at
-    // today).
+    // page's own `max-w-6xl` content (see layout-navigation.md).
+    //
+    // `.nav_dropdown` no longer anchors to this div's own `relative`
+    // (October 2026) — it's now positioned off a tighter `relative`
+    // wrapper around the "Profile" trigger itself, right where that
+    // trigger renders below, so the panel tracks the trigger directly
+    // instead of a fixed offset calibrated against this row's own padding.
+    // See that wrapper's own comment for why.
     //
     // `top-0` is not decorative: Tailwind's `sticky` utility only sets
     // `position: sticky` — CSS requires an inset value (`top`/`bottom`/
@@ -217,17 +218,90 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
             ))}
           </div>
           {isLoggedIn ? (
-            <p
-              onClick={() => {
-                document
-                  .querySelector(".nav_dropdown")
-                  ?.classList.toggle("nav_dropdown_visible");
-              }}
-              className="group m-0 ml-8 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
-            >
-              Profile{" "}
-              <RxCaretDown className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none" />
-            </p>
+            // `relative` here, not on some ancestor further up, is
+            // deliberate (October 2026 — supersedes `.nav_dropdown`
+            // anchoring to the whole `max-w-6xl` row's own `relative`, a
+            // fixed `right-17.75` calibrated for one specific padding
+            // width). That fixed offset didn't track this trigger across
+            // `px-9`/`sm:px-10`/`lg:px-12`, so the panel's right edge
+            // drifted out from under the caret by double-digit pixels at
+            // some widths — confirmed live, not just from reading the
+            // math. Anchoring the dropdown to its own trigger's `relative`
+            // and positioning it `right-0` makes "flush under the
+            // trigger" true at every width, nav padding included, with no
+            // magic number to keep in sync.
+            <div className="relative">
+              <p
+                onClick={() => {
+                  document
+                    .querySelector(".nav_dropdown")
+                    ?.classList.toggle("nav_dropdown_visible");
+                }}
+                className="group m-0 ml-8 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+              >
+                Profile{" "}
+                <RxCaretDown className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none" />
+              </p>
+
+              <div className="nav_dropdown absolute top-full right-0 z-10 mt-2 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
+                <div className="flex flex-col justify-center">
+                  <span className="mb-1.25 p-2.5 font-outfit text-base">
+                    Hello @{user?.userName}
+                  </span>
+                  <div
+                    role="separator"
+                    aria-orientation="horizontal"
+                    className="h-px w-full bg-black/5"
+                  ></div>
+                  {isDraft && organization && (
+                    <Link
+                      to={resumeSetupPath(organization.missingFields)}
+                      data-cy="nav-finish-setup"
+                      className="flex items-center justify-between gap-2 rounded-5px p-2.5 font-outfit text-base leading-none font-medium text-brand no-underline hover:bg-brand/8"
+                    >
+                      Finish setting up
+                      <span className="size-1.5 shrink-0 rounded-full bg-brand" />
+                    </Link>
+                  )}
+                  <Link
+                    to={
+                      user?.userType === "individual"
+                        ? `/user/${user?.userName}`
+                        : `/dashboard`
+                    }
+                    className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+                  >
+                    {user?.userType === "individual"
+                      ? "Your Profile"
+                      : "Dashboard"}
+                  </Link>
+                  {user?.userType === "organization" ? (
+                    <Link
+                      to={"/organization/events"}
+                      className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+                    >
+                      Your Events
+                    </Link>
+                  ) : null}
+                </div>
+                <div className="flex flex-col justify-center">
+                  <div
+                    role="separator"
+                    aria-orientation="horizontal"
+                    className="h-px w-full bg-black/5"
+                  ></div>
+                  {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
+                  <Link
+                    onClick={() => {
+                      handleLogout();
+                    }}
+                    className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+                  >
+                    Logout
+                  </Link>
+                </div>
+              </div>
+            </div>
           ) : (
             // Collapses to zero width/margin when `hideSignUpForHeroCta`
             // is true (October 2026 — supersedes the original "opacity
@@ -267,7 +341,21 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
               documented the intent correctly ("below 900px shows a
               hamburger icon"); the code just didn't match it. Fixed by
               matching this to the same 900px line the row above already
-              uses. */}
+              uses.
+
+              **Off-by-one at exactly 899px (October 2026) — supersedes
+              `max-[899px]` above.** Tailwind v4 compiles an arbitrary
+              `max-[Npx]` variant to the *exclusive* range `(width < Npx)`,
+              not the inclusive `(max-width: Npx)` CSS's own `max-width`
+              property implies — so `max-[899px]:block` only fired below
+              899px, not at it, leaving a real 1px gap against
+              `min-[900px]:flex` (`width >= 900px`) where neither this
+              trigger nor the link row above rendered. Confirmed live at a
+              899px viewport. The zero-gap pairing with a `min-[900px]`
+              variant is `max-[900px]` (`width < 900px`), not
+              `max-[899px]` — matching the number in both variants is the
+              correct pairing in v4's range syntax, not an off-by-one
+              itself. */}
         {!isNavbarOpen &&
           (isLoggedIn ? (
             <img
@@ -278,7 +366,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
               aria-label="Open account menu"
               aria-haspopup="true"
               aria-expanded={isNavbarOpen}
-              className="hidden size-7.5 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[899px]:block"
+              className="hidden size-7.5 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[900px]:block"
               onClick={() => {
                 toggleNavbar();
               }}
@@ -296,7 +384,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
               aria-label="Open menu"
               aria-haspopup="true"
               aria-expanded={isNavbarOpen}
-              className="hidden size-7.5 cursor-pointer text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[899px]:block"
+              className="hidden size-7.5 cursor-pointer text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[900px]:block"
               onClick={() => {
                 toggleNavbar();
               }}
@@ -389,63 +477,6 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
             </div>
           </div>
         )}
-
-        <div className="nav_dropdown absolute top-10 right-17.75 z-10 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
-          <div className="flex flex-col justify-center">
-            <span className="mb-1.25 p-2.5 font-outfit text-base">
-              Hello @{user?.userName}
-            </span>
-            <div
-              role="separator"
-              aria-orientation="horizontal"
-              className="h-px w-full bg-[#e2e5e883]"
-            ></div>
-            {isDraft && organization && (
-              <Link
-                to={resumeSetupPath(organization.missingFields)}
-                data-cy="nav-finish-setup"
-                className="flex items-center justify-between gap-2 rounded-5px p-2.5 font-outfit text-base leading-none font-medium text-brand no-underline hover:bg-brand/8"
-              >
-                Finish setting up
-                <span className="size-1.5 shrink-0 rounded-full bg-brand" />
-              </Link>
-            )}
-            <Link
-              to={
-                user?.userType === "individual"
-                  ? `/user/${user?.userName}`
-                  : `/dashboard`
-              }
-              className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
-            >
-              {user?.userType === "individual" ? "Your Profile" : "Dashboard"}
-            </Link>
-            {user?.userType === "organization" ? (
-              <Link
-                to={"/organization/events"}
-                className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
-              >
-                Your Events
-              </Link>
-            ) : null}
-          </div>
-          <div className="flex flex-col justify-center">
-            <div
-              role="separator"
-              aria-orientation="horizontal"
-              className="h-px w-full bg-[#e2e5e883]"
-            ></div>
-            {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
-            <Link
-              onClick={() => {
-                handleLogout();
-              }}
-              className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
-            >
-              Logout
-            </Link>
-          </div>
-        </div>
       </div>
     </nav>
   );

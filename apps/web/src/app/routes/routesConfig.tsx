@@ -10,6 +10,7 @@ import {
   Error404,
   Events,
   Profile,
+  ProfileSetup,
   YourEvents,
 } from "./route";
 import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRenderWhenLoggedIn";
@@ -70,6 +71,11 @@ const routesConfig: RouteConfigEntry[] = [
     path: "/auth/reset-password/:token",
     element: <ProtectedResetPassword />,
   },
+  // The signed-in user's own profile-edit flow — declared above the
+  // dynamic "/user/:userName" below for the same reason "/organization/
+  // setup" is declared above "/organization/:userName" (readability only;
+  // React Router already ranks a static segment above a dynamic one).
+  { path: "/user/setup", element: <ProfileSetup /> },
   { path: "/user/:userName", element: <Profile /> },
   { path: "/organizations", element: <Organizations /> },
   // The *public* organization profile a visitor reaches from a directory

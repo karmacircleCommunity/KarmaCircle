@@ -328,10 +328,13 @@ code {
   }
 }
 
-/* Navbar.tsx toggles this class imperatively via classList (not React state) */
+/* Navbar.tsx toggles this class imperatively via classList (not React
+   state). No `top` override here anymore (October 2026) — `.nav_dropdown`
+   now positions itself `top-full` off its own trigger's `relative`
+   wrapper, which already tracks correctly at every width; a fixed `60px`
+   here only ever matched that by coincidence at one specific nav height. */
 .nav_dropdown_visible {
   display: flex;
-  top: 60px;
   z-index: 100;
   transition: all 1s ease-in-out;
 }

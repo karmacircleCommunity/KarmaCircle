@@ -1,5 +1,5 @@
 import { FiLoader, FiNavigation } from "react-icons/fi";
-import type { LocateCity } from "../../hooks/useLocateCity";
+import type { LocateCity } from "@hooks/useLocateCity";
 
 /**
  * "Use my current location", in the space beside the question's headline.

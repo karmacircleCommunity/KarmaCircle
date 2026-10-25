@@ -14,8 +14,10 @@ import type { LocateFailure, LocateSource } from "@utils/locationSuggest";
  * positions is the whole job, and a hook does it without a portal or a
  * context.
  *
- * See `@utils/locationSuggest` for what `locateCity` actually tries -
- * briefly: the device twice, then the connection, and never after an
+ * Shared by `@features/organizations` setup and `@features/onboarding-
+ * profile` setup — see `@components/setup` for the rest of the pieces this
+ * flows into. See `@utils/locationSuggest` for what `locateCity` actually
+ * tries - briefly: the device twice, then the connection, and never after an
  * outright refusal.
  */
 export type LocateFilled = { place: string; source: LocateSource };

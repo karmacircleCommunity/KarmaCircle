@@ -16,32 +16,33 @@ import { Logout } from "@services/KarmaCircleApi";
 import fetcher from "@utils/Fetcher";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { checkMissingFields } from "@features/onboarding-profile/utils/checkMissingFields";
+import ProfileUpdate from "@features/onboarding-profile/components/ProfileUpdate";
 import type { LogoutResponse, ProfileDetails } from "../types";
 
 /**
  * The live public profile page, routed at both `/user/:userName` and
- * `/organization/:userName`. `showProfileModal`/`setShowProfileModal` is set by
- * `toggleProfileModal()` (wired to the "Edit profile" button) but,
- * despite its name and despite an earlier version of this doc claiming
- * otherwise, **nothing in this file's JSX ever reads it to render
- * `ProfileCompletion` or any other modal** — this component doesn't
- * import `ProfileCompletion` at all. Clicking "Edit profile" here
- * currently has no visible effect. See SPEC.md.
+ * `/organization/:userName`. `showProfileModal`/`setShowProfileModal`, set
+ * by `toggleProfileModal()` (wired to the "Edit profile" button) and by
+ * the missing-fields effect below, renders `ProfileUpdate` — but only for
+ * an organization account. An individual account is sent to `/user/setup`
+ * instead (`ProfileSetup.tsx`, the Typeform-style flow shared with
+ * organization setup's visual components), since `ProfileUpdate`'s modal
+ * is organization-shaped and was never a good edit experience for an
+ * individual profile. See SPEC.md.
  */
 const Profile = () => {
   const params = useParams();
   const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [editProfile, seteditProfile] = useState(false);
-  // Set by toggleProfileModal() but never read — see SPEC.md.
-  void editProfile;
 
   const dispatch = useDispatch();
   const user = useSelector(
-    (state: { user?: { userName?: string; iframe?: string } }) => state.user,
+    (state: {
+      user?: { userName?: string; iframe?: string; userType?: string };
+    }) => state.user,
   );
   const trueUser = user?.userName === params.userName;
-  const { data: details } = useSWR<ProfileDetails>(
+  const { data: details, mutate } = useSWR<ProfileDetails>(
     organizationEndpoints.details(params.userName),
     fetcher,
   );
@@ -52,7 +53,11 @@ const Profile = () => {
       checkMissingFields(user) &&
       trueUser
     ) {
-      setShowProfileModal(true);
+      if (user?.userType === "organization") {
+        setShowProfileModal(true);
+      } else {
+        navigate("/user/setup");
+      }
     }
   }, []);
 
@@ -72,13 +77,24 @@ const Profile = () => {
   }
 
   const toggleProfileModal = () => {
-    setShowProfileModal(!showProfileModal);
-    seteditProfile(true);
+    if (user?.userType === "organization") {
+      setShowProfileModal(true);
+    } else {
+      navigate("/user/setup");
+    }
   };
 
   return (
     <>
       <Navbar />
+
+      {showProfileModal && (
+        <ProfileUpdate
+          setOpenModal={setShowProfileModal}
+          refreshProfileData={() => mutate()}
+          profileData={details}
+        />
+      )}
 
       <div className="flex flex-col items-center pt-32 pb-16 max-430px:px-4 max-430px:py-24">
         <div className="mx-auto flex max-w-250 flex-col gap-16 max-430px:max-w-[100vw] max-430px:gap-8">

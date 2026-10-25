@@ -7,12 +7,12 @@ import { Link } from "react-router-dom";
  * the user is actually doing on the right, and no navbar or footer to wander
  * off into mid-flow.
  *
- * Two flows use it — signing in/up (`features/authentication/components/
- * AuthLayout.tsx`) and organization setup (`features/organizations/
- * components/setup/SetupLayout.tsx`). They differ only in what fills the
- * left panel, so that is the prop; everything else (the art, the scrim, the
- * cream form surface, where the wordmark sits at each breakpoint) lives
- * here once, which is what stops the two flows drifting into two designs.
+ * Three flows use it — signing in/up (`features/authentication/components/
+ * AuthLayout.tsx`), organization setup, and profile setup (both through the
+ * shared `components/setup/SetupLayout.tsx`). They differ only in what fills
+ * the left panel, so that is the prop; everything else (the art, the scrim,
+ * the cream form surface, where the wordmark sits at each breakpoint) lives
+ * here once, which is what stops the flows drifting into separate designs.
  *
  * Below 900px the left panel is dropped entirely rather than stacked — its
  * job is reassurance, and on a phone that belongs under the form, not above
