@@ -84,11 +84,12 @@ test("the full round trip: request, reset via the emailed link, sign in with the
 
   // Prove the round trip actually worked, not just that the form said so:
   // sign in with the *new* password.
-  await page.locator('input[name="email"]').fill(email);
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Enter your password" })).toBeVisible({
     timeout: 10_000,
   });
+  // Reset already verified this account and carries its email to sign-in.
+  await expect(page.locator('input[name="email"]')).toHaveValue(email);
+  await expect(page.locator('input[name="email"]')).toBeDisabled();
   await page.locator('input[name="password"]').fill(NEW_PASSWORD);
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });

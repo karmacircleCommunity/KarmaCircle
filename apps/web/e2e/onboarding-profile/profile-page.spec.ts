@@ -24,7 +24,9 @@ async function signUpIndividual(
   await page.goto("/auth/signup");
   await page.locator('input[name="email"]').fill(email);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "What's your name?" })).toBeVisible({
+  await expect(
+    page.getByRole("heading", { name: "What's your name?" }),
+  ).toBeVisible({
     timeout: 10_000,
   });
   await page.locator('input[name="name"]').fill(`Profile Test ${label}`);
@@ -32,10 +34,23 @@ async function signUpIndividual(
   await page.getByRole("button", { name: "Sign Up", exact: true }).click();
   await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
 
+  // These tests exercise owner controls, not the separate completion nudge.
+  await page.context().addCookies([
+    {
+      name: "skipProfileCompletion",
+      value: "true",
+      domain: "localhost",
+      path: "/",
+    },
+  ]);
+
   // The userName the backend derived from the email (see auth.md) is the
   // only handle for /user/:userName — read it back off the Navbar's own
   // account-menu link rather than guessing the derivation rule here.
-  await page.getByRole("navigation").getByText("Profile", { exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByText("Profile", { exact: true })
+    .click();
   const link = page.getByRole("link", { name: "Your Profile" });
   const href = await link.getAttribute("href");
   const userName = href?.replace(/^\/user\//, "") ?? "";
@@ -44,12 +59,18 @@ async function signUpIndividual(
   return { email, userName };
 }
 
-test("viewing your own profile shows Edit profile and Logout", async ({ page }) => {
+test("viewing your own profile shows Edit profile and Logout", async ({
+  page,
+}) => {
   const { userName } = await signUpIndividual(page, "own");
   await page.goto(`/user/${userName}`);
 
-  await expect(page.getByRole("button", { name: "Edit profile" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Logout" }).first()).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Edit profile" }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Logout" }).first(),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Subscribe" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Sponsor" })).toHaveCount(0);
 });
@@ -63,39 +84,37 @@ test("viewing someone else's profile shows Subscribe and Sponsor instead", async
   // someone else's profile" would actually still be logged in as them.
   const otherContext = await browser.newContext();
   const otherPage = await otherContext.newPage();
-  const { userName: otherUserName } = await signUpIndividual(otherPage, "other");
+  const { userName: otherUserName } = await signUpIndividual(
+    otherPage,
+    "other",
+  );
   await otherContext.close();
 
   await signUpIndividual(page, "viewer");
   await page.goto(`/user/${otherUserName}`);
 
-  await expect(page.getByRole("button", { name: "Subscribe" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sponsor" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Subscribe" }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sponsor" }).first(),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(
+    0,
+  );
   await expect(page.getByRole("button", { name: "Logout" })).toHaveCount(0);
 });
 
-test("clicking Edit profile currently has no visible effect (documented, not fixed)", async ({
+test("clicking Edit profile opens individual profile setup", async ({
   page,
 }) => {
-  // See docs/specs/onboarding-profile.md: toggleProfileModal() updates
-  // state nothing reads. This pins the current, known-broken behavior
-  // down as a regression trip-wire — if this test ever starts failing
-  // because a modal *does* open, update it (and the docs) rather than
-  // treating the failure as a real regression.
-  const { userName } = await signUpIndividual(page, "editnoop");
+  const { userName } = await signUpIndividual(page, "edit");
   await page.goto(`/user/${userName}`);
 
   await page.getByRole("button", { name: "Edit profile" }).first().click();
 
-  // No modal, no navigation — toggleProfileModal() flips state nothing
-  // reads (see the comment above), so the only honest assertion is that
-  // nothing observably changed. (Not asserting on the <h1> here: a fresh
-  // individual signup has no firstName/lastName at all — those are only
-  // ever set via the profile-completion flow, itself unreachable through
-  // the UI today — so it legitimately renders empty at this point.)
-  await expect(page).toHaveURL(new RegExp(`/user/${userName}$`));
-  await expect(page.getByRole("button", { name: "Edit profile" }).first()).toBeVisible();
+  await expect(page).toHaveURL(/\/user\/setup$/);
+  await expect(page.locator('[data-cy="profile-setup-start"]')).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
@@ -107,7 +126,9 @@ test("Logout actually logs out", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
   await expect(page.getByRole("navigation").getByText("Sign Up")).toBeVisible();
-  await expect(page.getByRole("navigation").getByText("Profile", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation").getByText("Profile", { exact: true }),
+  ).toHaveCount(0);
 });
 
 test("the desktop and mobile button rows are mutually exclusive, not duplicated", async ({
@@ -117,8 +138,12 @@ test("the desktop and mobile button rows are mutually exclusive, not duplicated"
   await page.goto(`/user/${userName}`);
 
   await page.setViewportSize({ width: 1280, height: 800 });
-  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(
+    1,
+  );
 
   await page.setViewportSize({ width: 375, height: 800 });
-  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(
+    1,
+  );
 });

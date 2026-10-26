@@ -53,3 +53,11 @@ Both files now check `useSelector(selectIsLoggedIn)` alone, matching the pattern
 The one remaining outlier is `Cookies.get("isLoggedIn")` in the orphaned, unrouted `Donate.tsx` — a *different* cookie name from the `Token` cookie discussed above, not currently worth chasing since that page isn't reachable (see [donate-shop-trending.md](./donate-shop-trending.md)).
 
 When adding new auth-gated UI, use `useSelector(selectIsLoggedIn)` — it's the only mechanism that's actually correct for both the email/password and Google OAuth login paths.
+
+## Session validity after rehydration
+
+Persisted `isLoggedIn` remembers login; it does not prove the server cookie remains valid.
+`SessionBootstrap` verifies remembered login through `GET /user/profile` before mounting the app.
+A 401 from startup verification, a later shared-fetcher read, or `updateUserProfile()` resets the existing user slice through `clearRejectedSession()`.
+Network and 5xx errors do not clear login.
+No client-side Token cookie check is used, so httpOnly OAuth cookies remain supported.

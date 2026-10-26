@@ -35,6 +35,7 @@ const ProfileSetup = () => {
     user,
     isLoading,
     error,
+    retry,
     form,
     setField,
     saving,
@@ -56,8 +57,11 @@ const ProfileSetup = () => {
     return (
       <SetupLayout stage={stage} steps={STEP_STATUS}>
         <p className="font-outfit text-body text-ink/70">
-          {isLoading ? "Loading your profile…" : "Sign in to edit your profile."}
+          {isLoading
+            ? "Loading your profile…"
+            : "Could not load your profile. Please try again."}
         </p>
+        {!isLoading && <Button onClickfunction={retry}>Try again</Button>}
       </SetupLayout>
     );
   }
@@ -65,7 +69,8 @@ const ProfileSetup = () => {
   /** Saves whatever's on screen, then leaves for the profile page. */
   const leave = async () => {
     const ok = await save();
-    if (ok) showSuccessToast("Saved");
+    if (!ok) return;
+    showSuccessToast("Saved");
     navigate(`/user/${user.userName}`);
   };
 

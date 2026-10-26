@@ -3,6 +3,8 @@
 
 import Axios from "axios";
 import type { AxiosError } from "axios";
+import { store } from "@app/store/store";
+import { clearRejectedSession } from "@utils/clearRejectedSession";
 import "react-toastify/dist/ReactToastify.css";
 import {
   authEndpoints,
@@ -190,6 +192,7 @@ export const updateUserProfile = async ({
 }: {
   credentials: unknown;
 }) => {
+  const requestedUser = store.getState().user;
   try {
     const response = await Axios.patch(
       userEndpoints.updateProfile,
@@ -201,6 +204,7 @@ export const updateUserProfile = async ({
 
     return response;
   } catch (error) {
+    clearRejectedSession(error, requestedUser);
     return (error as AxiosError).response;
   }
 };

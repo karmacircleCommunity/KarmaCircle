@@ -87,10 +87,7 @@ export function useProfileSetup() {
     window.scrollTo({ top: 0 });
   };
 
-  const transition = async (
-    to: "forward" | "back",
-    commit: () => void,
-  ) => {
+  const transition = async (to: "forward" | "back", commit: () => void) => {
     if (busy.current) return;
     busy.current = true;
 
@@ -151,6 +148,9 @@ export function useProfileSetup() {
     user,
     isLoading,
     error,
+    retry: () => {
+      void mutate();
+    },
     form,
     setField,
     saving,

@@ -8,6 +8,7 @@ Playwright specs for `apps/web/src/features/authentication/`. See [docs/specs/au
 |---|---|
 | [signup.spec.ts](./signup.spec.ts) | The `"email"` step's own validation/routing, then the `"signup"` branch: name sanitization, the live password-strength meter, the Sign Up button's disabled state, a full successful individual signup, and that an organization signup lands on `/organization/setup` instead of `/` |
 | [signin.spec.ts](./signin.spec.ts) | The `"signin"` branch: routing an existing email there, wrong-password rejection, a successful sign-in, the Back button, and the `DonotRenderWhenLoggedIn` route guard |
+| [session.spec.ts](./session.spec.ts) | Signed-out setup access, expired persisted login/navbar recovery, valid httpOnly cookies, expiry during save/close, server-error retry, and answer retention after failed close |
 | [password-reset.spec.ts](./password-reset.spec.ts) | `ForgotPassword.tsx` + `ResetPassword.tsx`: the identical-response-either-way confirmation, a full request→reset→sign-in-with-the-new-password round trip, mismatched-confirm-password rejection, and an invalid/expired token |
 
 ## Test data
@@ -20,9 +21,17 @@ Every test either fills the signup form itself or seeds an account directly agai
 
 - **Google OAuth** (`handleGoogle()`, the "Continue with Google" button) — it full-page-redirects to a real Google consent screen, which this suite doesn't attempt to drive or mock. Untested.
 - **`useValidation.ts`/`useFormLogic.ts`** — a richer, unused validator described in `docs/specs/authentication.md`. `Auth.tsx` doesn't call either, so there's nothing reachable through the UI to test.
-- **Logout** — covered indirectly nowhere in this folder yet; `Navbar.tsx`/`Profile.tsx`/`UserProfile.tsx` each call it with slightly different cleanup (see known-issues.md). Worth a spec if you're touching logout.
+- **Logout** - covered by `e2e/onboarding-profile/profile-page.spec.ts`; the session tests here remove cookies to simulate expiry rather than pressing Logout.
 - **The 409-on-signup race** (`useAuth.ts` mapping a backend `USER_ALREADY_EXISTS` onto `errors.email` and stepping back to `"email"`) — real, but genuinely racy to trigger deliberately in a single test; not attempted.
 
 ## Keeping this honest
 
 If `Auth.tsx`/`ForgotPassword.tsx`/`ResetPassword.tsx` changes in a way that changes what's asserted here, update the relevant spec in the same change — same rule as the rest of this repo's specs. If you add a new spec file to this folder, add it to the table above.
+
+## Session regression data
+
+`session.spec.ts` seeds unique accounts against the isolated test API, then signs in through the real UI.
+Cookie removal simulates session expiry while preserving Redux localStorage.
+The load-outage test injects a 503 for `GET /user/profile`; retry resumes real API requests.
+The failed-close test injects a 503 for `PATCH /user/update` and verifies that unsaved answers remain available.
+No test uses the local development database or ports.

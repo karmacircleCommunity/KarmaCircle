@@ -91,3 +91,12 @@ When asked to add profile features, confirm with whoever's asking whether they m
 ## Types
 
 This entire folder is TypeScript. See [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full breakdown, including two more previously-undocumented bugs converting to strict typing surfaced: `ProfileUpdate.tsx`'s reset function drops the `name` field, and `UserProfile.tsx`'s Logout button passes a plain `onClick` the shared `Button` component silently ignores.
+
+## Profile setup session and load failures
+
+`/user/setup` is wrapped in `RequireSignIn`; signed-out visitors go to `/auth/signin`.
+Startup session verification and later 401 handling clear stale Redux login, keeping navbar and guard consistent.
+Other profile-load errors show a load-failure message and Try again button that revalidates SWR, rather than asking a signed-in user to sign in.
+
+Close navigates only after a successful save; failures keep local answers available for retry.
+A 401 during save clears login and redirects through the route guard.

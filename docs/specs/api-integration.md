@@ -70,3 +70,10 @@ All user-facing success/error feedback for API calls goes through [showSuccessTo
 Follow this pattern for any new API-triggered feedback rather than calling `toast.success`/`toast.error` directly.
 `showWarningToast`/`showInfoToast` exist alongside them for a needs-attention-but-not-failed case; no current API call site uses either yet.
 All four are visually themed through `styles/index.css`'s `--toastify-*` overrides, not per-call styling - see [ui-kit.md](./ui-kit.md#toast) and the live samples at [brand.karmacircle.org](https://brand.karmacircle.org).
+
+## Session rejection handling
+
+`Fetcher.ts` and `updateUserProfile()` call `clearRejectedSession()` on failure.
+Only a 401 for the current Redux user snapshot resets the session; other failures still reach the caller.
+`restoreSession()` uses the existing `GET /user/profile` contract to validate persisted login before app startup.
+No backend route or payload changed.

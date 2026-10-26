@@ -7,6 +7,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import App from "./App";
 import { persistor, store } from "@app/store/store";
 import "@styles/index.css";
+import SessionBootstrap from "@features/authentication/components/SessionBootstrap";
 
 const vh = window.innerHeight * 0.01;
 document.documentElement.style.setProperty("--vh", `${vh}px`);
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <Provider store={store}>
     <HelmetProvider>
       <PersistGate loading={null} persistor={persistor}>
-        <App />
+        <SessionBootstrap>
+          <App />
+        </SessionBootstrap>
         <Analytics />
         <SpeedInsights />
       </PersistGate>

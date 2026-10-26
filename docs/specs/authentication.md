@@ -100,3 +100,11 @@ It does not protect any other route — there is currently no equivalent "requir
 ## Types
 
 This entire folder is TypeScript. See [authentication/SPEC.md](../../apps/web/src/features/authentication/SPEC.md#types) for the full breakdown — the feature's own `AuthType`/`Credentials`/`SignupFormState` types, and the shared `UserType`/`AuthTypeOption` in `apps/web/src/types/user.ts`.
+
+## Persisted session validation
+
+`SessionBootstrap` runs after `PersistGate`, before navbar or auth-route guards mount.
+`restoreSession()` verifies remembered login through `GET /user/profile`, refreshing Redux on success.
+A 401 clears stale login through `clearRejectedSession()`; connection and server errors preserve login.
+The shared fetcher and `updateUserProfile()` also clear sessions rejected during use, unless Redux has already moved to a newer user snapshot.
+`RequireSignIn` redirects signed-out `/user/setup` visits to `/auth/signin` with history replacement.

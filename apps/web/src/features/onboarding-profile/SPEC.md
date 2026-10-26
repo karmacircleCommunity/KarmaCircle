@@ -198,7 +198,9 @@ Clicking the **form's own submit** button runs full validation (still non-blocki
 
 **Data source:** `useSWR(userEndpoints.profile, fetcher)` → `GET /user/profile` (`requireAuth`), returning `{ user: sanitize(user) }` — the same endpoint `Dashboard.tsx` already reads, wrapped the same way (`profileData?.user`). On save, `updateUserProfile({ credentials: toProfileSetupPayload(form) })` (`KarmaCircleApi.ts`, `PATCH /user/update`) — the response carries only `{ message }`, not the updated record (unlike organizations' `UpdateMyOrganization`, which returns `{ organization }`), so `useProfileSetup`'s `save()` calls `mutate()` to revalidate rather than writing the response directly into the SWR cache.
 
-**Exit:** the same "× saves and leaves" pattern as organization setup, minus the badge (no draft/live concept to show) and minus the "still missing before you can go live" banner (nothing is still missing, by construction). Both "Maybe later" on the intro and the corner × save whatever's filled in and navigate to `/user/${user.userName}`.
+**Exit:** the corner × saves and leaves only on success.
+A failed save retains answers for retry; a 401 clears login and lets the route guard redirect to sign-in.
+The intro's Maybe later navigates without saving.
 
 ## Address-line autocomplete (`utils/googlePlaces.ts`, `hooks/useAddressAutocomplete.ts`)
 
@@ -348,3 +350,14 @@ Converting `Profile.tsx` is also what surfaced the "Edit profile button does not
 - **"Add a field to the individual profile-setup flow"** → an entry in `constants/profileSetup.ts`'s `PROFILE_SETUP_QUESTIONS` (plus a `FIELD_SPECS` row if it's part of a `group` question), same shape as organizations' `SETUP_STEPS` but flat (no step grouping). Check first whether `PATCH /user/update`'s `updateProfileSchema` (`apps/api/src/modules/users/user.validation.ts`) actually persists the field you want to add — this flow was scoped to exactly what that endpoint accepts (`description`, `address`); `name`/`coverImage` are accepted by the endpoint but were deliberately left out of this flow's three questions, so adding either is a real scope decision, not a one-line addition — ask first.
 - **"Finish `UserProfile.tsx`"** → register a route, fix the `userName` cookie check (probably replace with the same Redux-based `trueUser` pattern `Profile.tsx` uses), and remove/replace the Lorem-Ipsum and hardcoded-address/pronoun text — treat as a multi-part task, confirm scope first.
 - **"Build a generic profile-field form"** → `ProfileElements.ts` + `getProfileFields.ts` are the closest existing scaffolding; reconcile their validation numbers against the live `useProfileCompletion.ts`/`ProfileUpdate.tsx` bounds before using them as-is. Neither was used for `ProfileSetup.tsx` — that flow's two fields didn't need a generic renderer.
+
+## Profile setup access and loading errors
+
+`routesConfig.tsx` wraps `/user/setup` in `RequireSignIn`.
+Signed-out visits, including sessions cleared after a 401, redirect to `/auth/signin` with history replacement.
+`SessionBootstrap` verifies persisted login before navbar and route guards mount.
+Other profile-loading failures display a load error and Try again action (`useProfileSetup.retry()` calls SWR `mutate()`).
+The generic "Sign in to edit your profile" message no longer mislabels server or connection errors.
+
+Close now leaves only after a successful save.
+Session E2E tests cover expired save/close, server-error retry, and retaining answers after a failed close save.

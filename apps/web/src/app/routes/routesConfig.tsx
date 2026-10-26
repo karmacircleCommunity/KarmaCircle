@@ -14,6 +14,7 @@ import {
   YourEvents,
 } from "./route";
 import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRenderWhenLoggedIn";
+import RequireSignIn from "@features/authentication/components/RequireSignIn";
 
 // One unified email-first flow (features/authentication/pages/Auth.tsx)
 // backs both routes below — which of "sign in"/"sign up" the visitor sees
@@ -75,7 +76,14 @@ const routesConfig: RouteConfigEntry[] = [
   // dynamic "/user/:userName" below for the same reason "/organization/
   // setup" is declared above "/organization/:userName" (readability only;
   // React Router already ranks a static segment above a dynamic one).
-  { path: "/user/setup", element: <ProfileSetup /> },
+  {
+    path: "/user/setup",
+    element: (
+      <RequireSignIn>
+        <ProfileSetup />
+      </RequireSignIn>
+    ),
+  },
   { path: "/user/:userName", element: <Profile /> },
   { path: "/organizations", element: <Organizations /> },
   // The *public* organization profile a visitor reaches from a directory

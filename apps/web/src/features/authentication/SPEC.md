@@ -289,3 +289,12 @@ Each editable field still has a small local `RequiredMark` component (`<span cla
 - **"Standardize the password show/hide toggle"** → adopt `utils/PasswordToggle.ts` instead of leaving `Auth.tsx`/`ResetPassword.tsx` with their own inline copies.
 - **"Make the Google button match the shared Button style"** → `Auth.tsx` currently uses a raw `<button className="btn authpage_oauth">`, not the shared `Button` component; ui-kit.md's shared `Button` supports an `onClickfunction` prop pattern to follow if you convert it.
 - **"Centralize logout"** → out of scope for this folder; see `docs/specs/state-management.md` and the three call sites listed there.
+
+## Session bootstrap and private profile editing
+
+`SessionBootstrap.tsx` wraps the app inside `PersistGate`, withholding navbar and route guards until remembered login has been checked through `utils/restoreSession.ts`.
+`GET /user/profile` refreshes Redux on success; a 401 clears it through the shared fetcher.
+`clearRejectedSession()` also handles later fetcher reads and profile saves, without allowing an older request to reset a newer Redux user snapshot.
+Offline and server errors preserve login.
+`RequireSignIn.tsx` redirects signed-out `/user/setup` visits to `/auth/signin` with history replacement.
+The existing mount-time auth-page redirect now receives startup state after verification.

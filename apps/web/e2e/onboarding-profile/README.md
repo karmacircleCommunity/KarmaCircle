@@ -6,17 +6,21 @@ Playwright specs for `apps/web/src/features/onboarding-profile/`. Read [docs/spe
 
 | File | Covers |
 |---|---|
-| [profile-page.spec.ts](./profile-page.spec.ts) | `Profile.tsx` at `/user/:userName` — the trueUser-vs-visitor button set (Edit profile/Logout vs. Subscribe/Sponsor), that Edit profile is currently a documented no-op, that Logout actually works, and that the desktop/mobile button rows are legitimate responsive variants, not the duplicate the docs used to claim |
+| [profile-page.spec.ts](./profile-page.spec.ts) | `Profile.tsx` at `/user/:userName` — the trueUser-vs-visitor button set (Edit profile/Logout vs. Subscribe/Sponsor), that Edit profile opens the individual setup wizard, that Logout actually works, and that the desktop/mobile button rows are legitimate responsive variants, not the duplicate the docs used to claim |
 
 ## Why this folder is thin, and what "properly tested" means here
 
-Most of what `onboarding-profile.md` describes **isn't reachable through normal navigation at all**, and Playwright can only drive what a real user can actually get to:
+The individual setup wizard is reachable from Edit profile.
+Its authentication and failure recovery coverage lives in [authentication/session.spec.ts](../authentication/session.spec.ts).
+Some older components remain unreachable:
 
 - **`ProfileCompletion`** (the "complete your profile" modal) — `Profile.tsx` sets the state meant to show it but never reads that state in its JSX; `Dashboard.tsx` stopped mounting it in favor of `OrganizationSetupGate` (organizations only). It is currently mounted nowhere in the app. Untestable through E2E until something actually renders it again.
 - **`ProfileUpdate`** (the edit-existing-profile modal) — rendered from `Dashboard.tsx`, reachable via its "Edit Profile" button. Not yet covered here; would need its own spec once `dashboard`'s own E2E coverage exists (out of scope of this pass — see the repo's `docs/specs/testing.md` for what's covered where).
 - **`UserProfile.tsx`** — a second, more developed profile page with no route in `routesConfig.tsx` at all. Unreachable, untested, by design (see the file's own header comment for why it's not deleted either).
 
-What *is* tested is `Profile.tsx` — the one page in this feature actually reachable via `/user/:userName` — as thoroughly as its current (partly broken) behavior allows.
+`Profile.tsx` coverage exercises owner/visitor controls, editing navigation, logout, and responsive button visibility.
+The owner-control tests set the existing `skipProfileCompletion` cookie so the separate missing-fields nudge does not redirect before those controls can be checked.
+A full successful three-question profile-edit/save journey remains outside this coverage.
 
 ## A stale doc claim this suite corrected
 
