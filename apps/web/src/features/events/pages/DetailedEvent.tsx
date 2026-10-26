@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
+import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import { Footer, Navbar } from "@components";
@@ -7,7 +8,10 @@ import Button from "@components/buttons/Button";
 import ComponentHelmet from "@components/ComponentHelmet";
 import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
+import { selectUser } from "@app/store/slices/userSlice";
 import fetcher from "@utils/Fetcher";
+import { JoinEvent } from "@services/KarmaCircleApi";
+import { showErrorToast, showSuccessToast, showWarningToast } from "@utils/Toasts";
 import EventAgenda from "../components/detail/EventAgenda";
 import EventFacts from "../components/detail/EventFacts";
 import EventFundraiserPanel from "../components/detail/EventFundraiserPanel";
@@ -91,9 +95,21 @@ const EventNotFound = ({ eventId }: { eventId?: string }) => (
 );
 
 const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
-  // Local-only: there is no attend endpoint yet, and the panel says so
-  // rather than implying the organizer has been told. See EventJoinPanel.
-  const [joined, setJoined] = useState(false);
+  const user = useSelector(selectUser);
+  const [joining, setJoining] = useState(false);
+  const registrationKey =
+    user.isLoggedIn && user.email
+      ? [eventEndpoints.registration(event.id), user.email] as const
+      : null;
+  const {
+    data: registration,
+    error: registrationError,
+    isLoading: registrationLoading,
+    mutate: mutateRegistration,
+  } = useSWR<{ joined: boolean }>(registrationKey, ([url]) => fetcher(url));
+  const joined = registration?.joined ?? false;
+  const checkingRegistration = user.isLoggedIn && registrationLoading;
+  const registrationCheckFailed = user.isLoggedIn && Boolean(registrationError);
   const pageRef = useRef<HTMLDivElement>(null);
 
   useSectionReveal(pageRef);
@@ -113,6 +129,28 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
   const [joinPanelVisible, setJoinPanelVisible] = useState(true);
   const footerSentinelRef = useRef<HTMLDivElement>(null);
   const [nearFooter, setNearFooter] = useState(false);
+
+  const joinEvent = async () => {
+    if (joining || joined) return;
+    if (registrationCheckFailed) {
+      void mutateRegistration();
+      return;
+    }
+    setJoining(true);
+    const response = await JoinEvent(event.id);
+    setJoining(false);
+
+    if (response.ok) {
+      void mutateRegistration({ joined: true }, false);
+      if (response.data?.emailSent) {
+        showSuccessToast("You joined this event. Confirmation email sent.");
+      } else {
+        showWarningToast("You joined this event, but confirmation email could not be sent.");
+      }
+      return;
+    }
+    showErrorToast(response.message || "Could not join this event.");
+  };
 
   useEffect(() => {
     const panel = joinPanelRef.current;
@@ -256,7 +294,10 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                   event={event}
                   detail={detail}
                   joined={joined}
-                  onToggleJoin={() => setJoined((previous) => !previous)}
+                  joining={joining}
+                  checkingRegistration={checkingRegistration}
+                  registrationCheckFailed={registrationCheckFailed}
+                  onToggleJoin={joinEvent}
                 />
               </div>
 
@@ -278,7 +319,10 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
         event={event}
         detail={detail}
         joined={joined}
-        onToggleJoin={() => setJoined((previous) => !previous)}
+        joining={joining}
+        checkingRegistration={checkingRegistration}
+        registrationCheckFailed={registrationCheckFailed}
+        onToggleJoin={joinEvent}
         hidden={joinPanelVisible || nearFooter}
       />
 

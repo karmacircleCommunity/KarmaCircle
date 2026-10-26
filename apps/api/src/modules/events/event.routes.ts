@@ -3,7 +3,11 @@ import { AuthenticatedRequest, requireAuth } from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { asyncHandler } from "../../utils/async-handler";
 import * as eventController from "./event.controller";
-import { createEventSchema, listEventsQuerySchema } from "./event.validation";
+import {
+  createEventSchema,
+  eventUidParamsSchema,
+  listEventsQuerySchema,
+} from "./event.validation";
 
 const router = Router();
 
@@ -35,6 +39,57 @@ router.get(
   "/",
   validate(listEventsQuerySchema, "query"),
   asyncHandler(eventController.listEvents),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/join:
+ *   post:
+ *     summary: Join an upcoming public event and email the attendee a confirmation
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       201: { description: Event joined; confirmation email attempted }
+ *       200: { description: Already joined }
+ *       401: { description: Unauthorized }
+ *       403: { description: Event is invite-only }
+ *       404: { description: Event not found }
+ *       409: { description: Event has already started }
+ */
+router.post(
+  "/:uid/join",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.joinEvent),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/registration:
+ *   get:
+ *     summary: Check whether the authenticated attendee joined an event
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ joined: boolean }" }
+ *       401: { description: Unauthorized }
+ *       404: { description: Event not found }
+ */
+router.get(
+  "/:uid/registration",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.getRegistrationStatus),
 );
 
 /**

@@ -4,7 +4,7 @@ import { AppError } from "../../middleware/error-handler";
 import { findOrCreateForOwner } from "../organizations/organization.service";
 import { findByEmail } from "../users/user.service";
 import { CreateEventInput } from "./event.validation";
-import { Event, IEvent } from "./event.model";
+import { Event, EventRegistration, IEvent } from "./event.model";
 
 export async function findByUid(uid: string) {
   return Event.findOne({ uid });
@@ -84,4 +84,63 @@ export async function createEvent(
   });
 
   return event.save();
+}
+
+export async function joinEvent(email: string, uid: string) {
+  const [event, attendee] = await Promise.all([
+    findByUid(uid),
+    findByEmail(email),
+  ]);
+
+  if (!event) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
+  }
+  if (!attendee) {
+    throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+  if (event.inviteOnly) {
+    throw new AppError(STATUS_CODE.FORBIDDEN, "This event is invite-only.");
+  }
+  if (event.startTime.getTime() < Date.now()) {
+    throw new AppError(STATUS_CODE.CONFLICT, "This event has already started.");
+  }
+
+  const existing = await EventRegistration.findOne({
+    eventUid: uid,
+    userId: attendee._id,
+  });
+  if (existing) return { event, attendee, alreadyJoined: true };
+
+  try {
+    await EventRegistration.create({
+      eventUid: uid,
+      userId: attendee._id,
+      attendeeEmail: attendee.email,
+      attendeeName: attendee.name || "",
+    });
+  } catch (error) {
+    // The compound unique index closes the concurrent double-click race.
+    if ((error as { code?: number }).code !== 11000) throw error;
+    return { event, attendee, alreadyJoined: true };
+  }
+
+  return { event, attendee, alreadyJoined: false };
+}
+
+export async function getRegistrationStatus(email: string, uid: string) {
+  const event = await findByUid(uid);
+  if (!event) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
+  }
+
+  const attendee = await findByEmail(email);
+  if (!attendee) {
+    throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+
+  const registration = await EventRegistration.exists({
+    eventUid: uid,
+    userId: attendee._id,
+  });
+  return { joined: Boolean(registration) };
 }

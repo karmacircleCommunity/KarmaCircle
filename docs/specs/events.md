@@ -2,6 +2,60 @@
 
 Covers the events directory page, the (two, redundant) event-creation modals, and the various event card/slider components.
 
+## Event lifecycle: agent reference
+
+This section records the current end-to-end behavior, including the gaps that matter when changing the module.
+The Events page is public: visitors fetch `GET /events`, search and filter the returned events in the browser, then open `/events/:eventId` from an event card.
+Event detail fetches `GET /events?uid={uid}` and renders the event, organizer, mode-specific location or online information, and any optional detail fields present on the record.
+Past events show a completed state, with no join action.
+Upcoming events marked `inviteOnly` remain visible in the public directory and detail page; the detail page replaces Join with “ask the organizer.”
+There is no invitation list, invite delivery, access check, or approval flow, so `inviteOnly` is currently a display flag rather than private access control.
+For an upcoming event that is not invite-only, Join requires a signed-in account and saves one registration per account. The attendee receives a confirmation email; event detail checks the signed-in account's registration on load and shows “You are going” in place of Join when already registered.
+No capacity or attendee-count endpoint exists, so attendee totals and available spots must not be invented.
+Share uses the browser share sheet or clipboard, and Ask opens a mail link only when the event has a contact email.
+Organizations can find their hosted events at `/organization/events` and on their public organization profile, both backed by `GET /events?host={handle}`.
+
+### Publishing path and implementation boundary
+
+The backend supports publishing through authenticated `POST /events/create`, validates the event, verifies the account is an organization, stores the record with the authenticated organization's identity, and returns `201`.
+The public Events page's Create An Event button currently opens `CreateEvent.tsx`, whose Save button cannot become enabled and whose submit handler calls `PATCH /user/update`; it does not publish an event.
+The functional form and hook pair are `CreateEvents.tsx` and `useEvent.ts`, but that component is not mounted by any routed page.
+When wiring the organizer flow, use the real `POST /events/create` contract and refresh the exact `eventEndpoints.directory()` SWR key after success so the newly published event appears in the public directory.
+The create endpoint currently accepts the basic event fields and `inviteOnly`; most long-form detail fields shown by the detail page are not accepted by its request schema yet.
+Read the frontend deep spec at [events/SPEC.md](../../apps/web/src/features/events/SPEC.md), the backend spec at [apps/api/docs/specs/events.md](../../apps/api/docs/specs/events.md), and the route cross-reference at [apps/api/docs/specs/api-contract.md](../../apps/api/docs/specs/api-contract.md) before changing this path.
+
+```mermaid
+flowchart TD
+    A([Visitor or organization opens Events]) --> B[GET /events: public paginated event list]
+    B --> C[Browser search and filters: date, invite flag, mode]
+    C --> D{Choose event card}
+    D --> E[GET /events?uid: public event detail]
+    E --> F{Event already past?}
+    F -->|Yes| G[Completed state: no Join action]
+    F -->|No| X{Signed in?}
+    X -->|Yes| Y[GET /events/:uid/registration]
+    Y --> Z{Already joined?}
+    Z -->|Yes| AA[Show You're going; no Join action]
+    Z -->|No| H{inviteOnly?}
+    X -->|No| H
+    H -->|Yes| I[Show ask-organizer state; event remains public]
+    I --> J{contactEmail exists?}
+    J -->|Yes| K[Ask opens mail client]
+    J -->|No| L[No invite or request workflow exists]
+    H -->|No| M[Signed-in attendee joins via POST /events/:uid/join]
+    M --> N[Registration saved; confirmation email sent]
+    N --> AB[Email link returns to event detail]
+    AB --> E
+    E --> O[Share uses native share or clipboard]
+    P[Organization account signs in] --> Q[Create button opens current CreateEvent.tsx]
+    Q --> R[Current form cannot submit; handler targets PATCH /user/update]
+    P --> S[Backend POST /events/create exists]
+    S --> T[requireAuth + validation + organization check]
+    T --> U[Save event with server-derived organizer identity]
+    U --> V[201 response]
+    V --> W[GET /events includes event; GET /events?host lists organizer events]
+```
+
 ## `Events.tsx` — routed at `/events`
 
 [apps/web/src/features/events/pages/Events.tsx](../../apps/web/src/features/events/pages/Events.tsx).
@@ -20,6 +74,11 @@ Two real, deliberate differences from `/organizations`' directory, both because 
 **`EventCard` now handles a live record's real gaps rather than a fixture that had none:** no cover photo → an accent-gradient block with a calendar mark (same derivation as `OrganizationCard`'s no-cover fallback); no `organizerHandle` (an individual host, per `event.model.ts`) → the organizer name renders as plain text instead of a link; no capacity data → the "N going / spots left" rule at the bottom is omitted entirely rather than showing invented numbers (see [known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) — real capacity tracking is future scope, not built).
 
 **September 2026:** two badge pills — "Govt" (`event.isGovernmentSponsored`) and "Invite only" (`event.inviteOnly`) — render top-right on the cover, in the slot `OrganizationCard`'s "Featured" pill uses, when the underlying `Event` document carries either flag. The meta row's vertical spacing was also loosened and its date/time line's icon changed from a repeated `FiCalendar` to `FiClock`, so the date badge and the time line read as two distinct facts rather than the same one twice.
+
+Event creation requires a signed-in organization account: the `Token` cookie, Redux login state, and `userType === "organization"` must all be present.
+Personal accounts and signed-out visitors see neither the creation button nor its modal; browsing, search, and filters remain public.
+The API independently rejects personal-account creation requests with `403`, using the stored account type.
+No `e2e/events/` suite exists yet; this visibility rule has no automated browser coverage.
 
 The "Create An Event" button opens `CreateEvent` from [apps/web/src/features/events/components/CreateEvent.tsx](../../apps/web/src/features/events/components/CreateEvent.tsx) — unchanged, still the non-functional one (see below).
 
@@ -109,3 +168,10 @@ It only shows once it's actually needed: `hidden` in `DetailedEventView` is gate
 ## Types
 
 This entire folder is TypeScript. See [events/SPEC.md](../../apps/web/src/features/events/SPEC.md#types) for the full breakdown, including which pre-existing bugs (the `EventCard` prop mismatch, `CreateEvent`'s stray `htmlFor` on a `div`) now surface as suppressed compile errors.
+
+## Refreshing local demo events
+
+Demo event dates are relative to when the seed script runs, so an old seed can leave the default Upcoming view empty even while the API returns events.
+From `apps/api`, run `pnpm exec tsx scripts/seed-demo-data.ts --events-only` to refresh only the known demo event records in the configured database.
+This upserts the demo events with fresh relative dates, including future and past examples, without changing users, organizations, products, reports, or non-demo events.
+The directory keeps its normal date filters; past records belong under Past.

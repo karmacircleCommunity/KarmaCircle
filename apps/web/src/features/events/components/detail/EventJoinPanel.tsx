@@ -42,6 +42,9 @@ const EventJoinPanel = ({
   event,
   detail,
   joined,
+  joining,
+  checkingRegistration,
+  registrationCheckFailed,
   onToggleJoin,
 }: EventJoinPanelProps) => {
   const past = isEventPast(event.startsAt);
@@ -140,7 +143,7 @@ const EventJoinPanel = ({
             <button
               type="button"
               onClick={onToggleJoin}
-              disabled={full}
+              disabled={full || joining || checkingRegistration}
               aria-pressed={joined}
               className={`mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-3 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
                 joined
@@ -155,16 +158,30 @@ const EventJoinPanel = ({
               ) : (
                 <>
                   <FiUserPlus aria-hidden="true" />{" "}
-                  {full ? "Event is full" : "Join this event"}
+                  {registrationCheckFailed
+                    ? "Retry status check"
+                    : checkingRegistration
+                      ? "Checking…"
+                      : joining
+                        ? "Joining…"
+                        : full
+                          ? "Event is full"
+                          : "Join this event"}
                 </>
               )}
             </button>
           )}
 
+          {registrationCheckFailed && !joined && !event.inviteOnly && (
+            <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
+              Could not verify your registration. Try again before joining.
+            </p>
+          )}
+
           {joined && !event.inviteOnly && (
             <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
-              Saved on this device only - the organizer has not been told
-              yet. Tap again to change your mind.
+              You&apos;re registered for this event. Your registration is saved
+              to your account.
             </p>
           )}
         </>

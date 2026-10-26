@@ -106,6 +106,15 @@ export interface IEvent extends Document {
   updatedAt: Date;
 }
 
+export interface IEventRegistration extends Document {
+  eventUid: string;
+  userId: mongoose.Types.ObjectId;
+  attendeeEmail: string;
+  attendeeName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const agendaItemSchema = new Schema<IEventAgendaItem>(
   {
     time: { type: String, required: true, trim: true },
@@ -242,3 +251,20 @@ const eventSchema = new Schema<IEvent>(
 );
 
 export const Event = mongoose.model<IEvent>("Event", eventSchema);
+
+const eventRegistrationSchema = new Schema<IEventRegistration>(
+  {
+    eventUid: { type: String, required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, required: true },
+    attendeeEmail: { type: String, required: true },
+    attendeeName: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+eventRegistrationSchema.index({ eventUid: 1, userId: 1 }, { unique: true });
+
+export const EventRegistration = mongoose.model<IEventRegistration>(
+  "EventRegistration",
+  eventRegistrationSchema,
+);

@@ -3,6 +3,7 @@ import { env } from "./env";
 import { STATUS_CODE } from "../constants/http-status";
 import { AppError } from "../middleware/error-handler";
 import { logger } from "./logger";
+import type { IEvent } from "../modules/events/event.model";
 
 const DEFAULT_FROM = "KarmaCircle <onboarding@resend.dev>";
 
@@ -87,5 +88,57 @@ export async function sendPasswordResetEmail(
       STATUS_CODE.INTERNAL_SERVER_ERROR,
       "Failed to send the password reset email, try again later.",
     );
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
+}
+
+export async function sendEventJoinConfirmation(
+  to: string,
+  attendeeName: string,
+  event: IEvent,
+): Promise<void> {
+  const eventUrl = `${env.ORIGIN_URL.replace(/\/$/, "")}/events/${encodeURIComponent(event.uid)}`;
+  const date = new Intl.DateTimeFormat("en", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(event.startTime));
+  const safeName = escapeHtml(attendeeName || "there");
+  const safeEventName = escapeHtml(event.name);
+
+  const client = env.NODE_ENV === "test" ? null : getResendClient();
+  if (!client) return;
+
+  const { error } = await client.emails.send({
+    from: env.RESEND_FROM_EMAIL || DEFAULT_FROM,
+    to,
+    subject: `You're going to ${event.name}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #282828;">
+        <h2>You're going!</h2>
+        <p>Hi ${safeName},</p>
+        <p>Your place at <strong>${safeEventName}</strong> is confirmed.</p>
+        <p>${escapeHtml(date)} UTC</p>
+        <p><a href="${eventUrl}" style="display:inline-block;padding:12px 20px;background:#a8623e;color:#fff;border-radius:8px;text-decoration:none;">View event details</a></p>
+        <p>See you there,<br />KarmaCircle</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger.error({ error, eventUid: event.uid }, "Failed to send event join confirmation");
+    throw new AppError(STATUS_CODE.INTERNAL_SERVER_ERROR, "Failed to send event confirmation email.");
   }
 }

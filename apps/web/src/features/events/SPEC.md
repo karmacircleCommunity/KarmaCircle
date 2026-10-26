@@ -3,6 +3,14 @@
 Colocated, implementation-level companion to [docs/specs/events.md](../../../docs/specs/events.md).
 This is the most duplicated-and-broken feature in the codebase — two separate "create event" implementations, one of which cannot ever be submitted (see below, a new finding beyond what the centralized spec documents) — so read this one carefully before touching anything under `components/`.
 
+## Event creation access
+
+`Events.tsx` renders its creation button and modal only with a `Token` cookie, Redux `isLoggedIn`, and `userType === "organization"`.
+Personal accounts and signed-out visitors can browse events but cannot open the creation modal.
+The API also checks the stored account type and returns `403` for individual hosts.
+The existing duplicate creation forms and their documented limitations remain unchanged.
+No automated browser coverage exists for this feature yet.
+
 ## What this feature is responsible for
 
 The `/events` directory page, the `/events/:eventId` detail page, event display (cards, a slider), and event creation.
@@ -59,20 +67,19 @@ Routed at `/events/:eventId` (`app/routes/routesConfig.tsx`), where `:eventId` i
 
 **Live data, September 2026.** `useSWR<ApiEvent>(eventId ? eventEndpoints.byUid(eventId) : null, fetcher)` — the same conditional-key / loading / error-or-missing / view four-way branch `OrganizationProfile.tsx` already uses for its own single-record fetch. `eventEndpoints.byUid(uid)` hits `GET /events?uid={uid}`, reusing the backend's existing single-event branch (`event.controller.ts#listEvents`) rather than adding a dedicated `GET /events/:uid` route. `utils/toDisplayEventDetail.ts` maps the raw `ApiEvent` onto the `{ event, detail }` shape the page and its `components/detail/` pieces render — the detail-page equivalent of `toDisplayEvent.ts`.
 
+Signed-in visitors also fetch `GET /events/:uid/registration` via `eventEndpoints.registration(uid)`, with the SWR cache key scoped to account email. While that status loads, both Join controls stay disabled; when registration exists, they render the joined state instead. If the check fails, both controls offer a retry rather than risking a duplicate registration. This makes the confirmation email's event link land on a page that recognizes the attendee.
+
 This replaces the fixture-driven version this page ran until September 2026: two lookups (`findEvent`/`findEventDetail`) against `constants/eventDirectory.ts`/`eventDetails.ts`, which went stale the moment `Events.tsx`'s own August-2026 live-data change started linking cards to real `uid`s the fixture didn't contain — every real event's card led here to the not-found state instead of a detail page. Both fixture files, and their placeholder cover photos, are deleted now that nothing reads them.
 
 **`event.model.ts` grew the fields this page needs**, in the same pass that wired the fetch: `about`, `agenda`, `bringAlong`, `gettingThere`/`linkDelivery`/`joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`, plus two flags — `isGovernmentSponsored` (server/seed-only, mirrors `Organization.verified`; `EventHero` renders a brand-tinted "Government-backed" pill when set) and `inviteOnly` (organizer-settable; `EventJoinPanel` replaces the Join control with an honest "ask the organizer" state, and `EventFacts`'s "Who can come" cell reports it, when set). See [apps/api/docs/specs/events.md](../../../../apps/api/docs/specs/events.md) for the schema.
 
-**A real event has no capacity/RSVP tracking**, so `going`/`spotsLeft` stay `undefined` on the mapped `DisplayEvent` — same "nothing invented" rule `EventCardEvent` already follows. `EventFacts`'s "Attendance" cell and `EventJoinPanel`'s Going/Spots-left row both check for this and render an honest "not tracked" state rather than fabricating a number. See [known-issues.md](../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) — real capacity tracking is flagged as deliberate future scope, not scheduled.
+**Registration is saved, but capacity is still untracked.** Joining calls authenticated `POST /events/:uid/join`, saves one registration per account, and sends confirmation to the account email. Past and invite-only events are rejected by the API. `going`/`spotsLeft` stay undefined on `DisplayEvent`; do not derive counts from registrations. See [known-issues.md](../../../../docs/specs/known-issues.md#events--attendee-capacity-not-tracked).
 
 **Every `EventSection` with nothing behind it doesn't render** — "About this event" (`detail.about`), "How the day runs" (`detail.agenda`), and "What to bring" (`detail.bringAlong`) are all conditional on their array being non-empty, matching `OrganizationProfileView`'s own rule for sections with nothing behind them. "The details" (`EventFacts`) always renders — it degrades gracefully per-cell instead of disappearing. The location/join section renders unconditionally too, but `EventLocationPanel` itself returns `null` if there's genuinely nothing to show (no address on an offline event, no platform on an online one).
 
 **Cost.** `cost` is *omitted* on the model for free events rather than set to zero — nearly everything here is a nonprofit drive, so a price is the exception worth spelling out. The free branch says so in words ("Free to attend"), never a currency-formatted zero.
 
-**Nothing here writes anywhere.** No attend/RSVP or payment endpoint exists.
-Join is local `useState` in the page, passed down with an `onToggleJoin` callback; the counts move with it (when capacity data exists at all) and `EventJoinPanel` says in words that it is device-only and the organizer has not been told.
-Contribute toasts. Share is `navigator.share` with a clipboard fallback, treating a dismissed sheet (`AbortError`) as a non-event.
-Follow that pattern for anything else added here: acknowledge the press and be honest, rather than shipping a control that looks live and silently does nothing (which is exactly what `Profile.tsx`'s Subscribe/Sponsor pair does).
+**Join writes a registration.** `DetailedEvent.tsx` calls `JoinEvent` from `KarmaCircleApi.ts`; the API returns whether it joined and whether confirmation email was sent. Success updates SWR registration state and shows feedback, while failures leave Join available for retry. The mobile action bar and side panel share the same joined/loading state. Share is `navigator.share` with a clipboard fallback, treating a dismissed sheet (`AbortError`) as a non-event.
 
 **Layout.** Two columns from `lg`, with the sidebar `order-1` on mobile — on a narrow screen "can I go, and what does it cost" comes before the reading. One rendered instance either way; never a duplicated panel with duplicated state.
 

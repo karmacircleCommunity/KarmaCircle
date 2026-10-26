@@ -72,6 +72,9 @@ const EventMobileActionBar = ({
   event,
   detail,
   joined,
+  joining,
+  checkingRegistration,
+  registrationCheckFailed,
   onToggleJoin,
   hidden,
 }: EventJoinPanelProps & { hidden: boolean }) => {
@@ -148,7 +151,7 @@ const EventMobileActionBar = ({
         <button
           type="button"
           onClick={onToggleJoin}
-          disabled={full}
+          disabled={full || joining || checkingRegistration}
           aria-pressed={joined}
           tabIndex={hidden ? -1 : undefined}
           className={`inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
@@ -163,7 +166,16 @@ const EventMobileActionBar = ({
             </>
           ) : (
             <>
-              <FiUserPlus aria-hidden="true" /> {full ? "Full" : "Join event"}
+              <FiUserPlus aria-hidden="true" />{" "}
+              {registrationCheckFailed
+                ? "Retry check"
+                : checkingRegistration
+                  ? "Checking…"
+                  : joining
+                    ? "Joining…"
+                    : full
+                      ? "Full"
+                      : "Join event"}
             </>
           )}
         </button>

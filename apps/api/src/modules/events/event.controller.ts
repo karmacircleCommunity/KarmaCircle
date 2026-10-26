@@ -5,6 +5,8 @@ import { AppError } from "../../middleware/error-handler";
 import { buildPaginationMeta, toSkipLimit } from "../../utils/pagination";
 import * as eventService from "./event.service";
 import { CreateEventInput, ListEventsQuery } from "./event.validation";
+import { sendEventJoinConfirmation } from "../../config/mailer";
+import { logger } from "../../config/logger";
 
 export async function listEvents(req: Request, res: Response) {
   const { uid, slug, host, page, limit } =
@@ -40,4 +42,43 @@ export async function createEvent(req: AuthenticatedRequest, res: Response) {
   res
     .status(STATUS_CODE.CREATED)
     .json({ message: "Event Created", savedEvent });
+}
+
+export async function joinEvent(req: AuthenticatedRequest, res: Response) {
+  const result = await eventService.joinEvent(req.auth.email, req.params.uid);
+  let emailSent = false;
+
+  if (!result.alreadyJoined) {
+    try {
+      await sendEventJoinConfirmation(
+        result.attendee.email,
+        result.attendee.name || "",
+        result.event,
+      );
+      emailSent = true;
+    } catch (error) {
+      logger.error(
+        { error, eventUid: result.event.uid, attendeeEmail: result.attendee.email },
+        "Event joined but confirmation email failed",
+      );
+    }
+  }
+
+  return res.status(result.alreadyJoined ? STATUS_CODE.OK : STATUS_CODE.CREATED).json({
+    message: result.alreadyJoined ? "You have already joined this event." : "You joined this event.",
+    joined: true,
+    alreadyJoined: result.alreadyJoined,
+    emailSent,
+  });
+}
+
+export async function getRegistrationStatus(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  const status = await eventService.getRegistrationStatus(
+    req.auth.email,
+    req.params.uid,
+  );
+  return res.status(STATUS_CODE.OK).json(status);
 }

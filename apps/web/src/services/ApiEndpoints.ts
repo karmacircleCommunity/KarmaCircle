@@ -70,6 +70,9 @@ const eventEndpoints = {
    * rather than adding a new one. Mirrors `organizationEndpoints.byHandle`.
    */
   byUid: (uid: string) => `${API}/events?uid=${encodeURIComponent(uid)}`,
+  join: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/join`,
+  registration: (uid: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/registration`,
   /**
    * The public directory. Unlike `organizationEndpoints.directory()`,
    * `GET /events` has no server-side `search`/domain filter to send

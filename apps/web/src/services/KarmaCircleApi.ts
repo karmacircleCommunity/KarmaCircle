@@ -272,6 +272,22 @@ export const CreateEvent = async (event: unknown) => {
   }
 };
 
+export const JoinEvent = async (uid: string) => {
+  try {
+    const response = await Axios.post(eventEndpoints.join(uid), undefined, {
+      withCredentials: true,
+    });
+    return { ok: true as const, ...response };
+  } catch (error) {
+    const apiError = (error as AxiosError<{ message?: string }>).response;
+    return {
+      ok: false as const,
+      status: apiError?.status,
+      message: apiError?.data?.message,
+    };
+  }
+};
+
 export const fetchDashboard = async () => {
   try {
     const response = await Axios.get(organizationEndpoints.dashboard, {

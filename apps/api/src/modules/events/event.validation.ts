@@ -67,5 +67,9 @@ export const listEventsQuerySchema = z
   })
   .merge(paginationQuerySchema);
 
+export const eventUidParamsSchema = z.object({
+  uid: z.string().trim().min(1),
+});
+
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;

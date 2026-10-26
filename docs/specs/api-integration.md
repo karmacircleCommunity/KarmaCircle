@@ -31,7 +31,7 @@ All endpoint URL strings/builders live here, grouped by domain, and are imported
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
 organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, byHandle(handle), directory({...})
-eventEndpoints: all, create, byHost(handle)
+eventEndpoints: all, create, byHost(handle), byUid(uid), join(uid), registration(uid)
 paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)
 authEndpoints:  signin, signup, googleLogin, googleLoginSuccess, logout
 ```

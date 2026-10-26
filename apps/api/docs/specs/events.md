@@ -32,7 +32,9 @@
 
 All of the September 2026 fields above follow the same nested-sub-schema convention `organization.model.ts` established for `leadership`/`socialLinks`/`sponsorship` — `_id: false` sub-schemas for structured fields (`agenda`, `cost`, `fundraiser`) rather than flat scalars, and a plain default for the two booleans.
 
-**Attendee capacity/RSVP tracking is a deliberate non-goal, not an oversight.** No `capacity`, attendee list, or RSVP write endpoint exists — see [known-issues.md](../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) (web-side doc; this module has no such gaps of its own to list separately, since the frontend is the side that would fabricate a number if one were needed and doesn't).
+**Capacity counts are still not tracked.** Registrations are stored separately from event documents and do not expose attendee totals or spots remaining.
+
+**Public reads remain unauthenticated, while joining requires `requireAuth`.** `POST /events/:uid/join` stores one registration per event and authenticated user, blocks past and invite-only events, and sends a confirmation email to the account email. A failed email does not undo registration; response includes `emailSent: false`. There is no leave, invite, approval, capacity, or organizer-notification flow. The currently mounted frontend creation modal also does not call this module's `POST /events/create`; see the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference) and [API contract map](./api-contract.md).
 
 ## `event.service.ts`
 
@@ -48,6 +50,21 @@ No auth. `validate(listEventsQuerySchema, "query")` — `{ uid?: string, slug?: 
 
 `requireAuth` → `validate(createEventSchema)` → `eventController.createEvent`. **`403 NOT_AN_ORGANIZATION` if the authenticated account isn't an organization** (see `event.service.ts` above) - every event needs a real organization behind it, so this is checked before anything else in the service. Required always: `uid`, `name`, `description`, `coverImage`, `mode`, `startTime`, `endTime`, `startDate`, `endDate` (the four dates go through `z.coerce.date()`, so ISO strings or anything `Date`-constructible are accepted, not just already-`Date` values). Required **only if `mode === "Offline"`** (`createEventSchema`'s `superRefine`): `city`, `state`, `country`, `address`, `mapIframe` — each missing one adds its own Zod issue at that field's path, so a partially-filled offline event gets one `400` response listing every missing field at once, not just the first. `platform`/`platformLink` are always optional regardless of mode, even though they're the fields an `Online` event would actually need to be useful — nothing in this validation schema requires an online event to specify how to join it. `inviteOnly` is optional, defaults `false`. Every other September-2026 detail-page field (`about`, `agenda`, `bringAlong`, `gettingThere`, `linkDelivery`, `joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`, and `isGovernmentSponsored`) is **not** in `createEventSchema` at all today — this route can create the basic event, but populating the detail-page-only fields currently means writing to the collection directly (as `scripts/seed-demo-data.ts` does), not through this endpoint; extending the schema to accept them is future work, deliberately out of scope for the pass that added the fields themselves. On success: `201 { message: "Event Created", savedEvent }` — note this response's top-level shape (`message` + `savedEvent`, not `message` + `user`/`event`) is unique to this route; every other module's create/success response in this API uses a different key name for the payload (compare `users`' `user`, `products`' bare object).
 
+## `POST /events/:uid/join`
+
+Requires `requireAuth`; registration identity and confirmation destination come from the authenticated account, never the request body. Returns `404` for an unknown event, `403` for invite-only events, and `409` once `startTime` has passed. A unique compound index on `(eventUid, userId)` makes the write idempotent across retries and concurrent clicks. New registration returns `201 { joined: true, alreadyJoined: false, emailSent }`; an existing registration returns `200 { joined: true, alreadyJoined: true, emailSent: false }`. Confirmation email failure is logged and reported as `emailSent: false`, while the saved registration remains successful.
+
+## `GET /events/:uid/registration`
+
+Requires `requireAuth`; looks up only the caller's registration and returns `{ joined: boolean }`. Event detail calls this after loading when Redux reports an authenticated session, so returning attendees see the registered state without exposing attendee data publicly. Unknown event returns `404`.
+
 ## What's known-broken here
 
 See [known-issues.md](./known-issues.md#events). The main cross-repo item: the frontend has **two** competing "create event" UI components per its own spec, and only one of them is known (by the frontend's own docs) to send a body shape compatible with this route — check which component a given frontend change actually touches before assuming `POST /events/create`'s contract is being exercised correctly. Within this module alone, the `Online`-mode fields (`platform`/`platformLink`) not being required is the one asymmetry worth a second look if online events start showing up without a join link.
+
+## Refreshing local demo events
+
+Demo event dates are relative to when the seed script runs, so an old seed can leave the default Upcoming view empty even while the API returns events.
+From `apps/api`, run `pnpm exec tsx scripts/seed-demo-data.ts --events-only` to refresh only the known demo event records in the configured database.
+This upserts the demo events with fresh relative dates, including future and past examples, without changing users, organizations, products, reports, or non-demo events.
+The directory keeps its normal date filters; past records belong under Past.

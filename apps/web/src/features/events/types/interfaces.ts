@@ -240,6 +240,9 @@ export interface EventFundraiserPanelProps {
 
 export interface EventJoinPanelProps extends DetailedEventRecord {
   joined: boolean;
+  joining: boolean;
+  checkingRegistration: boolean;
+  registrationCheckFailed: boolean;
   onToggleJoin: () => void;
 }
 

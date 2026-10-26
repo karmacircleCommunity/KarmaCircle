@@ -1,5 +1,11 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/test-app";
+import { sendEventJoinConfirmation } from "../src/config/mailer";
+
+jest.mock("../src/config/mailer", () => ({
+  sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  sendEventJoinConfirmation: jest.fn().mockResolvedValue(undefined),
+}));
 
 const app = buildTestApp();
 
@@ -37,6 +43,60 @@ const validOnlineEvent = {
 };
 
 describe("Events", () => {
+  it("requires sign-in to join an event", async () => {
+    const res = await request(app).post("/events/missing-event/join");
+    expect(res.status).toBe(401);
+  });
+
+  it("saves an attendee registration and emails one confirmation", async () => {
+    const hostCookie = await signupAndGetCookie();
+    const startsAt = new Date(Date.now() + 86_400_000);
+    const created = await request(app)
+      .post("/events/create")
+      .set("Cookie", hostCookie)
+      .send({
+        ...validOnlineEvent,
+        uid: "join-confirmation-event",
+        startDate: startsAt.toISOString(),
+        startTime: startsAt.toISOString(),
+        endDate: new Date(startsAt.getTime() + 86_400_000).toISOString(),
+        endTime: new Date(startsAt.getTime() + 86_400_000).toISOString(),
+      });
+    expect(created.status).toBe(201);
+
+    const attendee = await request(app).post("/auth/signup").send({
+      email: "attendee@example.com",
+      password: "hunter2",
+      name: "Test Attendee",
+    });
+    const attendeeCookie = attendee.headers["set-cookie"][0];
+
+    const joined = await request(app)
+      .post("/events/join-confirmation-event/join")
+      .set("Cookie", attendeeCookie);
+    expect(joined.status).toBe(201);
+    expect(joined.body.joined).toBe(true);
+    expect(joined.body.emailSent).toBe(true);
+    expect(sendEventJoinConfirmation).toHaveBeenCalledTimes(1);
+    expect(sendEventJoinConfirmation).toHaveBeenCalledWith(
+      "attendee@example.com",
+      "Test Attendee",
+      expect.objectContaining({ uid: "join-confirmation-event" }),
+    );
+
+    const registrationStatus = await request(app)
+      .get("/events/join-confirmation-event/registration")
+      .set("Cookie", attendeeCookie);
+    expect(registrationStatus.status).toBe(200);
+    expect(registrationStatus.body).toEqual({ joined: true });
+
+    const duplicate = await request(app)
+      .post("/events/join-confirmation-event/join")
+      .set("Cookie", attendeeCookie);
+    expect(duplicate.status).toBe(200);
+    expect(duplicate.body.alreadyJoined).toBe(true);
+    expect(sendEventJoinConfirmation).toHaveBeenCalledTimes(1);
+  });
   it("rejects event creation without authentication", async () => {
     const res = await request(app)
       .post("/events/create")
