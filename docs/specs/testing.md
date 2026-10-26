@@ -12,7 +12,7 @@ This suite is deliberately **full-stack**: a real browser (via Playwright) drive
 |---|---|---|
 | [`e2e/authentication/`](../../apps/web/e2e/authentication/) | Sign up, sign in, forgot/reset password, the route guard | [README](../../apps/web/e2e/authentication/README.md) |
 | [`e2e/landing-home/`](../../apps/web/e2e/landing-home/) | The marketing home page, hero CTA, footer newsletter | [README](../../apps/web/e2e/landing-home/README.md) |
-| [`e2e/onboarding-profile/`](../../apps/web/e2e/onboarding-profile/) | The public profile page (`/user/:userName`) — most of this feature is unreachable dead code; the README says exactly what and why | [README](../../apps/web/e2e/onboarding-profile/README.md) |
+| [`e2e/onboarding-profile/`](../../apps/web/e2e/onboarding-profile/) | Individual editor navigation/save/exit and retired profile URLs; browser specs updated but not rerun for removal | [README](../../apps/web/e2e/onboarding-profile/README.md) |
 | [`e2e/organizations/`](../../apps/web/e2e/organizations/) | The organization signup→draft→live setup wizard | [README](../../apps/web/e2e/organizations/README.md) |
 
 `e2e/smoke.spec.ts` stays at the top level — it's cross-cutting infrastructure (backend reachability, basic nav) rather than any one feature's own behavior. `e2e/env.ts` and `e2e/global-setup.ts` are shared plumbing, not tests.

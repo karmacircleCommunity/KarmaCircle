@@ -24,8 +24,8 @@ interface ProfileUpdateCredentials {
 }
 
 /**
- * Modal: profile editing, triggered from `Dashboard.tsx` and from
- * `Profile.tsx`'s "Edit profile" button. Fully separate, parallel
+ * Modal: organization account editing, triggered from `Dashboard.tsx`.
+ * Fully separate, parallel
  * implementation of the same shape as `useProfileCompletion.ts` — not a
  * reuse of it. See SPEC.md.
  */

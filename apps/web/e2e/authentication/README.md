@@ -35,3 +35,6 @@ Cookie removal simulates session expiry while preserving Redux localStorage.
 The load-outage test injects a 503 for `GET /user/profile`; retry resumes real API requests.
 The failed-close test injects a 503 for `PATCH /user/update` and verifies that unsaved answers remain available.
 No test uses the local development database or ports.
+
+After sparse profile removal, Close returns Home rather than `/user/:userName`.
+Updated navigation expectations have not yet been rerun in a browser.

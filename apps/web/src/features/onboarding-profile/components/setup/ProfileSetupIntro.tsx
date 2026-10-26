@@ -32,8 +32,8 @@ const ProfileSetupIntro = ({
     </h1>
     <p className="mt-3 font-outfit text-body text-gray-600 sm:text-body-lg">
       {started
-        ? "Your answers so far are saved. Finish the rest whenever you are ready."
-        : "A few quick details round out your profile. All optional, and each one saves as you go."}
+        ? "Your saved details are filled in. Review or update them whenever you are ready."
+        : "A few quick details round out your profile. All optional. Save your changes at the end."}
     </p>
 
     <ol className="mt-9 flex list-none flex-col gap-2 p-0">
@@ -70,7 +70,8 @@ const ProfileSetupIntro = ({
     </ol>
 
     <p className="mt-8 font-outfit text-body text-ink/50">
-      Three questions, under a minute. Each one saves on its own as you go.
+      Three questions, under a minute. Closing before saving discards your
+      changes.
     </p>
 
     <div className="mt-8 flex flex-col items-center gap-4">

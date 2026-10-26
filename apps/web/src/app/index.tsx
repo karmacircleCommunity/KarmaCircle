@@ -5,6 +5,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import App from "./App";
+import AppLoading from "@components/AppLoading";
 import { persistor, store } from "@app/store/store";
 import "@styles/index.css";
 import SessionBootstrap from "@features/authentication/components/SessionBootstrap";
@@ -15,7 +16,7 @@ document.documentElement.style.setProperty("--vh", `${vh}px`);
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <Provider store={store}>
     <HelmetProvider>
-      <PersistGate loading={null} persistor={persistor}>
+      <PersistGate loading={<AppLoading />} persistor={persistor}>
         <SessionBootstrap>
           <App />
         </SessionBootstrap>

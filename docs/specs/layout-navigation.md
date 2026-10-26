@@ -13,11 +13,13 @@ Responsive behavior is pure CSS (`min-[900px]:flex` on the link row, `max-[900px
 
 **Off-by-one at exactly 899px (October 2026) — supersedes the `max-[899px]` fix above.** Tailwind v4 compiles an arbitrary `max-[Npx]` variant to the *exclusive* `(width < Npx)`, not the inclusive `(max-width: Npx)` CSS's own `max-width` property implies, so `max-[899px]:block` only fired below 899px, not at it — a real 1px gap against `min-[900px]:flex` (`width >= 900px`) where, once again, neither element rendered. Confirmed live at a 899px viewport. Fixed by matching the number in both variants (`max-[900px]`, `width < 900px`), which pairs with `min-[900px]` with zero gap and zero overlap — that is the correct pairing in v4's range syntax, not an off-by-one itself.
 The account dropdown (`.nav_dropdown`) is toggled by directly mutating the DOM (`document.querySelector(".nav_dropdown").classList.toggle(...)`) rather than React state — this only exists once per page since `Navbar` itself is rendered once, so it's safe today but is worth noting if `Navbar` is ever rendered more than once on a page.
-The dropdown links to `/user/:userName` or `/dashboard` depending on `user?.userType`, and (for organization users only) `/organization/events` — the organization's own events page, behind the setup gate. That entry used to point at `/event/create`, a path no route has ever matched, so it was a 404 for every organization that clicked it.
+The dropdown links to `/user/setup` (Edit profile) or `/dashboard` depending on `user?.userType`, and (for organization users only) `/organization/events` — the organization's own events page, behind the setup gate. That entry used to point at `/event/create`, a path no route has ever matched, so it was a 404 for every organization that clicked it.
 
 **Mobile avatar trigger accessibility (September 2026):** the `<img>` that opens the mobile link panel when logged in used to be a bare, non-interactive image (`alt=""`, no role, not in the tab order) — a keyboard or screen-reader user had no way to reach the mobile account menu at all. It now carries `role="button"`, `tabIndex={0}`, `aria-label="Open account menu"`, `aria-haspopup="true"`, `aria-expanded`, a `focus-visible` ring (the same `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand` treatment used elsewhere — see [ui-kit.md](./ui-kit.md)), and an Enter/Space `onKeyDown` handler alongside its existing `onClick`.
 
-**"Dashboard" vs. "Your Profile" naming (September 2026):** the mobile full-screen panel's link to `/dashboard` used to read "Profile" for individual accounts and "Dashboard" for organization accounts — while the desktop dropdown's *separate* link to `/user/:userName` read "Your Profile" for individual accounts. Two similarly-worded links to two different destinations, on the same account. The mobile panel's link is now unconditionally labeled "Dashboard" (it always points to `/dashboard`, regardless of account type); "Your Profile" stays as the desktop dropdown's distinct label for the `/user/:userName` public-profile link, which the mobile panel does not currently expose (only the desktop dropdown links to it).
+**Individual profile navigation (October 2026):** desktop and mobile both show Edit profile, opening `/user/setup` directly.
+Organization accounts retain Dashboard.
+The sparse `/user/:userName` screen was deleted.
 
 **Settings/Support entries removed (September 2026):** the dropdown's "Settings" and "Support" `<Link>`s never had a `to` prop — dead entries that went nowhere and gave no feedback on click (previously tracked in [known-issues.md](./known-issues.md)). Dropped rather than built out, per that entry's own guidance ("a menu item that silently does nothing is worse than an absent one"); build real Settings/Support pages and re-add the links if/when those exist.
 An organization whose profile is still a draft also gets a **"Finish setting up"** entry at the top of the dropdown (and of the mobile sheet), linking to the step where its first missing field lives — that is the always-visible way back into a flow the account is free to skip. See [organizations.md](./organizations.md#the-setup-flow--organizationsetup).
@@ -78,6 +80,13 @@ Swaps between a long and short description at the `800px` breakpoint (read once 
 [apps/web/src/components/Modal.tsx](../../apps/web/src/components/Modal.tsx).
 A generic overlay shell (Tailwind utility classes) taking `children`, `onClose`, and `className`, with a built-in close button.
 Not currently used anywhere — `ProfileCompletion`, `ProfileUpdate`, and `CreateEvent`/`CreateEvents` all build their own bespoke `*_overlay`/`*_modal` markup instead of wrapping this component. If asked to standardize modal styling/behavior across the app, this is the shell to converge on.
+
+## `AppLoading`
+
+[apps/web/src/components/AppLoading.tsx](../../apps/web/src/components/AppLoading.tsx) is the shared full-viewport startup screen.
+`PersistGate` and `SessionBootstrap` render it while restoring saved state and validating remembered login.
+It uses the existing dot wordmark, warm surface and brand tokens, plus a small spinner that respects reduced motion.
+Loading status remains available to screen readers without displaying session internals.
 
 ## `Loading`
 

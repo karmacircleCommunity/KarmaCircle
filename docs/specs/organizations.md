@@ -20,6 +20,10 @@ The required list lives on the backend (`REQUIRED_FIELDS`) and reaches the page 
 
 ## The setup flow — `/organization/setup`
 
+See the detailed [organization setup flowchart](./user-flows.md#organization-profile-setup-and-editing), checked against source on 26 October 2026.
+It distinguishes required-question validation, per-step persistence, Close, and publication on the save that satisfies the required list, before the optional Presence step necessarily finishes.
+The legacy `ProfileUpdate` modal updates the User account through `/user/update`; this wizard updates the separate public Organization record through `/organizations/me`.
+
 Routed at `/organization/setup` (declared above `/organization/:userName`, though React Router already ranks a static segment above a dynamic one).
 It is a focused flow, not a page inside the app chrome: no navbar, no footer, and the same split shell as the auth pages (see [ui-kit.md](./ui-kit.md#splitpanellayout)) — a dark brand panel on the left, the form on the right.
 
@@ -239,8 +243,8 @@ Not exported from the shared barrel (`apps/web/src/components/index.ts`) — onl
 It fetches `GET /organizations/{handle}` and maps the response through `utils/toDisplayOrganization.ts`. **Sections with nothing behind them do not render**: a newly published organization has no drives and no milestones, and inventing placeholders for them would be the same lie the fixture used to tell. The "About us" heading becomes "What we work on" when the description is a single paragraph, because that paragraph is already the header tagline and printing it twice on one screen read as a bug.
 
 **This route used to render `Profile.tsx`** — the account page shared with `/user/:userName`, which for a visitor who isn't the organization rendered a stock external logo and two dead buttons on an otherwise empty screen.
-`Profile.tsx` is unchanged and still owns `/user/:userName`; see [onboarding-profile.md](./onboarding-profile.md).
-If a request is about "the organization page", check which of the two is meant — the public directory profile (this file) or the signed-in account view (`Profile.tsx`).
+The sparse `Profile.tsx` screen and `/user/:userName` route were deleted in October 2026; individual editing opens `/user/setup` directly.
+Public organization profiles and the organization dashboard remain separate existing screens.
 
 Structure:
 - **Header card** — the same cover photo as the card the visitor clicked (so arriving reads as the card opening), under a bottom scrim that keeps the corner calm enough for the white-bordered badge that overlaps it, an overlapping logo image (falling back to the monogram, tinted by `accent`, when there is no `logo`), name + verified badge, tagline, a **social links row** (September 2026 — Instagram/Facebook/X/LinkedIn/YouTube, only the ones actually set, `react-icons/fa6`), a location/founded/volunteers meta row, a Follow toggle and a website link, and a four-up stat strip.

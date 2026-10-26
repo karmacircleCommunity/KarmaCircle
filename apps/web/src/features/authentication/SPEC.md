@@ -293,6 +293,9 @@ Each editable field still has a small local `RequiredMark` component (`<span cla
 ## Session bootstrap and private profile editing
 
 `SessionBootstrap.tsx` wraps the app inside `PersistGate`, withholding navbar and route guards until remembered login has been checked through `utils/restoreSession.ts`.
+Startup uses shared `AppLoading` during both persisted-state hydration and session restoration.
+It fills the viewport with the existing warm surface, dot wordmark, and a small brand spinner, with screen-reader loading status and reduced-motion support.
+It adds no artificial delay and exposes no session-checking jargon.
 `GET /user/profile` refreshes Redux on success; a 401 clears it through the shared fetcher.
 `clearRejectedSession()` also handles later fetcher reads and profile saves, without allowing an older request to reset a newer Redux user snapshot.
 Offline and server errors preserve login.

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import useSWR from "swr";
 import { userEndpoints } from "@services/ApiEndpoints";
 import { updateUserProfile } from "@services/KarmaCircleApi";
@@ -40,6 +40,7 @@ export type ProfileSetupAdvance = "moved" | "failed" | "finished";
  */
 export function useProfileSetup() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   const { data, error, isLoading, mutate } = useSWR<{ user: MyProfile }>(
     userEndpoints.profile,
@@ -78,12 +79,15 @@ export function useProfileSetup() {
   const question = started ? PROFILE_SETUP_QUESTIONS[questionIndex] : null;
 
   const goToIntro = () => {
-    setSearchParams({});
+    setSearchParams({}, { state: location.state });
     window.scrollTo({ top: 0 });
   };
 
   const goToQuestion = (index: number) => {
-    setSearchParams({ step: "about", q: String(index + 1) });
+    setSearchParams(
+      { step: "about", q: String(index + 1) },
+      { state: location.state },
+    );
     window.scrollTo({ top: 0 });
   };
 

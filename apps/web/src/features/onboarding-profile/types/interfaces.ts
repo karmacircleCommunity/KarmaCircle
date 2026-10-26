@@ -48,7 +48,9 @@ export interface UseProfileCompletionResult {
   ) => Promise<boolean | undefined>;
   clearError: (field: string) => void;
   handleResetFields: () => void;
-  handleSetDefaultValues: (profileData?: ProfileCompletionDefaultValues) => void;
+  handleSetDefaultValues: (
+    profileData?: ProfileCompletionDefaultValues,
+  ) => void;
 }
 
 /* ---------------------------------------------------------------------
@@ -70,29 +72,10 @@ export interface ProfileUpdateProps {
 }
 
 /* ---------------------------------------------------------------------
- * utils/checkMissingFields.ts
- * ------------------------------------------------------------------- */
-
-/** Whatever `Profile.tsx` passes in — the Redux `user` object. Every
- * check is `=== undefined`, so this is deliberately loose: an absent
- * key and an empty string are not the same thing to this function. */
-export interface CheckableProfileInfo {
-  city?: string;
-  state?: string;
-  address?: string;
-  country?: string;
-  pincode?: string;
-  userType?: UserType | string;
-  tagLine?: string;
-  description?: string;
-  [key: string]: unknown;
-}
-
-/* ---------------------------------------------------------------------
  * utils/getProfileFields.ts — unused scaffolding
  * ------------------------------------------------------------------- */
 
-/** Same shape family as `CheckableProfileInfo`, but accessed by dynamic
+/** Legacy profile fields accessed by dynamic
  * key (`info[field]` for each entry in `brandingFields`/`addressFields`/
  * `mandatoryFields`), hence the index signature. */
 export interface ProfileFieldsInfo {
@@ -115,24 +98,6 @@ export interface ProfileFieldElement {
 }
 
 /* ---------------------------------------------------------------------
- * pages/Profile.tsx — the live public profile page
- * ------------------------------------------------------------------- */
-
-/** `useSWR(organizationEndpoints.details(...), fetcher)`'s data. Covers both the
- * organization branch (name/tagLine/description) and the individual branch
- * (firstName/lastName) this page renders, per its own `userType` check.
- * Response shape is unverified from this repo — see SPEC.md. */
-export interface ProfileDetails {
-  userType?: UserType | string;
-  name?: string;
-  tagLine?: string;
-  firstName?: string;
-  lastName?: string;
-  description?: string;
-  [key: string]: unknown;
-}
-
-/* ---------------------------------------------------------------------
  * pages/UserProfile.tsx — not routed
  * ------------------------------------------------------------------- */
 
@@ -152,7 +117,7 @@ export interface UserProfileDetails {
  * `Logout()`'s (`KarmaCircleApi.ts`) return shape — like several `KarmaCircleApi.ts`
  * functions, its catch block returns the caught error as-is, so the
  * real inferred type includes `unknown`; asserted at each call site
- * (`Profile.tsx`, `UserProfile.tsx`) to the shape both actually read.
+ * (`UserProfile.tsx`) to the shape it reads.
  */
 export interface LogoutResponse {
   status?: number;

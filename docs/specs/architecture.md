@@ -23,9 +23,9 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | `/` | `Home` | Landing page + marketing content |
 | `/auth/signup` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Same component as `/auth/signin` — one unified sign-in/sign-up flow, see below |
 | `/auth/signin` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
-| `/user/:userName` | `Profile` | Individual-user public profile |
+| `/user/setup` | `ProfileSetup` | Signed-in individual editor; old handle page removed |
 | `/organizations` | `Organizations` | Organization/org directory |
-| `/organization/:userName` | `OrganizationProfile` | The public organization profile (`features/organizations`), reached from a directory card. Until August 2026 this route rendered `Profile` — the account view — which is now `/user/:userName` only |
+| `/organization/:userName` | `OrganizationProfile` | The public organization profile (`features/organizations`), reached from a directory card. Until August 2026 this route rendered `Profile` — the account view, deleted in October 2026 |
 | `/dashboard` | `Dashboard` | Logged-in organization/org's own dashboard |
 | `/events` | `Events` | Event directory |
 | `/trending` | `Trending` | "Coming soon" placeholder |

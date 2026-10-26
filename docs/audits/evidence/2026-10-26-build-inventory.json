@@ -1,0 +1,401 @@
+{
+  "date": "2026-10-26",
+  "branch": "main",
+  "head": "21e1b926404b9dce9ce2d76fe96646b513d85eb8",
+  "working_tree": "Includes pre-existing uncommitted changes; not a clean-commit benchmark.",
+  "build_command": "pnpm --filter karmacircle-frontend build",
+  "build_exit_code": 0,
+  "vite_version": "8.2.1",
+  "screenshot": {
+    "url": "http://localhost:3000/",
+    "throttle": "Fast 4G",
+    "requests": 188,
+    "transferred_MB": 31.5,
+    "resource_MB": 64.8,
+    "finish_seconds": 32.68,
+    "cache_note": "Disable cache unchecked; visible 304 and memory-cache entries. Not a fully uncached capture."
+  },
+  "cached_dev_js_bytes": 34398991,
+  "cached_dev_icon_js_bytes": 30455006,
+  "dev_measurement_note": "On-disk prebundled JavaScript only. Excludes maps. Cache inventory does not prove which files were downloaded in screenshot.",
+  "cached_dev_js_files": [
+    {
+      "file": "react-icons_gi.js",
+      "bytes": 7114074
+    },
+    {
+      "file": "react-icons_pi.js",
+      "bytes": 6228482
+    },
+    {
+      "file": "react-icons_tb.js",
+      "bytes": 4457673
+    },
+    {
+      "file": "react-icons_md.js",
+      "bytes": 2546181
+    },
+    {
+      "file": "react-icons_ri.js",
+      "bytes": 2424976
+    },
+    {
+      "file": "react-icons_bs.js",
+      "bytes": 1907971
+    },
+    {
+      "file": "react-icons_fa6.js",
+      "bytes": 1810463
+    },
+    {
+      "file": "react-icons_fa.js",
+      "bytes": 1431394
+    },
+    {
+      "file": "@mui_x-date-pickers.js",
+      "bytes": 1402591
+    },
+    {
+      "file": "react-icons_bi.js",
+      "bytes": 934172
+    },
+    {
+      "file": "react-dom_client.js",
+      "bytes": 820711
+    },
+    {
+      "file": "react-icons_io.js",
+      "bytes": 514984
+    },
+    {
+      "file": "react-icons_rx.js",
+      "bytes": 470891
+    },
+    {
+      "file": "react-icons_fc.js",
+      "bytes": 434797
+    },
+    {
+      "file": "react-router-dom.js",
+      "bytes": 399174
+    },
+    {
+      "file": "react-icons_fi.js",
+      "bytes": 178948
+    },
+    {
+      "file": "swiper_modules.js",
+      "bytes": 165061
+    },
+    {
+      "file": "gsap-dzI9RGFs.js",
+      "bytes": 153959
+    },
+    {
+      "file": "swiper_react.js",
+      "bytes": 144329
+    },
+    {
+      "file": "axios.js",
+      "bytes": 123924
+    },
+    {
+      "file": "@reduxjs_toolkit.js",
+      "bytes": 101844
+    },
+    {
+      "file": "@tanstack_react-query.js",
+      "bytes": 99439
+    },
+    {
+      "file": "gsap_ScrollTrigger.js",
+      "bytes": 98823
+    },
+    {
+      "file": "react-spinners.js",
+      "bytes": 65176
+    },
+    {
+      "file": "react-toastify.js",
+      "bytes": 39182
+    },
+    {
+      "file": "react.js",
+      "bytes": 38246
+    },
+    {
+      "file": "lenis_react.js",
+      "bytes": 38228
+    },
+    {
+      "file": "swr.js",
+      "bytes": 36758
+    },
+    {
+      "file": "@mui_x-date-pickers_AdapterDayjs.js",
+      "bytes": 36482
+    },
+    {
+      "file": "react-redux.js",
+      "bytes": 35330
+    },
+    {
+      "file": "react-helmet-async.js",
+      "bytes": 33781
+    },
+    {
+      "file": "redux-persist.js",
+      "bytes": 22366
+    },
+    {
+      "file": "react-dom.js",
+      "bytes": 14535
+    },
+    {
+      "file": "redux-Couub0BQ.js",
+      "bytes": 13620
+    },
+    {
+      "file": "react_jsx-runtime.js",
+      "bytes": 10780
+    },
+    {
+      "file": "react_jsx-dev-runtime.js",
+      "bytes": 10466
+    },
+    {
+      "file": "utils-DFq3RDdr.js",
+      "bytes": 6253
+    },
+    {
+      "file": "@vercel_analytics_react.js",
+      "bytes": 5803
+    },
+    {
+      "file": "@vercel_speed-insights_react.js",
+      "bytes": 4858
+    },
+    {
+      "file": "redux-persist_integration_react.js",
+      "bytes": 4670
+    },
+    {
+      "file": "iconBase-CSwfS6Mr.js",
+      "bytes": 4151
+    },
+    {
+      "file": "redux-persist_lib_storage.js",
+      "bytes": 2925
+    },
+    {
+      "file": "js-cookie.js",
+      "bytes": 2622
+    },
+    {
+      "file": "@gsap_react.js",
+      "bytes": 2137
+    },
+    {
+      "file": "zustand.js",
+      "bytes": 1920
+    },
+    {
+      "file": "rolldown-runtime-DC62tzP2.js",
+      "bytes": 1445
+    },
+    {
+      "file": "warning-7EriGyq-.js",
+      "bytes": 1180
+    },
+    {
+      "file": "gsap.js",
+      "bytes": 651
+    },
+    {
+      "file": "clsx.js",
+      "bytes": 565
+    }
+  ],
+  "production_files": [
+    {
+      "file": "assets/index-C2-zedS1.js",
+      "bytes": 951120
+    },
+    {
+      "file": "assets/signup-panel-waves-CuhKbzHo.jpg",
+      "bytes": 345455
+    },
+    {
+      "file": "assets/profilePlaceholderImage-By_Lt-FX.png",
+      "bytes": 211667
+    },
+    {
+      "file": "assets/index-ZqSWG6ij.css",
+      "bytes": 142500
+    },
+    {
+      "file": "assets/IndiaCities-cdWPeYXO.js",
+      "bytes": 111952
+    },
+    {
+      "file": "assets/winter-blankets-Avk5ME5J.jpg",
+      "bytes": 104568
+    },
+    {
+      "file": "assets/solar-lamps-CyLl1qGF.jpg",
+      "bytes": 92601
+    },
+    {
+      "file": "assets/street-dog-van-nb4ibPq5.jpg",
+      "bytes": 57604
+    },
+    {
+      "file": "assets/school-library-D1IHD3rz.jpg",
+      "bytes": 51794
+    },
+    {
+      "file": "assets/monsoon-health-camp-C6ju8MLu.jpg",
+      "bytes": 46579
+    },
+    {
+      "file": "assets/gh-94097778-C18-rz7N.jpg",
+      "bytes": 41855
+    },
+    {
+      "file": "assets/gh-56752104-58QCjGr0.jpg",
+      "bytes": 35866
+    },
+    {
+      "file": "assets/icons/icon-512x512.png",
+      "bytes": 35474
+    },
+    {
+      "file": "assets/gh-71691473-CB_pI4Ye.jpg",
+      "bytes": 34735
+    },
+    {
+      "file": "favicon.ico",
+      "bytes": 28360
+    },
+    {
+      "file": "assets/icons/icon-384x384.png",
+      "bytes": 22262
+    },
+    {
+      "file": "assets/solidarity-D3babAn8.png",
+      "bytes": 20385
+    },
+    {
+      "file": "assets/gh-72697074-D0tQvT2O.jpg",
+      "bytes": 19386
+    },
+    {
+      "file": "assets/Auth-BG2DU_BQ.js",
+      "bytes": 14364
+    },
+    {
+      "file": "assets/icons/icon-192x192.png",
+      "bytes": 11616
+    },
+    {
+      "file": "assets/icons/icon-152x152.png",
+      "bytes": 8861
+    },
+    {
+      "file": "assets/icons/icon-144x144.png",
+      "bytes": 8211
+    },
+    {
+      "file": "assets/icons/icon-128x128.png",
+      "bytes": 6071
+    },
+    {
+      "file": "index.html",
+      "bytes": 5062
+    },
+    {
+      "file": "assets/ResetPassword-DYaObqnS.js",
+      "bytes": 4750
+    },
+    {
+      "file": "assets/icons/icon-96x96.png",
+      "bytes": 4593
+    },
+    {
+      "file": "assets/icons/icon-72x72.png",
+      "bytes": 3073
+    },
+    {
+      "file": "assets/ForgotPassword-g-fzX9h8.js",
+      "bytes": 2786
+    },
+    {
+      "file": "assets/AuthLayout-DlBdt9O0.js",
+      "bytes": 2001
+    },
+    {
+      "file": "assets/icons/icon-48x48.png",
+      "bytes": 1824
+    },
+    {
+      "file": "sitemap.xml",
+      "bytes": 1643
+    },
+    {
+      "file": "manifest.json",
+      "bytes": 1449
+    },
+    {
+      "file": "assets/HeroScene-CZPdwW4z.js",
+      "bytes": 1091
+    },
+    {
+      "file": "assets/fa-doBHJbPZ.js",
+      "bytes": 910
+    },
+    {
+      "file": "sw.js",
+      "bytes": 608
+    },
+    {
+      "file": "sitemap.txt",
+      "bytes": 354
+    },
+    {
+      "file": "manifest.webmanifest",
+      "bytes": 327
+    },
+    {
+      "file": "registerSW.js",
+      "bytes": 134
+    },
+    {
+      "file": "assets/validateEmail-C9AXYb8u.js",
+      "bytes": 123
+    },
+    {
+      "file": "robots.txt",
+      "bytes": 67
+    },
+    {
+      "file": "docs/swagger-ui.css",
+      "bytes": 0
+    }
+  ],
+  "vite_reported_sizes_kB": {
+    "main_js": {
+      "raw": 951.12,
+      "gzip": 299.53
+    },
+    "main_css": {
+      "raw": 142.5,
+      "gzip": 22.39
+    },
+    "IndiaCities_js": {
+      "raw": 111.95,
+      "gzip": 46.93
+    }
+  },
+  "production_measurement_note": "File sizes, not measured browser transfers. Gzip estimates copied from Vite build output; live Content-Encoding and cache headers unverified.",
+  "browser_or_lighthouse_run": false
+}

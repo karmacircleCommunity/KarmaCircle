@@ -266,13 +266,13 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                   <Link
                     to={
                       user?.userType === "individual"
-                        ? `/user/${user?.userName}`
+                        ? "/user/setup"
                         : `/dashboard`
                     }
                     className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
                   >
                     {user?.userType === "individual"
-                      ? "Your Profile"
+                      ? "Edit profile"
                       : "Dashboard"}
                   </Link>
                   {user?.userType === "organization" ? (
@@ -440,17 +440,18 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                     </div>
                   )}
                   <div>
-                    {/* Always "Dashboard" — it always points to /dashboard,
-                        regardless of account type. "Your Profile" (below, in
-                        the desktop dropdown) is the separate, distinctly
-                        named link to /user/:handle; the two used to share
-                        the ambiguous label "Profile" for individual
-                        accounts. See docs/specs/layout-navigation.md. */}
                     <Link
                       className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                      to={"/dashboard"}
+                      to={
+                        user?.userType === "individual"
+                          ? "/user/setup"
+                          : "/dashboard"
+                      }
+                      onClick={() => setIsNavbarOpen(false)}
                     >
-                      Dashboard
+                      {user?.userType === "individual"
+                        ? "Edit profile"
+                        : "Dashboard"}
                     </Link>
                   </div>
                   <div>

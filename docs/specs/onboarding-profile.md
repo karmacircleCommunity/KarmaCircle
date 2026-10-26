@@ -1,18 +1,16 @@
 # Onboarding & Profile
 
-Covers the post-signup "complete your profile" flow, editing an existing profile, and the two (largely redundant) public profile pages.
+Covers the post-signup "complete your profile" flow, editing an existing profile, and the unrouted UserProfile prototype.
 
-## Profile completion flow (new users)
+## Profile entry and completion
 
-After signup, an organization/org account's profile is missing required fields (description, address).
-[checkMissingFields.ts](../../apps/web/src/features/onboarding-profile/utils/checkMissingFields.ts) checks whether `city`, `state`, `address`, `country`, or `pincode` are `undefined` on the user object, or — for `userType === "organization"` — whether `tagLine`/`description` are `undefined`.
-
-**Trigger sites:**
-- [Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx): on mount, if `!Cookies.get("skipProfileCompletion") && checkMissingFields(user) && trueUser` (i.e. you're viewing your own profile), branches on account type. **As of October 2026** an organization account opens `ProfileUpdate` (`setShowProfileModal(true)`); an individual account is navigated to `/user/setup` instead (`ProfileSetup.tsx` — see "Individual profile setup: `/user/setup`" below). Before that, `showProfileModal` was never read anywhere and the effect had no visible result; see SPEC.md for the full history.
-- [Dashboard.tsx](../../apps/web/src/features/dashboard/pages/Dashboard.tsx): **no longer shows the completion modal.** It used to mount `ProfileCompletion` whenever `profileData?.user?.config?.hasCompletedProfile === false`; since August 2026 an incomplete *organization* is handled by `OrganizationSetupGate` and the setup wizard instead (see [organizations.md](./organizations.md#the-setup-flow--organizationsetup)), so `ProfileCompletion` is currently rendered nowhere. Nothing about the component changed — only where it is mounted from.
-
-These two entry points use **different conditions** to decide whether to show the same modal — a user could satisfy one and not the other.
-See [known-issues.md](./known-issues.md).
+The sparse `Profile.tsx` screen and `/user/:userName` route were deleted on 26 October 2026.
+Individuals open `/user/setup` directly from Edit profile in desktop and mobile navigation.
+Old handle URLs reach the normal not-found page; no replacement public individual profile is introduced.
+The existing welcome screen and three-question editor remain.
+Save, Close, and Maybe later return Home; cancellation does not save.
+The automatic completion nudge, `checkMissingFields.ts`, and completion-bypass cookie writes were removed with the page.
+Organization setup and dashboard editing retain their existing flows.
 
 ## `useProfileCompletion` hook
 
@@ -40,11 +38,15 @@ Props: `setShowEditModal`, `refreshProfileData` (an SWR `mutate` function passed
 [apps/web/src/features/onboarding-profile/components/ProfileUpdate.tsx](../../apps/web/src/features/onboarding-profile/components/ProfileUpdate.tsx) is a near-duplicate of `ProfileCompletion`, used for editing an *already-completed* profile.
 Differences: it also edits `name`, it accepts a `profileData` prop to pre-fill from (instead of a separate `handleSetDefaultValues` call), it has a cover-image *and* a profile-picture dropzone (both preview-only, same caveat — neither file is actually uploaded), and its single Save button calls its own local `validateForm()` which, **as of October 2026, blocks `updateUserProfile({ credentials })` (`PATCH /user/update`) when validation errors are present** — `useProfileCompletion`'s version (feeding the still-unreachable `ProfileCompletion`) still fires its API call regardless of validation outcome.
 
-Rendered from `Dashboard.tsx` when `openModal === true` (opened by the dashboard's "Edit Profile" button) — reachable only for an organization account, since `Dashboard.tsx` is itself organization-only in practice. **As of October 2026, also from `Profile.tsx`'s "Edit profile" button — but only when `user?.userType === "organization"`.** An individual account's "Edit profile" click, and its missing-fields auto-trigger, both navigate to `/user/setup` instead (below); this modal's fields (organization name, description, address) were never a good edit surface for an individual profile. See [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#types) for the full history.
+Rendered from the organization dashboard only.
+Individuals use the navbar link directly.
 
 ## Individual profile setup: `/user/setup`
 
-[apps/web/src/features/onboarding-profile/pages/ProfileSetup.tsx](../../apps/web/src/features/onboarding-profile/pages/ProfileSetup.tsx), added October 2026, is the individual-account equivalent of organizations' `/organization/setup` (see [organizations.md](./organizations.md#the-setup-flow--organizationsetup)): a Typeform-style, one-question-at-a-time flow, reached from `Profile.tsx`'s "Edit profile" button and its missing-fields nudge. It replaced `ProfileUpdate` as the individual edit surface because that modal's fields and polish level were built for organizations, not individuals, and reusing it read as off-brand and buggy for a personal profile.
+The detailed [individual setup flowchart](./user-flows.md#individual-profile-setup-and-editing) now covers the actual entry, questions, save, exit, retry, and return paths.
+The [26 October flow audit](./known-issues.md#individual-profile-setup---flow-audit-26-october-2026) records save/exit behavior and remaining verification gaps.
+
+[apps/web/src/features/onboarding-profile/pages/ProfileSetup.tsx](../../apps/web/src/features/onboarding-profile/pages/ProfileSetup.tsx), added October 2026, is the individual-account equivalent of organizations' `/organization/setup` (see [organizations.md](./organizations.md#the-setup-flow--organizationsetup)): a Typeform-style, one-question-at-a-time flow, reached directly from the navbar's Edit profile link. It replaced `ProfileUpdate` as the individual edit surface because that modal's fields and polish level were built for organizations, not individuals, and reusing it read as off-brand and buggy for a personal profile.
 
 It reuses the organization flow's **visual shell**, which moved out of `features/organizations/` into shared locations for this: `SetupLayout`, `SetupAside`, `SetupFieldLabel`, `SetupLocateButton` now live under `apps/web/src/components/setup/`, and `useLocateCity` under `apps/web/src/hooks/`. Organizations import from the same shared paths now — nothing about their behavior changed, only where the files live.
 
@@ -69,15 +71,10 @@ Both files look like scaffolding for a future generic/dynamic profile-form compo
 
 There are **two separate "view a profile" pages** in this feature, though only one is actually routed — see each below:
 
-### `Profile.tsx` — routed at `/user/:userName`
+### Removed sparse profile page
 
-**As of August 2026 this component no longer serves `/organization/:userName`.** That route now renders `features/organizations/pages/OrganizationProfile.tsx`, the public directory profile — see [organizations.md](./organizations.md). `Profile.tsx` is the *account* view: it renders the signed-in owner's Edit/Logout controls, and for a visitor it rendered a stock logo and two dead buttons on an otherwise empty page, which is why the organization route was moved off it. Everything below still applies to `/user/:userName`.
-[apps/web/src/features/onboarding-profile/pages/Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx).
-Fetches via SWR: `organizationEndpoints.details(params.userName)` (`GET /organizations?userName=...`) — despite the endpoint's "organization" naming, this is the individual-account path today.
-Renders differently based on `details?.userType === "organization"` (name + tagline) vs. individual (firstName + lastName).
-`trueUser = user?.userName === params.userName` decides whether the viewer sees "Edit profile"/"Logout" or "Subscribe"/"Sponsor" (the latter two are static, non-functional buttons — no `onClick`).
-Renders an embedded Google Maps `<iframe>` for organizations only, defaulting to a hardcoded Kolkata location if `user?.iframe` is unset (note: reads `user?.iframe`, i.e. the *viewer's* Redux state, not `details?.iframe` — likely should read from the fetched `details`).
-The Subscribe/Sponsor/Edit/Logout button row appears twice in the JSX, but this is a legitimate responsive pair (`max-430px:hidden` for desktop, `min-430px:hidden` for mobile), not a duplication bug — an earlier version of this doc (and of `onboarding-profile/SPEC.md`) called it a copy-paste leftover based on stale, pre-Tailwind-rewrite class names; corrected September 2026 while writing the Playwright E2E suite. See [`apps/web/e2e/onboarding-profile/profile-page.spec.ts`](../../apps/web/e2e/onboarding-profile/profile-page.spec.ts).
+`Profile.tsx` and `/user/:userName` no longer exist.
+The existing editor is the only routed individual profile experience.
 
 ### `UserProfile.tsx` — not routed
 [apps/web/src/features/onboarding-profile/pages/UserProfile.tsx](../../apps/web/src/features/onboarding-profile/pages/UserProfile.tsx) is a second, more visually developed profile page (profile picture, social icons, an "Events Attending" `Swiper` carousel with 6–8 hardcoded placeholder slides, responsive slide count).
@@ -98,5 +95,12 @@ This entire folder is TypeScript. See [onboarding-profile/SPEC.md](../../apps/we
 Startup session verification and later 401 handling clear stale Redux login, keeping navbar and guard consistent.
 Other profile-load errors show a load-failure message and Try again button that revalidates SWR, rather than asking a signed-in user to sign in.
 
-Close navigates only after a successful save; failures keep local answers available for retry.
+Close and Maybe later discard unsaved changes and replace setup with Home.
+They never save, revalidate the own-profile cache, or show a success toast.
+Only Save changes persists the form; failures keep local answers available for retry.
 A 401 during save clears login and redirects through the route guard.
+
+### Navigation after removal
+
+Save, Close, and Maybe later replace the editor route with `/`.
+No return to a user handle URL or completion-bypass cookie remains.

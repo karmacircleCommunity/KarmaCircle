@@ -1,20 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-/**
- * Profile.tsx, routed at /user/:userName — the only part of
- * onboarding-profile actually reachable through normal navigation.
- *
- * ProfileCompletion (the "complete your profile" modal) is mounted
- * nowhere in the current app — Profile.tsx sets the state meant to show
- * it but never reads that state in its JSX, and Dashboard.tsx stopped
- * mounting it in favor of OrganizationSetupGate. There is nothing for
- * Playwright to drive there; see docs/specs/onboarding-profile.md and
- * ../README.md for what that actually means for this folder's coverage.
- *
- * UserProfile.tsx (a second, more developed profile page) has no route at
- * all — also untestable through navigation, also documented in
- * ../README.md rather than silently skipped.
- */
+import { E2E_API_URL } from "../env";
 
 async function signUpIndividual(
   page: import("@playwright/test").Page,
@@ -34,116 +19,103 @@ async function signUpIndividual(
   await page.getByRole("button", { name: "Sign Up", exact: true }).click();
   await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
 
-  // These tests exercise owner controls, not the separate completion nudge.
-  await page.context().addCookies([
-    {
-      name: "skipProfileCompletion",
-      value: "true",
-      domain: "localhost",
-      path: "/",
-    },
-  ]);
+  const response = await page.request.get(`${E2E_API_URL}/user/profile`);
+  expect(response.ok()).toBeTruthy();
+  const { user } = await response.json();
+  return { email, userName: user.userName };
+}
 
-  // The userName the backend derived from the email (see auth.md) is the
-  // only handle for /user/:userName — read it back off the Navbar's own
-  // account-menu link rather than guessing the derivation rule here.
+async function openProfileMenu(
+  page: import("@playwright/test").Page,
+  width: number,
+) {
+  if (width === 375) {
+    await page.getByRole("button", { name: "Open menu", exact: true }).click();
+  } else {
+    await page
+      .getByRole("navigation")
+      .getByText("Profile", { exact: true })
+      .click();
+  }
+}
+
+for (const width of [1280, 375]) {
+  test(`navbar opens profile editor directly at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await signUpIndividual(page, `nav-${width}`);
+    await openProfileMenu(page, width);
+    await page.getByRole("link", { name: "Edit profile", exact: true }).click();
+    await expect(page).toHaveURL(/\/user\/setup$/);
+    await expect(page.locator('[data-cy="profile-setup-start"]')).toBeVisible();
+    await page
+      .getByRole("button", { name: "Close profile setup", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/$/);
+  });
+}
+
+test("removed profile URL shows page not found for owner and visitor", async ({
+  page,
+  browser,
+}) => {
+  const { userName } = await signUpIndividual(page, "removed");
+  await page.goto(`/user/${userName}`);
+  await expect(
+    page.getByRole("heading", { name: "This page isn't here." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Edit profile", exact: true }),
+  ).toHaveCount(0);
+  const visitor = await browser.newContext();
+  try {
+    const visitorPage = await visitor.newPage();
+    await visitorPage.goto(`/user/${userName}`);
+    await expect(
+      visitorPage.getByRole("heading", { name: "This page isn't here." }),
+    ).toBeVisible();
+  } finally {
+    await visitor.close();
+  }
+});
+
+test("profile saves return home and saved answers survive reopening", async ({
+  page,
+}) => {
+  await signUpIndividual(page, "save");
+  await page.goto("/user/setup?step=about&q=1");
+  await page
+    .locator('[data-cy="profile-description"]')
+    .fill("Helping my community.");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url() === `${E2E_API_URL}/user/update` &&
+      response.status() === 200,
+  );
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await saved;
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/user/setup?step=about&q=1");
+  await expect(page.locator('[data-cy="profile-description"]')).toHaveValue(
+    "Helping my community.",
+  );
+});
+
+test("navbar logout remains available after removing profile page", async ({
+  page,
+}) => {
+  await signUpIndividual(page, "logout");
   await page
     .getByRole("navigation")
     .getByText("Profile", { exact: true })
     .click();
-  const link = page.getByRole("link", { name: "Your Profile" });
-  const href = await link.getAttribute("href");
-  const userName = href?.replace(/^\/user\//, "") ?? "";
-  expect(userName).not.toBe("");
-
-  return { email, userName };
-}
-
-test("viewing your own profile shows Edit profile and Logout", async ({
-  page,
-}) => {
-  const { userName } = await signUpIndividual(page, "own");
-  await page.goto(`/user/${userName}`);
-
+  await page.getByText("Logout", { exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Edit profile" }).first(),
+    page.getByRole("navigation").getByText("Sign Up", { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Logout" }).first(),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Subscribe" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sponsor" })).toHaveCount(0);
-});
-
-test("viewing someone else's profile shows Subscribe and Sponsor instead", async ({
-  page,
-  browser,
-}) => {
-  // A second, unrelated account, signed up in its own browser context so
-  // its session cookie never touches the viewer's — otherwise "viewing
-  // someone else's profile" would actually still be logged in as them.
-  const otherContext = await browser.newContext();
-  const otherPage = await otherContext.newPage();
-  const { userName: otherUserName } = await signUpIndividual(
-    otherPage,
-    "other",
-  );
-  await otherContext.close();
-
-  await signUpIndividual(page, "viewer");
-  await page.goto(`/user/${otherUserName}`);
-
-  await expect(
-    page.getByRole("button", { name: "Subscribe" }).first(),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Sponsor" }).first(),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole("button", { name: "Logout" })).toHaveCount(0);
-});
-
-test("clicking Edit profile opens individual profile setup", async ({
-  page,
-}) => {
-  const { userName } = await signUpIndividual(page, "edit");
-  await page.goto(`/user/${userName}`);
-
-  await page.getByRole("button", { name: "Edit profile" }).first().click();
-
-  await expect(page).toHaveURL(/\/user\/setup$/);
-  await expect(page.locator('[data-cy="profile-setup-start"]')).toBeVisible();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-});
-
-test("Logout actually logs out", async ({ page }) => {
-  const { userName } = await signUpIndividual(page, "logout");
-  await page.goto(`/user/${userName}`);
-
-  await page.getByRole("button", { name: "Logout" }).first().click();
-
-  await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
-  await expect(page.getByRole("navigation").getByText("Sign Up")).toBeVisible();
-  await expect(
-    page.getByRole("navigation").getByText("Profile", { exact: true }),
-  ).toHaveCount(0);
-});
-
-test("the desktop and mobile button rows are mutually exclusive, not duplicated", async ({
-  page,
-}) => {
-  const { userName } = await signUpIndividual(page, "responsive");
-  await page.goto(`/user/${userName}`);
-
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(
-    1,
-  );
-
-  await page.setViewportSize({ width: 375, height: 800 });
-  await expect(page.getByRole("button", { name: "Edit profile" })).toHaveCount(
-    1,
-  );
+  await page.goto("/user/setup");
+  await expect(page).toHaveURL(/\/auth\/signin$/);
 });

@@ -1,4 +1,7 @@
 import { useMemo, useRef, useState } from "react";
+import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { selectUser } from "@app/store/slices/userSlice";
 import { FaPlus } from "react-icons/fa6";
 import useSWR from "swr";
 import { DirectoryToolbar, Footer, Navbar } from "@components";
@@ -74,6 +77,10 @@ const TYPE_FILTERS: TypeFilter[] = [
  * this page's.
  */
 const Events = () => {
+  const user = useSelector(selectUser);
+  const canCreateEvent = Boolean(
+    Cookies.get("Token") && user.isLoggedIn && user.userType === "organization",
+  );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [query, setQuery] = useState("");
   const [when, setWhen] = useState<TimeFilter>("Upcoming");
@@ -89,10 +96,7 @@ const Events = () => {
   // a re-render happened to land a few milliseconds later.
   const now = useMemo(() => Date.now(), []);
 
-  const events = useMemo(
-    () => (data?.data ?? []).map(toDisplayEvent),
-    [data],
-  );
+  const events = useMemo(() => (data?.data ?? []).map(toDisplayEvent), [data]);
 
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -126,7 +130,8 @@ const Events = () => {
     // Soonest-first for what's coming up; most-recent-first for history —
     // the direction someone actually wants to read each list in.
     matches.sort((a, b) => {
-      const diff = new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+      const diff =
+        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
       return when === "Upcoming" ? diff : -diff;
     });
 
@@ -185,22 +190,26 @@ const Events = () => {
                 ? "Loading events"
                 : `${results.length} ${results.length === 1 ? "event" : "events"}`}
               {when === "Past" && results.length > 0 && " · past"}
-              {type !== "All" && results.length > 0 && ` · ${type.toLowerCase()}`}
+              {type !== "All" &&
+                results.length > 0 &&
+                ` · ${type.toLowerCase()}`}
             </>
           }
           action={
-            <button
-              ref={createEventButtonRef}
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="group flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand px-6 font-poppins text-body font-medium whitespace-nowrap text-white shadow-[0_8px_24px_-14px_var(--color-brand)] transition-[background-color,box-shadow] duration-300 ease-out hover:bg-brand-hover hover:shadow-[0_16px_34px_-12px_var(--color-brand)]"
-            >
-              <FaPlus
-                aria-hidden="true"
-                className="size-3.5 transition-transform duration-300 ease-out motion-safe:group-hover:rotate-90"
-              />
-              Create an event
-            </button>
+            canCreateEvent ? (
+              <button
+                ref={createEventButtonRef}
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="group flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand px-6 font-poppins text-body font-medium whitespace-nowrap text-white shadow-[0_8px_24px_-14px_var(--color-brand)] transition-[background-color,box-shadow] duration-300 ease-out hover:bg-brand-hover hover:shadow-[0_16px_34px_-12px_var(--color-brand)]"
+              >
+                <FaPlus
+                  aria-hidden="true"
+                  className="size-3.5 transition-transform duration-300 ease-out motion-safe:group-hover:rotate-90"
+                />
+                Create an event
+              </button>
+            ) : undefined
           }
         />
       </div>
@@ -247,7 +256,7 @@ const Events = () => {
         )}
       </div>
 
-      {showCreateModal && (
+      {canCreateEvent && showCreateModal && (
         <CreateEvent setShowCreateModal={setShowCreateModal} />
       )}
 

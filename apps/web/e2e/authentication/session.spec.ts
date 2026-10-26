@@ -108,29 +108,6 @@ test("session expiring during editing redirects on rejected save", async ({
   await expect(page.locator('input[name="email"]')).toBeVisible();
 });
 
-test("session expiring during editing redirects on rejected close", async ({
-  page,
-  context,
-}) => {
-  await signIn(page);
-  await page.goto("/user/setup?step=about&q=3");
-  await expect(
-    page.getByRole("heading", { name: "Add your address" }),
-  ).toBeVisible();
-  await context.clearCookies();
-  const rejected = page.waitForResponse(
-    (response) =>
-      response.url() === `${E2E_API_URL}/user/update` &&
-      response.status() === 401,
-  );
-  await page
-    .getByRole("button", { name: "Save and finish later", exact: true })
-    .click();
-  await rejected;
-  await expect(page).toHaveURL(/\/auth\/signin$/);
-  await expect(page.locator('input[name="email"]')).toBeVisible();
-});
-
 test("profile server errors offer retry without signing out", async ({
   page,
 }) => {
@@ -158,23 +135,76 @@ test("profile server errors offer retry without signing out", async ({
   ).toBeVisible();
 });
 
-test("failed close save keeps profile answers available for retry", async ({
+for (const entry of ["", "?step=about&q=1", "?step=about&q=3"]) {
+  test(`close discards edits without saving from setup ${entry || "intro"}`, async ({
+    page,
+  }) => {
+    await signIn(page);
+    await page.goto(`/user/setup${entry}`);
+    const close = page.getByRole("button", {
+      name: "Close profile setup",
+      exact: true,
+    });
+    await expect(close).toBeVisible();
+    const updates: string[] = [];
+    page.on("request", (request) => {
+      if (request.url() === `${E2E_API_URL}/user/update`)
+        updates.push(request.method());
+    });
+    await close.click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText("Saved", { exact: true })).toHaveCount(0);
+    await expect(page.locator('[data-cy="profile-setup-start"]')).toHaveCount(
+      0,
+    );
+    expect(updates).toEqual([]);
+    const profile = await page.request.get(`${E2E_API_URL}/user/profile`);
+    expect((await profile.json()).user.description ?? "").toBe("");
+  });
+}
+
+test("closing edited profile discards changes even when update service is unavailable", async ({
   page,
 }) => {
   await signIn(page);
   await page.goto("/user/setup?step=about&q=1");
-  const description = page.locator('[data-cy="profile-description"]');
-  await description.fill("Keep this unsaved answer");
-  await page.route(`${E2E_API_URL}/user/update`, (route) =>
-    route.fulfill({
-      status: 503,
-      json: { message: "Could not save, try again" },
-    }),
-  );
   await page
-    .getByRole("button", { name: "Save and finish later", exact: true })
+    .locator('[data-cy="profile-description"]')
+    .fill("Discard this answer");
+  const updates: string[] = [];
+  await page.route(`${E2E_API_URL}/user/update`, async (route) => {
+    updates.push(route.request().method());
+    await route.fulfill({ status: 503, json: { message: "Could not save" } });
+  });
+  await page
+    .getByRole("button", { name: "Close profile setup", exact: true })
     .click();
-  await expect(page.getByText("Could not save, try again")).toBeVisible();
-  await expect(page).toHaveURL(/\/user\/setup\?step=about&q=1$/);
-  await expect(description).toHaveValue("Keep this unsaved answer");
+  await expect(page).toHaveURL(/\/$/);
+  expect(updates).toEqual([]);
+  const profile = await page.request.get(`${E2E_API_URL}/user/profile`);
+  expect((await profile.json()).user.description ?? "").toBe("");
+  await expect(page.getByText("Saved", { exact: true })).toHaveCount(0);
+});
+
+test("closing editor entered from navbar returns home after moving through questions", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto("/organizations");
+  await page
+    .getByRole("navigation")
+    .getByText("Profile", { exact: true })
+    .click();
+  await page.getByRole("link", { name: "Edit profile", exact: true }).click();
+  await expect(page.locator('[data-cy="profile-setup-start"]')).toBeVisible();
+  await page.locator('[data-cy="profile-setup-start"]').click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page).toHaveURL(/q=2$/);
+  await page
+    .getByRole("button", { name: "Close profile setup", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("button", { name: "Close profile setup", exact: true }),
+  ).toHaveCount(0);
 });

@@ -66,7 +66,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [state-management.md](./state-management.md) | Redux store/slice, Zustand store, redux-persist, cookies |
 | [api-integration.md](./api-integration.md) | Every way the frontend talks to the backend: `KarmaCircleApi.ts`, `integrations/*`, `ApiConnector`, SWR fetchers |
 | [authentication.md](./authentication.md) | Sign in, sign up, Google OAuth, logout, route guarding, password/email validation |
-| [onboarding-profile.md](./onboarding-profile.md) | Post-signup profile completion, profile editing, the public Profile/UserProfile pages |
+| [onboarding-profile.md](./onboarding-profile.md) | Individual editor, legacy completion components, unrouted UserProfile prototype |
 | [dashboard.md](./dashboard.md) | The logged-in organization/org dashboard |
 | [organizations.md](./organizations.md) | The Organizations directory, `OrganizationCard`, and the public organization profile at `/organization/:userName` |
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
@@ -79,6 +79,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [donate-shop-trending.md](./donate-shop-trending.md) | Donate (Razorpay); the Shop and Trending placeholder pages were deleted |
 | [error-handling.md](./error-handling.md) | 404 page, toast conventions, `Test.tsx` |
 | [testing.md](./testing.md) | The Playwright E2E suite (`apps/web/e2e/`) — full-stack, real browser against a real API, isolated from local dev — and how it fits with `apps/api`'s Jest suite. Read before adding or changing any test |
+| [performance-seo-audit.md](./performance-seo-audit.md) | October 2026 performance/SEO RCA, production build evidence, prioritized open fixes, and measurement/closure criteria |
 | [known-issues.md](./known-issues.md) | Cross-cutting bugs, dead code, and inconsistencies found while writing these specs — read this before touching adjacent code |
 
 ## Deeper, colocated specs

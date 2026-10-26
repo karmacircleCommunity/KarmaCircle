@@ -80,8 +80,9 @@ This means a Google sign-in only "completes" on the frontend if the user lands b
 
 ## Logout
 
-`Logout()` (`KarmaCircleApi.ts`, `GET /auth/logout`) is called from three places with three slightly different cleanup sequences: `Navbar.tsx`, `Profile.tsx`, and `UserProfile.tsx`.
-All three dispatch `resetUserData()` on success; `Navbar.tsx` additionally calls `localStorage.clear()`, `Profile.tsx` additionally calls `Cookies.remove("skipProfileCompletion")`, and `UserProfile.tsx` does neither extra step but does toggle the Zustand `isLoading` flag around the call.
+`Logout()` remains available from `Navbar.tsx` and the unrouted `UserProfile.tsx` prototype.
+The removed sparse profile page no longer adds a logout path.
+Navbar clears local storage and dispatches `resetUserData()` on success.
 There is no shared `useLogout()` hook — consider extracting one if you need to touch this again, so the cleanup steps stay consistent.
 
 ## Route guard: `DonotRenderWhenLoggedIn`
@@ -104,6 +105,9 @@ This entire folder is TypeScript. See [authentication/SPEC.md](../../apps/web/sr
 ## Persisted session validation
 
 `SessionBootstrap` runs after `PersistGate`, before navbar or auth-route guards mount.
+Startup uses shared `AppLoading` during both persisted-state hydration and session restoration.
+It fills the viewport with the existing warm surface, dot wordmark, and a small brand spinner, with screen-reader loading status and reduced-motion support.
+It adds no artificial delay and exposes no session-checking jargon.
 `restoreSession()` verifies remembered login through `GET /user/profile`, refreshing Redux on success.
 A 401 clears stale login through `clearRejectedSession()`; connection and server errors preserve login.
 The shared fetcher and `updateUserProfile()` also clear sessions rejected during use, unless Redux has already moved to a newer user snapshot.

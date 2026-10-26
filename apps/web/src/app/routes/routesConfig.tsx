@@ -9,7 +9,6 @@ import {
   Dashboard,
   Error404,
   Events,
-  Profile,
   ProfileSetup,
   YourEvents,
 } from "./route";
@@ -72,10 +71,7 @@ const routesConfig: RouteConfigEntry[] = [
     path: "/auth/reset-password/:token",
     element: <ProtectedResetPassword />,
   },
-  // The signed-in user's own profile-edit flow — declared above the
-  // dynamic "/user/:userName" below for the same reason "/organization/
-  // setup" is declared above "/organization/:userName" (readability only;
-  // React Router already ranks a static segment above a dynamic one).
+  // Individual accounts edit directly; the old /user/:userName page is removed.
   {
     path: "/user/setup",
     element: (
@@ -84,16 +80,8 @@ const routesConfig: RouteConfigEntry[] = [
       </RequireSignIn>
     ),
   },
-  { path: "/user/:userName", element: <Profile /> },
   { path: "/organizations", element: <Organizations /> },
-  // The *public* organization profile a visitor reaches from a directory
-  // card. `Profile.tsx` (which still owns /user/:userName above) is the account
-  // view — it renders the signed-in owner's edit/logout controls and, for a
-  // visitor, an all-but-empty page. See features/organizations/pages/
-  // OrganizationProfile.tsx.
-  // Declared before the "/organization/:userName" profile below purely for
-  // readability — React Router already ranks a static segment above a
-  // dynamic one, so "/organization/setup" could never fall through to it.
+  // Organization account setup stays separate from public directory profiles.
   { path: "/organization/setup", element: <OrganizationSetup /> },
   // The organization's own events, behind `OrganizationSetupGate`. This is
   // where the navbar's "Your events" points; it used to point at

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { selectIsLoggedIn } from "@app/store/slices/userSlice";
+import AppLoading from "@components/AppLoading";
 import { restoreSession } from "../utils/restoreSession";
 
 /** Verify persisted login before navbar or auth-route guards can trust it. */
@@ -19,7 +20,7 @@ const SessionBootstrap = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  if (checking) return <p role="status">Checking your session…</p>;
+  if (checking) return <AppLoading />;
   return children;
 };
 

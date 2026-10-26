@@ -14,10 +14,8 @@ import type { ProfileSetupStepStatus } from "../types";
 /**
  * The individual user's own profile-edit flow, routed at `/user/setup` —
  * the individual-user equivalent of organizations' `/organization/setup`,
- * reached from `Profile.tsx`'s "Edit profile" button and its
- * missing-fields nudge. Replaces the old `ProfileUpdate` modal for
- * individual accounts (organizations still use the dashboard's
- * `ProfileUpdate` modal and `/organization/setup` — unchanged).
+ * reached directly from the navbar's Edit profile link.
+ * Organization accounts retain their dashboard and organization setup flows.
  *
  * Deliberately simpler than the organization flow it borrows its shell
  * from: one flat run of three questions rather than multiple steps, no
@@ -48,14 +46,42 @@ const ProfileSetup = () => {
     goToQuestion,
     next,
     back,
-    save,
   } = useProfileSetup();
 
   const locate = useLocateCity((key, value) => setField(key, value));
 
+  // Keep cancellation independent of saving, including on the intro screen.
+  const leave = () => {
+    navigate("/", { replace: true });
+  };
+
+  const advance = async () => {
+    if (!user) return;
+    const result = await next();
+    if (result !== "finished") return;
+    showSuccessToast("Profile updated");
+    navigate("/", { replace: true });
+  };
+
+  const topBar = (
+    <div className="mb-5 flex justify-end sm:mb-8">
+      <button
+        type="button"
+        onClick={leave}
+        disabled={saving}
+        data-cy="profile-setup-exit"
+        title="Close profile setup"
+        aria-label="Close profile setup"
+        className="-mr-1.5 inline-flex cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-1.5 text-ink/40 transition-colors hover:bg-ink/5 hover:text-ink/70 disabled:cursor-not-allowed"
+      >
+        <FiX aria-hidden className="size-5" />
+      </button>
+    </div>
+  );
+
   if (isLoading || error || !user) {
     return (
-      <SetupLayout stage={stage} steps={STEP_STATUS}>
+      <SetupLayout stage={stage} steps={STEP_STATUS} topBar={topBar}>
         <p className="font-outfit text-body text-ink/70">
           {isLoading
             ? "Loading your profile…"
@@ -66,37 +92,6 @@ const ProfileSetup = () => {
     );
   }
 
-  /** Saves whatever's on screen, then leaves for the profile page. */
-  const leave = async () => {
-    const ok = await save();
-    if (!ok) return;
-    showSuccessToast("Saved");
-    navigate(`/user/${user.userName}`);
-  };
-
-  const advance = async () => {
-    const result = await next();
-    if (result !== "finished") return;
-    showSuccessToast("Profile updated");
-    navigate(`/user/${user.userName}`);
-  };
-
-  const topBar = (
-    <div className="mb-5 flex justify-end sm:mb-8">
-      <button
-        type="button"
-        onClick={leave}
-        disabled={saving}
-        data-cy="profile-setup-exit"
-        title="Save and finish later"
-        aria-label="Save and finish later"
-        className="-mr-1.5 inline-flex cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-1.5 text-ink/40 transition-colors hover:bg-ink/5 hover:text-ink/70 disabled:cursor-not-allowed"
-      >
-        <FiX aria-hidden className="size-5" />
-      </button>
-    </div>
-  );
-
   if (!question) {
     return (
       <SetupLayout stage={stage} steps={STEP_STATUS} topBar={topBar}>
@@ -105,7 +100,7 @@ const ProfileSetup = () => {
           form={form}
           started={Object.values(form).some((value) => value.trim().length > 0)}
           onStart={() => goToQuestion(0)}
-          onLater={() => navigate(`/user/${user.userName}`)}
+          onLater={leave}
         />
       </SetupLayout>
     );

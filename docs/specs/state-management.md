@@ -18,7 +18,7 @@ There is still no single source of truth for "is the user logged in" enforced ac
 **Where it's written:**
 - [useAuth.ts](../../apps/web/src/features/authentication/hooks/useAuth.ts) — on successful sign-in/sign-up, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })`.
 - [Home.tsx](../../apps/web/src/features/landing-home/pages/Home.tsx) — after a Google OAuth redirect completes, dispatches `updateUserData(...)` then `toggleUserLogin()` (two separate dispatches, not one).
-- [Profile.tsx](../../apps/web/src/features/onboarding-profile/pages/Profile.tsx) and [Navbar.tsx](../../apps/web/src/components/Navbar.tsx) — on logout, dispatch `resetUserData()`.
+- [Navbar.tsx](../../apps/web/src/components/Navbar.tsx) — on logout, dispatch `resetUserData()`.
 - [Dashboard.tsx](../../apps/web/src/features/dashboard/pages/Dashboard.tsx) — on every SWR fetch of `userEndpoints.profile`, re-dispatches `updateUserData(data?.user)` in the `onSuccess` callback, keeping Redux in sync with the latest server copy.
 
 ## 2. Zustand (`useAuthStore`)
@@ -36,12 +36,12 @@ Cookies actually read in the frontend:
 
 | Cookie | Read in | Purpose |
 |---|---|---|
-| `skipProfileCompletion` | `Profile.tsx` | If set, suppresses the profile-completion modal even if fields are missing |
 | `userName` | `UserProfile.tsx` | Compared against the route's `:slug` param to decide if the viewer owns the profile |
 | `isLoggedIn` | `Donate.tsx` | Gate for the (currently unrouted) donate page — see [donate-shop-trending.md](./donate-shop-trending.md) |
 | `OAuthLoginInitiated` | `Home.tsx` | Set by the backend/redirect flow before bouncing back from Google OAuth; its presence triggers `successCallback()` |
 
-`Cookies.remove("skipProfileCompletion")` and `localStorage.clear()` are both called on logout (in `Profile.tsx` and `Navbar.tsx` respectively) alongside `resetUserData()` — three different mechanisms cleaned up in three different places, not one central "logout" utility.
+`Navbar.tsx` clears local storage and dispatches `resetUserData()` on logout.
+The deleted sparse profile page no longer writes or clears a completion-bypass cookie.
 
 ## "Is the user logged in?" — one real check, one stale outlier
 

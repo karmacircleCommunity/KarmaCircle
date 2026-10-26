@@ -31,6 +31,8 @@
  *   - leadership photos: pravatar.cc, seeded the same way
  *
  * Usage: npx tsx scripts/seed-demo-data.ts
+ * Refresh only demo events: npx tsx scripts/seed-demo-data.ts --events-only
+ * Event dates are relative to each run; rerun when the demo calendar ages.
  * (reads MONGO_URI from apps/api/.env, same as the server does.)
  */
 import "dotenv/config";
@@ -44,6 +46,7 @@ import { ReportProblem } from "../src/modules/reports/report.model";
 
 const SALT_ROUNDS = 10;
 const MONGO_URI = process.env.MONGO_URI;
+const eventsOnly = process.argv.includes("--events-only");
 
 const logoUrl = (seed: string) =>
   `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear&fontWeight=600`;
@@ -221,58 +224,37 @@ async function seed() {
   await mongoose.connect(MONGO_URI);
   console.log(`Connected to ${mongoose.connection.name}`);
 
-  const demoPassword = await bcrypt.hash("Demo@1234", SALT_ROUNDS);
+  if (!eventsOnly) {
+    const demoPassword = await bcrypt.hash("Demo@1234", SALT_ROUNDS);
 
-  // --- Users: individuals ---
-  await Individual.findOneAndUpdate(
-    { email: "aditi.rao@example.com" },
-    {
-      userType: "individual",
-      userName: "aditi_rao",
-      name: "Aditi Rao",
-      email: "aditi.rao@example.com",
-      phone: "+91 98765 43210",
-      description: "Volunteer coordinator, loves beach cleanups.",
-      address: { city: "Mumbai", state: "Maharashtra", country: "India" },
-      config: { hasCompletedProfile: true },
-      password: demoPassword,
-      cart: [],
-      tokenVersion: 0,
-    },
-    { upsert: true, setDefaultsOnInsert: true },
-  );
-  await Individual.findOneAndUpdate(
-    { email: "rohan.mehta@example.com" },
-    {
-      userType: "individual",
-      userName: "rohan_mehta",
-      name: "Rohan Mehta",
-      email: "rohan.mehta@example.com",
-      phone: "+91 91234 56789",
-      description: "First-time volunteer, into education drives.",
-      address: { city: "Pune", state: "Maharashtra", country: "India" },
-      config: { hasCompletedProfile: true },
-      password: demoPassword,
-      cart: [],
-      tokenVersion: 0,
-    },
-    { upsert: true, setDefaultsOnInsert: true },
-  );
-
-  console.log("Upserted 2 individuals");
-
-  // --- Organizations: the login half + the real organizations-collection half ---
-  for (const org of DEMO_ORGS) {
-    await OrganizationLogin.findOneAndUpdate(
-      { email: org.email },
+    // --- Users: individuals ---
+    await Individual.findOneAndUpdate(
+      { email: "aditi.rao@example.com" },
       {
-        userType: "organization",
-        userName: org.handle,
-        name: org.name,
-        email: org.email,
-        phone: org.phone,
-        description: org.description.split("\n\n")[0],
-        address: { city: org.city, state: org.state, country: "India" },
+        userType: "individual",
+        userName: "aditi_rao",
+        name: "Aditi Rao",
+        email: "aditi.rao@example.com",
+        phone: "+91 98765 43210",
+        description: "Volunteer coordinator, loves beach cleanups.",
+        address: { city: "Mumbai", state: "Maharashtra", country: "India" },
+        config: { hasCompletedProfile: true },
+        password: demoPassword,
+        cart: [],
+        tokenVersion: 0,
+      },
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+    await Individual.findOneAndUpdate(
+      { email: "rohan.mehta@example.com" },
+      {
+        userType: "individual",
+        userName: "rohan_mehta",
+        name: "Rohan Mehta",
+        email: "rohan.mehta@example.com",
+        phone: "+91 91234 56789",
+        description: "First-time volunteer, into education drives.",
+        address: { city: "Pune", state: "Maharashtra", country: "India" },
         config: { hasCompletedProfile: true },
         password: demoPassword,
         cart: [],
@@ -281,40 +263,63 @@ async function seed() {
       { upsert: true, setDefaultsOnInsert: true },
     );
 
-    await OrganizationRecord.findOneAndUpdate(
-      { handle: org.handle },
-      {
-        handle: org.handle,
-        name: org.name,
-        ownerEmail: org.email,
-        tag: org.tag,
-        domains: org.domains,
-        description: org.description,
-        teamSize: org.teamSize,
-        location: { city: org.city, state: org.state, address: org.address },
-        website: org.website || undefined,
-        contactEmail: org.email,
-        contactPhone: org.phone,
-        logo: logoUrl(org.handle),
-        cover: coverUrl(org.handle),
-        gallery: [galleryUrl(org.handle, 1), galleryUrl(org.handle, 2)],
-        socialLinks: org.socialLinks,
-        leadership: org.leadership.map((leader) => ({
-          ...leader,
-          photo: avatarUrl(`${org.handle}-${leader.name}`),
-        })),
-        sponsorship: { enabled: org.sponsorshipEnabled },
-        fundsRaised: org.fundsRaised || undefined,
-        fundsGoal: org.fundsGoal || undefined,
-        followers: Math.round(org.teamSize * (3 + Math.random() * 4)),
-        status: "live",
-        verified: org.verified,
-      },
-      { upsert: true, setDefaultsOnInsert: true },
-    );
-  }
+    console.log("Upserted 2 individuals");
 
-  console.log(`Upserted ${DEMO_ORGS.length} organizations (login + record)`);
+    // --- Organizations: the login half + the real organizations-collection half ---
+    for (const org of DEMO_ORGS) {
+      await OrganizationLogin.findOneAndUpdate(
+        { email: org.email },
+        {
+          userType: "organization",
+          userName: org.handle,
+          name: org.name,
+          email: org.email,
+          phone: org.phone,
+          description: org.description.split("\n\n")[0],
+          address: { city: org.city, state: org.state, country: "India" },
+          config: { hasCompletedProfile: true },
+          password: demoPassword,
+          cart: [],
+          tokenVersion: 0,
+        },
+        { upsert: true, setDefaultsOnInsert: true },
+      );
+
+      await OrganizationRecord.findOneAndUpdate(
+        { handle: org.handle },
+        {
+          handle: org.handle,
+          name: org.name,
+          ownerEmail: org.email,
+          tag: org.tag,
+          domains: org.domains,
+          description: org.description,
+          teamSize: org.teamSize,
+          location: { city: org.city, state: org.state, address: org.address },
+          website: org.website || undefined,
+          contactEmail: org.email,
+          contactPhone: org.phone,
+          logo: logoUrl(org.handle),
+          cover: coverUrl(org.handle),
+          gallery: [galleryUrl(org.handle, 1), galleryUrl(org.handle, 2)],
+          socialLinks: org.socialLinks,
+          leadership: org.leadership.map((leader) => ({
+            ...leader,
+            photo: avatarUrl(`${org.handle}-${leader.name}`),
+          })),
+          sponsorship: { enabled: org.sponsorshipEnabled },
+          fundsRaised: org.fundsRaised || undefined,
+          fundsGoal: org.fundsGoal || undefined,
+          followers: Math.round(org.teamSize * (3 + Math.random() * 4)),
+          status: "live",
+          verified: org.verified,
+        },
+        { upsert: true, setDefaultsOnInsert: true },
+      );
+    }
+
+    console.log(`Upserted ${DEMO_ORGS.length} organizations (login + record)`);
+  }
 
   // --- Events ---
   const now = new Date();
@@ -989,70 +994,72 @@ async function seed() {
 
   console.log(`Upserted ${demoEvents.length} events`);
 
-  // --- Products ---
-  const products = [
-    {
-      productType: "Apparel",
-      productName: "Green Earth NGO T-Shirt",
-      productPrice: 499,
-      productDescription: "100% organic cotton tee, proceeds fund tree-planting drives.",
-      productImage: "https://placehold.co/400x400?text=NGO+T-Shirt",
-      productQty: 120,
-      productSlug: "green-earth-ngo-tshirt",
-    },
-    {
-      productType: "Accessories",
-      productName: "Reusable Cloth Tote Bag",
-      productPrice: 249,
-      productDescription: "Handwoven jute tote bag supporting local artisans.",
-      productImage: "https://placehold.co/400x400?text=Tote+Bag",
-      productQty: 80,
-      productSlug: "reusable-cloth-tote-bag",
-    },
-    {
-      productType: "Stationery",
-      productName: "Shiksha Seva Notebook Set",
-      productPrice: 149,
-      productDescription: "Pack of 3 recycled-paper notebooks; every sale funds a student's supplies.",
-      productImage: "https://placehold.co/400x400?text=Notebook+Set",
-      productQty: 200,
-      productSlug: "shiksha-seva-notebook-set",
-    },
-  ];
+  if (!eventsOnly) {
+    // --- Products ---
+    const products = [
+      {
+        productType: "Apparel",
+        productName: "Green Earth NGO T-Shirt",
+        productPrice: 499,
+        productDescription: "100% organic cotton tee, proceeds fund tree-planting drives.",
+        productImage: "https://placehold.co/400x400?text=NGO+T-Shirt",
+        productQty: 120,
+        productSlug: "green-earth-ngo-tshirt",
+      },
+      {
+        productType: "Accessories",
+        productName: "Reusable Cloth Tote Bag",
+        productPrice: 249,
+        productDescription: "Handwoven jute tote bag supporting local artisans.",
+        productImage: "https://placehold.co/400x400?text=Tote+Bag",
+        productQty: 80,
+        productSlug: "reusable-cloth-tote-bag",
+      },
+      {
+        productType: "Stationery",
+        productName: "Shiksha Seva Notebook Set",
+        productPrice: 149,
+        productDescription: "Pack of 3 recycled-paper notebooks; every sale funds a student's supplies.",
+        productImage: "https://placehold.co/400x400?text=Notebook+Set",
+        productQty: 200,
+        productSlug: "shiksha-seva-notebook-set",
+      },
+    ];
 
-  for (const product of products) {
-    await Product.findOneAndUpdate({ productSlug: product.productSlug }, product, {
-      upsert: true,
-      setDefaultsOnInsert: true,
-    });
+    for (const product of products) {
+      await Product.findOneAndUpdate({ productSlug: product.productSlug }, product, {
+        upsert: true,
+        setDefaultsOnInsert: true,
+      });
+    }
+
+    console.log(`Upserted ${products.length} products`);
+
+    // --- Reports ---
+    const reports = [
+      {
+        firstName: "Neha",
+        lastName: "Sharma",
+        email: "neha.sharma@example.com",
+        reportmessage: "The event RSVP button doesn't respond on mobile Safari.",
+      },
+      {
+        firstName: "Vikram",
+        lastName: "Iyer",
+        email: "vikram.iyer@example.com",
+        reportmessage: "Profile picture upload fails for files over 2MB with no error shown.",
+      },
+    ];
+
+    for (const report of reports) {
+      await ReportProblem.findOneAndUpdate({ email: report.email }, report, {
+        upsert: true,
+        setDefaultsOnInsert: true,
+      });
+    }
+
+    console.log(`Upserted ${reports.length} reports`);
   }
-
-  console.log(`Upserted ${products.length} products`);
-
-  // --- Reports ---
-  const reports = [
-    {
-      firstName: "Neha",
-      lastName: "Sharma",
-      email: "neha.sharma@example.com",
-      reportmessage: "The event RSVP button doesn't respond on mobile Safari.",
-    },
-    {
-      firstName: "Vikram",
-      lastName: "Iyer",
-      email: "vikram.iyer@example.com",
-      reportmessage: "Profile picture upload fails for files over 2MB with no error shown.",
-    },
-  ];
-
-  for (const report of reports) {
-    await ReportProblem.findOneAndUpdate({ email: report.email }, report, {
-      upsert: true,
-      setDefaultsOnInsert: true,
-    });
-  }
-
-  console.log(`Upserted ${reports.length} reports`);
 
   await mongoose.disconnect();
   console.log("Done. Disconnected.");
