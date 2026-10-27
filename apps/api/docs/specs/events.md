@@ -58,6 +58,11 @@ Requires `requireAuth`; registration identity and confirmation destination come 
 
 Requires `requireAuth`; looks up only the caller's registration and returns `{ joined: boolean }`. Event detail calls this after loading when Redux reports an authenticated session, so returning attendees see the registered state without exposing attendee data publicly. Unknown event returns `404`.
 
+## `GET /events/mine`
+
+Requires `requireAuth`; resolves the caller from the auth cookie and returns only events linked to that user's saved registrations as `{ data, pagination }`. Accepts shared `page`/`limit` parameters (default page 1, limit 20, max 100) and `period=upcoming|past` (default `upcoming`). Upcoming events have `startTime >= now` and sort ascending; past events have `startTime < now` and sort descending. The endpoint does not accept a user identifier and never returns registration attendee details.
+The registration schema indexes `userId` for this attendee lookup, alongside its unique `(eventUid, userId)` constraint.
+
 ## What's known-broken here
 
 See [known-issues.md](./known-issues.md#events). The main cross-repo item: the frontend has **two** competing "create event" UI components per its own spec, and only one of them is known (by the frontend's own docs) to send a body shape compatible with this route — check which component a given frontend change actually touches before assuming `POST /events/create`'s contract is being exercised correctly. Within this module alone, the `Online`-mode fields (`platform`/`platformLink`) not being required is the one asymmetry worth a second look if online events start showing up without a join link.

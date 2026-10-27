@@ -7,9 +7,38 @@ import {
   createEventSchema,
   eventUidParamsSchema,
   listEventsQuerySchema,
+  myEventsQuerySchema,
 } from "./event.validation";
 
 const router = Router();
+
+/**
+ * @openapi
+ * /events/mine:
+ *   get:
+ *     summary: List events the authenticated attendee joined
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: period
+ *         schema: { type: string, enum: [upcoming, past], default: upcoming }
+ *     responses:
+ *       200: { description: "{ data, pagination }" }
+ *       401: { description: Unauthorized }
+ */
+router.get(
+  "/mine",
+  requireAuth,
+  validate(myEventsQuerySchema, "query"),
+  asyncHandler<AuthenticatedRequest>(eventController.listMyEvents),
+);
 
 /**
  * @openapi

@@ -1,6 +1,7 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/test-app";
 import { sendEventJoinConfirmation } from "../src/config/mailer";
+import { Event } from "../src/modules/events/event.model";
 
 jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
@@ -48,6 +49,11 @@ describe("Events", () => {
     expect(res.status).toBe(401);
   });
 
+  it("requires sign-in to list an attendee's events", async () => {
+    const res = await request(app).get("/events/mine");
+    expect(res.status).toBe(401);
+  });
+
   it("saves an attendee registration and emails one confirmation", async () => {
     const hostCookie = await signupAndGetCookie();
     const startsAt = new Date(Date.now() + 86_400_000);
@@ -90,12 +96,47 @@ describe("Events", () => {
     expect(registrationStatus.status).toBe(200);
     expect(registrationStatus.body).toEqual({ joined: true });
 
+    const myEvents = await request(app)
+      .get("/events/mine")
+      .query({ period: "upcoming" })
+      .set("Cookie", attendeeCookie);
+    expect(myEvents.status).toBe(200);
+    expect(
+      myEvents.body.data.map((event: { uid: string }) => event.uid),
+    ).toEqual(["join-confirmation-event"]);
+    expect(myEvents.body.data[0]).not.toHaveProperty("attendeeEmail");
+
+    const anotherAttendee = await request(app).post("/auth/signup").send({
+      email: "another-attendee@example.com",
+      password: "hunter2",
+      name: "Another Attendee",
+    });
+    const anotherCookie = anotherAttendee.headers["set-cookie"][0];
+    const theirEvents = await request(app)
+      .get("/events/mine")
+      .set("Cookie", anotherCookie);
+    expect(theirEvents.status).toBe(200);
+    expect(theirEvents.body.data).toHaveLength(0);
+
     const duplicate = await request(app)
       .post("/events/join-confirmation-event/join")
       .set("Cookie", attendeeCookie);
     expect(duplicate.status).toBe(200);
     expect(duplicate.body.alreadyJoined).toBe(true);
     expect(sendEventJoinConfirmation).toHaveBeenCalledTimes(1);
+
+    await Event.updateOne(
+      { uid: "join-confirmation-event" },
+      { $set: { startTime: new Date(Date.now() - 1_000) } },
+    );
+    const pastEvents = await request(app)
+      .get("/events/mine")
+      .query({ period: "past" })
+      .set("Cookie", attendeeCookie);
+    expect(pastEvents.status).toBe(200);
+    expect(
+      pastEvents.body.data.map((event: { uid: string }) => event.uid),
+    ).toEqual(["join-confirmation-event"]);
   });
   it("rejects event creation without authentication", async () => {
     const res = await request(app)
@@ -161,7 +202,11 @@ describe("Events", () => {
       .set("Cookie", cookie)
       // A client-supplied organizerHandle must be ignored — the value only
       // ever comes from the authenticated host's own organization record.
-      .send({ ...validOnlineEvent, uid: "org-hosted-event", organizerHandle: "someone-else" });
+      .send({
+        ...validOnlineEvent,
+        uid: "org-hosted-event",
+        organizerHandle: "someone-else",
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.savedEvent.organizerHandle).toBe(orgHandle);
@@ -292,7 +337,11 @@ describe("Events", () => {
     const inviteOnly = await request(app)
       .post("/events/create")
       .set("Cookie", cookie)
-      .send({ ...validOnlineEvent, uid: "invite-only-event", inviteOnly: true });
+      .send({
+        ...validOnlineEvent,
+        uid: "invite-only-event",
+        inviteOnly: true,
+      });
     expect(inviteOnly.status).toBe(201);
     expect(inviteOnly.body.savedEvent.inviteOnly).toBe(true);
   });
@@ -322,7 +371,11 @@ describe("Events", () => {
     await request(app)
       .post("/events/create")
       .set("Cookie", cookie)
-      .send({ ...validOnlineEvent, uid: "detail-fields-event", inviteOnly: true });
+      .send({
+        ...validOnlineEvent,
+        uid: "detail-fields-event",
+        inviteOnly: true,
+      });
 
     const res = await request(app).get("/events?uid=detail-fields-event");
 

@@ -14,6 +14,8 @@ For an upcoming event that is not invite-only, Join requires a signed-in account
 No capacity or attendee-count endpoint exists, so attendee totals and available spots must not be invented.
 Share uses the browser share sheet or clipboard, and Ask opens a mail link only when the event has a contact email.
 Organizations can find their hosted events at `/organization/events` and on their public organization profile, both backed by `GET /events?host={handle}`.
+Individual attendees can find saved registrations at `/events/mine`, linked from the signed-in Profile menu and backed by authenticated `GET /events/mine?period=upcoming|past`.
+Organizers can view events they host at `/organization/events`, but cannot see registrations, attendee names, or counts; an organizer attendance dashboard remains proposed work.
 
 ### Publishing path and implementation boundary
 
@@ -35,18 +37,27 @@ flowchart TD
     F -->|No| X{Signed in?}
     X -->|Yes| Y[GET /events/:uid/registration]
     Y --> Z{Already joined?}
-    Z -->|Yes| AA[Show You're going; no Join action]
+    Z -->|Yes| AA[Show You're going; hide Join]
     Z -->|No| H{inviteOnly?}
     X -->|No| H
     H -->|Yes| I[Show ask-organizer state; event remains public]
     I --> J{contactEmail exists?}
     J -->|Yes| K[Ask opens mail client]
     J -->|No| L[No invite or request workflow exists]
-    H -->|No| M[Signed-in attendee joins via POST /events/:uid/join]
-    M --> N[Registration saved; confirmation email sent]
-    N --> AB[Email link returns to event detail]
+    H -->|No| M[Prompt sign-in if needed; attendee joins via POST /events/:uid/join]
+    M --> N[Save one registration for this account and event]
+    N --> EE{Confirmation email sent?}
+    EE -->|Yes| EM[Send confirmation with View Event Details link]
+    EE -->|No| EF[Registration remains saved; emailSent false]
+    EM --> AB[Email or My Events link opens event detail]
+    EF --> AB
     AB --> E
     E --> O[Share uses native share or clipboard]
+    N --> ME[My Events: GET /events/mine]
+    ME --> MP{Upcoming or Past?}
+    MP -->|Upcoming| MU[Upcoming registrations, soonest first]
+    MP -->|Past| MT[Past registrations, newest first]
+    ME -.->|Proposed only| OR[Organizer attendee list and count per hosted event]
     P[Organization account signs in] --> Q[Create button opens current CreateEvent.tsx]
     Q --> R[Current form cannot submit; handler targets PATCH /user/update]
     P --> S[Backend POST /events/create exists]
@@ -55,6 +66,10 @@ flowchart TD
     U --> V[201 response]
     V --> W[GET /events includes event; GET /events?host lists organizer events]
 ```
+
+The dashed organizer attendee view is a product proposal, not current behavior.
+Today the host event list includes event records only, and there is no organizer-facing registration query or attendee count.
+The attendee experience is end to end: successful join persists the registration independently of email delivery, and opening a confirmation or My Events link loads registration state so an existing attendee sees “You're going” instead of Join.
 
 ## `Events.tsx` — routed at `/events`
 
@@ -78,7 +93,7 @@ Two real, deliberate differences from `/organizations`' directory, both because 
 Event creation requires a signed-in organization account: the `Token` cookie, Redux login state, and `userType === "organization"` must all be present.
 Personal accounts and signed-out visitors see neither the creation button nor its modal; browsing, search, and filters remain public.
 The API independently rejects personal-account creation requests with `403`, using the stored account type.
-No `e2e/events/` suite exists yet; this visibility rule has no automated browser coverage.
+`e2e/events/events-responsive.spec.ts` covers the public directory's Upcoming/Past filtering and responsive layout; My Events currently has API coverage but no browser coverage.
 
 The "Create An Event" button opens `CreateEvent` from [apps/web/src/features/events/components/CreateEvent.tsx](../../apps/web/src/features/events/components/CreateEvent.tsx) — unchanged, still the non-functional one (see below).
 
@@ -95,6 +110,14 @@ Two things make it different from the `/events` directory above it:
 - **It renders live records, not the fixture.** It fetches `GET /events?host={handle}`, a filter added to the API in the same change, so filtering happens server-side and nothing is hidden on page two.
 
 It deliberately does **not** use `EventCard`: the card needs a cover photo, a cause and a capacity, and a live event record (`ApiEvent`, mirroring the API's `IEvent`) has none of the three. Plain rows are what the data actually supports. When those fields exist on a real event, this page and the directory can converge on the card.
+
+## `MyEvents.tsx` — an attendee's joined events
+
+[apps/web/src/features/events/pages/MyEvents.tsx](../../apps/web/src/features/events/pages/MyEvents.tsx), routed at `/events/mine` behind `RequireSignIn` and linked from the individual account's Profile menu.
+It fetches the current account's registrations from authenticated `GET /events/mine`, paginates in batches of 100, and sends the selected period to the API so both tabs page and sort independently.
+Cards show the event, organizer, date, location or online platform, and a "You're going" status; each opens the event's live detail page.
+Loading, fetch failure, no registrations, and empty time-period states are handled explicitly.
+The older `UserProfile.tsx` has a static mock carousel but remains unrouted; it is not the implementation used by this feature.
 
 Event creation is still broken (see below), so in practice this page shows its empty state — which is honest, rather than a fixture pretending otherwise.
 
@@ -155,8 +178,8 @@ It only shows once it's actually needed: `hidden` in `DetailedEventView` is gate
 
 **Attendee capacity is deliberately not tracked.** `going`/`spotsLeft` stay `undefined` on every live event — same "nothing invented" rule the directory card follows. `EventFacts`'s "Attendance" cell and `EventJoinPanel`'s Going/Spots-left row both render an honest "not tracked" state instead. See [known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) for what real RSVP/capacity tracking would need — flagged as future scope, not scheduled.
 
-**Nothing on this page writes anywhere.** There is no attend/RSVP or payment endpoint (see [api-integration.md](./api-integration.md)):
-- Join is local component state, and only offered at all for an event that isn't invite-only. The counts move with it when capacity data exists (`going + 1`, one spot fewer, "You are going"), and the panel says in words that it is saved on the device only and the organizer has not been told. That is deliberate — a control that looks live and silently does nothing is the worse failure, and is what `Profile.tsx`'s Subscribe/Sponsor pair does.
+**Joining writes a registration; contribution is not implemented.** The attendee state comes from saved registrations, not local component state:
+- Join calls authenticated `POST /events/:uid/join`; the API saves one registration for the caller and event, then attempts the confirmation email. The joined state is verified through `GET /events/:uid/registration` on page load, so returning from email or My Events shows “You are going” and hides the Join action. Capacity remains untracked, and no attendee count is derived from saved registrations.
 - Contribute toasts "contributions open here soon".
 - Share uses `navigator.share` where it exists and the clipboard otherwise; a dismissed share sheet (`AbortError`) is not treated as an error.
 - The venue's map is a plain Google Maps *search link*, not an embed — an iframe would mean a third-party script and a cookie banner for one address.

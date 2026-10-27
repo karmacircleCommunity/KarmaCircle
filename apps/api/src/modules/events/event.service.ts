@@ -35,6 +35,41 @@ export async function findAll(
   return { data, total };
 }
 
+export async function findForAttendee(
+  email: string,
+  pagination: {
+    skip: number;
+    limit: number;
+    period: "upcoming" | "past";
+  },
+) {
+  const attendee = await findByEmail(email);
+  if (!attendee) {
+    throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+
+  const registrations = await EventRegistration.find({ userId: attendee._id })
+    .select({ eventUid: 1 })
+    .lean();
+  const eventUids = registrations.map(({ eventUid }) => eventUid);
+  if (eventUids.length === 0) return { data: [], total: 0 };
+
+  const now = new Date();
+  const query = {
+    uid: { $in: eventUids },
+    startTime: pagination.period === "upcoming" ? { $gte: now } : { $lt: now },
+  };
+  const sort = pagination.period === "upcoming" ? 1 : -1;
+  const [data, total] = await Promise.all([
+    Event.find(query)
+      .sort({ startTime: sort, uid: sort })
+      .skip(pagination.skip)
+      .limit(pagination.limit),
+    Event.countDocuments(query),
+  ]);
+  return { data, total };
+}
+
 export async function createEvent(
   email: string,
   data: CreateEventInput,

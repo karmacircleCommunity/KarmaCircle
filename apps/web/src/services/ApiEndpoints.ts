@@ -55,6 +55,7 @@ const paymentEndpoints = {
 const eventEndpoints = {
   all: `${API}/events`,
   create: `${API}/events/create`,
+  mine: () => `${API}/events/mine`,
   /**
    * One host's own events, filtered server-side by `hostUsername` — the
    * organization's "Your events" page. Filtering a fetched page in the

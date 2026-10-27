@@ -71,5 +71,10 @@ export const eventUidParamsSchema = z.object({
   uid: z.string().trim().min(1),
 });
 
+export const myEventsQuerySchema = paginationQuerySchema.extend({
+  period: z.enum(["upcoming", "past"]).default("upcoming"),
+});
+
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
+export type MyEventsQuery = z.infer<typeof myEventsQuerySchema>;

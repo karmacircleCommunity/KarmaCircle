@@ -11,6 +11,7 @@ import {
   Events,
   ProfileSetup,
   YourEvents,
+  MyEvents,
 } from "./route";
 import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRenderWhenLoggedIn";
 import RequireSignIn from "@features/authentication/components/RequireSignIn";
@@ -87,6 +88,14 @@ const routesConfig: RouteConfigEntry[] = [
   // where the navbar's "Your events" points; it used to point at
   // "/event/create", which no route has ever matched.
   { path: "/organization/events", element: <YourEvents /> },
+  {
+    path: "/events/mine",
+    element: (
+      <RequireSignIn>
+        <MyEvents />
+      </RequireSignIn>
+    ),
+  },
   { path: "/organization/:userName", element: <OrganizationProfile /> },
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/events", element: <Events /> },

@@ -13,8 +13,8 @@ No automated browser coverage exists for this feature yet.
 
 ## What this feature is responsible for
 
-The `/events` directory page, the `/events/:eventId` detail page, event display (cards, a slider), and event creation.
-Nothing rendered under `/events` today reflects real backend data — every visible card, count, and image is a hardcoded placeholder — even though the fetch and creation pieces needed to make it real mostly already exist.
+The public `/events` directory and `/events/:eventId` detail page, attendee registration and My Events, hosted-event listings, event display, and event creation.
+The directory, detail, registration status, My Events, and hosted-event pages read real API data; the mounted create-event modal remains non-functional, and capacity plus organizer attendee data remain unsupported.
 
 ## Why it's shaped this way
 
@@ -26,6 +26,7 @@ Two unrelated event-creation UIs were built at different times and never reconci
 |---|---|---|
 | `pages/Events.tsx` | The `/events` page | ✅ routed, renders **live data** via `GET /events` (September 2026) |
 | `pages/YourEvents.tsx` | The `/organization/events` page — one organization's own events, behind `OrganizationSetupGate` | ✅ routed, renders **live data** via `GET /events?host={handle}` |
+| `pages/MyEvents.tsx` | The signed-in individual's `/events/mine` page — registered events split into Upcoming and Past | ✅ routed, reads authenticated attendee data from `GET /events/mine` |
 | `pages/DetailedEvent.tsx` | The `/events/:eventId` detail page | ✅ routed, renders **live data** via `GET /events?uid={id}` (September 2026 — see below) |
 | `components/detail/` | The eight pieces that page composes — `EventHero`, `EventFacts`, `EventAgenda`, `EventLocationPanel`, `EventJoinPanel`, `EventMobileActionBar`, `EventFundraiserPanel`, `EventSection` | ✅ rendered by `DetailedEvent.tsx` only |
 | `utils/toDisplayEventDetail.ts` | Maps a live `ApiEvent` onto the `{ event, detail }` shape `DetailedEvent.tsx` renders | ✅ used by `DetailedEvent.tsx` |

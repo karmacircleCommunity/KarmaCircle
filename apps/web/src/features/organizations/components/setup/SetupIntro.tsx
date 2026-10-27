@@ -65,7 +65,8 @@ const SetupIntro = ({
     </ol>
 
     <p className="mt-8 font-outfit text-body text-ink/50">
-      Two steps, around two minutes. Each one saves on its own as you go.
+      Seven questions across three parts. Your name is already filled in from
+      signup, so six short answers remain. Answers save as you go.
     </p>
 
     <div className="mt-8 flex flex-col items-center gap-4">

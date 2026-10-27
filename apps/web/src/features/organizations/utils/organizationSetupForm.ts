@@ -3,6 +3,7 @@ import type {
   MyOrganization,
   OrganizationSetupField,
   OrganizationSetupForm,
+  OrganizationSetupStepId,
 } from "../types";
 
 export const EMPTY_SETUP_FORM: OrganizationSetupForm = {
@@ -190,6 +191,22 @@ export function outstandingFields(
   return fields.filter((field) => !isFieldFilled(form, field));
 }
 
+/** First question with a required answer still missing. */
+export function firstIncompleteSetupPosition(
+  form: OrganizationSetupForm,
+): { stepId: OrganizationSetupStepId; questionIndex: number } | null {
+  for (const step of SETUP_STEPS) {
+    const questionIndex = step.questions.findIndex((question) =>
+      question.requiredFields.some((field) => !isFieldFilled(form, field)),
+    );
+    if (questionIndex !== -1) {
+      return { stepId: step.id, questionIndex };
+    }
+  }
+
+  return null;
+}
+
 /** Whether anything in this slice of the form differs from what was saved. */
 export function isStepDirty(
   form: OrganizationSetupForm,
@@ -220,20 +237,24 @@ export function isStepDirty(
 }
 
 /**
- * Where "continue setup" should land: the first step that still has a
- * required field missing, so someone coming back is dropped exactly where
- * they left off rather than at the beginning.
+ * Where "continue setup" should land: the first question that still has a
+ * required answer missing, so someone coming back skips completed questions.
  *
  * Reads the server's `missingFields` (the list that actually gates
  * publication) rather than the form, because every caller of this is
  * outside the setup flow and has no form to read.
  */
 export function resumeSetupPath(missingFields: string[]): string {
-  const next = SETUP_STEPS.find((step) =>
-    step.requiredFields.some((field) => missingFields.includes(field)),
-  );
+  for (const step of SETUP_STEPS) {
+    const questionIndex = step.questions.findIndex((question) =>
+      question.requiredFields.some((field) => missingFields.includes(field)),
+    );
+    if (questionIndex !== -1) {
+      return `/organization/setup?step=${step.id}&q=${questionIndex + 1}`;
+    }
+  }
 
-  return next ? `/organization/setup?step=${next.id}` : "/organization/setup";
+  return "/organization/setup";
 }
 
 /**

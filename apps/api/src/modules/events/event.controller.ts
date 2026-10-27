@@ -4,7 +4,11 @@ import { AuthenticatedRequest } from "../../middleware/auth";
 import { AppError } from "../../middleware/error-handler";
 import { buildPaginationMeta, toSkipLimit } from "../../utils/pagination";
 import * as eventService from "./event.service";
-import { CreateEventInput, ListEventsQuery } from "./event.validation";
+import {
+  CreateEventInput,
+  ListEventsQuery,
+  MyEventsQuery,
+} from "./event.validation";
 import { sendEventJoinConfirmation } from "../../config/mailer";
 import { logger } from "../../config/logger";
 
@@ -27,6 +31,19 @@ export async function listEvents(req: Request, res: Response) {
     { host },
     toSkipLimit({ page, limit }),
   );
+  return res
+    .status(STATUS_CODE.OK)
+    .json({ data, pagination: buildPaginationMeta({ page, limit, total }) });
+}
+
+export async function listMyEvents(req: AuthenticatedRequest, res: Response) {
+  const { page, limit, period } = req.query as unknown as MyEventsQuery;
+  const { data, total } = await eventService.findForAttendee(req.auth.email, {
+    skip: (page - 1) * limit,
+    limit,
+    period,
+  });
+
   return res
     .status(STATUS_CODE.OK)
     .json({ data, pagination: buildPaginationMeta({ page, limit, total }) });
@@ -58,18 +75,26 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
       emailSent = true;
     } catch (error) {
       logger.error(
-        { error, eventUid: result.event.uid, attendeeEmail: result.attendee.email },
+        {
+          error,
+          eventUid: result.event.uid,
+          attendeeEmail: result.attendee.email,
+        },
         "Event joined but confirmation email failed",
       );
     }
   }
 
-  return res.status(result.alreadyJoined ? STATUS_CODE.OK : STATUS_CODE.CREATED).json({
-    message: result.alreadyJoined ? "You have already joined this event." : "You joined this event.",
-    joined: true,
-    alreadyJoined: result.alreadyJoined,
-    emailSent,
-  });
+  return res
+    .status(result.alreadyJoined ? STATUS_CODE.OK : STATUS_CODE.CREATED)
+    .json({
+      message: result.alreadyJoined
+        ? "You have already joined this event."
+        : "You joined this event.",
+      joined: true,
+      alreadyJoined: result.alreadyJoined,
+      emailSent,
+    });
 }
 
 export async function getRegistrationStatus(

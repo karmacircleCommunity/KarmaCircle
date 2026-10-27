@@ -12,11 +12,13 @@ import {
   FIELD_CY,
   FIELD_SPECS,
   REQUIRED_LABELS,
+  SETUP_STEPS,
 } from "../constants/organizationSetup";
 import { useLocateCity } from "@hooks/useLocateCity";
 import { useOrganizationSetup } from "../hooks/useOrganizationSetup";
 import {
   invalidFields,
+  firstIncompleteSetupPosition,
   outstandingFields,
 } from "../utils/organizationSetupForm";
 
@@ -205,7 +207,14 @@ const OrganizationSetup = () => {
           started={steps.some(
             (entry) => entry.outstanding < entry.requiredFields.length,
           )}
-          onStart={() => goToStep(steps[0].id)}
+          onStart={() => {
+            const next = firstIncompleteSetupPosition(form);
+            const finalStep = SETUP_STEPS[SETUP_STEPS.length - 1];
+            goToStep(
+              next?.stepId ?? finalStep.id,
+              next?.questionIndex ?? finalStep.questions.length - 1,
+            );
+          }}
           onLater={() => navigate("/")}
         />
       </SetupLayout>

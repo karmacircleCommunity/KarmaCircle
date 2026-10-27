@@ -275,6 +275,14 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                       ? "Edit profile"
                       : "Dashboard"}
                   </Link>
+                  {user?.userType === "individual" ? (
+                    <Link
+                      to="/events/mine"
+                      className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+                    >
+                      My Events
+                    </Link>
+                  ) : null}
                   {user?.userType === "organization" ? (
                     <Link
                       to={"/organization/events"}
@@ -454,6 +462,17 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                         : "Dashboard"}
                     </Link>
                   </div>
+                  {user?.userType === "individual" && (
+                    <div>
+                      <Link
+                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
+                        to="/events/mine"
+                        onClick={() => setIsNavbarOpen(false)}
+                      >
+                        My Events
+                      </Link>
+                    </div>
+                  )}
                   <div>
                     <p
                       className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"

@@ -29,11 +29,12 @@ record:
   `/user/:userName`; that page is unchanged and still owns `/user/:userName`
   — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md). When a
   request says "the organization page", check which of the two is meant.
-- `/organization/setup` — `pages/OrganizationSetup.tsx`, the Typeform-style
-  wizard that both publishes a draft organization and doubles as its edit
-  flow once live. Three steps as of September 2026: "about" and "reach"
-  (the original required-field steps) plus "presence" (new, entirely
-  optional — logo/cover, social links, address/map, leadership, sponsorship).
+- `/organization/setup` — `pages/OrganizationSetup.tsx`, the one-question-at-a-time
+  wizard that publishes a draft organization and doubles as its edit flow
+  once live. It has seven questions across "about", "reach", and "support".
+  Signup pre-fills the organization name, so a new account starts at question
+  2 and answers six remaining prompts. Optional funding, contact, image,
+  social, street-address, and leadership prompts are no longer part of setup.
 
 ## File manifest
 
@@ -42,7 +43,7 @@ record:
 | `pages/Organizations.tsx` | The `/organizations` directory | ✅ routed; live data, server-side search/filter, a featured strip for sponsorship-enabled organizations |
 | `pages/OrganizationProfile.tsx` | The `/organization/:userName` public profile | ✅ routed; live, 404s on a draft organization |
 | `pages/OrganizationSetup.tsx` | The `/organization/setup` owner-only wizard | ✅ routed; live; also the edit flow for a live organization |
-| `hooks/useOrganizationSetup.ts` | The setup flow's state: record, taxonomy, form, stage, per-step save | ✅ used by `OrganizationSetup.tsx`; fully generic over `SETUP_STEPS`, no changes needed to add the "presence" step |
+| `hooks/useOrganizationSetup.ts` | The setup flow's state: record, taxonomy, form, stage, per-step save | ✅ used by `OrganizationSetup.tsx`; fully generic over `SETUP_STEPS` |
 | `hooks/useRazorpayCheckout.ts` | Lazy-loads Razorpay's Checkout script exactly once (module-level cached promise), opens it with caller-supplied options | ✅ used by `SponsorOrganizationModal.tsx` |
 | `constants/organizationSetup.ts` | The wizard's steps as data, `FIELD_SPECS`, `FIELD_CY`, `REQUIRED_LABELS` | ✅ read by the page, the hook and the draft notice |
 | `utils/organizationSetupForm.ts` | Pure helpers: seeding, per-step payloads, dirty check, outstanding counts, validation | ✅ used by the hook |
@@ -317,21 +318,19 @@ entirely client-callback-driven; see
 for the one real gap that leaves (a payment that succeeds after the browser
 closes before `.../verify` fires).
 
-## The setup wizard's new "presence" step (September 2026)
+## Optional profile fields and earlier "presence" step (September 2026)
 
-`constants/organizationSetup.ts`'s `PRESENCE_QUESTIONS` — five questions,
-none of them required, added as `SETUP_STEPS[2]`:
+The fields below remain supported by the organization record and API, but
+the setup wizard no longer asks for them.
+The only optional onboarding question is the direct-support toggle described below.
 
-1. **`logoCover`** (`group`) — `logo`, `cover` URLs.
-2. **`socials`** (`group`) — the five social-platform URL fields.
-3. **`addressMap`** (`group`) — `address`, `mapIframe`.
-4. **`leadership`** (`list`, new question kind) — renders
-   `components/setup/SetupLeadershipEditor.tsx`, a repeating card editor
-   (name/title/photo URL/bio, add/remove, capped at 8).
-5. **`sponsorship`** (`toggle`, new question kind) — a single on/off switch
-   for `sponsorshipEnabled`, rendered inline in `SetupQuestion.tsx` rather
-   than its own component (unlike leadership, there's no per-item state to
-   manage).
+`constants/organizationSetup.ts` previously used `PRESENCE_QUESTIONS` for five optional questions in `SETUP_STEPS[2]`.
+The current step retains only the support toggle; the other fields remain in the model/API but are no longer onboarding questions.
+Earlier implementation details:
+
+1. Logo/cover URLs, social links, and address/map fields were grouped as optional questions.
+2. Leadership used a repeating card editor capped at eight members.
+3. Direct support remains as a single on/off switch for `sponsorshipEnabled`, rendered inline in `SetupQuestion.tsx`.
 
 **Why two new question kinds rather than reusing `group`:** `group` renders
 a fixed, known set of fields once; leadership is a repeating, unbounded (well,

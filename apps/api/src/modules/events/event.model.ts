@@ -255,7 +255,7 @@ export const Event = mongoose.model<IEvent>("Event", eventSchema);
 const eventRegistrationSchema = new Schema<IEventRegistration>(
   {
     eventUid: { type: String, required: true, index: true },
-    userId: { type: Schema.Types.ObjectId, required: true },
+    userId: { type: Schema.Types.ObjectId, required: true, index: true },
     attendeeEmail: { type: String, required: true },
     attendeeName: { type: String, required: true },
   },

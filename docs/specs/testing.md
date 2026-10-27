@@ -14,10 +14,11 @@ This suite is deliberately **full-stack**: a real browser (via Playwright) drive
 | [`e2e/landing-home/`](../../apps/web/e2e/landing-home/) | The marketing home page, hero CTA, footer newsletter | [README](../../apps/web/e2e/landing-home/README.md) |
 | [`e2e/onboarding-profile/`](../../apps/web/e2e/onboarding-profile/) | Individual editor navigation/save/exit and retired profile URLs; browser specs updated but not rerun for removal | [README](../../apps/web/e2e/onboarding-profile/README.md) |
 | [`e2e/organizations/`](../../apps/web/e2e/organizations/) | The organization signup→draft→live setup wizard | [README](../../apps/web/e2e/organizations/README.md) |
+| [`e2e/events/`](../../apps/web/e2e/events/) | Public event directory filtering and responsive layout; attendee My Events page is not covered yet | [README](../../apps/web/e2e/events/README.md) |
 
 `e2e/smoke.spec.ts` stays at the top level — it's cross-cutting infrastructure (backend reachability, basic nav) rather than any one feature's own behavior. `e2e/env.ts` and `e2e/global-setup.ts` are shared plumbing, not tests.
 
-**Before adding coverage for a feature, check whether it already has a folder here** and read that folder's `README.md` first — it documents what's already covered, what's deliberately skipped and why (often because the underlying app code is unreachable/dead, not because testing it was skipped), and any test-data gotchas specific to that feature. A feature with no folder yet (dashboard, events, donations/payments, products) has no E2E coverage at all — see "What this doesn't cover".
+**Before adding coverage for a feature, check whether it already has a folder here** and read that folder's `README.md` first — it documents what's already covered, what's deliberately skipped and why (often because the underlying app code is unreachable/dead, not because testing it was skipped), and any test-data gotchas specific to that feature. A feature with no folder yet (dashboard, donations/payments, products) has no E2E coverage at all — see "What this doesn't cover".
 
 ## Why Playwright, not Cypress
 
@@ -81,7 +82,7 @@ Real, current app behavior the suite had to be written against — not aspiratio
 ## What this doesn't cover
 
 - No component or hook-level unit tests exist for `apps/web` — Playwright's E2E suite is the only automated coverage. If you're asked to add test coverage for a component or hook in isolation, there's no existing pattern to follow; introducing a unit-test runner (Vitest, most likely, given the Vite toolchain) is a separate decision, not something to do incidentally while fixing something else.
-- **Feature folders with no E2E coverage at all yet:** `dashboard`, `events`, `donate-shop-trending` (payments), `products`. See each feature's own summary spec (`docs/specs/<feature>.md`) before writing tests for one of these — several have the same "less is actually reachable than the docs used to claim" texture the `authentication`/`onboarding-profile` work above surfaced.
+- **Feature folders with no E2E coverage at all yet:** `dashboard`, `donate-shop-trending` (payments), `products`. The Events directory has responsive/filter coverage; attendee My Events page still needs browser coverage. See each feature's own summary spec (`docs/specs/<feature>.md`) before writing tests for one of these — several have the same "less is actually reachable than the docs used to claim" texture the `authentication`/`onboarding-profile` work above surfaced.
 - **Google OAuth sign-in** isn't covered anywhere — it needs a real (or mocked) Google consent screen, which this suite doesn't attempt.
 - **Animation/motion and responsive breakpoints** are asserted on nowhere in this suite (see `landing-home/README.md`) — this is DOM/behavior testing, not visual regression testing, and this repo has no visual-snapshot tooling set up.
 

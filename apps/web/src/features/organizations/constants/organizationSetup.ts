@@ -210,22 +210,6 @@ const REACH_QUESTIONS: OrganizationSetupQuestion[] = [
     fields: ["city", "state"],
     requiredFields: ["city"],
   },
-  {
-    id: "contact",
-    kind: "group",
-    headline: "How can people reach you?",
-    hint: "All optional — but a profile with no way to get in touch rarely hears from anyone.",
-    fields: ["website", "contactEmail", "contactPhone"],
-    requiredFields: [],
-  },
-  {
-    id: "funding",
-    kind: "group",
-    headline: "Anything you'd like to say about funding?",
-    hint: "Optional. Shown on your profile as your own stated figures, never as a verified total.",
-    fields: ["fundsRaised", "fundsGoal"],
-    requiredFields: [],
-  },
 ];
 
 /**
@@ -235,45 +219,7 @@ const REACH_QUESTIONS: OrganizationSetupQuestion[] = [
  * in, and fill it in later from the same wizard (it doubles as the edit
  * flow — see organizations.md).
  */
-const PRESENCE_QUESTIONS: OrganizationSetupQuestion[] = [
-  {
-    id: "logoCover",
-    kind: "group",
-    headline: "Add a logo and a cover photo",
-    hint: "Both optional, and both just a pasted image URL for now.",
-    fields: ["logo", "cover"],
-    requiredFields: [],
-  },
-  {
-    id: "socials",
-    kind: "group",
-    headline: "Where can people find you online?",
-    hint: "All optional — only the ones you fill in show up on your profile.",
-    fields: [
-      "socialInstagram",
-      "socialFacebook",
-      "socialTwitter",
-      "socialLinkedin",
-      "socialYoutube",
-    ],
-    requiredFields: [],
-  },
-  {
-    id: "addressMap",
-    kind: "group",
-    headline: "Add a street address or a map",
-    hint: "Optional, beyond the city and state you already gave.",
-    fields: ["address", "mapIframe"],
-    requiredFields: [],
-  },
-  {
-    id: "leadership",
-    kind: "list",
-    headline: "Who leads this organization?",
-    hint: "Optional — introduce up to 8 people on your public profile.",
-    fields: ["leadership"],
-    requiredFields: [],
-  },
+const SUPPORT_QUESTIONS: OrganizationSetupQuestion[] = [
   {
     id: "sponsorship",
     kind: "toggle",
@@ -297,11 +243,8 @@ function toStep(
     summary,
     questions,
     fields: questions.flatMap((question) => question.fields),
-    // `name` is deliberately dropped here: signup always fills it, so it
-    // can never be what blocks publication, and counting it would have the
-    // progress rail claim a detail is outstanding when it isn't. It stays
-    // in the question's own `requiredFields` so the screen still marks it
-    // as needed.
+    // Name is asked only if absent, but signup normally pre-fills it and it
+    // does not gate publication on the backend.
     requiredFields: questions.flatMap((question) =>
       question.requiredFields.filter((field) => field !== "name"),
     ),
@@ -311,21 +254,23 @@ function toStep(
 export const SETUP_STEPS: OrganizationSetupStep[] = [
   toStep(
     "about",
-    "What your organization does",
-    "Your name, your work, and the causes you cover.",
+    "About your work",
+    "What you do, what kind of organization you are, and the causes you cover.",
     ABOUT_QUESTIONS,
   ),
   toStep(
     "reach",
-    "Where you are, and how to reach you",
-    "Location, size, contact details and funding.",
+    "Your reach",
+    "Your team size and where you are based.",
     REACH_QUESTIONS,
   ),
   toStep(
+    // Keep existing `?step=presence` links valid; the user-facing step is
+    // now focused only on direct support.
     "presence",
-    "Round out your profile",
-    "Logo, cover, socials, your team, and support.",
-    PRESENCE_QUESTIONS,
+    "Support through KarmaCircle",
+    "Choose whether people can support your organization directly.",
+    SUPPORT_QUESTIONS,
   ),
 ];
 

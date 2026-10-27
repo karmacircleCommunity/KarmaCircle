@@ -39,6 +39,7 @@ flowchart TD
     org_profile["Organization Profile - /organization/:handle"]:::general
     org_dashboard["Dashboard - /dashboard"]:::general
     org_events_admin["Your Events - /organization/events"]:::general
+    my_events["My Events - /events/mine, signed-in individual"]:::general
     org_gate{{"Live organization account?"}}:::decision
     gate_refuse["Gate refusal: browse organizations instead"]:::general
     gate_pass["Dashboard / Your Events content"]:::general
@@ -62,6 +63,7 @@ flowchart TD
     home -->|"Navbar, organization"| org_dashboard
     home -->|"Navbar, organization"| org_events_admin
     home -->|"Navbar Edit profile, individual"| personal_setup
+    home -->|"Navbar Profile menu, individual"| my_events
     auth --> acct_type
     acct_type -->|"Individual"| home
     acct_type -->|"Organization"| org_setup
@@ -112,6 +114,7 @@ flowchart TD
     h_nav_signup["Link: Sign Up, shown when logged out"]:::general
     h_nav_dash["Link: Dashboard, organization accounts"]:::general
     h_nav_yourevents["Link: Your Events, organization accounts - desktop menu"]:::general
+    h_nav_myevents["Link: My Events, signed-in individual - Profile menu"]:::general
     h_nav_finish["Link: Finish setting up, draft organizations"]:::general
     h_oauth["Google OAuth landing pad on mount"]:::general
     u_personal["Individual: navbar Edit profile - /user/setup"]:::general
@@ -131,6 +134,7 @@ flowchart TD
     h_navbar --> h_nav_signup
     h_navbar --> h_nav_dash
     h_navbar --> h_nav_yourevents
+    h_navbar --> h_nav_myevents
     h_navbar --> h_nav_finish
     h_start --> h_oauth
     h_navbar --> u_personal
@@ -193,13 +197,14 @@ flowchart TD
 
 ## Organization profile setup and editing
 
-Checked against `OrganizationSetup.tsx`, `useOrganizationSetup.ts`, `organizationSetup.ts`, `organizationSetupForm.ts`, and `organization.service.ts` on 26 October 2026.
+Checked against `OrganizationSetup.tsx`, `useOrganizationSetup.ts`, `organizationSetup.ts`, `organizationSetupForm.ts`, and `organization.service.ts` on 27 October 2026.
 See [organizations.md](./organizations.md#the-setup-flow--organizationsetup) and [the backend organization spec](../../apps/api/docs/specs/organizations.md).
 This wizard updates the separate Organization record; the legacy organization-account `ProfileUpdate` modal updates the User record instead.
-The wizard has 13 questions across About (4), Reach (4), and Presence (5).
+The wizard has seven questions across About (4), Reach (2), and Support (1).
+Signup pre-fills the organization name, so setup starts at question 2 of 7 and asks only six more answers.
 Required answers block Continue, but Close can save an incomplete step and leave.
 Every changed step saves only its own fields; an unchanged step skips the request.
-Publication happens on whichever save first satisfies the backend's five required fields, normally the Reach save, before the optional Presence questions finish.
+Publication happens on whichever save first satisfies the backend's five required fields, normally the Reach save, before the optional Support choice.
 A live organization stays live when subsequently edited.
 
 ```mermaid
@@ -215,9 +220,9 @@ flowchart TD
     os_stage{{"Explicit step in URL or already live?"}}:::decision
     os_intro["Draft intro: start / continue or Maybe later"]:::general
     os_home(["Home - /"]):::terminator
-    os_about["About: name, description, organization type, 1-5 causes"]:::general
-    os_reach["Reach: team size, city/state, optional contacts and funding"]:::general
-    os_presence["Presence - optional: logo/cover URLs, socials, address/map, leadership, sponsorship"]:::general
+    os_about["About: prefilled name, description, organization type, 1-5 causes"]:::general
+    os_reach["Reach: team size and city/state"]:::general
+    os_support["Support: accept direct support through KarmaCircle?"]:::general
     os_validate{{"Required answers present and current question format valid?"}}:::decision
     os_fix["Refuse Continue; show field error and focus answer"]:::general
     os_boundary{{"Last question of this step?"}}:::decision
@@ -242,7 +247,7 @@ flowchart TD
     os_intro -->|"Maybe later - no save"| os_home
     os_about --> os_validate
     os_reach --> os_validate
-    os_presence --> os_validate
+    os_support --> os_validate
     os_validate -->|"No"| os_fix -->|"Correct answer"| os_validate
     os_validate -->|"Yes"| os_boundary
     os_boundary -->|"No"| os_next --> os_validate
@@ -250,7 +255,7 @@ flowchart TD
     os_ok -->|"No"| os_retry -->|"Retry"| os_save
     os_ok -->|"Yes"| os_publish --> os_more
     os_more -->|"After About"| os_reach
-    os_more -->|"After Reach"| os_presence
+    os_more -->|"After Reach"| os_support
     os_more -->|"No"| os_live
     os_live -->|"Yes"| os_profile
     os_live -->|"No"| os_draft
@@ -261,7 +266,7 @@ flowchart TD
 
 Back moves to the previous question, or the preceding step's last question, without saving.
 For a draft, Back from the first question reaches the intro; for a live organization, the documented first-question Back gap applies.
-The setup gate resumes at the first step with missing required fields, not necessarily the last question visited.
+The setup gate resumes at the first question with a missing required answer, not necessarily the last question visited.
 Refresh keeps URL position and server-saved answers; it loses edits made since the last step save.
 
 ## Sign in and sign up
@@ -372,16 +377,10 @@ flowchart TD
 ## Events - directory, detail, and creating one
 
 See [events.md](./events.md) and [known-issues.md](./known-issues.md).
-The create-event path is deliberately drawn with its real, broken state: `CreateEvent.tsx` (the modal actually wired to the "Create an event" button) can never be submitted, and even if it could, it calls the wrong endpoint.
-`CreateEvents.tsx` is the correct implementation and is not rendered from any page today.
-Creation controls require the `Token` cookie, Redux login state, and an organization account; personal accounts and signed-out visitors only browse.
-The API independently rejects personal-account creation requests with `403`.
-Upcoming is the default filter and compares each event start time to the current time when the page opens.
-Expired demo dates therefore belong under Past, even when the API returns many records.
-Refresh demo dates from `apps/api` with `pnpm exec tsx scripts/seed-demo-data.ts --events-only`; this changes only known demo events.
-On 26 October 2026, the refreshed local API returned 18 demo events: 15 upcoming and 3 past.
-Search matches over returned names, organizers, descriptions, cities, countries, platforms, and modes were checked against the live API data; no browser check was run.
-Personalized feed remains deferred; persistent attendance and following are not implemented yet, and existing Join/Follow controls only change local UI state.
+The map below covers the current attendee and organizer paths, including the known publishing UI gap.
+The organizer attendee roster and attendance counts are explicitly marked as proposed; no organizer endpoint or UI exposes registration totals today.
+Upcoming is the default directory filter and compares each event start time to the current time when the page opens.
+My Events is a signed-in individual page with Upcoming and Past periods, backed by the caller-scoped registration lookup.
 
 ```mermaid
 flowchart TD
@@ -396,7 +395,7 @@ flowchart TD
     e_type["Type filter: invite-only, open, online, offline - client-side"]:::general
     e_grid["Grid of Event Cards"]:::general
     e_access{{"Token cookie, signed in, organization account?"}}:::decision
-    e_browse["Personal account or visitor - no creation controls"]:::general
+    e_browse["Personal account or visitor - public browsing only"]:::general
     e_create_btn["Create an event button"]:::general
     e_modal["CreateEvent.tsx modal opens"]:::general
     e_wired{{"Are the address fields wired to inputs?"}}:::decision
@@ -414,12 +413,28 @@ flowchart TD
     e_agenda["How the day runs - Agenda, if any"]:::general
     e_location["Where it is / How to join"]:::general
     e_bring["What to bring"]:::general
-    e_join["Join Panel - cost, capacity, Join button, local only"]:::general
+    e_join["Join Panel - cost and Join action; capacity is not tracked"]:::general
     e_timing{{"Event timing?"}}:::decision
     e_completed["Completed wrap-up shown instead of Join"]:::general
     e_invite{{"Invite only?"}}:::decision
-    e_nojoin["No join control shown"]:::general
-    e_joinactive["Join button active"]:::general
+    e_nojoin["Ask organizer state; no invite or approval flow"]:::general
+    e_auth{{"Signed in?"}}:::decision
+    e_signin["Sign in, then return to event"]:::general
+    e_status["GET /events/:uid/registration"]:::general
+    e_already{{"Already registered?"}}:::decision
+    e_going["You're going - Join action hidden"]:::terminator
+    e_joinactive["Join this event"]:::general
+    e_post["POST /events/:uid/join - save one registration per account"]:::general
+    e_email{{"Confirmation email sent?"}}:::decision
+    e_email_sent["Confirmation email with View Event Details link"]:::general
+    e_email_failed["Registration remains saved; show email delivery status"]:::general
+    e_my_events["My Events - /events/mine"]:::general
+    e_period{{"Upcoming or Past?"}}:::decision
+    e_upcoming["GET /events/mine?period=upcoming"]:::general
+    e_past["GET /events/mine?period=past"]:::general
+    e_return["Open event details from email or My Events"]:::general
+    e_hosted["Your Events - /organization/events; GET /events?host"]:::general
+    e_organizer_count["Proposed: organizer attendee list and count per hosted event"]:::terminator
     e_organizer["Organizer Panel - Hosted by, links to organization profile"]:::general
     e_fundraiser["Fundraiser Panel - shown only if the event has one"]:::general
     e_mobilebar["Mobile Action Bar - fixed bottom, hides near Join Panel or footer"]:::general
@@ -453,7 +468,28 @@ flowchart TD
     e_timing -->|"Past"| e_completed
     e_timing -->|"Upcoming"| e_invite
     e_invite -->|"Yes"| e_nojoin
-    e_invite -->|"No"| e_joinactive
+    e_invite -->|"No"| e_auth
+    e_auth -->|"No"| e_signin
+    e_signin --> e_status
+    e_auth -->|"Yes"| e_status
+    e_status --> e_already
+    e_already -->|"Yes"| e_going
+    e_already -->|"No"| e_joinactive
+    e_joinactive --> e_post
+    e_post --> e_email
+    e_email -->|"Yes"| e_email_sent
+    e_email -->|"No"| e_email_failed
+    e_email_sent --> e_return
+    e_email_failed --> e_return
+    e_return --> e_detail_fetch
+    e_going --> e_my_events
+    e_email_sent --> e_my_events
+    e_email_failed --> e_my_events
+    e_my_events --> e_period
+    e_period -->|"Upcoming"| e_upcoming
+    e_period -->|"Past"| e_past
+    e_saved --> e_hosted
+    e_hosted -.->|"Future organizer feature"| e_organizer_count
     e_join --> e_organizer
     e_join --> e_fundraiser
     e_hero --> e_mobilebar
