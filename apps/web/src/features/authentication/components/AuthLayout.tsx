@@ -1,4 +1,5 @@
 import SplitPanelLayout from "@components/layouts/SplitPanelLayout";
+import { UserType } from "@/types/user";
 import type { CSSProperties, ReactNode } from "react";
 import { FiAward, FiCalendar, FiUsers } from "react-icons/fi";
 
@@ -10,35 +11,84 @@ import { FiAward, FiCalendar, FiUsers } from "react-icons/fi";
 // the value props in that panel, and the accent variables Auth.tsx reads.
 // Don't fork the shell into per-step copies — extend here instead.
 
-// No numbers/stats here on purpose: this app doesn't have real usage data to
-// back a claim like "10,000+ organizations" and this codebase already has a
-// documented problem elsewhere (Landing.tsx) with fabricated stats standing
-// in for real ones — not repeating that here.
-const VALUE_PROPS = [
-  {
-    icon: FiUsers,
-    title: "Reach the right people",
-    description:
-      "Get discovered by donors and volunteers actively searching for causes like yours.",
-  },
-  {
-    icon: FiCalendar,
-    title: "Host events effortlessly",
-    description:
-      "Create and manage events with built-in RSVPs, all in one place.",
-  },
-  {
-    icon: FiAward,
-    title: "Build trust with a public profile",
-    description: "Share your story, your impact, and your mission.",
-  },
-];
-
 type AuthLayoutProps = {
   children: ReactNode;
+  accountType?: UserType;
 };
 
-const AuthLayout = ({ children }: AuthLayoutProps) => {
+const AuthLayout = ({ children, accountType }: AuthLayoutProps) => {
+  const isIndividual = accountType === UserType.Individual;
+  const asideContent = accountType
+    ? {
+        eyebrow: isIndividual ? "Your personal account" : "Your organization",
+        title: isIndividual
+          ? "Make your support count."
+          : "Bring your cause to people who care.",
+        description: isIndividual
+          ? "Find causes you care about, take part in events, and share the difference you make."
+          : "Build your public presence, connect with supporters, and bring people together around your mission.",
+        valueProps: isIndividual
+          ? [
+              {
+                icon: FiUsers,
+                title: "Find your community",
+                description: "Connect with causes and people who share your values.",
+              },
+              {
+                icon: FiCalendar,
+                title: "Take part in events",
+                description: "Discover ways to show up, volunteer, and contribute.",
+              },
+              {
+                icon: FiAward,
+                title: "Share your story",
+                description: "Build a personal profile around the causes you support.",
+              },
+            ]
+          : [
+              {
+                icon: FiUsers,
+                title: "Reach the right people",
+                description: "Help donors and volunteers discover your cause.",
+              },
+              {
+                icon: FiCalendar,
+                title: "Host events",
+                description: "Bring your community together around your mission.",
+              },
+              {
+                icon: FiAward,
+                title: "Build trust with a profile",
+                description: "Share your story, your impact, and your mission.",
+              },
+            ],
+      }
+    : {
+        eyebrow: "KarmaCircle",
+        title: "Bring your cause to people who care.",
+        description:
+          "Join KarmaCircle to connect with donors, volunteers, and a community ready to help.",
+        valueProps: [
+          {
+            icon: FiUsers,
+            title: "Reach the right people",
+            description:
+              "Get discovered by donors and volunteers actively searching for causes like yours.",
+          },
+          {
+            icon: FiCalendar,
+            title: "Host events effortlessly",
+            description:
+              "Create and manage events with built-in RSVPs, all in one place.",
+          },
+          {
+            icon: FiAward,
+            title: "Build trust with a public profile",
+            description: "Share your story, your impact, and your mission.",
+          },
+        ],
+      };
+
   return (
     <SplitPanelLayout
       className="auth-page"
@@ -56,17 +106,22 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
         } as CSSProperties
       }
       aside={
-        <>
+        <div
+          key={accountType ?? "general"}
+          aria-live="polite"
+        >
+          <p className="mb-3 font-outfit text-xs font-semibold tracking-[0.12em] text-white/65 uppercase">
+            {asideContent.eyebrow}
+          </p>
           <h2 className="font-poppins text-3xl leading-tight font-bold text-white">
-            Bring your cause to people who care.
+            {asideContent.title}
           </h2>
           <p className="mt-3 font-outfit text-body text-white/70">
-            Join KarmaCircle to connect with donors, volunteers, and a community
-            ready to help.
+            {asideContent.description}
           </p>
 
           <ul className="mt-10 flex list-none flex-col gap-6 p-0">
-            {VALUE_PROPS.map(({ icon: Icon, title, description }) => (
+            {asideContent.valueProps.map(({ icon: Icon, title, description }) => (
               <li key={title} className="flex items-start gap-3.5">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
                   <Icon className="text-lg" />
@@ -82,7 +137,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
               </li>
             ))}
           </ul>
-        </>
+        </div>
       }
     >
       {children}
