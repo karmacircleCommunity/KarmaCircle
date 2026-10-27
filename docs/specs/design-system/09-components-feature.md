@@ -126,7 +126,9 @@ They remain local variables only because `Auth.tsx` reads `--auth-accent` throug
 
 [features/authentication/components/AuthLayout.tsx](../../../apps/web/src/features/authentication/components/AuthLayout.tsx).
 Thin wrapper over `SplitPanelLayout`.
-It owns exactly two things: the value props in the left panel, and the accent variables.
+It owns the value props and account-specific copy in the left panel, plus the accent variables.
+On the auth email and signup steps, `Auth.tsx` passes the selected account type so this panel reflects the Individual or Organization path.
+When no account type is passed, the panel uses its general auth copy for sign-in, password reset, and other auth states.
 **Do not fork the shell into per-step copies; extend here.**
 
 Aside geometry:
