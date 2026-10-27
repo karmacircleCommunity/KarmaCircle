@@ -12,7 +12,7 @@ Both routes are kept only so existing links/bookmarks to either still work — w
 The flow has three steps, tracked as local state (`step: "email" | "signin" | "signup"`), not three separate pages:
 
 1. **`"email"`** — the step every visitor sees first by default, regardless of which route they landed on. Choose "Individual" or "Organization" (`userType`, one shared tab control — defaults to "Individual"), enter an email, and press Continue.
-   The auth page's left panel shifts its account-specific message and benefits with this choice; the form also says the type is saved for new accounts and cannot be changed later in account settings.
+   The auth page's left panel shifts its account-specific message and benefits with this choice; the form also says new accounts keep this type after signup and it cannot be switched from account settings later.
    An existing account keeps its saved type when the visitor signs in.
    The commitment is shown beside the selector on narrow screens too, where the left panel is hidden.
    **Exception (October 2026):** arriving with an `email` string in router `state` — currently only `ResetPassword.tsx`'s post-reset redirect does this — skips `"email"` entirely and mounts straight onto `"signin"` with that email locked in, on the reasoning that a successful reset already proves the account exists, so there's nothing left for `CheckEmailExists` to tell the flow.
