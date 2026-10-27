@@ -64,7 +64,7 @@ const AuthLayout = ({ children, accountType }: AuthLayoutProps) => {
             ],
       }
     : {
-        eyebrow: "KarmaCircle",
+        eyebrow: undefined,
         title: "Bring your cause to people who care.",
         description:
           "Join KarmaCircle to connect with donors, volunteers, and a community ready to help.",
@@ -110,9 +110,11 @@ const AuthLayout = ({ children, accountType }: AuthLayoutProps) => {
           key={accountType ?? "general"}
           aria-live="polite"
         >
-          <p className="mb-3 font-outfit text-xs font-semibold tracking-[0.12em] text-white/65 uppercase">
-            {asideContent.eyebrow}
-          </p>
+          {asideContent.eyebrow && (
+            <p className="mb-3 font-outfit text-xs font-semibold tracking-[0.12em] text-white/65 uppercase">
+              {asideContent.eyebrow}
+            </p>
+          )}
           <h2 className="font-poppins text-3xl leading-tight font-bold text-white">
             {asideContent.title}
           </h2>
