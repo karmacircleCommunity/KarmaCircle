@@ -17,9 +17,10 @@ Check an item only when the repository or its GitHub settings provide evidence t
 
 KarmaCircle has strong architecture notes, feature specs, known-issue records, design-system guidance, and isolated API and browser test suites.
 This first readiness pass aligns Claude and Codex instructions and adds pull request validation.
-GitHub branch protection and a first successful CI run still need confirmation.
+The first pull request CI run and Vercel preview both pass.
+GitHub branch protection, secret scanning, and outside-collaborator workflow approval still need owner-side review.
 
-### Latest local verification
+### Verification evidence
 
 - `pnpm install --frozen-lockfile` passes with the declared pnpm version.
 - `pnpm lint` passes; only conditional assertions in responsive E2E tests still warn.
@@ -30,8 +31,12 @@ GitHub branch protection and a first successful CI run still need confirmation.
 - The production CSS contains the intended `leading-[1.05]`, `leading-[1.1]`, and `leading-[1.12]` rules; the unsupported bare classes are absent.
 - The isolated API test suite passes.
 - GitHub confirms every pinned action SHA resolves to a commit object.
-- Browser E2E and visual review remain pending because local UI testing requires Tamal's explicit authorization.
-- GitHub Actions has not run this unpushed workflow yet.
+- The browser E2E suite passed in PR #1380; visual design review remains pending because no product UI was changed and local browser review needs Tamal's explicit authorization.
+- PR #1380 passed frozen install, lint, type-check, builds, API tests, browser E2E, and the Vercel preview deployment.
+- The CI validation job completed successfully in 10m 27s on 2026-11-01.
+- GitHub currently reports Dependabot alerts and security updates enabled.
+- GitHub currently reports secret scanning and push protection disabled, no branch protection or repository rulesets, private vulnerability reporting disabled, and default workflow permissions set to read-write.
+- The repository API did not expose the outside-collaborator workflow approval setting; confirm it in GitHub settings.
 
 ## 1. Shared Claude and Codex instructions
 
@@ -105,7 +110,7 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Run workspace lint, API and frontend type checks, builds, and both test suites in `.github/workflows/ci.yml` for pull requests.
 - [x] Use the `pull_request` event, read-only permissions, no repository secrets, and full-SHA-pinned actions for PR validation.
 - [x] Upload browser failure artifacts for debugging.
-- [ ] Confirm the first CI run passes on a pull request.
+- [x] Confirm the first CI run passes on a pull request; PR #1380 passed the full workflow on 2026-11-01.
 - [external] Require `CI / validate` in branch protection for `main`; current GitHub API check found no branch protection or repository ruleset.
 - [external] Decide whether the `dev` branch also needs required checks and protection.
 - [x] Add a frontend lint script and run it in PR CI.
@@ -120,14 +125,13 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Pin actions used by the CI workflow to full commit SHAs.
 - [x] Document approval boundaries for external messages, merges, deployments, and GitHub settings.
 - [x] Pin all active third-party GitHub Actions to full commit SHAs across every workflow.
-- [ ] Enable secret scanning and push protection.
-- [ ] Enable Dependabot alerts and security updates.
+- [external] Enable secret scanning and push protection; both are currently disabled.
+- [x] Enable Dependabot alerts and security updates; GitHub currently reports both enabled.
 - [x] Configure Dependabot to propose weekly updates for pinned GitHub Actions and the pnpm workspace dependencies.
-- [ ] Require approval for outside-collaborator workflow runs.
+- [external] Require approval for outside-collaborator workflow runs; this setting still needs manual confirmation.
 - [external] Enable private vulnerability reporting; GitHub API currently reports it disabled.
-- [external] Confirm and enable Dependabot alerts and security updates; their API endpoints returned 404.
-- [external] Check outside-collaborator workflow approval in repository settings; current token cannot read Actions policy settings.
-- [external] Require review and `CI / validate` before merging to protected branches.
+- [external] Protect `main` with required review and the `CI / validate` status check; no branch protection or repository ruleset currently exists.
+- [external] Change the repository default workflow token permission from read-write to read-only; the current CI workflow has explicit read-only permissions.
 - [ ] Review repository and organization secrets for least privilege and rotate any credential exposed by old workflow paths.
 
 ## 7. Reproducible development environment
@@ -148,7 +152,7 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Document WOCS labels and apply them before eligible pull requests merge.
 - [x] Require a pull request summary of changed behavior, checks run, and known limitations.
 - [x] Request screenshots or other visual evidence when they materially help review a UI change.
-- [ ] Confirm CI is a required status check before relying on it as a merge gate.
+- [external] Confirm `CI / validate` is a required status check before relying on it as a merge gate.
 - [ ] Keep deployment workflows separate from validation; only deploy after required checks and approvals.
 
 ## 9. Current first-pass actions
@@ -157,7 +161,8 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Align root agent instruction ownership and remove branch/style conflicts between `AGENTS.md` and `CLAUDE.md`.
 - [x] Add pull request CI for lint, types, builds, and existing test suites.
 - [x] Update testing and security docs to describe the new workflow.
-- [ ] Confirm the CI workflow with a real pull request and require its check in GitHub branch protection.
+- [x] Confirm the CI workflow with PR #1380; its full validation check passed.
+- [external] Require its check in GitHub branch protection before treating CI as a merge gate.
 - [x] Add acceptance-criteria and user-flow fields to issue forms.
 - [x] Pin active GitHub Actions and configure automated dependency update proposals.
 - [ ] Work through the remaining UI checklist.
