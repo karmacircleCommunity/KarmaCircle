@@ -5,7 +5,7 @@
 The root [`CI` workflow](../../.github/workflows/ci.yml) runs for every pull request.
 It installs the pinned pnpm workspace, runs lint and type checks, builds both apps, installs Playwright browsers, and runs the API and frontend suites with `pnpm test`.
 The workflow uses the `pull_request` event, read-only repository permissions, and no repository secrets, so fork contributions can run the same checks safely.
-Repository administrators must still require `CI / validate` in GitHub branch protection if merges should be blocked until it passes.
+Repository administrators must still require the `validate` check from the `CI` workflow in GitHub branch protection if merges should be blocked until it passes.
 The current GitHub API check found no branch protection or repository ruleset on `main`.
 
 `apps/web`'s only automated test tooling is a **Playwright** E2E suite (`apps/web/e2e/`), added September 2026, replacing an earlier Cypress setup (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`) that existed but was never actually wired into CI. There is still no component/unit-test runner for this app — see "What this doesn't cover" below.
@@ -74,7 +74,8 @@ From `apps/web`, or from the repo root with `--filter karmacircle-frontend`:
 
 From the repo root, plain `pnpm test` runs this suite **and** `apps/api`'s Jest suite together (Turborepo runs each workspace's own `test` script; neither depends on the other, so they run concurrently).
 
-CI is not wired up for this suite yet (as of September 2026) — it exists and passes locally/on demand, but no GitHub Actions workflow runs it automatically. `web-prtests.yml` still has a *disabled* Cypress job commented out from before this migration; wiring Playwright into CI is a deliberate, separate decision, not implied by this suite existing.
+The root CI workflow now runs the Playwright suite on every pull request.
+`web-prtests.yml` still has a disabled Cypress job commented out from before this migration; it is not the active test workflow.
 
 ## Known sharp edges (found while building this suite)
 

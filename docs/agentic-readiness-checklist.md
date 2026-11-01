@@ -111,12 +111,12 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Use the `pull_request` event, read-only permissions, no repository secrets, and full-SHA-pinned actions for PR validation.
 - [x] Upload browser failure artifacts for debugging.
 - [x] Confirm the first CI run passes on a pull request; PR #1380 passed the full workflow on 2026-11-01.
-- [external] Require `CI / validate` in branch protection for `main`; current GitHub API check found no branch protection or repository ruleset.
+- [external] Require the `validate` check from the `CI` workflow in branch protection for `main`; current GitHub API check found no branch protection or repository ruleset.
 - [external] Decide whether the `dev` branch also needs required checks and protection.
 - [x] Add a frontend lint script and run it in PR CI.
 - [~] Tailwind lint warnings are cleared or scoped around valid display ratios; redesign conditional responsive E2E assertions before setting a zero-warning threshold.
 - [ ] Track flaky tests and fix or quarantine them with an owner and expiry date.
-- [ ] Keep test data isolated; never use real user data, local developer databases, or real email in CI.
+- [x] Keep test data isolated; never use real user data, local developer databases, or real email in CI.
 
 ## 6. Security and safe agent actions
 
@@ -130,7 +130,7 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Configure Dependabot to propose weekly updates for pinned GitHub Actions and the pnpm workspace dependencies.
 - [external] Require approval for outside-collaborator workflow runs; this setting still needs manual confirmation.
 - [external] Enable private vulnerability reporting; GitHub API currently reports it disabled.
-- [external] Protect `main` with required review and the `CI / validate` status check; no branch protection or repository ruleset currently exists.
+- [external] Protect `main` with required review and the `validate` check from the `CI` workflow; no branch protection or repository ruleset currently exists.
 - [external] Change the repository default workflow token permission from read-write to read-only; the current CI workflow has explicit read-only permissions.
 - [ ] Review repository and organization secrets for least privilege and rotate any credential exposed by old workflow paths.
 
@@ -152,7 +152,7 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Document WOCS labels and apply them before eligible pull requests merge.
 - [x] Require a pull request summary of changed behavior, checks run, and known limitations.
 - [x] Request screenshots or other visual evidence when they materially help review a UI change.
-- [external] Confirm `CI / validate` is a required status check before relying on it as a merge gate.
+- [external] Confirm the `validate` check from the `CI` workflow is required before relying on it as a merge gate.
 - [ ] Keep deployment workflows separate from validation; only deploy after required checks and approvals.
 
 ## 9. Current first-pass actions

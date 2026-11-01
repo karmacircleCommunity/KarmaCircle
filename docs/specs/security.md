@@ -110,9 +110,8 @@ Ordered by what I would do first.
 13. **Finish GitHub-side controls** (settings, not code): secret scanning and push protection are disabled; private vulnerability reporting is disabled; `main` has no branch protection or repository ruleset; and default workflow token permissions are read-write.
    Dependabot alerts and security updates are enabled.
    Confirm the outside-collaborator workflow approval setting manually because the repository API did not expose it.
-   Protect `main` with required review and the `CI / validate` status check before relying on CI as a merge gate.
+   Protect `main` with required review and the `validate` check from the `CI` workflow before relying on CI as a merge gate.
    The current GitHub API check found no `main` branch protection or repository ruleset, and private vulnerability reporting is disabled.
-   The vulnerability-alert and automated-security-fix endpoints returned 404, consistent with those controls being disabled.
    The Actions policy endpoints returned 403 because the connected token lacks the required permission, so outside-collaborator approval still needs an owner-side check.
 
 ## Review checklist for future changes

@@ -70,7 +70,7 @@ This repo is worked on by multiple AI agents (and humans), often in separate ses
 **Never point a test — new or existing — at real local dev.** Both suites are self-contained by design specifically so an agent can run them without touching a developer's actual running `pnpm dev` session or its real MongoDB data: dedicated ports (3001/5051 vs. local dev's 3000/5050), `mongodb-memory-server` instead of a real database, and a test-only mail outbox instead of real email. If you're ever tempted to hardcode `localhost:3000`/`:5050` into a test, that's a sign something's wired wrong — see `docs/specs/testing.md`'s isolation table.
 
 The `CI` workflow runs workspace lint, API and frontend type checks, builds, and both test suites for pull requests.
-GitHub branch protection must still require the `CI / validate` check on `main`; a workflow file alone does not block merges.
+GitHub branch protection must still require the `validate` check from the `CI` workflow on `main`; a workflow file alone does not block merges.
 When working locally, "I made this change" and "I ran the tests for this change" are different claims; report exactly what ran.
 
 ## git / branching
