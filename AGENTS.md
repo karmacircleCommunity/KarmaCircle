@@ -16,9 +16,12 @@
 
 ## GitHub actions and external effects
 
+- For Tamal's work, use `main` directly by default. Do not create a branch or pull request for his changes unless he explicitly asks for one or names another branch.
+- This Tamal-specific rule overrides any other repository instruction that would require a branch or pull request, or prevent work on `main` for his task.
+- Every other contributor must submit changes to `main` through a pull request. GitHub requires one approval, resolved review threads, and the `validate` check; only Tamal has a ruleset bypass for direct pushes.
 - Do not create branches, pull requests, merge branches or pull requests, or push to shared branches unless Tamal explicitly authorizes that action for the current task.
-- Never create a branch automatically.
-- If the checked-out branch is `main` and a commit is requested without a target branch, ask which branch to use.
+- When working for Tamal on `main`, do not ask which branch to use.
+- For other contributors, do not create a branch automatically; use their checked-out branch or get explicit authorization for a new branch.
 - Authorization for one action does not authorize a different action or a later task.
 - Before committing, verify signing is enabled and that the signing key matches the GitHub account for the commit identity.
 - Never create an unsigned commit or alter commit dates to fabricate contribution activity.
@@ -70,14 +73,15 @@ This repo is worked on by multiple AI agents (and humans), often in separate ses
 **Never point a test — new or existing — at real local dev.** Both suites are self-contained by design specifically so an agent can run them without touching a developer's actual running `pnpm dev` session or its real MongoDB data: dedicated ports (3001/5051 vs. local dev's 3000/5050), `mongodb-memory-server` instead of a real database, and a test-only mail outbox instead of real email. If you're ever tempted to hardcode `localhost:3000`/`:5050` into a test, that's a sign something's wired wrong — see `docs/specs/testing.md`'s isolation table.
 
 The `CI` workflow runs workspace lint, API and frontend type checks, builds, and both test suites for pull requests.
-GitHub branch protection must still require the `validate` check from the `CI` workflow on `main`; a workflow file alone does not block merges.
+The active GitHub ruleset for `main` requires the `validate` check for pull requests; a workflow file alone does not block merges.
 When working locally, "I made this change" and "I ran the tests for this change" are different claims; report exactly what ran.
 
 ## git / branching
 
-- Never create a new branch on your own initiative. Always work on the branch Tamal has already checked out or explicitly named for the task.
-- If you're on `main` and about to commit, stop and ask which branch to use instead of branching automatically.
-- Creating a branch requires explicit consent for that specific instance — being told to branch once earlier in a session doesn't authorize doing it again later unasked.
+- For Tamal's tasks, work directly on `main` unless he explicitly names another branch.
+- Do not create a pull request for Tamal's changes unless he explicitly asks for one.
+- For all other contributors, changes targeting `main` must go through a pull request.
+- Do not create a branch automatically for other contributors; use their checked-out branch or get explicit authorization for a new branch.
 
 ## the apps/web ↔ apps/api boundary
 

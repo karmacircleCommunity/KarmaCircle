@@ -34,10 +34,10 @@ body:
   - type: textarea
     id: user-flow
     attributes:
-      label: User flow or UI states
-      description: For user-facing work, describe the affected flow and loading, empty, error, or success states.
+      label: User flow, UI states, and accessibility
+      description: "For user-facing work, name the primary user and describe the steps they take. Include relevant loading, empty, success, error, disabled, and permission states, plus responsive or accessibility needs. For backend-only work, write N/A."
     validations:
-      required: false
+      required: true
   - type: textarea
     id: users-platforms
     attributes:

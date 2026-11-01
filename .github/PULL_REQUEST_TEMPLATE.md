@@ -28,7 +28,12 @@ Closes #
 
 - [ ] Feature spec and design system reviewed.
 - [ ] Responsive layout checked at relevant mobile, tablet, and desktop sizes.
-- [ ] Keyboard, focus, and applicable accessibility states reviewed.
+- [ ] Relevant loading, empty, success, error, disabled, and permission states reviewed.
+- [ ] Keyboard, focus, labels, screen-reader semantics, and reduced motion reviewed where applicable.
+- [ ] Touch targets and pointer/touch interactions reviewed on supported small screens.
+- [ ] For forms, invalid input, server errors, pending state, and success feedback reviewed.
+- [ ] Long text, missing optional data, and empty results reviewed where applicable.
+- [ ] List viewport sizes and devices checked:
 - [ ] Include screenshots or other visual evidence when they materially help review a UI change.
 - Visual review not run or still pending:
 

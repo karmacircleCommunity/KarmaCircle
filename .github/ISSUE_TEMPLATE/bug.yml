@@ -25,6 +25,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: affected-flow-state
+    attributes:
+      label: Affected user flow or UI state
+      description: "For user-facing bugs, say who is affected, where it occurs in the flow, what state appears, and the viewport or device if relevant. For backend-only bugs, write N/A."
+    validations:
+      required: true
+  - type: textarea
     id: solution
     attributes:
       label: Proposed Solution

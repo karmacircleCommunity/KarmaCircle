@@ -5,8 +5,8 @@
 The root [`CI` workflow](../../.github/workflows/ci.yml) runs for every pull request.
 It installs the pinned pnpm workspace, runs lint and type checks, builds both apps, installs Playwright browsers, and runs the API and frontend suites with `pnpm test`.
 The workflow uses the `pull_request` event, read-only repository permissions, and no repository secrets, so fork contributions can run the same checks safely.
-Repository administrators must still require the `validate` check from the `CI` workflow in GitHub branch protection if merges should be blocked until it passes.
-The current GitHub API check found no branch protection or repository ruleset on `main`.
+The GitHub ruleset for `main` requires the `validate` check for pull requests and requires one approval with review threads resolved.
+Tamal's account is the only bypass actor, so he can push directly to `main`.
 
 `apps/web`'s only automated test tooling is a **Playwright** E2E suite (`apps/web/e2e/`), added September 2026, replacing an earlier Cypress setup (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`) that existed but was never actually wired into CI. There is still no component/unit-test runner for this app — see "What this doesn't cover" below.
 

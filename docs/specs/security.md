@@ -107,11 +107,11 @@ Ordered by what I would do first.
     Both are low; gate `/docs` behind `NODE_ENV !== "production"` and lower the body limit if no route needs more.
 12. **`POST /user/report` is unauthenticated** and only covered by the global 300 requests per 15 minutes limiter.
     Give it its own tighter limiter.
-13. **Finish GitHub-side controls** (settings, not code): secret scanning and push protection are disabled; private vulnerability reporting is disabled; `main` has no branch protection or repository ruleset; and default workflow token permissions are read-write.
-   Dependabot alerts and security updates are enabled.
-   Confirm the outside-collaborator workflow approval setting manually because the repository API did not expose it.
-   Protect `main` with required review and the `validate` check from the `CI` workflow before relying on CI as a merge gate.
-   The current GitHub API check found no `main` branch protection or repository ruleset, and private vulnerability reporting is disabled.
+13. **Enable remaining GitHub-side controls** (settings, not code): secret scanning with push protection, private vulnerability reporting, read-only default workflow token permissions, and "Require approval for all outside collaborators" for workflow runs.
+   The active `main` ruleset requires pull requests, one approval, resolved review threads, and the `validate` check for everyone except Tamal, who can push directly.
+   Private vulnerability reporting is disabled.
+   GitHub API confirms Dependabot alerts and automated security fixes are enabled.
+   Repository-wide workflow token permissions currently default to `write`; the CI workflow itself sets read-only permissions.
    The Actions policy endpoints returned 403 because the connected token lacks the required permission, so outside-collaborator approval still needs an owner-side check.
 
 ## Review checklist for future changes

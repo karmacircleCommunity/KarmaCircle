@@ -3,6 +3,9 @@
 Thanks for helping improve KarmaCircle.
 This repository contains two independently deployed apps: `apps/web` (React and Vite) and `apps/api` (Express, TypeScript, and MongoDB).
 These contribution guidelines apply to both apps.
+They describe the workflow for community contributors.
+Tamal, the project owner, works directly on `main` and does not need a pull request for his own changes.
+All other contributors must submit a pull request to `main` and pass its required review and CI checks.
 
 ## Find and claim an issue
 

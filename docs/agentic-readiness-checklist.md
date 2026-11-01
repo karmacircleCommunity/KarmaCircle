@@ -13,12 +13,26 @@ Check an item only when the repository or its GitHub settings provide evidence t
 - `[ ]` Not done yet.
 - `[external]` Requires a GitHub or account setting outside the repository.
 
+## Top priorities
+
+1. **Make project guides trustworthy:** map repository guides and specs to the code and Miro flows, correct stale or conflicting details, and set a light review cadence.
+2. **Make the project easy and safe to start:** verify clean setup, document required environment settings, and smoke-check the root development workflow without using production or personal data.
+3. **Close security gaps:** enable secret scanning and push protection, set workflow tokens to read-only by default, confirm outside-contributor workflow approval, review repository secrets, and resolve private vulnerability reporting.
+
+## Core readiness progress
+
+The UI quality checklist in section 4 is an on-demand guide for UI work, not an agentic-readiness requirement, so it is excluded from this score.
+Section 9 is a roll-up of completed first-pass work, so it is excluded to avoid counting the same work twice.
+Score completed items in sections 1-3 and 5-8 as 1, partial items as 0.5, and open or external items as 0, divided by all scored items.
+Update the bar when checklist statuses change.
+
+`[████████░░] 77%` (45 done, 5 partial, 12 open or external; 62 scored items).
+
 ## Current readiness summary
 
-KarmaCircle has strong architecture notes, feature specs, known-issue records, design-system guidance, and isolated API and browser test suites.
-This first readiness pass aligns Claude and Codex instructions and adds pull request validation.
-The first pull request CI run and Vercel preview both pass.
-GitHub branch protection, secret scanning, and outside-collaborator workflow approval still need owner-side review.
+KarmaCircle has architecture notes, feature specs, known-issue records, design-system guidance, and isolated API and browser test suites.
+The repository instructions align across tools, and pull request validation runs in GitHub Actions.
+The `main` ruleset requires pull requests, one approval, resolved review threads, and the `validate` check for everyone except Tamal, who can push directly.
 
 ### Verification evidence
 
@@ -31,22 +45,18 @@ GitHub branch protection, secret scanning, and outside-collaborator workflow app
 - The production CSS contains the intended `leading-[1.05]`, `leading-[1.1]`, and `leading-[1.12]` rules; the unsupported bare classes are absent.
 - The isolated API test suite passes.
 - GitHub confirms every pinned action SHA resolves to a commit object.
-- The browser E2E suite passed in PR #1380; visual design review remains pending because no product UI was changed and local browser review needs Tamal's explicit authorization.
-- PR #1380 passed frozen install, lint, type-check, builds, API tests, browser E2E, and the Vercel preview deployment.
-- The CI validation job completed successfully in 10m 27s on 2026-11-01.
-- GitHub currently reports Dependabot alerts and security updates enabled.
-- GitHub currently reports secret scanning and push protection disabled, no branch protection or repository rulesets, private vulnerability reporting disabled, and default workflow permissions set to read-write.
-- The repository API did not expose the outside-collaborator workflow approval setting; confirm it in GitHub settings.
+- Browser E2E passed in PR CI; local visual review remains pending because it needs Tamal's explicit authorization.
+- Pull request #1380 passed the full GitHub Actions validation workflow and Vercel preview on 2026-11-01.
 
 ## 1. Shared Claude and Codex instructions
 
 - [x] Keep shared project rules in root `AGENTS.md`.
-- [x] Make `CLAUDE.md` import `AGENTS.md` using Claude Code's native import syntax and serve as a supplemental navigation and convention guide.
-- [x] Use one rule for branch creation, commits, pushes, merges, and pull requests across both tools.
+- [x] Make `CLAUDE.md` point to `AGENTS.md` and serve as a supplemental navigation and convention guide.
+- [x] Use one Git rule across both tools: Tamal works directly on `main`; everyone else uses pull requests for changes to `main`.
 - [x] Use one communication-style rule across both tools.
 - [x] Point both tools to the same UI quality checklist, app maps, and known-issue docs.
 - [x] Review shared instructions for conflicts; keep model-specific setup limited to tool-specific entry points.
-- [ ] Confirm Claude Code and Codex both load their entry-point files in a separate clean checkout; the current repository wiring uses Claude Code's documented import syntax and Codex's `AGENTS.md` entry point.
+- [~] Verify both tools load root instructions from an isolated temporary repository; Codex read `AGENTS.md`, while Claude Code's runtime check awaits reauthentication. Its documented `@AGENTS.md` import is present.
 
 ## 2. Task intake and acceptance criteria
 
@@ -55,7 +65,7 @@ GitHub branch protection, secret scanning, and outside-collaborator workflow app
 - [x] Collect task expected outcome and relevant project area in the issue forms.
 - [x] Add explicit acceptance criteria to feature, bug, and documentation issues, including relevant edge cases.
 - [x] Ask feature authors to name non-goals, constraints, affected user types, and supported platforms when they matter.
-- [~] Ask for user flow and UI states in feature issues; responsive and accessibility checks are required by the pull request template.
+- [x] Require feature requests to describe user flow, applicable UI states, responsive needs, and accessibility needs, or mark them N/A for backend-only work.
 - [x] Add a reusable pull request checklist for acceptance criteria, checks, docs, UI review, and AI disclosure.
 - [x] Ask maintainers to split broad product work into linked issues before assigning it.
 - [ ] Require maintainers to assign and maintain WOCS difficulty labels before eligible pull requests merge.
@@ -74,12 +84,13 @@ GitHub branch protection, secret scanning, and outside-collaborator workflow app
 
 ## 4. UI quality checklist
 
-Use this checklist for every pull request that changes user-facing UI.
+Use this checklist when doing user-facing UI work.
+It is a reusable quality guide, not a requirement for general agentic-coding readiness.
 
 ### Before implementation
 
 - [ ] Read the feature spec and `docs/specs/design-system/README.md`.
-- [ ] Identify the user, the task they need to complete, and the UI states affected.
+- [ ] Identify the primary user, the task they need to complete, and applicable UI states before implementation.
 - [ ] Reuse existing components, tokens, patterns, and interactions where they fit.
 - [ ] Record acceptance criteria for loading, empty, success, error, disabled, and permission states that apply.
 - [ ] Identify keyboard, assistive-technology, reduced-motion, and responsive needs before coding.
@@ -91,6 +102,9 @@ Use this checklist for every pull request that changes user-facing UI.
 - [ ] Review wide layouts for readable line length, sensible content width, and balanced whitespace.
 - [ ] Check alignment, spacing, typography, contrast, hierarchy, text wrapping, and icon consistency.
 - [ ] Confirm focus indicators, keyboard navigation, labels, button names, and semantic structure.
+- [ ] Check touch targets and pointer/touch interactions on supported small screens.
+- [ ] For forms, check invalid input, inline and server errors, focus on invalid fields, pending state, and success feedback.
+- [ ] Check representative content extremes, including long text, missing optional data, and empty results.
 - [ ] Confirm zoom and text enlargement do not hide content or actions.
 - [ ] Check reduced-motion behavior for animation or scroll-linked effects.
 - [ ] Capture before/after screenshots at the affected sizes when visual review is authorized and useful.
@@ -102,7 +116,7 @@ Use this checklist for every pull request that changes user-facing UI.
 - [ ] Run relevant browser tests and inspect screenshots or traces for UI changes when authorized.
 - [ ] Respect the repo's user preference: do not open a local browser or test the UI without explicit authorization.
 - [ ] If visual review was not authorized or could not run, say so plainly and leave that review marked pending.
-- [ ] Include viewport sizes and the checks performed in the pull request summary.
+- [ ] Include exact viewport sizes, UI states, and checks performed in the pull request summary.
 
 ## 5. Automated validation and CI
 
@@ -110,8 +124,8 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Run workspace lint, API and frontend type checks, builds, and both test suites in `.github/workflows/ci.yml` for pull requests.
 - [x] Use the `pull_request` event, read-only permissions, no repository secrets, and full-SHA-pinned actions for PR validation.
 - [x] Upload browser failure artifacts for debugging.
-- [x] Confirm the first CI run passes on a pull request; PR #1380 passed the full workflow on 2026-11-01.
-- [external] Require the `validate` check from the `CI` workflow in branch protection for `main`; current GitHub API check found no branch protection or repository ruleset.
+- [x] Confirm CI passes on a pull request; PR #1380 passed the full validation workflow.
+- [x] Require the `validate` check, one approval, and resolved review threads for pull requests to `main`; Tamal has the only direct-push bypass.
 - [external] Decide whether the `dev` branch also needs required checks and protection.
 - [x] Add a frontend lint script and run it in PR CI.
 - [~] Tailwind lint warnings are cleared or scoped around valid display ratios; redesign conditional responsive E2E assertions before setting a zero-warning threshold.
@@ -125,13 +139,12 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Pin actions used by the CI workflow to full commit SHAs.
 - [x] Document approval boundaries for external messages, merges, deployments, and GitHub settings.
 - [x] Pin all active third-party GitHub Actions to full commit SHAs across every workflow.
-- [external] Enable secret scanning and push protection; both are currently disabled.
-- [x] Enable Dependabot alerts and security updates; GitHub currently reports both enabled.
+- [ ] Enable secret scanning and push protection.
+- [x] Enable Dependabot alerts and security updates; GitHub API confirms both are enabled.
 - [x] Configure Dependabot to propose weekly updates for pinned GitHub Actions and the pnpm workspace dependencies.
-- [external] Require approval for outside-collaborator workflow runs; this setting still needs manual confirmation.
 - [external] Enable private vulnerability reporting; GitHub API currently reports it disabled.
-- [external] Protect `main` with required review and the `validate` check from the `CI` workflow; no branch protection or repository ruleset currently exists.
-- [external] Change the repository default workflow token permission from read-write to read-only; the current CI workflow has explicit read-only permissions.
+- [external] Confirm or require approval for outside-collaborator workflow runs; current token cannot read Actions policy settings.
+- [external] Set the repository default workflow token permission to read-only; GitHub currently reports `write`, while the CI workflow sets read-only permissions explicitly.
 - [ ] Review repository and organization secrets for least privilege and rotate any credential exposed by old workflow paths.
 
 ## 7. Reproducible development environment
@@ -152,17 +165,16 @@ Use this checklist for every pull request that changes user-facing UI.
 - [x] Document WOCS labels and apply them before eligible pull requests merge.
 - [x] Require a pull request summary of changed behavior, checks run, and known limitations.
 - [x] Request screenshots or other visual evidence when they materially help review a UI change.
-- [external] Confirm the `validate` check from the `CI` workflow is required before relying on it as a merge gate.
 - [ ] Keep deployment workflows separate from validation; only deploy after required checks and approvals.
 
-## 9. Current first-pass actions
+## 9. Completed first-pass summary (not scored)
 
 - [x] Create this tracked checklist.
 - [x] Align root agent instruction ownership and remove branch/style conflicts between `AGENTS.md` and `CLAUDE.md`.
 - [x] Add pull request CI for lint, types, builds, and existing test suites.
 - [x] Update testing and security docs to describe the new workflow.
-- [x] Confirm the CI workflow with PR #1380; its full validation check passed.
-- [external] Require its check in GitHub branch protection before treating CI as a merge gate.
-- [x] Add acceptance-criteria and user-flow fields to issue forms.
+- [x] Confirm the CI workflow with PR #1380 and require `validate` in the GitHub `main` ruleset.
+- [x] Require acceptance criteria and user-flow/UI-state details in feature issues; ask for the affected flow and state in bug issues.
 - [x] Pin active GitHub Actions and configure automated dependency update proposals.
-- [ ] Work through the remaining UI checklist.
+
+The UI quality checklist above remains available for future UI tasks and does not count toward core readiness progress.
