@@ -124,6 +124,22 @@
     "color": "ededed"
   },
   {
+    "name": "wocs",
+    "color": "1f883d"
+  },
+  {
+    "name": "level 1",
+    "color": "2da44e"
+  },
+  {
+    "name": "level 2",
+    "color": "fbca04"
+  },
+  {
+    "name": "level 3",
+    "color": "d73a4a"
+  },
+  {
     "name": "dependencies",
     "color": "0366d6"
   }

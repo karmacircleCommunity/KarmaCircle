@@ -1,6 +1,7 @@
-## Reporting a Vulnerability
+# Reporting a vulnerability
 
-If you find a security error please **DONOT** make an issue /discussion out of it, talk about it publicly, instead report it with the most details possible to [Tamal Das](https://twitter.com/tamalCodes). You can expect an update within the next **36 hours** - if not please be patient.
+Do not report security vulnerabilities in public issues, discussions, or pull requests.
+Email the KarmaCircle maintainers at [tamalcodes@gmail.com](mailto:tamalcodes@gmail.com) with a description of the issue, its impact, and steps needed to reproduce it.
+Do not include real user data, credentials, or secrets in the report.
 
-Thankyou.
-Team KarmaCircle.
+The maintainers will review the report and coordinate a fix before public disclosure.

@@ -1,129 +1,99 @@
+# Contributing to KarmaCircle
 
-<!-- TOC -->
+Thanks for helping improve KarmaCircle.
+This repository contains two independently deployed apps: `apps/web` (React and Vite) and `apps/api` (Express, TypeScript, and MongoDB).
+These contribution guidelines apply to both apps.
 
-- [Contributing Guidelines](#contributing-guidelines)
-  - [Commits 👮](#commits-)
-      - [Commit Message Format 🔐](#commit-message-format-)
-      - [ESLint \& Prettier ✨](#eslint--prettier-)
-  - [Issues 👮](#issues-)
-      - [Creating an issue 📝](#creating-an-issue-)
-      - [Working on an Issue 🛠️](#working-on-an-issue-️)
-      - [Closing an Issue 📌](#closing-an-issue-)
-  - [Pull requests 👮](#pull-requests-)
-      - [Creating a Pull Request 📝](#creating-a-pull-request-)
-      - [Pull Request Title Format 🔐](#pull-request-title-format-)
-      - [Reviewing a Pull Request 📌](#reviewing-a-pull-request-)
-        - [DOs](#dos)
-        - [DON'Ts](#donts)
-        - [NOTE](#note)
+## Find and claim an issue
 
-<!-- /TOC -->
+1. Browse [open issues](https://github.com/karmacircleCommunity/KarmaCircle/issues?q=is%3Aissue+is%3Aopen) and check for an existing issue before opening another.
+2. Choose one issue at a time and read its discussion, expected outcome, relevant project area, and labels.
+3. Comment that you would like to work on it, or use the issue form's willingness checkbox.
+4. Wait for a maintainer to confirm assignment before starting work or opening a pull request.
+5. If the issue is unclear or has no expected outcome, ask for clarification in the issue before coding.
 
-# Contributing Guidelines 
-Please go through the documentation at least once before you start contributing as it will help you understand the project, and how we work better.
+For Winter of Code Social (WOCS), contributors should say they are participating when claiming an issue.
+Maintainers assign a difficulty level and keep issue status current.
+Please do not open duplicate issues or pull requests made only to collect points.
 
-This repo is a monorepo: `apps/web` (frontend) and `apps/api` (backend) — see the [README](./README.md#this-is-a-monorepo) for the layout and setup links for each. The guidelines below (commits, issues, PRs) apply repo-wide, to both apps.
+## Set up the project
 
-## Commits 👮
+### Requirements
 
-Try and make small commits, it will be easier for us to review and merge them and also it will be easier for you to fix any errors if there are any.
+- Node.js 20.19+ or 22.12+, matching the frontend tooling's supported versions.
+- pnpm 11.22.0, as declared by the root `package.json`.
+- Docker Desktop, OrbStack, or another Docker-compatible runtime if you want to run the complete local stack with MongoDB.
 
-#### Commit Message Format 🔐
+### Install and configure
 
-The commit message should be in the format of `type(scope): subject` where the `scope` is optional `type` is one of the following:
+Install the pinned pnpm version and workspace dependencies from the repository root:
 
-- `feat` : Use this when you are adding a new feature.
-- `fix` : Use this when you are fixing a bug.
-- `docs` : Use this when you are adding documentation.
-- `style` : Use this when you are changing the style of the code.
-- `refactor` : Use this when you are refactoring the code.
-- `test` : Use this when you are adding tests.
-- `chore` : Use this when you are changing the build process or auxiliary tools and libraries such as documentation generation.
+```bash
+npm install --global pnpm@11.22.0
+pnpm install
+```
 
-#### ESLint & Prettier ✨
+Copy the relevant `.env.example` files and follow the [full local setup guide](./docs/LocalDevSetup.md) to run the frontend, API, and local MongoDB.
+The frontend and backend setup guides are also available for [frontend-only work](./docs/FrontendSetup.md) and [backend-only work](./apps/api/docs/BackendSetup.md).
+Never commit `.env` files, credentials, or other secrets.
 
-We are using `pre-commit hooks` and `linting packages` to make sure that the code is in the correct format. 
+## Project conventions
 
-So whenever you try and make any commit, it will automatically run the `linting` and `prettier` on the staged/changed files and if there are any errors, it will not let you commit the code until you fix those.
+- Keep changes focused on the assigned issue and explain user-visible behavior in the pull request.
+- Follow the existing code patterns and formatting in the app you change.
+- Backend changes use TypeScript, ESLint, and Prettier.
+- Frontend changes use the existing React and Vite patterns and TypeScript checks where applicable.
+- Use conventional commit and pull request titles in lowercase, formatted as `type(scope): subject`.
+- Supported types are `feat`, `fix`, `docs`, `style`, `refactor`, `test`, and `chore`.
+- Do not rely on a pre-commit hook to run linting or formatting; the current pre-commit hook does not run `lint-staged`.
 
-Some of them are automatically fixed, while some need manual fixing.
+## AI-assisted contributions
 
----
-## Issues 👮
+AI tools are allowed.
+If you use AI assistance, disclose it in the pull request description and say which parts it helped with.
+Review and understand all submitted changes, and remain responsible for their correctness, tests, security, and license compatibility.
+Do not provide AI tools with credentials, private user data, or other confidential project information.
 
+## Checks
 
-#### Creating an issue 📝
+Run checks that cover the app you changed before opening a pull request.
 
-- There are different types in the issues section such as `Bug` , `Documentation` , `Feature` . You can choose, or create any of the types of issues.
-- In case you need to create something else, you can use the `Other` type. Blank issues are not recommended at all.
-- When creating an issue make sure you fill up the fields properly and also make sure that you are **not raising a duplicate issue.**
-- The `labels` are used to categorize the issues and they will be automatically added based on the type of issue you are creating.
+```bash
+pnpm test
+pnpm --filter karmacircle-api lint
+pnpm --filter karmacircle-frontend type-check
+```
 
-#### Working on an Issue 🛠️
+`pnpm test` runs the API Jest suite and the frontend Playwright end-to-end suite.
+The Playwright suite starts its own isolated test services.
+See the [testing guide](./docs/specs/testing.md) for browser setup and coverage details.
+Do not point tests at your local development database or send real email.
+If a check fails, include the failure and reason in your pull request instead of claiming it passed.
 
-- Only ask to be assigned 1 issue at a time.
-- **Do not** enable GitHub Actions on your fork
-- You can assign yourself to an issue if you want to work on it by checking the `I am willing to work on this issue (blank for no)` checkbox.
-- In case someone else has left that box empty, you can assign yourself to that issue by commenting `I would like to work on this issue` on that issue.
-- We assign on a **first come first serve basis**.
+## Pull requests
 
+- Open a pull request only after a maintainer has assigned you the issue.
+- Link the issue with `Closes #123` when the pull request resolves it.
+- Describe what changed, why it changed, and how you checked it.
+- Disclose any AI assistance in the pull request description and identify the parts it helped with.
+- Include screenshots for visual changes when useful.
+- Keep the pull request focused and respond to review comments respectfully.
+- Use a lowercase conventional title such as `feat(events): add event filtering`.
+- Confirm required checks pass before asking for review.
 
-#### Closing an Issue 📌
+### WOCS labels
 
-- If you are the one who has created the issue and want to close it you can close it by yourself.
-- If you are working on the issue, you can reference the issue in the pull request in `closes #issue_number` format & the issue will be closed automatically when the PR is merged.
+For every WOCS-eligible pull request, maintainers must apply the exact `wocs` label and exactly one difficulty label: `level 1`, `level 2`, or `level 3`.
+Apply the labels before merging, since the WOCS tracker uses them for points.
+Use the same difficulty level on the issue so contributors can see the scope before claiming it.
+The difficulty level is assigned by a project admin or mentor.
 
+## Issues
 
----
+Issue templates help collect the details maintainers need to plan work.
+Each contribution issue should have a descriptive title, a clear task, an expected outcome, the relevant app or files when known, and a maintainer-assigned difficulty level.
+Maintainers should update, reassign, or close issues when availability or scope changes.
 
-## Pull requests 👮
+## License
 
-#### Creating a Pull Request 📝
-
-- Do not raise a PR if you are not assigned to the issue. Do not try and make spam pull requests as you might be **banned** from the organization.
-- Whenever making a Pull request, make sure you fill up the fields properly.
-- We use `Lint PR title` workflow which makes sure that the PR titles are in the correct format. If you are not sure about the format, you can check the `Pull Request Title Format` section below.
-
-
-#### Pull Request Title Format 🔐
-
-🔴🔴🔴 **All LowerCase**
-
-The title of the pull request should be in the format of `type(scope): subject` where the `scope` is optional `type` is one of the following:
-
-Available types:
-
-- `feat` : Use this when you are adding a new feature.
-- `fix` : Use this when you are fixing a bug.
-- `docs` : Use this when you are adding documentation.
-- `style` : Use this when you are changing the style of the code.
-- `refactor` : Use this when you are refactoring the code.
-- `test` : Use this when you are adding tests.
-- `chore` : Use this when you are changing the build process or auxiliary tools and libraries such as documentation generation.
-
-**Examples:**
-
-- `feat: customized icon for plates`
-- `chore(refactor): remove unused dependencies`
-- `fix: updated broken link in the footer`
-
-
-#### Reviewing a Pull Request 📌
-
-We welcome everyone to review Pull Requests, it is a great way to learn and network.
-
-##### DOs
-- Be kind and respectful, we use inclusive, gender-neutral language (for example `they/them` instead of `guy/man`)
-- Use inline comments to explain your suggestions
-- Use inline suggestions to propose changes
-##### DON'Ts
-- Don't be rude, disrespectful or aggressive
-- Do not repeat feedback, this creates more noise than value (check the existing conversation), use GitHub reactions if you agree/disagree with a comment
-- Do not spam Pull requests/issues.
-
-
-##### NOTE
-
-- Make sure there are no `failed` checks in the pull request. If there are any failed checks, you can click on the `Details` button to see the logs and fix the errors.
-- If the tests are failing due to some internal error on our side, **ignore it.**
-- Merging and reviewing the PRs takes time, so please be patient.
+By contributing, you agree that your contributions are provided under the repository's [MIT License](./LICENSE).

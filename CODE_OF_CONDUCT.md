@@ -1,12 +1,13 @@
-# Citizen Code of Conduct 💂‍♂️
+# KarmaCircle Code of Conduct
 
 ## 1. Purpose
 
-A primary goal of JWOC is to be inclusive to the largest number of contributors, with the most varied and diverse backgrounds possible. As such, we are committed to providing a friendly, safe and welcoming environment for all, regardless of gender, sexual orientation, ability, ethnicity, socioeconomic status, and religion (or lack thereof).
+A primary goal of KarmaCircle is to be inclusive of contributors with varied and diverse backgrounds.
+We are committed to providing a friendly, safe, and welcoming environment for everyone, regardless of gender, sexual orientation, ability, ethnicity, socioeconomic status, or religion.
 
 This code of conduct outlines our expectations for all those who participate in our community, as well as the consequences for unacceptable behavior.
 
-We invite all those who participate in JWOC to help us create safe and positive experiences for everyone.
+We invite everyone who participates in KarmaCircle to help create safe and positive experiences for the community.
 
 ## 2. Open [Source/Culture/Tech] Citizenship
 
@@ -45,7 +46,10 @@ The following behaviors are considered harassment and are unacceptable within ou
 
 ## 5. Weapons Policy
 
-No weapons will be allowed at JWOC events, community spaces, or in other spaces covered by the scope of this Code of Conduct. Weapons include but are not limited to guns, explosives (including fireworks), and large knives such as those used for hunting or display, as well as any other item used for the purpose of causing injury or harm to others. Anyone seen in possession of one of these items will be asked to leave immediately, and will only be allowed to return without the weapon. Community members are further expected to comply with all state and local laws on this matter.
+No weapons are allowed at KarmaCircle events, project spaces, or other spaces covered by this Code of Conduct.
+Weapons include guns, explosives, large knives, and any other item carried for the purpose of causing injury or harm.
+Anyone seen with a weapon will be asked to leave and may return only without it.
+Community members must also comply with applicable laws.
 
 ## 6. Consequences of Unacceptable Behavior
 
@@ -57,27 +61,25 @@ If a community member engages in unacceptable behavior, the community organizers
 
 ## 7. Reporting Guidelines
 
-If you are subject to or witness unacceptable behavior, or have any other concerns, please notify a community organizer as soon as possible. gyansujan69@gmail.com.
-
-[Reporting guidelines](https://jwoc.tech/docs/student-manual)
-
-Additionally, community organizers are available to help community members engage with local law enforcement or to otherwise help those experiencing unacceptable behavior feel safe. In the context of in-person events, organizers will also provide escorts as desired by the person experiencing distress.
+If you are subject to or witness unacceptable behavior, contact a KarmaCircle project maintainer privately at [tamalcodes@gmail.com](mailto:tamalcodes@gmail.com).
+For WOCS-related concerns, you may also contact the program organizers through their official support channels.
+Maintainers can help community members contact local authorities or otherwise find support.
+At in-person events, organizers will provide escorts when requested by someone experiencing distress.
 
 ## 8. Addressing Grievances
 
-If you feel you have been falsely or unfairly accused of violating this Code of Conduct, you should notify JWOC-Organizers with a concise description of your grievance. Your grievance will be handled in accordance with our existing governing policies.  https://jwoc.tech/docs/mentor-manual
-
-We will take strict action against anyone who is not following the code of conduct , or not being respectful at all. They might be banned from GDSC JGEC permanently. They will also be barred from joining any other Google Developer Students Club
+If you feel you have been falsely or unfairly accused of violating this Code of Conduct, contact a KarmaCircle project maintainer privately with a concise description of your concern.
+Maintainers will review the concern fairly and confidentially.
 
 ## 9. Scope
 
-We expect all community participants (contributors, paid or otherwise; sponsors; and other guests) to abide by this Code of Conduct in all community venues--online and in-person--as well as in all one-on-one communications pertaining to community business.
+We expect all community participants (contributors, sponsors, and guests) to abide by this Code of Conduct in project spaces, online or in person, and in communications about project business.
 
 This code of conduct and its related procedures also applies to unacceptable behavior occurring outside the scope of community activities when such behavior has the potential to adversely affect the safety and well-being of community members.
 
 ## 10. Contact info
 
-gyansujan69@gmail.com
+Contact the project maintainers at [tamalcodes@gmail.com](mailto:tamalcodes@gmail.com).
 
 ## 11. License and attribution
 

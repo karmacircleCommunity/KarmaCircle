@@ -10,6 +10,20 @@ body:
       description: Provide a clear and concise explanation of your issue.
     validations:
       required: true
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: Expected outcome
+      description: What response, change, or result are you asking for?
+    validations:
+      required: true
+  - type: textarea
+    id: relevant-area
+    attributes:
+      label: Relevant app or files
+      description: Mention the frontend, backend, or files involved if you know them.
+    validations:
+      required: false
   - type: dropdown
     id: browser
     attributes:
@@ -41,10 +55,7 @@ body:
             Guidelines](https://github.com/karmacircleCommunity/KarmaCircle/blob/main/CONTRIBUTING.md)"
           required: true
 
-        - label: "I am participating in JWOC"
-          required: false
-
-        - label: "I am participating in IWOC"
+        - label: "I am participating in Winter of Code Social (WOCS)"
           required: false
 
         - label: "I am willing to work on this issue (blank for no)"
@@ -53,5 +64,5 @@ body:
   - type: markdown
     attributes:
       value: |
-        In case of emergencies contact me on [Twitter](https://twitter.com/tamalCodes)
-        Feel free to check out other cool repositories [here](https://github.com/tamalCodes)
+        Keep project questions in this issue or the public WOCS project forum so other contributors can learn from the discussion.
+        For security vulnerabilities, follow [SECURITY.md](https://github.com/karmacircleCommunity/KarmaCircle/blob/main/SECURITY.md).

@@ -27,8 +27,8 @@ This repo holds both apps that make up KarmaCircle:
 
 | App | Path | What it is |
 |---|---|---|
-| Frontend | [`apps/web`](./apps/web) | `karmacircle-frontend` — React 19 + Vite SPA |
-| Backend | [`apps/api`](./apps/api) | `karmacircle-api` — Express + TypeScript + MongoDB API |
+| Frontend | [`apps/web`](./apps/web) | `karmacircle-frontend` - React 19 + Vite SPA |
+| Backend | [`apps/api`](./apps/api) | `karmacircle-api` - Express + TypeScript + MongoDB API |
 
 They're independently deployed (two separate Vercel projects) but share this repo, CI, and contribution workflow. See [CLAUDE.md](./CLAUDE.md) and [AGENTS.md](./AGENTS.md) for the fuller architecture/agentic-workflow notes, and each app's own `docs/specs/README.md` for its feature/module map.
 
@@ -48,17 +48,19 @@ They're independently deployed (two separate Vercel projects) but share this rep
 
 # Contributing to KarmaCircle 🔐
 
-Remember, Good PR makes you a Good contributor!
+New contributors can start by browsing [open issues](https://github.com/karmacircleCommunity/KarmaCircle/issues?q=is%3Aissue+is%3Aopen), then read [CONTRIBUTING.md](./CONTRIBUTING.md) before taking on work.
 
-We at KarmaCircle work hard to maintain the structure, and [use conventional Pull](https://github.com/karmacircleCommunity/KarmaCircle/blob/main/CONTRIBUTING.md#pull-request-title-format-) request titles and commits. Without a proper template for the PR, not following the guidelines and spam might get the pull request closed, or banned.
+KarmaCircle uses conventional commit messages and pull request titles.
+The contribution guide explains how to claim issues, set up the project, run checks, and prepare a pull request.
 
 ## 1. Setting up the project locally
 
+- [Full local dev setup (frontend, backend, and MongoDB)](/docs/LocalDevSetup.md)
 - [Forking + Cloning Guide](/docs/CloneSetup.md)
 - [Setting up the Frontend](/docs/FrontendSetup.md)
 - [Setting up the Backend](/apps/api/docs/BackendSetup.md)
 - [Setting up with docker](/docs/DockerSetup.md)
-- [**Full local dev setup (frontend + backend + MongoDB in one go)**](/docs/LocalDevSetup.md) — the fastest path if you just want everything running
+- [**Full local dev setup (frontend + backend + MongoDB in one go)**](/docs/LocalDevSetup.md) - the fastest path if you just want everything running
 
 ## 2. Contributing guidelines & more
 
