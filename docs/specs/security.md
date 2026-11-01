@@ -39,8 +39,8 @@ Reported privately by Humaira Akram (humaira924.github.io), confirmed by reading
 ### Other workflow hardening
 - Every workflow now declares least-privilege `permissions:` (previously all used the repo default).
 - `checkout` upgraded from v1/v2/v3 to v4 with `persist-credentials: false` where the token is not needed afterwards.
-- Vercel CLI was installed as `vercel@canary`, an unreviewed moving target with the deploy token in hand, now `vercel@latest`.
-  Pin an exact version when convenient.
+- Vercel CLI is installed at the exact reviewed version `65.9.0` in the frontend preview workflow, and production workflows still install `vercel@latest`.
+  Pin exact versions in production workflows when those workflows are next updated.
 - `BetaHuhn/deploy-to-vercel-action@latest` is now `@v1`.
 - Every active action reference across the workflows is pinned to a full commit SHA, including the welcome action that previously tracked `main`.
 - `.github/workflows/ci.yml` runs on `pull_request` with read-only permissions and no repository secrets.

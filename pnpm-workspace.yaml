@@ -1,3 +1,8 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+allowBuilds:
+  "@scarf/scarf": false
+  esbuild: true
+  mongodb-memory-server: true

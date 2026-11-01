@@ -33,6 +33,9 @@ npm install --global pnpm@11.22.0
 pnpm install --frozen-lockfile
 ```
 
+The workspace explicitly allows install scripts for `esbuild` and `mongodb-memory-server`, which the build and isolated API tests need.
+It blocks the optional `@scarf/scarf` install script.
+
 Copy the relevant `.env.example` files and follow the [full local setup guide](./docs/LocalDevSetup.md) to run the frontend, API, and local MongoDB.
 The frontend and backend setup guides are also available for [frontend-only work](./docs/FrontendSetup.md) and [backend-only work](./apps/api/docs/BackendSetup.md).
 Never commit `.env` files, credentials, or other secrets.
