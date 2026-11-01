@@ -67,9 +67,10 @@ Not currently imported by any component; `ProfileCompletion`/`ProfileUpdate` har
 Also not currently imported anywhere.
 Both files look like scaffolding for a future generic/dynamic profile-form component.
 
-## Public profile pages (two, overlapping)
+## Legacy profile code
 
-There are **two separate "view a profile" pages** in this feature, though only one is actually routed — see each below:
+The former sparse public profile route has been removed.
+One unrouted profile prototype remains in the feature tree:
 
 ### Removed sparse profile page
 
@@ -80,10 +81,11 @@ The existing editor is the only routed individual profile experience.
 [apps/web/src/features/onboarding-profile/pages/UserProfile.tsx](../../apps/web/src/features/onboarding-profile/pages/UserProfile.tsx) is a second, more visually developed profile page (profile picture, social icons, an "Events Attending" `Swiper` carousel with 6–8 hardcoded placeholder slides, responsive slide count).
 Fetches via SWR: `userEndpoints.details(params.slug)` (`GET /user?userName=...`).
 **This page is not referenced by `routesConfig.tsx` at all** — there is no route for it, so it is currently unreachable through normal navigation.
-It reads `Cookies.get("userName")`, a cookie that is never set anywhere else in the codebase (compare to `Profile.tsx`'s `trueUser` check, which uses Redux state instead) — so its "is this my own profile" branch can never evaluate true in the current app.
+Its "own profile" branch compares `currentUser?.userName` from Redux with `params.slug`.
+This is an unrouted prototype, so the branch is not part of the current application flow.
 Treat this as a work-in-progress replacement for (or alternate design of) `Profile.tsx` rather than a currently-active page.
 
-When asked to add profile features, confirm with whoever's asking whether they mean the *live* `Profile.tsx` or intend to finish wiring up `UserProfile.tsx`.
+When asked to add individual profile features, distinguish the routed `/user/setup` editor from the unrouted `UserProfile.tsx` prototype; the old public `Profile.tsx` page and `/user/:userName` route were removed.
 
 ## Types
 

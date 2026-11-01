@@ -1,8 +1,8 @@
 # Onboarding & Profile — Feature Spec
 
-Colocated, implementation-level companion to [docs/specs/onboarding-profile.md](../../../docs/specs/onboarding-profile.md).
+Colocated, implementation-level companion to [docs/specs/onboarding-profile.md](../../../../../docs/specs/onboarding-profile.md).
 Read that file first for the short cross-feature summary; this file goes deeper, file by file, for an AI agent about to edit code in `src/features/onboarding-profile/`.
-Read [docs/specs/state-management.md](../../../docs/specs/state-management.md) (Redux `user` slice shape) and [docs/specs/api-integration.md](../../../docs/specs/api-integration.md) (the `PATCH` endpoints this feature calls) before making changes here.
+Read [docs/specs/state-management.md](../../../../../docs/specs/state-management.md) (Redux `user` slice shape) and [docs/specs/api-integration.md](../../../../../docs/specs/api-integration.md) (the `PATCH` endpoints this feature calls) before making changes here.
 
 ## What this feature is responsible for
 
@@ -24,7 +24,7 @@ Organization account editing retains the dashboard's `ProfileUpdate` modal; publ
 | `components/setup/ProfileSetupQuestion.tsx`, `ProfileSetupLocationFields.tsx`, `ProfileSetupIntro.tsx` | **New.** The setup flow's own question/location/intro screens — forks of organizations' equivalents, not a shared/parameterized version (see organizations.md) | ✅ yes |
 | `utils/googlePlaces.ts`, `hooks/useAddressAutocomplete.ts` | **New, same day.** Google Places (New) autocomplete for the address question's `line1` field — see "Address-line autocomplete" below | ✅ yes, when `VITE_GOOGLE_MAPS_API_KEY` is set; plain input otherwise |
 | `components/ProfileCompletion.tsx` | Modal: first-time profile completion (organization-shaped; unreachable from anywhere today) | ❌ unreachable |
-| `components/ProfileUpdate.tsx` | Modal: profile editing — **organization accounts only as of October 2026** (`Dashboard.tsx`, and `Profile.tsx` when `user?.userType === "organization"`); individual accounts now use `ProfileSetup.tsx` instead | ✅ yes, organizations only |
+| `components/ProfileUpdate.tsx` | Modal: profile editing for the authenticated organization owner | ✅ yes, opened from the organization dashboard |
 | `hooks/useProfileCompletion.ts` | Local form state + validation + submit for `ProfileCompletion` | ✅ yes (feeds an unreachable component) |
 | `constants/ProfileElements.ts` | Declarative field metadata (label/placeholder/min length/error message) for a hypothetical generic field renderer | ❌ not imported anywhere |
 | `constants/index.ts` | Barrel re-exporting `ProfileElements` | ❌ (only consumer would be `ProfileElements` itself, unused) |
@@ -43,7 +43,7 @@ Save, Close, and Maybe later return Home; cancellation discards unsaved changes.
 **No entry exists for this component in `routesConfig.tsx`** — it is unreachable through normal navigation.
 Confirm with whoever's asking before investing effort here; treat it as an alternate design still being finished, not a page you can assume anyone will see.
 
-**Data source:** `useSWR(userEndpoints.details(params.slug), fetcher)` — this is the endpoint `Profile.tsx` does *not* use (`GET /user?userName=...`), so if this page is ever wired up, it would be exercising a currently-untested-in-production code path on the frontend.
+**Data source:** `useSWR(userEndpoints.details(params.slug), fetcher)`. This unrouted prototype uses a different endpoint builder from the legacy `organizationEndpoints.details(userName)` builder; neither is part of the current routed profile flow.
 
 **"Own profile" check:** `currentUser?.userName === params.slug`, reading the signed-in user from Redux (`selectUser`).
 This previously read a `userName` cookie, which could never be `true`: the API set that cookie only on the Google OAuth path, scoped to the API's own host, so page JavaScript on the frontend origin could not read it.
@@ -71,7 +71,7 @@ Owns all local state for the `ProfileCompletion` modal.
 **`validateForm(updatedCredentials)`** (async):
 1. Builds `newErrors`: `description` required (presence only here — the 100–500 char length check is separate, below); all six `address` subfields required (presence, `.trim() === ""` check); `description.length > 500` → "cannot be more than 500 characters"; `description.length < 100` → "cannot be less than 100 characters" (these two length checks are **not mutually exclusive in code** — both run unconditionally, but in practice only one can match a given string length, so only one message ends up on `newErrors.description`, overwriting the other's *key* — not a real bug since they can't both fire, just note that a description of length exactly 500 or 100 is accepted, i.e. bounds are inclusive at 100 and exclusive at >500); `address.pincode` must be `!isNaN(...)` if present.
 2. `setErrors(newErrors)`.
-3. **Regardless of whether `newErrors` is empty**, calls `completeProfileApiCall({ credentials: { ...updatedCredentials, config: { hasCompletedProfile: true } } })` (`KarmaCircleApi.ts`, `PATCH /user/complete`) — this is the validation-doesn't-block-submission bug cataloged in [known-issues.md](../../../docs/specs/known-issues.md). **Note the payload always sets `config.hasCompletedProfile: true`, unconditionally** — even if required fields are still blank (bypassable since the UI's `disabled` gate is defense-in-depth here, not the request body's own logic), a request that reaches this line marks the profile "complete" server-side regardless of what `newErrors` contains.
+3. **Regardless of whether `newErrors` is empty**, calls `completeProfileApiCall({ credentials: { ...updatedCredentials, config: { hasCompletedProfile: true } } })` (`KarmaCircleApi.ts`, `PATCH /user/complete`) — this is the validation-doesn't-block-submission bug cataloged in [known-issues.md](../../../../../docs/specs/known-issues.md). **Note the payload always sets `config.hasCompletedProfile: true`, unconditionally** — even if required fields are still blank (bypassable since the UI's `disabled` gate is defense-in-depth here, not the request body's own logic), a request that reaches this line marks the profile "complete" server-side regardless of what `newErrors` contains.
 4. If `data.status === STATUSCODE.OK` (`200`): `showSuccessToast`, then **returns with no further action** — critically, **this success path does not call `setShowEditModal(false)` or `refreshProfileData()`**, because this hook has no access to those (they're props passed to the component, not to the hook). Only the header "Save" button (see below) closes the modal on success.
 5. If `data` is falsy or lacks `.status` (e.g. a network failure where `completeProfileApiCall` caught and returned `error.response`, which is `undefined` for a connectivity error) — **`data.status` on line 4 throws a `TypeError: Cannot read properties of undefined`** before this function can return anything. Not previously documented; this is a real crash path (uncaught, and there's no error boundary anywhere in the app — see [error-handling/SPEC.md](../error-handling/SPEC.md)) if `completeProfileApiCall` is ever hit while fully offline having passed the `checkInternetConnection()` gate elsewhere (this modal itself has no such gate before submitting).
 6. Otherwise (a real HTTP error response, e.g. 400): falls through past the `if`, and `return Object.keys(newErrors).length === 0` — the function's return value only reflects client-side validation, not whether the API call itself succeeded, for any non-200/network-error case.
@@ -130,7 +130,7 @@ The legacy completion component does not gain a new mount site.
 
 ## `pages/ProfileSetup.tsx` and the setup flow — individual accounts, `/user/setup`
 
-**New, October 2026.** The individual-account equivalent of organizations' `/organization/setup` (`OrganizationSetup.tsx` — see [organizations/SPEC.md](../organizations/SPEC.md) and [organizations.md](../../../../docs/specs/organizations.md#the-setup-flow--organizationsetup)): a Typeform-style, one-question-at-a-time flow reached directly from Edit profile in individual desktop/mobile navigation.
+**New, October 2026.** The individual-account equivalent of organizations' `/organization/setup` (`OrganizationSetup.tsx` — see [organizations/SPEC.md](../organizations/SPEC.md) and [organizations.md](../../../../../docs/specs/organizations.md#the-setup-flow--organizationsetup)): a Typeform-style, one-question-at-a-time flow reached directly from Edit profile in individual desktop/mobile navigation.
 
 **Why a new page rather than reusing `ProfileUpdate`:** the person using this app looked at `/user/tamalcodes` and called the modal's UI "not our standard," full of organization concepts (an "Upload cover image" dropzone, an "Edit profile" modal titled around organization fields) that don't belong on an individual profile, and asked for the organization setup flow's components reused for individuals instead. This is that request.
 
@@ -208,7 +208,7 @@ Legacy `ProfileCompletion` and `UserProfile` remain inactive.
 - **`UserProfile.tsx`'s Logout button passes a plain `onClick`** the shared `Button` component silently discards (`Button.tsx` spreads `...props` and then explicitly overwrites `onClick` with its own `onClickfunction`, which is `undefined` here) — this button has never actually worked. New finding, also surfaced by strict typing; low-priority since this page isn't routed.
 - Two profile-edit modals with different endpoints, different field coverage, and inconsistent reachability from the two "view profile" surfaces (table above).
 - `ProfileCompletion`'s two Save buttons take genuinely different code paths — only one of them closes the modal / refreshes data on success (see above; not previously documented at this precision).
-- **Fixed, October 2026, for `ProfileUpdate.validateForm` only:** it now returns `false` before the `PATCH` call when `newErrors` is non-empty. `useProfileCompletion.validateForm` (used only by the unreachable `ProfileCompletion`) still fires its `PATCH` request regardless of validation errors — [known-issues.md](../../../docs/specs/known-issues.md), but the UI's `disabled` gate does cover the "required field empty" case there too.
+- **Fixed, October 2026, for `ProfileUpdate.validateForm` only:** it now returns `false` before the `PATCH` call when `newErrors` is non-empty. `useProfileCompletion.validateForm` (used only by the unreachable `ProfileCompletion`) still fires its `PATCH` request regardless of validation errors — [known-issues.md](../../../../../docs/specs/known-issues.md), but the UI's `disabled` gate does cover the "required field empty" case there too.
 - Both validators will **throw an uncaught `TypeError`** if the API call fails with no HTTP response at all (pure network failure) — `data.status` on `undefined`. New finding, not previously documented.
 - `handleSetDefaultValues` has a stray `console.log`. New finding.
 - Both address forms have a `name="stat e"` typo on the State input (harmless, cosmetic-only). New finding.

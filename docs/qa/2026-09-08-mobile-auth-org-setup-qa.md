@@ -108,7 +108,7 @@ added specifically so error/status text doesn't clash with the brand palette. In
   [passwordStrength.ts:27](../../apps/web/src/features/authentication/utils/passwordStrength.ts),
   [ResetPassword.tsx](../../apps/web/src/features/authentication/pages/ResetPassword.tsx),
   [ForgotPassword.tsx:121](../../apps/web/src/features/authentication/pages/ForgotPassword.tsx),
-  [SetupFieldLabel.tsx:26](../../apps/web/src/features/organizations/components/setup/SetupFieldLabel.tsx),
+  [SetupFieldLabel.tsx:26](../../apps/web/src/components/setup/SetupFieldLabel.tsx),
   [SetupQuestion.tsx:338](../../apps/web/src/features/organizations/components/setup/SetupQuestion.tsx),
   [OrganizationSetup.tsx:345,392](../../apps/web/src/features/organizations/pages/OrganizationSetup.tsx).
 - The "Draft — not visible yet" badge and the "still needed before you can go live" notice both use

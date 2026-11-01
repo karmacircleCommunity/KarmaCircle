@@ -12,14 +12,16 @@ This is the single most important thing to know before adding a new API call: th
 
 Plain `axios` calls (imported directly as `Axios`, not through `ApiConnector`).
 Each function catches errors and returns `error.response` (or `error` itself in a couple of functions) instead of throwing — callers must check `response?.status` rather than using `try/catch`.
-Functions exported: `LoginUser`, `RegisterUser`, `GetAllOrganizations`, `ReportProblem`, `completeProfileApiCall`, `updateUserProfile`, `GoogleAuth`, `successCallback`, `Logout`, `CreateEvent`, `fetchDashboard`.
-Most POST/PATCH calls pass `{ withCredentials: true }` so the backend's session/auth cookie is sent; a few reads (`GetAllOrganizations`) don't.
+Functions exported: `LoginUser`, `RegisterUser`, `CheckEmailExists`, `ForgotPassword`, `ResetPassword`, `GetAllOrganizations`, `UpdateMyOrganization`, `CreateSponsorshipOrder`, `VerifySponsorshipPayment`, `ReportProblem`, `completeProfileApiCall`, `updateUserProfile`, `GoogleAuth`, `successCallback`, `Logout`, `CreateEvent`, `JoinEvent`, and `fetchDashboard`.
+Authenticated POST/PATCH calls pass `{ withCredentials: true }` so the backend's session/auth cookie is sent.
+Public reads and flows such as email availability, password reset, organization directory, and sponsorship calls do not require that cookie.
 
-### Layer B — feature-level `services/` fetchers (only used for read-only organization/event listing helpers)
+### Layer B — feature-level `services/` fetchers (legacy read-only organization/event helpers)
 
 Goes through [ApiConnector.ts](../../apps/web/src/services/ApiConnector.ts), a thin wrapper around a separate `axios.create({})` instance (`axiosInstance`), exposing `apiConnector(method, url, bodyData, headers, params)`.
-Only two consumers exist: `getOrganizations()` in [Organizations.ts](../../apps/web/src/features/organizations/services/Organizations.ts) and `getEvents()` in [Events.ts](../../apps/web/src/features/events/services/Events.ts) — and neither of those two functions is actually called anywhere in the app; `Organizations.tsx` and `Events.tsx` (the pages) both currently render hardcoded demo arrays instead.
-See [known-issues.md](./known-issues.md).
+Its two helper functions are `getOrganizations()` in [Organizations.ts](../../apps/web/src/features/organizations/services/Organizations.ts) and `getEvents()` in [Events.ts](../../apps/web/src/features/events/services/Events.ts), but neither is called by a page today.
+The routed organization and event directories use SWR with `Fetcher.ts` and the live API instead of hardcoded demo arrays.
+See [known-issues.md](./known-issues.md) for other integration gaps.
 `ApiConnector`'s dead status-600 check (`if (response.status === 400) console.error("Logout triggered due to status 600 response")`) is unreachable — `response.status === 400` never equals `600`, and axios throws (doesn't return) on 4xx/5xx by default anyway, so this branch is unreachable through the normal success path.
 
 **When adding a new call, follow Layer A's pattern** (`KarmaCircleApi.ts` + direct `axios`) unless you're specifically building on top of the existing `getOrganizations`/`getEvents` read helpers.
@@ -30,16 +32,16 @@ All endpoint URL strings/builders live here, grouped by domain, and are imported
 
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
-organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, byHandle(handle), directory({...})
-eventEndpoints: all, create, byHost(handle), byUid(uid), join(uid), registration(uid)
+organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, follow(handle), profileView(handle), byHandle(handle), directory({...})
+eventEndpoints: all, create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory(limit)
 paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)
-authEndpoints:  signin, signup, googleLogin, googleLoginSuccess, logout
+authEndpoints:  signin, signup, checkEmail, forgotPassword, resetPassword, googleLogin, googleLoginSuccess, logout
 ```
 
 This list was itself out of date before the September 2026 pass that added `paymentEndpoints` — `organizationEndpoints.mine`/`taxonomy`/`byHandle`/`directory` and `eventEndpoints.byHost` had already shipped (August 2026, organizations.md) without this file being updated alongside them. Corrected here rather than left compounding; the SWR call-site table below is narrower on purpose (see its own intro) and wasn't re-audited beyond adding the one new sponsorship-flow entry.
 
-Note `userEndpoints.update` and `userEndpoints.updateProfile` both exist and point to different URLs (`/user/update/profile` vs `/user/update`) — only `updateProfile` is actually referenced (`ProfileUpdate.tsx`/`useValidation`-adjacent flows).
-`organizationEndpoints.details(userName)` is queried with `?userName=` but is used for both individual users and organizations (see [onboarding-profile.md](./onboarding-profile.md) — `Profile.tsx` calls `organizationEndpoints.details` even on the `/user/:userName` route).
+`userEndpoints.update` and `userEndpoints.updateProfile` both exist and point to different URLs (`/user/update/profile` vs `/user/update`); check the current call sites before choosing one.
+The old `Profile.tsx` page was deleted, and `UserProfile.tsx` is not registered in `routesConfig.tsx`; do not infer a live profile route from legacy endpoint builders.
 
 ## SWR usage (data fetching in components)
 
@@ -48,16 +50,21 @@ Two fetcher functions exist:
 - [apps/web/src/utils/Fetcher.ts](../../apps/web/src/utils/Fetcher.ts) — `axios.get(url, { withCredentials: true }).then(res => res.data)`. Used almost everywhere.
 - [apps/web/src/utils/fetchers/PatchFetcher.ts](../../apps/web/src/utils/fetchers/PatchFetcher.ts) — same shape but issues a PATCH. Not currently imported by any component (dead file) — SWR mutations in this app instead call the relevant `KarmaCircleApi.ts` function directly and then call `mutate()`.
 
-SWR call sites:
+Current routed SWR call sites (including `useSWRInfinite`):
 | Component | Key | Purpose |
 |---|---|---|
-| `Dashboard.tsx` | `organizationEndpoints.dashboard` | Loads the owner-only organization workspace and revalidates every 60 seconds |
-| `Profile.tsx` | `organizationEndpoints.details(userName)` | Loads a profile by username for `/user/:userName` (`/organization/:userName` moved to `features/organizations` in August 2026 and fetches nothing yet) |
-| `UserProfile.tsx` | `userEndpoints.details(slug)` | Loads a public profile by slug (a second, mostly-unused profile page — see [onboarding-profile.md](./onboarding-profile.md)) |
-| `OrganizationProfile.tsx` | `eventEndpoints.byHost(handle)` | New (September 2026) — the profile's "Events hosted" section; a second, independent fetch alongside the page's own `organizationEndpoints.byHandle` call, which is why `useSectionReveal`'s dependency array needed `events.length` added too |
-| `MyEvents.tsx` | `eventEndpoints.mine()` | The signed-in individual's `/events/mine` page; paginated list of that account's attendee registrations |
+| `Organizations.tsx` | `organizationEndpoints.directory()` and taxonomy endpoint | Loads the public organization directory and filter taxonomy |
+| `OrganizationProfile.tsx` | `organizationEndpoints.byHandle()`, `organizationEndpoints.follow()`, and `eventEndpoints.byHost()` | Loads a public organization profile, authenticated follow state, and hosted events |
+| `OrganizationSetup.tsx` and `useMyOrganization.ts` | `organizationEndpoints.mine` and taxonomy endpoint | Loads the signed-in organization's editable record and setup taxonomy |
+| `Dashboard.tsx` | `organizationEndpoints.dashboard` | Loads the owner-only organization workspace and its dashboard data |
+| `Events.tsx` | `eventEndpoints.directory()` | Loads and filters the public event directory |
+| `DetailedEvent.tsx` | `eventEndpoints.byUid()` and `eventEndpoints.registration()` | Loads public event details and, for a signed-in visitor, saved registration state |
+| `YourEvents.tsx` | `eventEndpoints.byHost()` | Loads the signed-in organization's hosted events |
+| `MyEvents.tsx` | `eventEndpoints.mine()` via `useSWRInfinite` | Loads the signed-in individual's paginated attendee registrations |
+| `ProfileSetup.tsx` | `userEndpoints.profile` | Loads the signed-in individual's saved profile answers |
 
-`useEvent.ts`'s `submitCallback` calls `mutate(eventEndpoints.all)` from `useSWRConfig()` after a successful event creation, to invalidate any cached `eventEndpoints.all` SWR key — but no component currently fetches `eventEndpoints.all` via SWR, so this revalidation currently has no listener.
+`CreateEvents.tsx` is not routed, so its `useEvent.ts` submit callback is not part of the current page flow.
+That callback invalidates `eventEndpoints.all`, while the routed directory uses `eventEndpoints.directory()`; verify the exact cache key if this form is ever wired in.
 
 The organization dashboard includes sample markers for local demo records.
 Sample contribution amounts are displayed separately and never included in verified raised totals.

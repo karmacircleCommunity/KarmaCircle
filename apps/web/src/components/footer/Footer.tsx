@@ -41,8 +41,7 @@ const Footer = () => {
   // No newsletter endpoint exists in KarmaCircleApi.ts/apps/api — see
   // docs/specs/known-issues.md. This gives honest feedback (nothing is
   // silently swallowed) without claiming an email was actually captured,
-  // rather than mirroring Profile.tsx's Subscribe button, which has no
-  // handler at all.
+  // rather than copying an older, unhandled Subscribe control.
   const handleSubscribe = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email.trim()) return;

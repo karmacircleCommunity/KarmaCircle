@@ -8,7 +8,7 @@ Loaded via `<link>` in [apps/web/index.html](../../../apps/web/index.html), prec
 | --- | --- | --- | --- |
 | Outfit | 300;400;500;600;700;800;900 | `--font-outfit` | **Primary.** 223 uses. |
 | Poppins | 400;500;600;700;800 | `--font-poppins` | **Secondary.** 144 uses. |
-| Montserrat | 400;500;600;700;800;900 | `--font-mont` | Minor. 5 uses, all in `Header.tsx`. |
+| Montserrat | 400;500;600;700;800;900 | `--font-mont` | Minor legacy face, currently used by `Header.tsx`. |
 | Ubuntu | 400 | none | **Loaded, never used.** Dead render-blocking request. |
 | Open Sans | 400 | none | **Loaded, never used.** Dead render-blocking request. |
 | Mulish | not loaded here | none | Declared first in `body { font-family }` but only fetched by `features/donate-shop-trending/pages/Donate.css`, which is imported by `Donate.tsx` alone. On every other route the body stack falls through to `-apple-system` / `BlinkMacSystemFont` / `Segoe UI` / `Roboto`. |
@@ -23,7 +23,7 @@ This is the rule. Match it rather than introducing a fourth face.
 | --- | --- | --- |
 | Headings, nav, buttons, labels, badges, eyebrows, card titles, stat values, anything that is not a paragraph | `font-outfit` | The default for everything that is not body copy. |
 | Body copy, form helper text, card summaries, meta rows, footer link text, footer legal | `font-poppins` | |
-| Nothing new | `font-mont` | Only `Header.tsx` (`text-[3.5rem]` `font-black` `uppercase` hero) and `Profile.tsx` still use it. Do not add a sixth use. |
+| Nothing new | `font-mont` | `Header.tsx` (`text-[3.5rem]` `font-black` `uppercase` hero) is the remaining consumer. Do not extend its use. |
 | Document base | `"Mulish"` stack in `body` | Almost always overridden at component level by the two tokens above. |
 
 ## Size ramp

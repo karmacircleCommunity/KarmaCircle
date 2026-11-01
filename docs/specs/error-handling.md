@@ -28,7 +28,7 @@ Almost certainly a debugging scratch file — safe to delete unless someone conf
 
 ## Playwright E2E
 
-See [testing.md](./testing.md) — the full picture (both apps, how the e2e API server and the two dedicated ports work, migration notes from Cypress) now lives there rather than here. Briefly: `e2e/smoke.spec.ts` is a minimal smoke test, `e2e/organization-setup.spec.ts` covers the full organization setup flow, and `pnpm test` (from `apps/web` or the repo root) runs them headlessly against a self-contained stack — nothing needs to be running beforehand.
+See [testing.md](./testing.md) — the full picture (both apps, how the e2e API server and the two dedicated ports work, migration notes from Cypress) now lives there rather than here. Briefly: `e2e/smoke.spec.ts` is a minimal smoke test, `e2e/organizations/organization-setup.spec.ts` covers the full organization setup flow, and `pnpm test` (from `apps/web` or the repo root) runs them headlessly against a self-contained stack — nothing needs to be running beforehand.
 
 ## Types
 

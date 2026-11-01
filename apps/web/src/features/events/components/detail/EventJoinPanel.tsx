@@ -13,7 +13,7 @@ import type { EventJoinPanelProps } from "../../types";
  * `docs/specs/known-issues.md`) — so the button
  * acknowledges the press and says out loud that the organizer has not been
  * told yet. A control that looks live and silently does nothing is the
- * worse failure - it is what `Profile.tsx`'s Subscribe/Sponsor pair does,
+ * worse failure - it is what an older profile-page Subscribe/Sponsor pair did,
  * and what this page is written not to copy.
  *
  * The counts move with the toggle (`going + 1`, one spot fewer) because a

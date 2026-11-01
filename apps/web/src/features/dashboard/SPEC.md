@@ -17,7 +17,7 @@ The optional demo-data note is a transient state message, not a dashboard sectio
 The header identifies the organization, explains the dashboard's scope, and exposes `Edit organization profile` and `View hosted events`; both actions stack at mobile widths.
 `View hosted events` points to `/organization/events`, the organization's live hosted-event list.
 The organization overview card uses its border without an outer box shadow.
-See [docs/specs/dashboard.md](../../../docs/specs/dashboard.md#refinement-checklist) for the ten-area refinement checklist and design references.
+See [docs/specs/dashboard.md](../../../../../docs/specs/dashboard.md#refinement-checklist) for the ten-area refinement checklist and design references.
 
 ## `components/TrackSection.tsx`
 
@@ -37,7 +37,7 @@ The exact field-to-dashboard-area mapping lives in [the API organization contrac
 
 `organizations/pages/OrganizationProfile.tsx` sends a profile-view event after the public organization record loads.
 Its Follow button checks `GET /organizations/{handle}/follow`, then persists changes through `POST` or `DELETE`.
-Follow state requires both the `Token` cookie and Redux's authenticated state.
+The frontend enables the follow-state request from Redux's authenticated state; the API authenticates the request using its HTTP-only `Token` cookie.
 
 ## Limits
 

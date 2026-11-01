@@ -1,6 +1,6 @@
 # Events — Feature Spec
 
-Colocated, implementation-level companion to [docs/specs/events.md](../../../docs/specs/events.md).
+Colocated, implementation-level companion to [docs/specs/events.md](../../../../../docs/specs/events.md).
 This is the most duplicated-and-broken feature in the codebase — two separate "create event" implementations, one of which cannot ever be submitted (see below, a new finding beyond what the centralized spec documents) — so read this one carefully before touching anything under `components/`.
 
 ## Event creation access
@@ -9,7 +9,7 @@ This is the most duplicated-and-broken feature in the codebase — two separate 
 Personal accounts and signed-out visitors can browse events but cannot open the creation modal.
 The API also checks the stored account type and returns `403` for individual hosts.
 The existing duplicate creation forms and their documented limitations remain unchanged.
-No automated browser coverage exists for this feature yet.
+`e2e/events/events-responsive.spec.ts` covers live directory cards, Upcoming/Past filtering, city search, and mobile/desktop overflow; event-detail and event-creation flows still lack browser coverage.
 
 ## What this feature is responsible for
 
@@ -47,7 +47,7 @@ Two unrelated event-creation UIs were built at different times and never reconci
 
 ## `pages/Events.tsx`
 
-**`ComponentHelmet type="Events"`** — correct `type` string, matching `ComponentHelmet`'s dedicated `"Events"` branch; see [layout-navigation.md](../../../docs/specs/layout-navigation.md). Was previously a copy-paste leftover from `Organizations.tsx` (`type="Organizations"`, wrong for this page) — fixed August 2026 alongside the club → organization rename.
+**`ComponentHelmet type="Events"`** — correct `type` string, matching `ComponentHelmet`'s dedicated `"Events"` branch; see [layout-navigation.md](../../../../../docs/specs/layout-navigation.md). Was previously a copy-paste leftover from `Organizations.tsx` (`type="Organizations"`, wrong for this page) — fixed August 2026 alongside the club → organization rename.
 
 **The event list is live, September 2026** — `GET /events` (`eventEndpoints.directory()`, `limit=100`) via `useSWR`, mapped through `utils/toDisplayEvent.ts` into `EventCardEvent`. Replaces the twelve-event fixture that used to live in `constants/eventDirectory.ts`, now deleted (see below) — `DetailedEvent.tsx` stopped reading it too, in the same September 2026 pass.
 
@@ -72,13 +72,13 @@ Signed-in visitors also fetch `GET /events/:uid/registration` via `eventEndpoint
 
 This replaces the fixture-driven version this page ran until September 2026: two lookups (`findEvent`/`findEventDetail`) against `constants/eventDirectory.ts`/`eventDetails.ts`, which went stale the moment `Events.tsx`'s own August-2026 live-data change started linking cards to real `uid`s the fixture didn't contain — every real event's card led here to the not-found state instead of a detail page. Both fixture files, and their placeholder cover photos, are deleted now that nothing reads them.
 
-**`event.model.ts` grew the fields this page needs**, in the same pass that wired the fetch: `about`, `agenda`, `bringAlong`, `gettingThere`/`linkDelivery`/`joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`, plus two flags — `isGovernmentSponsored` (server/seed-only, mirrors `Organization.verified`; `EventHero` renders a brand-tinted "Government-backed" pill when set) and `inviteOnly` (organizer-settable; `EventJoinPanel` replaces the Join control with an honest "ask the organizer" state, and `EventFacts`'s "Who can come" cell reports it, when set). See [apps/api/docs/specs/events.md](../../../../apps/api/docs/specs/events.md) for the schema.
+**`event.model.ts` grew the fields this page needs**, in the same pass that wired the fetch: `about`, `agenda`, `bringAlong`, `gettingThere`/`linkDelivery`/`joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`, plus two flags — `isGovernmentSponsored` (server/seed-only, mirrors `Organization.verified`; `EventHero` renders a brand-tinted "Government-backed" pill when set) and `inviteOnly` (organizer-settable; `EventJoinPanel` replaces the Join control with an honest "ask the organizer" state, and `EventFacts`'s "Who can come" cell reports it, when set). See [apps/api/docs/specs/events.md](../../../../../apps/api/docs/specs/events.md) for the schema.
 
 **Registration is saved, but capacity is still untracked.** Joining calls authenticated `POST /events/:uid/join` and saves one registration per account.
 The API sends confirmation to the account email only in production; development and test suppress delivery and report `emailSent: false`.
 Past and invite-only events are rejected by the API.
 `going`/`spotsLeft` stay undefined on `DisplayEvent`; do not derive counts from registrations.
-See [known-issues.md](../../../../docs/specs/known-issues.md#events--attendee-capacity-not-tracked).
+See [known-issues.md](../../../../../docs/specs/known-issues.md#events--attendee-capacity-not-tracked).
 
 **Every `EventSection` with nothing behind it doesn't render** — "About this event" (`detail.about`), "How the day runs" (`detail.agenda`), and "What to bring" (`detail.bringAlong`) are all conditional on their array being non-empty, matching `OrganizationProfileView`'s own rule for sections with nothing behind them. "The details" (`EventFacts`) always renders — it degrades gracefully per-cell instead of disappearing. The location/join section renders unconditionally too, but `EventLocationPanel` itself returns `null` if there's genuinely nothing to show (no address on an offline event, no platform on an online one).
 
@@ -162,20 +162,20 @@ Each call creates a **fresh, closure-local `errors = {}`** object — this is th
 4. Returns the `errors` object (not a boolean, not throwing) — callers must inspect `Object.keys(errors).length`.
 
 **`submitCallback(event, setshowCreateModal)`:**
-- If the closure's `errors` is empty (see the same-render caveat above): calls `CreateEvent(event)` (`KarmaCircleApi.ts`, `POST /events/create`, **the real event-creation endpoint** — contrast with `CreateEvent.tsx`'s wrong-endpoint bug above; naming collision alert: the *hook's* `CreateEvent` import from `KarmaCircleApi.ts` and the *component* `CreateEvent.tsx` are unrelated same-named things). On `response.status === 201`: success toast, `setshowCreateModal(false)`, and `mutate(eventEndpoints.all)` via `useSWRConfig()` — invalidates any cached SWR entry for `eventEndpoints.all`. **Per [api-integration.md](../../../docs/specs/api-integration.md), no component currently fetches `eventEndpoints.all` via SWR (`Events.tsx` uses a hardcoded array instead), so this revalidation call currently has no listener** — it's correct/harmless, just currently inert, and would start doing useful work the moment `Events.tsx` is wired up to a real SWR fetch of that key.
+- If the closure's `errors` is empty (see the same-render caveat above): calls `CreateEvent(event)` (`KarmaCircleApi.ts`, `POST /events/create`). On `response.status === 201`, it shows a success toast, closes the modal, and invalidates `eventEndpoints.all` through SWR. This alternate form is not routed, and the live directory uses `eventEndpoints.directory()` instead.
 - On any other status: `showErrorToast(response.response.data.message)` — note the doubled `.response.response` — this only works if `CreateEvent()` (the `KarmaCircleApi.ts` function) returned a raw Axios error object with `.response.data.message` rather than the `error.response` shape `KarmaCircleApi.ts`'s other functions typically return; check `CreateEvent`'s own catch block in `KarmaCircleApi.ts` before assuming this path is exercised correctly (it returns the caught `error` object as-is, not `error.response`, unlike most other `KarmaCircleApi.ts` functions — so `response` here actually holds the full Axios error, and `response.response.data.message` is consistent with that, if unusual compared to sibling functions).
 - If `errors` is non-empty: a single generic toast, "Please fill all the required fields" — no per-field detail in the toast (per-field detail is shown inline via `errors.name`/`errors.uid`/etc. in the form itself).
 
 ## Event display components
 
-- **`EventCard.tsx`** — renders from its `event: EventCardEvent` prop. Same card as `organizations/OrganizationCard.tsx` and `landing-home/DrivesRail.tsx` (16:9 cover photo, cause label on a scrim, one-line `truncate` title, two-line `line-clamp-2` summary on a `min-h-11` box), plus the thing an event needs and those don't: a date badge on the cover. A "N going / N spots left" rule at the bottom renders only when `going`/`spotsLeft` are actually set — never true for a live `GET /events` record, which has no capacity field to have set (see [known-issues.md](../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built), future scope).
+- **`EventCard.tsx`** — renders from its `event: EventCardEvent` prop. It shows a cover image or fallback, a date badge, event name and summary, and event location or online details. Live records have no cause or capacity fields, so the card does not invent a cause label or "going / spots left" count (see [known-issues.md](../../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built), future scope).
   **The date is split across the two surfaces on purpose** - `formatEventBadge` on the cover ("12 SEP"), `formatEventTime` in the meta row ("Sat · 9:00 pm"). Both used to call `formatEventDate`, so every card printed the same day number twice. The meta block carries `mb-4` rather than leaning on the bottom rule's `mt-auto`, which resolves to zero once the copy fills the card and left the rule touching the location line.
   **September 2026:** the meta block's own vertical rhythm was loosened (`mt-2.5`→`mt-3`, `gap-1.5`→`gap-2`) and its date/time line's icon swapped from a second `FiCalendar` to `FiClock` — the repeated calendar glyph (already on the cover badge above it) read as the same fact printed twice rather than two distinct ones, and the tight gap between the two meta lines made the block read as cramped. Two badge pills — "Govt" (`isGovernmentSponsored`, brand-tinted) and "Invite only" (`inviteOnly`, neutral) — were added top-right on the cover in the same slot `OrganizationCard`'s "Featured" pill uses, stacked when an event carries both.
 
   **The card links to `/events/:id`** — a stretched overlay on the title link (`after:absolute after:inset-0`) rather than an `<a>` wrapped around the card, so there is one accessible name for the destination and the organizer link, which goes somewhere else entirely, stays clickable on top of it (`relative z-1`). Until August 2026 the card was not a link at all, because the detail page was an unregistered stub.
   Until August 2026 this component **declared no parameters at all**: every field ("Food Marathon, 2025", "GodLike Organization", three identical GitHub avatars, "+300 Participated") was hardcoded, identical across all twenty cards, while `Events.tsx` passed it an `event` prop it never read.
 (`FeaturedEventCard.tsx`, `FeaturedEventImage.tsx`, `EventSlider.tsx` and `Slider.css` were deleted in the August 2026 directory rewrite - a hand-rolled 3s carousel over ten slides of identical hardcoded content, with no pause-on-hover, no manual controls and no accessibility affordances. Nothing outside itself imported them.)
-- **`EventsMarqueeCards.tsx`** — **the one component in this feature that actually reads and correctly uses an `event` prop**: cover image, name, either a location (`CiLocationOn` + `event.address`, when `mode === "Offline"`) or a platform icon+name (`mode !== "Offline"`, icon URL chosen via a nested ternary keyed on `event.platform` — falls back to a generic "other" icon for any platform not literally `"Zoom Meeting"`/`"Google Meet"`/`"Microsoft Teams"`), and a formatted start date/time via `getFormattedDate(event?.startDate)` + `event?.startTime` rendered with responsive truncation (`window.innerWidth <= 500` shows an abbreviated date). **Not rendered by any page.** Given `Profile.tsx` (onboarding-profile feature) has a commented-out `Marquee` block referencing an `EventsCard`, this component looks like the intended content for that commented-out section — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md).
+- **`EventsMarqueeCards.tsx`** - an unused event card component that renders a cover, name, location or online platform, and start date/time from its `event` prop. **Not rendered by any page.** Its future placement remains undecided.
 
 ## `components/HostedEvents.tsx` — literally empty
 
@@ -205,18 +205,26 @@ Correctly handles the 11th–13th "th" exception.
 No timezone handling — relies on `new Date(dateString)`'s local-timezone interpretation, whatever that resolves to in the visitor's browser.
 Only consumer is `EventsMarqueeCards.tsx` (itself unused) — so this function currently has no live call path either.
 
-## Data flow summary — `/events` today (hardcoded) vs. `CreateEvents` (correct, unreached)
+## Data flow summary — live event reads and current creation gap
 
 ```
 Events.tsx render
    ▼
-events = 20x identical hardcoded user/organization-shaped object   (no network call)
+GET /events via eventEndpoints.directory() and SWR
    ▼
-events.map(event => <EventCard event={event} />)   ← EventCard takes no params, event is discarded
+toDisplayEvent() maps each ApiEvent to EventCardEvent
+   ▼
+EventCard renders the live event
 ```
 
 ```
-CreateEvents.tsx (not rendered anywhere) — the correct creation path
+CreateEvent.tsx — the modal currently mounted by Events.tsx
+   ▼
+Save is disabled and its handler targets PATCH /user/update; it does not create events
+```
+
+```
+CreateEvents.tsx (not rendered anywhere) — an alternate form that calls the create API
    ▼
 local `event` state (name/dates/mode/uid/description/coverImage/mode-specific fields)
    ▼
@@ -225,19 +233,15 @@ handleSubmit() → seterrors(validateEvent()); submitCallback(event, setshowCrea
    ▼
 CreateEvent(event)   [KarmaCircleApi.ts, POST /events/create]
    ▼
-201 ──► toast, close modal, mutate(eventEndpoints.all)   (wrong cache key as of Sept 2026 — Events.tsx now fetches eventEndpoints.directory(), a different SWR key; see docs/specs/events.md)
+201 ──► toast, close modal, mutate(eventEndpoints.all)
 ```
 
 ## Types
 
-This folder is TypeScript (`.ts`/`.tsx`) as of this conversion pass — see [authentication/SPEC.md](../authentication/SPEC.md#types) for the general pattern this repo follows.
-`types/index.ts` holds `CreateEventCredentials` (the broken `CreateEvent.tsx`'s profile-shaped state), `EventFormState`/`EventFormErrors`/`UseEventResult` (the correct `CreateEvents.tsx`+`useEvent.ts` pair), and `EventRecord` (the loose shape `EventsMarqueeCards.tsx` and a real event record are expected to have).
-Two pre-existing issues documented above now surface as real compile errors, both left in place behind documented `@ts-expect-error` suppressions rather than fixed, consistent with this pass's types-only scope:
-- **`EventCard.tsx` ignores its `event` prop entirely** — its call site in `Events.tsx` suppresses the resulting excess-property error rather than `EventCard` being given a prop type it doesn't actually read.
-- **`CreateEvent.tsx`'s `htmlFor` attributes on `<div>` elements** (the event-mode picker) aren't valid on a `div` — harmless pre-existing markup, suppressed rather than removed.
-
-`Events.tsx`'s hardcoded `events` array is now explicitly typed as `Organization[]` (imported from `@features/organizations/types`) rather than a home-grown `EventRecord[]`, to make the "this is organization-shaped, not event-shaped" mismatch the type checker's problem too, not just a documentation note.
-`useEvent.ts`'s `submitCallback` asserts `CreateEvent()`'s (from `KarmaCircleApi.ts`) return type at the call site, since that function's own catch block returns the caught error as-is rather than `error.response` — its real inferred type collapses to include `unknown`. `HostedEvents.tsx` stays a genuinely empty (0-byte) file, matching `HostedEvents.tsx` — there was nothing to add types to.
+`types/index.ts` re-exports the feature interfaces and types.
+`ApiEvent` models the API event response, `EventCardEvent` is the directory card view model, and `DisplayEvent` plus `EventDetailContent` provide the detail-page view model.
+`Events.tsx` maps `ApiEvent` records with `toDisplayEvent()` and passes the resulting `EventCardEvent` to `EventCard`.
+`CreateEventCredentials` describes the mounted broken form, while `EventFormState`, `EventFormErrors`, and `UseEventResult` describe the unmounted alternate form and its hook.
 
 **September 2026, detail-page types:** `DirectoryEvent`/`EventDetail`/`EventVenue`/`EventOnlineAccess` (the fixture-shaped types `constants/eventDirectory.ts`/`eventDetails.ts` used to satisfy) are gone from `types/interfaces.ts`, replaced by `DisplayEvent` (the detail page's near-superset of `EventCardEvent`, plus `address`/`state`/`platformLink`/`endsAt`/the two always-boolean trust flags) and `EventDetailContent` (the long-form/timeline/mode-specific fields, flat rather than nested in a `venue`/`onlineAccess` sub-object — `EventLocationPanel` reads `event.address`/`city`/`platform`/`platformLink` and `detail.gettingThere`/`linkDelivery`/`joinRequirements` directly). `ApiEvent` grew the matching fields 1:1 with `event.model.ts`'s `IEvent`; the two must keep changing together.
 
@@ -250,7 +254,6 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 - `validateEvent()`'s mode-specific field checks (address/mapIframe or platformLink) only run if a top-level required field is also missing, letting an event with all top-level fields but no address/platform link pass validation — new finding, refines the existing known-issues.md entry about this hook.
 - `submitCallback`'s reliance on same-render closure identity between `validateEvent()` and `submitCallback()` — already flagged in `known-issues.md`, precise mechanism explained above.
 - `EventsMarqueeCards.tsx` still isn't rendered anywhere, and `getFormattedDate.ts` exists only for it. `utils/formatEventFacts.ts` has its own `formatEventDate`/`formatEventBadge` (real ISO timestamps, matching every live `Event` field) while `getFormattedDate` takes the API's `{ date, time }` string pair — if `EventsMarqueeCards.tsx` is ever wired up against a live record, the two date formatters should collapse into one rather than staying split.
-- `Events.tsx` passes `type="Organizations"` to `ComponentHelmet` — already in `known-issues.md`.
 - `HostedEvents.tsx` is a 0-byte file; importing it throws — already in `known-issues.md`. Its `.scss` sibling has a typo'd filename (`Hosed` not `Hosted`) — new finding.
 - `convertToBase64.ts`'s `converter` can hang forever on a falsy file (currently unreachable via the guarded call site) — new finding.
 - `getEvents()` is fully correct and unused — already in `known-issues.md`.
@@ -258,8 +261,8 @@ Two pre-existing issues documented above now surface as real compile errors, bot
 ## If you're asked to...
 
 - **"Add event creation" / "fix the create event button"** → clarify which surface: `/events`'s button opens the non-functional `CreateEvent.tsx`. The correct implementation to build from is `CreateEvents.tsx` + `useEvent.ts`, which isn't wired into any page — the fix is very likely swapping `Events.tsx`'s import from `CreateEvent` to `CreateEvents` (checking prop-name compatibility — `CreateEvent` takes `setShowCreateModal`, `CreateEvents` takes `setshowCreateModal`, different casing) rather than patching the broken component in place. Note that `createEventSchema` (backend) only accepts the basic fields plus `inviteOnly` today — none of the September 2026 detail-page fields (`about`/`agenda`/`cost`/`fundraiser`/etc.) are creatable through either UI component yet, only through `scripts/seed-demo-data.ts` writing the model directly.
-- **"Fix the copy-paste SEO bug on the events page"** → change `<ComponentHelmet type="Organizations" />` to `type="Events"` in `Events.tsx`.
+- **"Review the Events page SEO label"** → `Events.tsx` currently uses `type="Events"`; verify the route and title branch before changing it.
 - **"Build a 'my hosted events' view for the dashboard"** → `HostedEvents.tsx` is the intended file (currently empty) — there's no existing logic to preserve, treat it as new work.
-- **"Show a real event's location/platform info somewhere"** → `EventsMarqueeCards.tsx` already does this correctly and just needs a page to render it from; the commented-out `Marquee` block in `onboarding-profile/pages/Profile.tsx` is the most likely intended destination.
-- **"Add RSVP / attendee capacity"** → deliberately not built yet, see [known-issues.md](../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) for what it would need (a `capacity` field, a write endpoint, an attendee collection). A materially bigger piece of work than the trust/detail fields added in September 2026 — don't fold it into a smaller-scoped change without calling that out.
+- **"Show a real event's location/platform info somewhere"** -> the routed event directory, event detail page, organization profile's hosted-event section, and My Events page already render live event data. Check the relevant feature spec before wiring the unused `EventsMarqueeCards.tsx` into a new surface.
+- **"Add RSVP / attendee capacity"** → deliberately not built yet, see [known-issues.md](../../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) for what it would need (a `capacity` field, a write endpoint, an attendee collection). A materially bigger piece of work than the trust/detail fields added in September 2026 — don't fold it into a smaller-scoped change without calling that out.
 - **"Let organizers set the government-sponsored flag themselves"** → don't — that's the one field deliberately kept server/seed-only, mirroring `Organization.verified`, precisely so it can't be self-declared. If a real verification workflow is ever wanted, it needs an admin-only route (which doesn't exist for `Organization.verified` either yet), not a client-writable field on `createEventSchema`.

@@ -37,4 +37,4 @@ The Playwright end-to-end suite can run with `pnpm --filter karmacircle-frontend
 
 Follow the existing feature-first structure and React patterns.
 Keep TypeScript types accurate and run the relevant checks before opening a pull request.
-The pre-commit hook currently does not run `lint-staged`, so do not assume it automatically formats files.
+The root pre-commit hook currently has `lint-staged` disabled. The separate API hook runs `lint-staged` for API files; frontend files are not automatically linted or formatted by the root hook.

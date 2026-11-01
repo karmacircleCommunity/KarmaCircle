@@ -1,7 +1,8 @@
 # State Management
 
 Three separate mechanisms hold state in this app, each for a different purpose.
-There is still no single source of truth for "is the user logged in" enforced across the codebase, but `Navbar.tsx` and `DonotRenderWhenLoggedIn.tsx` were fixed (August 2026) to check Redux's `isLoggedIn` alone — see the "isLoggedIn checks" section below for why, and for the one remaining outlier (`Donate.tsx`).
+Redux `user.isLoggedIn` is the frontend's authentication-state source of truth.
+The backend cookie is validated at startup and by authenticated API calls; frontend code does not read the `Token` cookie.
 
 ## 1. Redux (the logged-in user's profile)
 
@@ -19,40 +20,39 @@ There is still no single source of truth for "is the user logged in" enforced ac
 - [useAuth.ts](../../apps/web/src/features/authentication/hooks/useAuth.ts) — on successful sign-in/sign-up, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })`.
 - [Home.tsx](../../apps/web/src/features/landing-home/pages/Home.tsx) — after a Google OAuth redirect completes, dispatches `updateUserData(...)` then `toggleUserLogin()` (two separate dispatches, not one).
 - [Navbar.tsx](../../apps/web/src/components/Navbar.tsx) — on logout, dispatch `resetUserData()`.
-- [Dashboard.tsx](../../apps/web/src/features/dashboard/pages/Dashboard.tsx) — on every SWR fetch of `userEndpoints.profile`, re-dispatches `updateUserData(data?.user)` in the `onSuccess` callback, keeping Redux in sync with the latest server copy.
 
 ## 2. Zustand (`useAuthStore`)
 
 [apps/web/src/app/store/useAuth.ts](../../apps/web/src/app/store/useAuth.ts) is a single Zustand store holding exactly one field: `isLoading` (boolean) and its setter `toggleLoading(loading)`.
-It exists purely to drive button spinners/disabled states for form submissions that live outside the `useAuth` hook's own local `loading` state — e.g. [useFormLogic.ts](../../apps/web/src/features/authentication/hooks/useFormLogic.ts), [AuthButton.tsx](../../apps/web/src/features/authentication/components/AuthButton.tsx), [UserProfile.tsx](../../apps/web/src/features/onboarding-profile/pages/UserProfile.tsx).
+It exists purely to drive button spinners/disabled states in older or unrouted form flows — [useFormLogic.ts](../../apps/web/src/features/authentication/hooks/useFormLogic.ts), [AuthButton.tsx](../../apps/web/src/features/authentication/components/AuthButton.tsx), and the unrouted [UserProfile.tsx](../../apps/web/src/features/onboarding-profile/pages/UserProfile.tsx).
 Despite the name, it has nothing to do with authentication state itself — only with in-flight loading UI.
 
 There is no Zustand store for user/session data; all of that goes through Redux.
 
 ## 3. Cookies (`js-cookie`)
 
-Some non-auth flags are read directly with `Cookies.get(...)`; `Token` itself is no longer read client-side (see below).
+The frontend reads the OAuth kickoff flag and, in one event-directory UI condition, the `Token` cookie.
+The API also uses `Token` for server-side authentication; it is not a reliable frontend session check because the Google OAuth cookie is httpOnly.
 Cookies actually read in the frontend:
 
 | Cookie | Read in | Purpose |
 |---|---|---|
-| `userName` | `UserProfile.tsx` | Compared against the route's `:slug` param to decide if the viewer owns the profile |
-| `isLoggedIn` | `Donate.tsx` | Gate for the (currently unrouted) donate page — see [donate-shop-trending.md](./donate-shop-trending.md) |
+| `Token` | `Events.tsx` | Combined with Redux login state and organization account type to show the create-event control |
 | `OAuthLoginInitiated` | `Home.tsx` | Set by the backend/redirect flow before bouncing back from Google OAuth; its presence triggers `successCallback()` |
+
+The unrouted `UserProfile.tsx` prototype reads its owner identity from Redux; it does not read a cookie.
 
 `Navbar.tsx` clears local storage and dispatches `resetUserData()` on logout.
 The deleted sparse profile page no longer writes or clears a completion-bypass cookie.
 
-## "Is the user logged in?" — one real check, one stale outlier
+## Authentication checks across routed UI
 
-`Navbar.tsx` and `DonotRenderWhenLoggedIn.tsx` previously gated on `Cookies.get("Token") && isLoggedIn`.
-That's a bug fixed August 2026: the `Token` cookie the *Google OAuth* flow sets (`issueOAuthSession` in `apps/api/src/modules/auth/auth.controller.ts`) is `httpOnly`, so it is never visible to `Cookies.get` — the condition could never be true for a Google-authenticated session, even though the backend session and the Redux `isLoggedIn` flag were both correct.
-(The email/password flow's `Token` cookie is *not* httpOnly, which is why this bug only showed up for Google sign-in — the navbar staying on "Sign Up" after a successful login.)
-Both files now check `useSelector(selectIsLoggedIn)` alone, matching the pattern `Landing.tsx` already used.
+`Navbar.tsx`, `DonotRenderWhenLoggedIn.tsx`, and `RequireSignIn.tsx` use Redux's `selectIsLoggedIn` for frontend state.
+`Events.tsx` additionally checks `Cookies.get("Token")` before showing its organization-only create-event control.
+That cookie check can differ between email/password and Google OAuth because the Google OAuth token cookie is httpOnly.
+Backend routes remain responsible for enforcing authorization regardless of whether a frontend control is shown.
 
-The one remaining outlier is `Cookies.get("isLoggedIn")` in the orphaned, unrouted `Donate.tsx` — a *different* cookie name from the `Token` cookie discussed above, not currently worth chasing since that page isn't reachable (see [donate-shop-trending.md](./donate-shop-trending.md)).
-
-When adding new auth-gated UI, use `useSelector(selectIsLoggedIn)` — it's the only mechanism that's actually correct for both the email/password and Google OAuth login paths.
+Follow [AGENTS.md](../../AGENTS.md)'s current rule when adding a new auth-gated control; this section records the implementation as it exists today.
 
 ## Session validity after rehydration
 
@@ -60,4 +60,4 @@ Persisted `isLoggedIn` remembers login; it does not prove the server cookie rema
 `SessionBootstrap` verifies remembered login through `GET /user/profile` before mounting the app.
 A 401 from startup verification, a later shared-fetcher read, or `updateUserProfile()` resets the existing user slice through `clearRejectedSession()`.
 Network and 5xx errors do not clear login.
-No client-side Token cookie check is used, so httpOnly OAuth cookies remain supported.
+The `Token` cookie is not used to determine persisted login state; authenticated API requests send it to the backend.

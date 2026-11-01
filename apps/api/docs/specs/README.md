@@ -3,7 +3,7 @@
 This directory is a map of the codebase for AI coding agents and new contributors.
 Each file documents one module: what it does, which files implement it, the exact request/response shapes, and any known gaps or inconsistencies.
 These specs describe the code as it exists today, including its rough edges — they are not aspirational.
-When you change a module, update its spec file in the same PR so this map stays trustworthy.
+When you change a module, update its spec file in the same change so this map stays trustworthy.
 
 This directory mirrors the structure of the frontend's own `docs/specs/` (see below) on purpose, so an agent working across both apps finds the same shape of map in each.
 
@@ -26,7 +26,7 @@ See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate a
 - **Helmet, compression, cors, express-rate-limit, pino/pino-http** for the standard middleware stack — see [architecture.md](./architecture.md).
 - **swagger-jsdoc + swagger-ui-express** — every route file carries `@openapi` JSDoc blocks; the generated spec is served at `/docs`. Treat a route's JSDoc block as documentation of intent, not as a guarantee it matches the Zod schema next to it — cross-check both when in doubt.
 - **Jest + ts-jest + Supertest + mongodb-memory-server** for tests (`tests/*.test.ts`) — an in-memory Mongo instance per test run, no real database needed. Every module has a test file. A separate standalone e2e server (`tests/e2e/server.ts`) also exists, used only by `apps/web`'s Playwright suite. See [testing.md](./testing.md).
-- **Vercel serverless** is the production deploy target (`api/index.ts` wraps `createApp()` as a handler, `vercel.json` rewrites everything to it); `npm start` (plain `node dist/src/server.ts` after `npm run build`) is the non-Vercel path. Both boot the exact same `createApp()` from `src/app.ts`. See [architecture.md](./architecture.md).
+- **Vercel serverless** is the production deploy target (`api/index.ts` wraps `createApp()` as a handler, `vercel.json` rewrites everything to it); `npm start` (plain `node dist/src/server.js` after `npm run build`) is the non-Vercel path. Both boot the exact same `createApp()` from `src/app.ts`. See [architecture.md](./architecture.md).
 
 ## Folder structure
 

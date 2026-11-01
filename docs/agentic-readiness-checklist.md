@@ -26,7 +26,7 @@ Section 9 is a roll-up of completed first-pass work, so it is excluded to avoid 
 Score completed items in sections 1-3 and 5-8 as 1, partial items as 0.5, and open or external items as 0, divided by all scored items.
 Update the bar when checklist statuses change.
 
-`[████████░░] 77%` (45 done, 5 partial, 12 open or external; 62 scored items).
+`[████████░░] 78%` (46 done, 5 partial, 11 open or external; 62 scored items).
 
 ## Current readiness summary
 
@@ -78,8 +78,8 @@ The `main` ruleset requires pull requests, one approval, resolved review threads
 - [x] Document the monorepo boundary and keep the API contract as backend source of truth.
 - [x] Keep a graphify map for navigation across code and docs.
 - [~] Treat the graph as a navigation aid and verify claims against current code and specs; generated graph summaries can lag or use generic community names.
-- [ ] Assign an owner or review cadence for feature specs, known issues, and setup guides.
-- [~] Remove obsolete implementation notes when code changes; the stale Turbo note is corrected and the old backend handoff is marked superseded, but the full docs set still needs review.
+- [x] Assign an owner and quarterly review cadence for feature specs, known issues, setup guides, and linked flow diagrams.
+- [~] Remove obsolete implementation notes when code changes; this guide sweep corrected route, setup, and cross-reference drift, while some older implementation notes still need a focused audit.
 - [ ] Keep stated file counts, test counts, route counts, and other changing numbers out of prose unless the source of truth generates them.
 
 ## 4. UI quality checklist

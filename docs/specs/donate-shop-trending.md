@@ -7,9 +7,10 @@ Three low-priority/incomplete areas grouped together because none of them repres
 [apps/web/src/features/donate-shop-trending/pages/Donate.tsx](../../apps/web/src/features/donate-shop-trending/pages/Donate.tsx) exists but **has no entry in `routesConfig.tsx`** — it cannot be reached by navigating the live app.
 It also imports two components that don't resolve: `../../components/Cards/SingleOrganizationEvent/SingleOrganizationEvent` doesn't exist in the current file tree, and `../../components/Loading` is off by one directory level (the real `Loading` component now lives at `apps/web/src/components/Loading.tsx`, exported from the shared barrel).
 **Importing this file today will fail the build** — it is stale code from before a component reorganization, not a working feature.
-It fetches organizations via `GetAllOrganizations()` (`KarmaCircleApi.ts`, `GET /organizations`), loads the Razorpay checkout script (`https://checkout.razorpay.com/v1/checkout.js`) via a hand-rolled `loadScript` helper, and gates access on `Cookies.get("isLoggedIn")` — a cookie that, per [state-management.md](./state-management.md), is not set anywhere else in the current codebase (the rest of the app uses the `Token` cookie + Redux `isLoggedIn`), so this gate can never pass today even if the imports were fixed.
+It fetches organizations via `GetAllOrganizations()` (`KarmaCircleApi.ts`, `GET /organizations`), loads the Razorpay checkout script (`https://checkout.razorpay.com/v1/checkout.js`) via a hand-rolled `loadScript` helper, and checks Redux `selectIsLoggedIn` for its login gate.
+The file remains unrouted and has unresolved imports, so this check is not part of a live user flow.
 
-If asked to "fix the donate page," treat this as a near-full rewrite (fix imports, register a route, align the login-gate check with the rest of the app) rather than a small patch — confirm scope before starting.
+If asked to "fix the donate page," treat this as a near-full rewrite (fix imports, register a route, and verify the full donation and payment flow) rather than a small patch — confirm scope before starting.
 
 ## `PaymentGateway.ts` (Razorpay integration — the working piece)
 

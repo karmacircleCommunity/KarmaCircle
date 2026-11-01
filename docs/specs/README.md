@@ -3,7 +3,14 @@
 This directory is a map of the codebase for AI coding agents and new contributors.
 Each file documents one feature area: what it does, which files implement it, how data flows through it, and any known gaps or inconsistencies.
 These specs describe the code as it exists today, including its rough edges — they are not aspirational.
-When you change a feature, update its spec file in the same PR so this map stays trustworthy.
+When you change a feature, update its spec file in the same change so this map stays trustworthy.
+
+## Review cadence
+
+The repository maintainer owns these maps.
+Update specs immediately with code changes, then review the frontend and backend maps, route/API contracts, known issues, setup guides, and linked Miro flows at least once per quarter for drift that no single change exposed.
+Record the most recent quarterly review date in this section when completing that sweep.
+Most recent repository guide and flow review: 1 November 2026.
 
 ## What this project is
 
@@ -21,7 +28,7 @@ This directory (`docs/specs/`) covers `apps/web` only; there is no server-side c
 - **`@tanstack/react-query`**'s `QueryClientProvider` wraps the whole app but is not actually used by any query hooks yet — see [known-issues.md](./known-issues.md).
 - **MUI** (`@mui/material`, `@mui/x-date-pickers`) for the event-creation date/time pickers and a few form controls.
 - **Tailwind CSS v4** for all component styling (via `@tailwindcss/vite`), plus a small amount of hand-written global CSS in `apps/web/src/styles/index.css` for things Tailwind's class scanner can't reach — react-select/MUI-generated class names, a `<input type="radio">`-driven pseudo-element toggle switch, and Bootstrap's `.container` replicated for a few not-yet-Tailwind files. See [design-system/04-spacing-layout.md](./design-system/04-spacing-layout.md).
-- **Playwright** for end-to-end tests (`e2e/smoke.spec.ts`, `e2e/organization-setup.spec.ts`), replacing Cypress (September 2026) — see [testing.md](./testing.md).
+- **Playwright** for end-to-end tests (`e2e/smoke.spec.ts`, `e2e/organizations/organization-setup.spec.ts`, and feature-first suites under `e2e/<feature>/`), replacing Cypress (September 2026) — see [testing.md](./testing.md).
 
 ## Folder structure
 

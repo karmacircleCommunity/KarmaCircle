@@ -1,7 +1,7 @@
 # Organizations — Feature Spec
 
 Colocated, implementation-level companion to
-[docs/specs/organizations.md](../../../docs/specs/organizations.md). A directory
+[docs/specs/organizations.md](../../../../../docs/specs/organizations.md). A directory
 page, a public profile page, an owner-only setup/edit wizard, one card
 component, a sponsorship payment flow, the un-called `ApiConnector` fetcher,
 the API→view adapter, and types. The twelve-organization sample-data file is
@@ -24,11 +24,10 @@ record:
   live data via `useSWR` + `organizationEndpoints.directory({...})`.
 - `/organization/:userName` — the **public** organization profile a card
   links to (`pages/OrganizationProfile.tsx`), fetching
-  `GET /organizations/{handle}` live. This route previously rendered
-  `Profile.tsx` from `onboarding-profile`, the _account_ page shared with
-  `/user/:userName`; that page is unchanged and still owns `/user/:userName`
-  — see [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md). When a
-  request says "the organization page", check which of the two is meant.
+  `GET /organizations/{handle}` live. The older individual account route
+  `/user/:userName` and its `Profile.tsx` page were removed in October 2026;
+  the remaining individual profile editor is `/user/setup` — see
+  [onboarding-profile/SPEC.md](../onboarding-profile/SPEC.md).
 - `/organization/setup` — `pages/OrganizationSetup.tsx`, the one-question-at-a-time
   wizard that publishes a draft organization and doubles as its edit flow
   once live. It has seven questions across "about", "reach", and "support".
@@ -70,13 +69,13 @@ record:
 ## `pages/Organizations.tsx`
 
 **Rendered chrome:** `<ComponentHelmet type="Organizations" />`, `<Navbar />`, a
-heading block, `DirectoryToolbar` (search + cause filters + result count +
+heading block, `DirectoryToolbar` (search + cause filter dropdown + result count +
 "Your dashboard" button), the results grid, `<Footer />`.
 
 **Live data, server-side filtered.** `useSWR(organizationEndpoints.directory({
 search, domain }), fetcher, { keepPreviousData: true })` — both the search
-term and the cause chip go to the backend, not applied to an already-fetched
-page (the directory is paginated). The cause chips themselves come from
+term and the cause filter go to the backend, not applied to an already-fetched
+page (the directory is paginated). The cause filter options come from
 `useSWR(organizationEndpoints.taxonomy, fetcher)`, never a hardcoded list.
 
 **Featured strip (September 2026).** Only on the unfiltered default view
@@ -94,7 +93,7 @@ Deliberately a *filter*, not "the first two results" — an organization only
 ever appears there because it actually turned sponsorship on, matching this
 codebase's own "nothing invented" convention (see the profile's
 "sections with nothing behind them don't render" rule, and
-[design-system/09-components-feature.md](../../../docs/specs/design-system/09-components-feature.md)'s
+[design-system/09-components-feature.md](../../../../../docs/specs/design-system/09-components-feature.md)'s
 note about not fabricating stats). The backend already sorts
 `sponsorship.enabled` organizations first (`organization.service.ts#findLive`),
 so this reads an existing order rather than issuing a second query. `rest`
@@ -103,7 +102,7 @@ two grids.
 
 **Search field fix (September 2026).** `DirectoryToolbar`'s `<input>` is
 `type="text" role="searchbox"`, not `type="search"` — see
-[docs/specs/design-system/08-components-shared.md](../../../docs/specs/design-system/08-components-shared.md#directorytoolbar)
+[docs/specs/design-system/08-components-shared.md](../../../../../docs/specs/design-system/08-components-shared.md#directorytoolbar)
 for exactly why (`type="search"` layered extra, inconsistently-hidden
 browser-native chrome on top of this component's own icon/clear button,
 which read as "a weird animation"). The clear button is now always mounted
@@ -129,7 +128,7 @@ cut with no fade sitting almost flush against the count (fixed with a
 trailing-edge `bg-gradient-to-l from-surface to-transparent` scrim, which
 required moving the mobile `-mx-9` bleed off the scroll element and onto
 its wrapper so the fade positions against the right box). Full geometry:
-[docs/specs/design-system/08-components-shared.md#directorytoolbar](../../../docs/specs/design-system/08-components-shared.md#directorytoolbar).
+[docs/specs/design-system/08-components-shared.md#directorytoolbar](../../../../../docs/specs/design-system/08-components-shared.md#directorytoolbar).
 
 **Loading, two distinct states (September 2026).** The true first load
 (`isLoading && !data`) renders six `OrganizationCardSkeleton`s rather than
@@ -150,7 +149,7 @@ input/button. `aria-live` result count, "nothing matches / reset filters"
 empty state.
 
 That chrome is shared with `/events` via
-[`DirectoryToolbar`](../../../components/DirectoryToolbar.tsx). The grid is
+[`DirectoryToolbar`](../../components/DirectoryToolbar.tsx). The grid is
 `1 / 2 / 3` columns (`sm` / `xl`) inside `max-w-6xl` with `px-9` mobile
 padding. Scoped by `useSectionReveal(gridRef, [results.length, domain])`.
 
@@ -229,7 +228,7 @@ independent `useSWR` call inside `OrganizationProfileView`), so without it in
 the array, "Events hosted"'s own `data-reveal` elements could get stuck at
 their pre-animation opacity exactly the way this page's own documented
 history already has one regression for (see the note in
-[organizations.md](../../../docs/specs/organizations.md#organizationprofiletsx--the-public-profile)).
+[organizations.md](../../../../../docs/specs/organizations.md#organizationprofiletsx--the-public-profile)).
 
 ## `components/OrganizationCard.tsx`
 
@@ -267,7 +266,7 @@ from before this pass. New in September 2026:
   bloom, the name to `text-brand`, the arrow gaining a filled `bg-brand/10`
   circle behind it. `EventCard`/`EventsMarqueeCards` still use the plain
   recipe — see
-  [design-system/14-drift-register.md#d15](../../../../docs/specs/design-system/14-drift-register.md#d15--organizationcards-hover-no-longer-matches-eventcardeventsmarqueecards--open-deliberate)
+  [design-system/14-drift-register.md#d15](../../../../../docs/specs/design-system/14-drift-register.md#d15--organizationcards-hover-no-longer-matches-eventcardeventsmarqueecards--open-deliberate)
   for why that's tracked rather than silently inconsistent.
 
 Not exported from the shared barrel (`apps/web/src/components/index.ts`) —
@@ -389,7 +388,7 @@ export const getOrganizations = async () => {
 
 Goes through `apiConnector()` (`src/services/ApiConnector.ts`) — the "Layer
 B" call path described in
-[api-integration.md](../../../docs/specs/api-integration.md), **not** the
+[api-integration.md](../../../../../docs/specs/api-integration.md), **not** the
 `Axios` instance `KarmaCircleApi.ts`'s functions use (`CreateSponsorshipOrder`/
 `VerifySponsorshipPayment` included). `Organizations.tsx` fetches through
 `useSWR` + `organizationEndpoints.directory()` directly instead, which is why
@@ -442,14 +441,13 @@ it too.
 - The profile Follow button now persists through the authenticated follow
   endpoints and updates owner dashboard counts.
 - No pagination on the directory beyond a `limit: 60` fetch.
-- `Events.tsx`/`EventCard` still render fixture data (a separate,
-  pre-existing gap this change didn't touch) — the "Events hosted" section
-  and the "Most recently…" link both work off the real API directly instead,
-  and their links to `/events/:uid` land on `DetailedEvent.tsx`'s
-  fixture-only lookup until that page is wired up.
+- The public `/events` directory and `/events/:eventId` detail page now use
+  live API records, and the hosted-events section uses the same live event
+  route through its own query. Event creation remains a separate known issue;
+  see [events/SPEC.md](../events/SPEC.md).
 - No file-upload endpoint exists — `logo`/`cover`/`gallery`/leadership
   `photo` are all pasted URLs, an explicit, deliberately deferred choice
-  (see [known-issues.md](../../../docs/specs/known-issues.md)), not an
+  (see [known-issues.md](../../../../../docs/specs/known-issues.md)), not an
   oversight.
 - No Razorpay webhook — see "Sponsorship flow" above.
 

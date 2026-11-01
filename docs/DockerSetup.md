@@ -1,44 +1,25 @@
+# Docker development setup
 
-# Docker setup guidelines 🚀
+The repository's root Docker Compose file runs a local MongoDB container only.
+For the full frontend, API, and MongoDB setup, follow the [local development guide](./LocalDevSetup.md).
 
-## Prerequisite
+## Run the frontend container
 
-- Install [Docker Desktop](https://docs.docker.com/get-docker/)
+The frontend also has a standalone development container configured in `apps/web/docker-compose.dev.yaml`.
+This container runs the frontend only; it does not start the API or MongoDB.
 
-## Step 1 - Clone the repository
+1. Install and start [Docker Desktop](https://docs.docker.com/get-docker/) or another Docker Compose compatible runtime.
+2. From the repository root, install workspace dependencies as described in the [local development guide](./LocalDevSetup.md#1-install-dependencies).
+3. Create `apps/web/.env` from `apps/web/.env.example`.
+4. Set `VITE_API_URL` to the API URL reachable by the browser, such as `http://localhost:5050` when the API runs on the host.
+5. Start the frontend container from `apps/web`:
 
-```
- git clone https://github.com/karmacircleCommunity/KarmaCircle.git
-```
-
-## Step 2 - Change directory to apps/web
-
-This repo is a monorepo; the frontend's `docker-compose.dev.yaml` lives at `apps/web`, not the repo root.
-
-```
- cd KarmaCircle/apps/web
-```
-
-## Step 3 - Add env variables
-
-- Once you're done installing, create a `.env` file in the root of your project directory to include all environment variables
-- The following are the environment variables you'll need before running the server:
-```
-PORT=
-MONGO_URI=
-RAZORPAY_KEY_ID=
-KEY_ID=
-KEY_SECRET=
-```
-- You can go through the <a href="https://razorpay.com/docs/api" target="_blank">Razorpay docs</a> to generate the API keys
-
-## Step 4 - Run docker compose file
-
-```
-docker-compose up -d --build
+```bash
+docker compose -f docker-compose.dev.yaml up --build
 ```
 
-## Step 5 - Open in browser
+Open `http://localhost:3000/` in a browser.
+Stop the container with `docker compose -f docker-compose.dev.yaml down`.
 
-`visit localhost:3000 to run the app`
-
+The frontend container uses the frontend's `Dockerfile` and mounts `apps/web/src` for development changes.
+Its environment file contains frontend `VITE_` settings; backend settings belong in `apps/api/.env`.

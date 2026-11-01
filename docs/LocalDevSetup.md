@@ -59,12 +59,12 @@ Edit `apps/api/.env`:
 
 | Var | What to put |
 |---|---|
-| `MONGO_URI` | `mongodb://localhost:27017/karmacircle` (points at the container from step 1) |
+| `MONGO_URI` | `mongodb://localhost:27017/karmacircle` (points at the MongoDB container from step 2) |
 | `PORT` | `5050` - **not** `5000`, see [Known gotchas](#known-gotchas) |
 | `CALLBACK_URL` | `http://localhost:5050/auth/google/callback` (must match `PORT`) |
 | `JWT_SECRET` | Any random string - the example file's default is fine |
 | `SECRET_KEY`, `CLIENT_ID`, `CLIENT_SECRET` | **Must be non-empty** even if you're not testing Google OAuth - any placeholder string works, e.g. `"local-dev-placeholder"`. The example file ships these as `""`, which fails startup validation - see [Known gotchas](#known-gotchas). |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Same - must be non-empty, placeholder is fine unless testing payments |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Optional. Leave them empty unless testing payments; the API starts without them. |
 | Everything else (`ORIGIN_URL`, `ORIGIN_DOMAIN`, `CORS_ORIGINS`, `successURL`) | Leave as the example file's defaults. `ORIGIN_DOMAIN` in particular must stay **empty** locally, or the browser will reject the auth cookies |
 
 ## 4. Set up the frontend (`apps/web`)
@@ -79,7 +79,7 @@ Edit `apps/web/.env` - the example file already sets `VITE_API_URL` to a placeho
 VITE_API_URL="http://localhost:5050"
 ```
 
-(`5050` to match the backend's `PORT` from step 2.) `VITE_RAZORPAY_KEY_ID` can stay empty or be placeholders unless you're testing the donate flow.
+(`5050` to match the backend's `PORT` from step 2.) `VITE_RAZORPAY_KEY_ID` can stay empty unless testing payments.
 
 ## 5. Run both
 
@@ -113,4 +113,5 @@ Then open `http://localhost:3000` in a browser and try signing up / signing in -
 ## Known gotchas
 
 - **Port 5000 is often already taken on macOS** by the system's AirPlay Receiver (`ControlCenter` process) - you'll get `EADDRINUSE` even though nothing in this repo is using it. Easiest fix: run the backend on a different port (this guide uses `5050`), rather than disabling AirPlay Receiver. Check what's squatting on a port with `lsof -i :5000 -sTCP:LISTEN`.
-- **`apps/api/.env.example` ships `SECRET_KEY`/`CLIENT_ID`/`CLIENT_SECRET`/`RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` as empty strings**, but `src/config/env.ts`'s Zod schema requires all of them non-empty (`.min(1)`) - the server won't boot at all until you fill in at least a placeholder for each, even if you have no intention of using Google OAuth or Razorpay locally.
+- **`apps/api/.env.example` ships required Google OAuth settings as empty strings**, but `src/config/env.ts` requires `SECRET_KEY`, `CLIENT_ID`, `CLIENT_SECRET`, `CALLBACK_URL`, and `successURL` to be non-empty - the server won't boot until those settings are filled, even if you do not plan to test Google OAuth locally.
+- Razorpay keys are optional in `src/config/env.ts`; local development and tests can run without them.

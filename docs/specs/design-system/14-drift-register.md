@@ -126,7 +126,7 @@ Same component, two further gaps: `max-[525px]:text-center` contradicts the mobi
 - `max-500px:break-all` will break words mid-character.
 - Uses px letter-spacing (`tracking-[1.2px]`, `tracking-[1px]`) rather than `em`.
 
-**Fix:** rebuild on the section-heading recipe in [10-patterns.md](./10-patterns.md), and retire `--font-mont` once `Profile.tsx`'s use is also gone.
+**Fix:** rebuild on the section-heading recipe in [10-patterns.md](./10-patterns.md), then retire `--font-mont` if no consumers remain.
 
 ---
 

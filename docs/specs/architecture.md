@@ -8,8 +8,8 @@ It mounts `<App />` inside, from outermost to innermost: Redux `<Provider>`, `<H
 It also sets a `--vh` CSS custom property from `window.innerHeight` on load, a common mobile-viewport-height workaround; it is not recalculated on resize.
 
 [apps/web/src/app/App.tsx](../../apps/web/src/app/App.tsx) wraps the router in `<QueryClientProvider>` (from `@tanstack/react-query`) and MUI's `<LocalizationProvider>` (needed for the date/time pickers used in event creation).
-It renders a global `<ToastContainer />` (react-toastify) and a global `<ScrollProgress />` bar outside the `<Routes>`, so both appear on every page. (It used to say `<BacktoTop />` here too — that button was unmounted in August 2026 and is still unmounted; see [layout-navigation.md](./layout-navigation.md).)
-Route content is wrapped in `<Suspense fallback={"Loading . . ."}>` to support the two lazy-loaded auth pages (see below).
+It renders a global `<ToastContainer />` (react-toastify) and a global `<ScrollProgress />` bar outside the `<Routes>`, so both appear on every page. The `BacktoTop` component exists but is not mounted here; see [layout-navigation.md](./layout-navigation.md).
+Route content is wrapped in `<Suspense fallback={"Loading . . ."}>` to support the three lazy-loaded authentication pages (see below).
 
 Note: `QueryClientProvider` is set up but no component in the codebase currently calls `useQuery`/`useMutation` — all server-state fetching goes through SWR or plain `axios` instead.
 See [known-issues.md](./known-issues.md).
@@ -21,31 +21,36 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | Path | Element | Notes |
 |---|---|---|
 | `/` | `Home` | Landing page + marketing content |
-| `/auth/signup` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Same component as `/auth/signin` — one unified sign-in/sign-up flow, see below |
-| `/auth/signin` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | |
-| `/user/setup` | `ProfileSetup` | Signed-in individual editor; old handle page removed |
-| `/organizations` | `Organizations` | Organization/org directory |
-| `/organization/:userName` | `OrganizationProfile` | The public organization profile (`features/organizations`), reached from a directory card. Until August 2026 this route rendered `Profile` — the account view, deleted in October 2026 |
-| `/dashboard` | `Dashboard` | Logged-in organization/org's own dashboard |
-| `/events` | `Events` | Event directory |
-| `/trending` | `Trending` | "Coming soon" placeholder |
-| `*` | `Error404` | Catch-all |
+| `/brand` | `BrandRedirect` | Redirects to the standalone brand guide site |
+| `/auth/signup`, `/auth/signin` | `Auth` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Same email-first flow on both paths |
+| `/auth/forgot-password` | `ForgotPassword` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Request a reset email |
+| `/auth/reset-password/:token` | `ResetPassword` (lazy, wrapped in `DonotRenderWhenLoggedIn`) | Set a new password using a single-use token |
+| `/user/setup` | `ProfileSetup` (wrapped in `RequireSignIn`) | Signed-in individual editor; old handle page removed |
+| `/organizations` | `Organizations` | Live organization directory |
+| `/organization/setup` | `OrganizationSetup` | Organization owner setup and editing flow |
+| `/organization/:userName` | `OrganizationProfile` | Public organization profile. The parameter is named `userName` in the route, while links and API records use the organization handle |
+| `/dashboard` | `Dashboard` | Organization dashboard; setup gate handles incomplete or signed-out states |
+| `/organization/events` | `YourEvents` | Organization's hosted events; setup gate handles access state |
+| `/events/mine` | `MyEvents` (wrapped in `RequireSignIn`) | Signed-in individual's registrations |
+| `/events` | `Events` | Live event directory |
+| `/events/:eventId` | `DetailedEvent` | Event detail; `eventId` is the event `uid` |
+| `*` | `Error404` | Catch-all for unknown paths |
 
-`Auth` is the only lazily-loaded route (`lazy(() => import(...))`), mounted at both `/auth/signup` and `/auth/signin` and wrapped by [DonotRenderWhenLoggedIn](../../apps/web/src/features/authentication/components/DonotRenderWhenLoggedIn.tsx) — a HOC that redirects an already-authenticated user to `/`.
+The three authentication pages are lazily loaded and wrapped by [DonotRenderWhenLoggedIn](../../apps/web/src/features/authentication/components/DonotRenderWhenLoggedIn.tsx), which redirects a visitor who is already signed in to `/`.
+`ProfileSetup` and `MyEvents` are wrapped by [RequireSignIn](../../apps/web/src/features/authentication/components/RequireSignIn.tsx).
 See [authentication.md](./authentication.md).
 
-Pages are exported from a barrel file, [apps/web/src/app/routes/route.ts](../../apps/web/src/app/routes/route.ts).
-`routesConfig.tsx` imports most pages from this barrel but imports `Home`, `Trending`, and `Auth` directly — there's no functional difference for the ones that could go through the barrel, just inconsistent style. `Auth` specifically must be imported directly (not re-exported from `route.ts`) for its `lazy()` wrapping to actually code-split it — see [known-issues.md](./known-issues.md)'s former `[INEFFECTIVE_DYNAMIC_IMPORT]` entry, now fixed this way.
-
-There is no `/donate` route registered anywhere, even though `apps/web/src/features/donate-shop-trending/pages/Donate.tsx` exists.
-`/events/:eventId` was registered in August 2026 and renders `DetailedEvent.tsx`, which until then was an unrouted stub — see [events.md](./events.md).
-`/donate` is still effectively unreachable dead code — see [known-issues.md](./known-issues.md).
+Most routed pages are exported from [apps/web/src/app/routes/route.ts](../../apps/web/src/app/routes/route.ts); `Home` is imported directly, and auth pages are imported directly for lazy loading.
+`/donate` has no route even though its page remains in the feature tree.
+The old `/trending` route is not registered, and the former Trending page is not in the route barrel.
+See [known-issues.md](./known-issues.md) for unreachable feature code.
 
 ## Build configuration
 
 - `vite.config.mjs` configures the path aliases (see [README.md](./README.md)), dev server (`port: 3000`, `host: true`, `usePolling: true` for the watcher — relevant in Docker/WSL setups), and `vite-plugin-pwa` with a `CacheFirst` runtime-caching strategy for Google Fonts and image files.
 - Environment variables are read via `import.meta.env.*` and must be prefixed `VITE_`.
-  The two names actually read in code are `VITE_API_URL` (base URL for every backend call) and `VITE_RAZORPAY_KEY_ID` (see [donate-shop-trending.md](./donate-shop-trending.md)).
+  The names currently read in frontend source are `VITE_API_URL`, `VITE_GEOAPIFY_API_KEY`, `VITE_GOOGLE_MAPS_API_KEY`, and `VITE_RAZORPAY_KEY_ID`.
+  See [LocalDevSetup.md](../LocalDevSetup.md) for which ones are required or optional.
 - `eslint.config.js` and `.prettierrc` define lint/format rules; `husky` + `lint-staged` run `eslint --fix` and `prettier --write` on staged `.js`/`.jsx`/`.ts`/`.tsx` files pre-commit.
 - `commitlint.config.js` enforces Conventional Commits via a husky `commit-msg` hook.
 
@@ -71,15 +76,15 @@ apps/web/src/
     routes/                    — routesConfig.tsx (route table), route.ts (page barrel)
     store/                     — Redux Toolkit store + userSlice, Zustand store (useAuth — loading flag only)
   features/
-    authentication/            — unified Auth page, AuthButton, DonotRenderWhenLoggedIn, useAuth/useValidation/useFormLogic
-    onboarding-profile/        — Profile/UserProfile pages, ProfileCompletion/ProfileUpdate modals, ProfileElements
+    authentication/            — unified Auth page, password reset pages, AuthButton, route guards, and auth hooks
+    onboarding-profile/        — individual profile setup; legacy unrouted profile prototype and retired modals also remain
     dashboard/                 — Dashboard page, ProfileSection, TrackSection
-    organizations/                     — Organizations page, OrganizationCard, Organizations.ts fetcher
-    events/                    — Events/DetailedEvent pages, event cards, CreateEvent(s), useEvent
-    landing-home/               — Home page, Landing hero
-    donate-shop-trending/      — Donate page + PaymentGateway.ts (Razorpay); the Shop and Trending pages were deleted
-    error-handling/            — Error404 (rebuilt August 2026), Test pages
-  components/                  — shared across 2+ features: Navbar, Footer, Header, Button, Combobox, Modal, Loading, ScrollProgress, BacktoTop, ComponentHelmet, ClickAwayListener
+    organizations/             — directory, public profile, setup, dashboard-adjacent UI, and API types/hooks
+    events/                    — directory/detail pages, event cards, create forms, hooks, fetchers, and mappers
+    landing-home/              — Home page, landing sections, sample drives, and page-specific types
+    donate-shop-trending/      — unrouted Donate page and payment integration files; no Shop or Trending route
+    error-handling/            — Error404 page
+  components/                  — shared UI: Navbar, Footer, Header, Button, Combobox, Modal, Loading, ScrollProgress, ComponentHelmet, ClickAwayListener
   hooks/                       — cross-cutting hooks used by 2+ features (useSectionReveal, useMagnetic, useReducedMotion — the shared motion layer, see ui-kit.md#motion)
   services/                    — KarmaCircleApi.ts (most backend calls), ApiConnector.ts + ApiEndpoints.ts (shared API infra)
   statics/                     — static reference data (Constants.ts, CountryList.ts, OnlinePlatform.ts, IndiaStates.ts, IndiaCities.ts)
@@ -95,5 +100,5 @@ Two deliberate exceptions, both added with the organization setup flow's locatio
 They are shared because of what they are rather than how many places import them - a suggest-as-you-type form field is a UI-kit primitive and is documented as one ([ui-kit.md](./ui-kit.md#combobox)), and "where is this" is a question events will ask in the same words organizations do.
 The reference data they read (`statics/IndiaStates.ts`, `statics/IndiaCities.ts`) belongs in `statics/` on the existing rule, which is where `CountryList.ts` already sits with one consumer.
 
-Two backend-call layers coexist: `apps/web/src/services/KarmaCircleApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.js` / `services/Events.js` fetchers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`, only used by `getOrganizations`/`getEvents`).
+Two backend-call layers coexist: `apps/web/src/services/KarmaCircleApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.ts` / `services/Events.ts` helpers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`; neither helper is called by a routed page today).
 See [api-integration.md](./api-integration.md) for which one each feature actually uses.

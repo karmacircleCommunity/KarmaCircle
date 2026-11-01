@@ -30,13 +30,14 @@ flowchart TD
     cta{{"Signed in already?"}}:::decision
     cta_signup["CTA: Sign up Today!"]:::general
     cta_explore["CTA: Explore our organizations"]:::general
-    auth["Authentication - /auth/signin or /auth/signup"]:::general
+    auth["Authentication - /auth/signin, /auth/signup, /auth/forgot-password, /auth/reset-password/:token"]:::general
+    brand_redirect["Brand guide redirect - /brand"]:::general
     acct_type{{"New account type?"}}:::decision
-    org_setup["Organization Setup wizard"]:::general
+    org_setup["Organization Setup wizard - /organization/setup"]:::general
     org_live{{"Required fields complete?"}}:::decision
     org_draft["Draft organization - hidden from directory"]:::general
     orgs_dir["Organizations Directory - /organizations"]:::general
-    org_profile["Organization Profile - /organization/:handle"]:::general
+    org_profile["Organization Profile - /organization/:userName (organization handle)"]:::general
     org_dashboard["Dashboard - /dashboard"]:::general
     org_events_admin["Your Events - /organization/events"]:::general
     my_events["My Events - /events/mine, signed-in individual"]:::general
@@ -53,6 +54,7 @@ flowchart TD
     not_found["404 - unmatched route"]:::terminator
 
     start --> home
+    start --> brand_redirect
     home --> cta
     cta -->|"No"| cta_signup
     cta -->|"Yes"| cta_explore
@@ -118,7 +120,7 @@ flowchart TD
     h_nav_finish["Link: Finish setting up, draft organizations"]:::general
     h_oauth["Google OAuth landing pad on mount"]:::general
     u_personal["Individual: navbar Edit profile - /user/setup"]:::general
-    u_org_record["Public organization details: /organization/setup"]:::general
+    u_org_record["Organization setup editor: /organization/setup"]:::general
 
     h_start --> h_hero
     h_hero --> h_cta
@@ -223,7 +225,7 @@ flowchart TD
     os_edit_save["Validate and save fields via PATCH /organizations/me; blank optional fields clear"]:::general
     os_edit_ok{{"Save succeeded?"}}:::decision
     os_edit_retry["Error message; keep edits for retry"]:::general
-    os_view(["View updated public profile - /organization/:handle"]):::terminator
+    os_view(["View updated public profile - /organization/:userName (organization handle)"]):::terminator
     os_intro["Draft intro: start / continue or Maybe later"]:::general
     os_home(["Home - /"]):::terminator
     os_about["About: prefilled name, description, organization type, 1-5 causes"]:::general
@@ -239,7 +241,7 @@ flowchart TD
     os_publish["Server checks description, type, causes, team size and city on every save; publish draft when complete"]:::general
     os_more{{"More steps?"}}:::decision
     os_live{{"Organization live at end?"}}:::decision
-    os_profile(["Public profile - /organization/:handle"]):::terminator
+    os_profile(["Public profile - /organization/:userName (organization handle)"]):::terminator
     os_draft["Still draft: show missing details and stay; hidden publicly"]:::general
     os_exit["Close: validate current formats, save current step; stay on failure"]:::general
     os_back_gap(["Known gap: live organization's first Back returns to first question, not intro"]):::terminator
@@ -332,7 +334,7 @@ flowchart TD
     classDef terminator fill:#B3E65F,stroke:#6E9A24,color:#2F440B
 
     o_start(["Visitor opens Organizations"]):::terminator
-    o_taxonomy["Cause filter chips - GET /organizations/taxonomy"]:::general
+    o_taxonomy["Cause filter dropdown - GET /organizations/taxonomy"]:::general
     o_search["Search and domain filter - server-side"]:::general
     o_featured["Featured strip - sponsored orgs, shown only when unfiltered"]:::general
     o_grid["Grid of Organization Cards"]:::general

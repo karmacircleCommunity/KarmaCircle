@@ -52,8 +52,8 @@ See [AGENTS.md](./AGENTS.md) for the fuller workflow around this.
 
 ## When two implementations exist, ask
 
-`apps/web` has several places where two components or hooks do overlapping things (two profile-edit modals, two "create event" forms, two auth-validation systems, two public-profile pages — all cataloged in its `known-issues.md`).
-If a request is ambiguous about which one it means ("add a field to the create-event form", "fix the profile page"), ask which one before writing code, rather than guessing or editing both.
+`apps/web` has several overlapping or retired implementations (two profile-edit modals, two create-event forms, two auth-validation systems, and an unrouted legacy user-profile prototype alongside the live organization profile).
+If a request is ambiguous about which form or flow it means, check the route table and feature specs, then ask before editing an alternate or unrouted implementation.
 `apps/api` doesn't currently have this problem — each module has exactly one code path per route.
 
 ## Coding conventions — apps/web (frontend)
@@ -61,18 +61,24 @@ If a request is ambiguous about which one it means ("add a field to the create-e
 These are drawn from how the *majority* of the existing code already does things — match them in new/changed code rather than introducing a third pattern:
 
 - **Imports:** prefer the `@/`, `@app/`, `@features/`, `@components/`, `@services/`, `@statics/`, `@hooks/`, `@utils/`, `@styles/`, `@assets/` aliases (defined in both `vite.config.mjs` and `tsconfig.json` — keep them in sync if you add one) over relative paths in new code.
-- **TypeScript:** the repo is converting to TypeScript feature by feature (`authentication` and `organizations` are done — see [docs/specs/README.md](./docs/specs/README.md#typescript) and [docs/specs/architecture.md](./docs/specs/architecture.md#typescript)). Every feature has (or should have) a `types/` folder colocated at `apps/web/src/features/<name>/types/` (or `apps/web/src/types/` for types genuinely shared across features). Inside that folder, split declarations by kind into separate files rather than one combined `index.ts`:
+- **TypeScript:** the frontend conversion is complete; keep new and edited frontend code typed, and check the feature's spec for its current type layout ([docs/specs/README.md](./docs/specs/README.md#typescript), [docs/specs/architecture.md](./docs/specs/architecture.md#typescript)).
+  Features with a `types/` folder keep feature types there; genuinely shared types belong in `apps/web/src/types/`.
+  Inside those folders, follow the repository convention of separating interfaces, enums, and type aliases by kind:
   - `interfaces.ts` — all `interface` declarations
   - `enums.ts` — all `enum` declarations
   - `types.ts` — all type aliases (`type X = ...`)
 
-  Never mix interfaces, enums, and type aliases into a single file — keeping them segregated avoids confusion as a feature's type surface grows. When touching a feature that still has the old combined `types/index.ts`, split it into these three files as part of your change rather than adding to the combined file. Don't reach for `any` or inline object-shape props when a converted feature already has the type defined nearby.
+  Don't reach for `any` or inline object-shape props when the feature already has a type defined nearby.
 - **Folder structure:** the codebase is organized feature-first under `apps/web/src/features/<name>/` (each with its own `pages/`, `components/`, `hooks/`, `services/`, `utils/`, `constants/` as needed), not by page/component/hook type. `apps/web/src/app/` is the app shell (entry, root component, routes, store). `apps/web/src/components/`, `apps/web/src/services/`, `apps/web/src/statics/`, `apps/web/src/styles/`, `apps/web/src/utils/`, `apps/web/src/assets/` hold code shared across more than one feature. See [docs/specs/architecture.md](./docs/specs/architecture.md).
-- **API calls:** add new backend calls to `apps/web/src/services/KarmaCircleApi.ts` following its existing pattern (plain `axios`, catch and return `error.response` rather than throwing, `withCredentials: true` on writes) — not the feature-level `services/` fetchers (`apps/web/src/features/organizations/services/Organizations.js`, `apps/web/src/features/events/services/Events.js`) + `apps/web/src/services/ApiConnector.js` layer, which is only used by two dead-end helpers today. See `docs/specs/api-integration.md`.
-- **Reads inside components:** use `useSWR(endpoint, fetcher)` (from `apps/web/src/utils/Fetcher.js`), matching `Dashboard.jsx`/`Profile.jsx`. Don't add new `@tanstack/react-query` usage — the provider is mounted but nothing uses it yet.
-- **Status codes:** compare against `STATUSCODE` from `apps/web/src/statics/Constants.js` (e.g. `STATUSCODE.OK`) rather than a bare `200`.
-- **Toasts:** use `showSuccessToast`/`showErrorToast` from `apps/web/src/utils/Toasts.js` for any API-triggered feedback, not `toast.success`/`toast.error` directly — they already handle the offline case.
-- **Buttons:** use the shared `Button` component (`apps/web/src/components/buttons/globalbutton/Button.jsx`) and its `onClickfunction` prop, not a raw `<button onClick>`, for anything that should look like the rest of the app.
+- **API calls:** add new backend calls to `apps/web/src/services/KarmaCircleApi.ts` following its existing pattern (plain `axios`, catch and return `error.response` rather than throwing, `withCredentials: true` on writes).
+  The feature-level `services/Organizations.ts` and `services/Events.ts` helpers go through `apps/web/src/services/ApiConnector.ts` and are not called by routed pages today.
+  See `docs/specs/api-integration.md` before adding or changing a call.
+- **Reads inside components:** use `useSWR(endpoint, fetcher)` with `apps/web/src/utils/Fetcher.ts` where it fits the feature's existing pattern.
+  Routed examples include `Events.tsx`, `OrganizationProfile.tsx`, and `Dashboard.tsx`.
+  Don't add new `@tanstack/react-query` usage; the provider is mounted but no component uses its query hooks yet.
+- **Status codes:** compare against `STATUSCODE` from `apps/web/src/statics/Constants.ts` (e.g. `STATUSCODE.OK`) rather than a bare `200`.
+- **Toasts:** use `showSuccessToast`/`showErrorToast` from `apps/web/src/utils/Toasts.ts` for API-triggered feedback; they already handle the offline case.
+- **Buttons:** use the shared `Button` component (`apps/web/src/components/buttons/Button.tsx`) and its `onClickfunction` prop where its behavior fits.
 - **Styling:** use Tailwind CSS utility classes directly in `className` — this is now the convention across the whole app, no `.scss` files and no CSS Modules remain. **Before writing or changing any UI, read [docs/specs/design-system/README.md](./docs/specs/design-system/README.md)** — the design system covers tokens, hex values, type, spacing, radii, shadows, breakpoints, shared-component specs, recipes, and known deviations. It carries the resolution order (shared component → pattern → token → Tailwind default → arbitrary value) and a hard "never do this" list. [docs/specs/ui-kit.md](./docs/specs/ui-kit.md) is now only a navigation map into it, kept for its anchors.
 - **Validation on submit:** if you fix a form's validation, make sure a non-empty `errors` object actually blocks the API call — several existing forms compute errors but call the API anyway (see `known-issues.md`); don't copy that pattern into new code.
 
@@ -91,6 +97,6 @@ Drawn from how the existing code already does things — match them in new/chang
 ## Keep the specs honest
 
 If you fix something a `known-issues.md` calls out ([docs/specs/known-issues.md](./docs/specs/known-issues.md) for `apps/web`, [apps/api/docs/specs/known-issues.md](./apps/api/docs/specs/known-issues.md) for `apps/api`), remove that entry and update the relevant feature/module spec in the same change.
-If you build out something a spec marks as an unused/unwired stub (e.g. wiring `getOrganizations()`/`getEvents()` into the real pages, finishing `UserProfile.jsx`), update that spec to describe the new, real behavior instead of the old placeholder.
+If you build out something a spec marks as an unused or unwired stub (e.g. wiring `getOrganizations()`/`getEvents()` into routed pages, or finishing the unrouted `UserProfile.tsx` prototype), update that spec to describe the new, real behavior instead of the old placeholder.
 If a fix touches the API contract between the two apps, update the spec on **both** sides — see "the apps/web ↔ apps/api boundary" in `AGENTS.md`.
 If you notice something new and wrong while working nearby, add it to the relevant `known-issues.md` rather than leaving it undocumented.

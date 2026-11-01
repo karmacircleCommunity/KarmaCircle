@@ -172,7 +172,7 @@ Actual deployed responses and indexing outcomes have not been checked.
 ### SEO-04 - Public detail metadata and initial HTML are generic (P1)
 
 **Evidence:** `index.html` contains an empty root and static site-wide metadata; public content and Helmet changes require JavaScript.
-`OrganizationProfile.tsx` and routed individual `Profile.tsx` set no page-specific Helmet metadata.
+`OrganizationProfile.tsx` sets no page-specific Helmet metadata. Individual profile editing uses `/user/setup`; it is not a public profile route.
 Event detail reuses generic Events metadata.
 Static OG/Twitter URL/title/description remain homepage values; the social image points to a GitHub-hosted SVG.
 

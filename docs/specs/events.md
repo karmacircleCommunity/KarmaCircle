@@ -111,7 +111,7 @@ Two things make it different from the `/events` directory above it:
 - **It is behind `OrganizationSetupGate`** ([organizations.md](./organizations.md#the-setup-flow--organizationsetup)) — a draft organization is told what is still missing and handed a link that resumes setup, rather than shown an events page it cannot yet use.
 - **It renders live records, not the fixture.** It fetches `GET /events?host={handle}`, a filter added to the API in the same change, so filtering happens server-side and nothing is hidden on page two.
 
-It deliberately does **not** use `EventCard`: the card needs a cover photo, a cause and a capacity, and a live event record (`ApiEvent`, mirroring the API's `IEvent`) has none of the three. Plain rows are what the data actually supports. When those fields exist on a real event, this page and the directory can converge on the card.
+It deliberately renders hosted events as owner-focused rows instead of reusing the public directory card.
 
 ## `MyEvents.tsx` — an attendee's joined events
 
@@ -121,7 +121,8 @@ Cards show the event, organizer, date, location or online platform, and a "You'r
 Loading, fetch failure, no registrations, and empty time-period states are handled explicitly.
 The older `UserProfile.tsx` has a static mock carousel but remains unrouted; it is not the implementation used by this feature.
 
-Event creation is still broken (see below), so in practice this page shows its empty state — which is honest, rather than a fixture pretending otherwise.
+The empty state depends on the signed-in account's saved registrations.
+It does not imply that event creation is the only way registrations can exist.
 
 ## Two different "create event" components (pick carefully)
 
@@ -153,9 +154,9 @@ On success (`response.status === 201`): success toast, closes the modal, and cal
 
 ## Event display components
 
-- [EventsMarqueeCards.tsx](../../apps/web/src/features/events/components/EventsMarqueeCards.tsx) — takes an `event` prop, renders cover image, name, and either a location (Offline) or a platform icon+name (Online), plus a formatted start date/time (via [getFormattedDate.ts](../../apps/web/src/features/events/utils/getFormattedDate.ts)). Responsive text truncation at `window.innerWidth <= 500`. Not currently rendered by any page — looks intended for a "recent events" marquee (there's a commented-out `<Marquee>` block in `Profile.tsx` that would have used something like this).
-- [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) — the card in the `Events.tsx` grid, typed against the looser `EventCardEvent` (`types/interfaces.ts`), not the fixture-complete `DirectoryEvent` — see the `Events.tsx` section above for why. The same card as `OrganizationCard` and the landing page's drives rail — 16:9 cover, cause label on a scrim, one-line title, two-line summary on a fixed box — plus a date badge on the cover. The badge carries the day ("12 SEP") and the meta row carries only weekday and time ("Sat · 9:00 pm"), so the two don't print the same date twice as they did until August 2026. **The whole card links to `/events/:id`**, via a stretched overlay on the title link (`after:absolute after:inset-0`) rather than an `<a>` around everything — one accessible name for the destination, with the organizer link (which points somewhere else entirely) still clickable on top of it via `relative z-1`. Carries `data-reveal`; `Events.tsx` scopes `useSectionReveal` to the grid so cards fade in on scroll and re-reveal when a filter changes. See [ui-kit.md](./ui-kit.md#motion).
-  Until August 2026 it accepted no props at all and hardcoded every field, so all twenty cards were byte-for-byte identical. September 2026: the "N going / N spots left" rule described in earlier versions of this doc is gone for a live event (no capacity data to show — see the `Events.tsx` section above); it still renders for a fixture `DirectoryEvent` that has one, which today only means `DetailedEvent.tsx`'s own components (`EventFacts`, `EventJoinPanel`), not this card.
+- [EventsMarqueeCards.tsx](../../apps/web/src/features/events/components/EventsMarqueeCards.tsx) — takes an `event` prop and renders its cover, name, location or online platform, and start date/time. It is not rendered by a current route; its future placement remains undecided.
+- [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) — the card in the `Events.tsx` grid, typed against `EventCardEvent` (`types/interfaces.ts`). It renders a 16:9 cover or fallback, a date badge, one-line title, two-line summary, and event metadata. Live event records have no cause or capacity values, so the card does not show a cause label or attendee count. The badge carries the day ("12 SEP") and the meta row carries weekday and time ("Sat · 9:00 pm"). **The whole card links to `/events/:eventId`**, via a stretched overlay on the title link (`after:absolute after:inset-0`) rather than an `<a>` around everything. The organizer link remains separately clickable. Carries `data-reveal`; `Events.tsx` scopes `useSectionReveal` to the grid so cards fade in on scroll and re-reveal when a filter changes. See [ui-kit.md](./ui-kit.md#motion).
+  Until August 2026 it accepted no props at all and hardcoded every field, so all twenty cards were byte-for-byte identical. The old `DirectoryEvent` fixture type and its capacity values were removed when the detail page moved to live records; no current event view has attendee-count or spots-left data.
 
 **Net effect:** the `/events` directory and the event detail page both now reflect real backend data end to end — the cards are real `GET /events` records with their real gaps handled rather than fixtures with invented capacity numbers, and nothing on either page claims a number that isn't real. Event creation (`useEvent` + `CreateEvents`) remains the one unwired-to-anything-reachable piece of this feature.
 
@@ -178,7 +179,7 @@ It only shows once it's actually needed: `hidden` in `DetailedEventView` is gate
 
 **Cost is a first-class fact and free is the default.** `cost` is *omitted* on the model for a free event rather than set to zero — almost every event here is a nonprofit drive — so the free case says "Free to attend / Nonprofit event. Nothing to pay, ever." in words.
 
-**Attendee capacity is deliberately not tracked.** `going`/`spotsLeft` stay `undefined` on every live event — same "nothing invented" rule the directory card follows. `EventFacts`'s "Attendance" cell and `EventJoinPanel`'s Going/Spots-left row both render an honest "not tracked" state instead. See [known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) for what real RSVP/capacity tracking would need — flagged as future scope, not scheduled.
+**Attendee capacity is deliberately not tracked.** `going`/`spotsLeft` stay `undefined` on every live event — same "nothing invented" rule the directory card follows. `EventFacts`'s "Attendance" cell and `EventJoinPanel`'s Going/Spots-left row are omitted when the event has no capacity data. See [known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) for what real RSVP/capacity tracking would need — flagged as future scope, not scheduled.
 
 **Joining writes a registration; contribution is not implemented.** The attendee state comes from saved registrations, not local component state:
 - Join calls authenticated `POST /events/:uid/join`; the API saves one registration for the caller and event, then sends the confirmation email only in production.
