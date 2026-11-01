@@ -30,8 +30,11 @@ Install the pinned pnpm version and workspace dependencies from the repository r
 
 ```bash
 npm install --global pnpm@11.22.0
-pnpm install
+pnpm install --frozen-lockfile
 ```
+
+The workspace explicitly allows install scripts for `esbuild` and `mongodb-memory-server`, which the build and isolated API tests need.
+It blocks the optional `@scarf/scarf` install script.
 
 Copy the relevant `.env.example` files and follow the [full local setup guide](./docs/LocalDevSetup.md) to run the frontend, API, and local MongoDB.
 The frontend and backend setup guides are also available for [frontend-only work](./docs/FrontendSetup.md) and [backend-only work](./apps/api/docs/BackendSetup.md).
@@ -60,13 +63,18 @@ Run checks that cover the app you changed before opening a pull request.
 
 ```bash
 pnpm test
-pnpm --filter karmacircle-api lint
-pnpm --filter karmacircle-frontend type-check
+pnpm lint
+pnpm type-check
+pnpm build
 ```
 
 `pnpm test` runs the API Jest suite and the frontend Playwright end-to-end suite.
+`pnpm lint` runs ESLint for both apps.
+`pnpm type-check` checks TypeScript in both apps.
+These commands provide the clean-checkout smoke procedure and match the pull request CI gates.
 The Playwright suite starts its own isolated test services.
 See the [testing guide](./docs/specs/testing.md) for browser setup and coverage details.
+The pull request CI workflow runs the same suites, lint, type checks, and app builds.
 Do not point tests at your local development database or send real email.
 If a check fails, include the failure and reason in your pull request instead of claiming it passed.
 
@@ -91,7 +99,9 @@ The difficulty level is assigned by a project admin or mentor.
 ## Issues
 
 Issue templates help collect the details maintainers need to plan work.
-Each contribution issue should have a descriptive title, a clear task, an expected outcome, the relevant app or files when known, and a maintainer-assigned difficulty level.
+Each contribution issue should have a descriptive title, a focused task, acceptance criteria, an expected outcome, the relevant app or files when known, and a maintainer-assigned difficulty level.
+For larger or user-facing work, include affected user types, supported platforms, constraints, non-goals, and the important UI states.
+Split work that cannot be reviewed as one focused change into linked issues before assigning it.
 Maintainers should update, reassign, or close issues when availability or scope changes.
 
 ## License

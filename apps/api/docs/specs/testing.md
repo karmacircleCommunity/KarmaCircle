@@ -2,7 +2,7 @@
 
 This backend has two separate, independent test setups, for two different jobs:
 
-1. **Jest + Supertest** (`tests/*.test.ts`) — fast, in-process, one module at a time. This is what `npm test` / `pnpm --filter karmacircle-api test` runs, and what CI should run on every change.
+1. **Jest + Supertest** (`tests/*.test.ts`) - fast, in-process, one module at a time. This is what `npm test` / `pnpm --filter karmacircle-api test` runs. The root CI workflow runs this suite together with the frontend Playwright suite on every pull request.
 2. **A standalone e2e server** (`tests/e2e/server.ts`) — a real, listening instance of this API, that exists purely so `apps/web`'s Playwright suite has something real to drive a browser against. Jest never uses this; Playwright never uses Jest's harness. See [../../../../docs/specs/testing.md](../../../../docs/specs/testing.md) (`apps/web`'s testing spec) for the full picture of how the two apps' test suites fit together — this file only covers the `apps/api` side of that.
 
 ## Jest + Supertest
@@ -36,7 +36,7 @@ Every module has a test file (as of September 2026 — `directory`, `payments`, 
 
 A real, listening instance of this API, started only by Playwright (`apps/web/playwright.config.ts`'s `webServer` array) or manually via `pnpm --filter karmacircle-api run test:e2e-server`. It exists because a real browser driven by Playwright makes real HTTP requests to a real URL — Jest's in-process Supertest approach has nothing to bind to.
 
-- **Backed by `mongodb-memory-server`**, the same library Jest's own `jest.setup.ts` uses — so an e2e run never touches a real MongoDB and needs nothing running locally beyond `pnpm install`.
+- **Backed by `mongodb-memory-server`**, the same library Jest's own `jest.setup.ts` uses — so an e2e run never touches a real MongoDB and needs nothing running locally beyond `pnpm install --frozen-lockfile`.
 - **A dedicated port (5051 by default)**, deliberately different from local dev's 5050 — see [tests/e2e/env.setup.ts](../../tests/e2e/env.setup.ts). This process must be able to run *alongside* a developer's real `pnpm dev` session without colliding with it or touching its real MongoDB data. `ORIGIN_URL` is likewise overridden to `http://localhost:3001` (apps/web's own dedicated e2e port — see `apps/web/e2e/env.ts`), so CORS actually allows the e2e web server's origin rather than local dev's `:3000`.
 - **A test-only reset route.** `createApp()` ([../../src/app.ts](../../src/app.ts)) registers `POST /__test__/reset` — wipes every collection — but only `if (env.NODE_ENV === "test")`, so it can never exist in a real deployment. Playwright's `apps/web/e2e/global-setup.ts` calls it once before the whole suite runs, giving Playwright the same "start from an empty database" guarantee Jest gets for free from a fresh `mongodb-memory-server` per test file. It isn't called between individual spec files — see the `apps/web` testing spec for why (parallelism, and the unique-data-per-run pattern that avoids needing it).
 - **A non-production password-reset outbox.** [config/mailer.ts](../../src/config/mailer.ts) never calls Resend unless `env.NODE_ENV === "production"`.

@@ -1,5 +1,13 @@
 # Testing
 
+## Continuous integration
+
+The root [`CI` workflow](../../.github/workflows/ci.yml) runs for every pull request.
+It installs the pinned pnpm workspace, runs lint and type checks, builds both apps, installs Playwright browsers, and runs the API and frontend suites with `pnpm test`.
+The workflow uses the `pull_request` event, read-only repository permissions, and no repository secrets, so fork contributions can run the same checks safely.
+Repository administrators must still require the `validate` check from the `CI` workflow in GitHub branch protection if merges should be blocked until it passes.
+The current GitHub API check found no branch protection or repository ruleset on `main`.
+
 `apps/web`'s only automated test tooling is a **Playwright** E2E suite (`apps/web/e2e/`), added September 2026, replacing an earlier Cypress setup (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`) that existed but was never actually wired into CI. There is still no component/unit-test runner for this app — see "What this doesn't cover" below.
 
 This suite is deliberately **full-stack**: a real browser (via Playwright) drives a real, running `apps/web` dev server, which itself makes real HTTP requests to a real, running `apps/api` instance — nothing here is mocked, except email delivery (see "The password-reset outbox" below). `apps/api` has its own, separate Jest+Supertest suite for API-level coverage; see [apps/api/docs/specs/testing.md](../../apps/api/docs/specs/testing.md) for that side. Running `pnpm test` from the repo root runs both suites, via Turborepo, at the same time — that's what "test the API and the UI at once" means in this repo.
@@ -36,7 +44,7 @@ A developer's normal `pnpm dev` runs the web app on port 3000 and the API on por
 | Outgoing email | an in-memory development outbox, never a real send | an in-memory test outbox, never a real send |
 
 - [`apps/web/e2e/env.ts`](../../apps/web/e2e/env.ts) is the single source of truth for the two e2e ports — imported by `playwright.config.ts`, `global-setup.ts`, and every spec file that needs to call the API directly.
-- [`apps/web/playwright.config.ts`](../../apps/web/playwright.config.ts)'s `webServer` array starts **both** servers itself before any test runs, and tears them down after (locally, `reuseExistingServer: true` keeps them warm across repeated `pnpm test` runs in the same session) — a clean checkout needs nothing running beforehand beyond `pnpm install` and `npx playwright install`.
+- [`apps/web/playwright.config.ts`](../../apps/web/playwright.config.ts)'s `webServer` array starts **both** servers itself before any test runs, and tears them down after (locally, `reuseExistingServer: true` keeps them warm across repeated `pnpm test` runs in the same session) — a clean checkout needs nothing running beforehand beyond `pnpm install --frozen-lockfile` and `npx playwright install`.
   - The API entry runs [`apps/api/tests/e2e/server.ts`](../../apps/api/tests/e2e/server.ts) — a real, listening instance of the API backed by `mongodb-memory-server`, distinct from how Jest drives the same `createApp()` in-process with nothing listening. See `apps/api`'s own testing spec for that file's details, including the test-only `POST /__test__/reset` route it exposes.
   - The web entry runs `vite --port 3001 --strictPort` with `VITE_API_URL` overridden to the e2e API's URL, so the dev server built for this run points at the isolated API, not local dev's 5050.
   - Both commands run via `npx <bin>` with an explicit `cwd`, not `pnpm --filter`/`pnpm exec` — pnpm itself isn't guaranteed to be on `PATH` in every environment (this repo's local dev has the same gap; pnpm is invoked via `npx pnpm@<version>` when it isn't installed globally). `npx` resolves each package's own local devDependency bin from its own `node_modules/.bin` regardless of what's on `PATH`.
@@ -57,16 +65,17 @@ Playwright runs spec files in parallel across workers by default (`fullyParallel
 
 From `apps/web`, or from the repo root with `--filter karmacircle-frontend`:
 
-- `pnpm test` — headless, all three browser projects, matches CI.
+- `pnpm test` — headless, all configured browser projects, matches CI.
 - `pnpm test:ui` — Playwright's interactive UI mode (time-travel through a run, pick a single test).
 - `pnpm test:headed` — headed (visible) browser windows.
 - `pnpm test:report` — reopen the last run's HTML report.
 - `CAPTURE_TOUR=1 pnpm test` — also saves numbered screenshots of the organization-setup journey into `test-results/tour/`.
 - `npx playwright test e2e/<folder>/` — run just one feature's spec files.
 
-From the repo root, plain `pnpm test` runs this suite **and** `apps/api`'s Jest suite together (Turborepo runs each workspace's own `test` script; neither depends on the other, so they run concurrently) — over 110 Playwright tests and 73 Jest tests, in roughly the same wall-clock time as either alone.
+From the repo root, plain `pnpm test` runs this suite **and** `apps/api`'s Jest suite together (Turborepo runs each workspace's own `test` script; neither depends on the other, so they run concurrently).
 
-CI is not wired up for this suite yet (as of September 2026) — it exists and passes locally/on demand, but no GitHub Actions workflow runs it automatically. `web-prtests.yml` still has a *disabled* Cypress job commented out from before this migration; wiring Playwright into CI is a deliberate, separate decision, not implied by this suite existing.
+The root CI workflow now runs the Playwright suite on every pull request.
+`web-prtests.yml` still has a disabled Cypress job commented out from before this migration; it is not the active test workflow.
 
 ## Known sharp edges (found while building this suite)
 

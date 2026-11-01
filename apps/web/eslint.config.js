@@ -78,4 +78,17 @@ module.exports = [
       "tailwindcss/no-unnecessary-arbitrary-value": "warn",
     },
   },
+  {
+    files: [
+      "src/features/landing-home/components/DrivesRail.tsx",
+      "src/features/landing-home/components/HowItWorks.tsx",
+      "src/features/landing-home/components/Landing.tsx",
+      "src/features/landing-home/components/OpenSource.tsx",
+    ],
+    rules: {
+      // Tailwind v4 does not generate leading-1.05/1.1/1.12. The plugin's fixes also mis-order classes around the valid bracket forms.
+      "tailwindcss/classnames-order": "off",
+      "tailwindcss/no-unnecessary-arbitrary-value": "off",
+    },
+  },
 ];

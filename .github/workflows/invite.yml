@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Invite on label
-        uses: vj-abigo/invite-on-label@v1.4
+        uses: vj-abigo/invite-on-label@6c8d39e8e79900c27737e8da5b212fb946d6b2d1 # v1.4.1
         with:
           organization: karmacircleCommunity
           label: invite me to the organisation

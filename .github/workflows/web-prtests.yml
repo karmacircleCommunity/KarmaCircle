@@ -30,12 +30,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
+      - name: Install Vercel CLI
+        run: npm install --global vercel@65.9.0
+
       - name: Deploy to Vercel Action
-        uses: BetaHuhn/deploy-to-vercel-action@v1
+        uses: BetaHuhn/deploy-to-vercel-action@9893d875c782e1b4995a9399e8c4d660c33849c3 # v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

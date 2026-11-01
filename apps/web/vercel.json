@@ -3,6 +3,7 @@
     "enabled": false,
     "silent": true
   },
+  "installCommand": "npx --yes pnpm@11.22.0 install --frozen-lockfile",
   "routes": [
     {
       "src": "/(.*)",

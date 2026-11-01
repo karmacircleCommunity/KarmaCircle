@@ -1,10 +1,21 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
+  - package-ecosystem: github-actions
+    directory: /
     labels:
       - dependencies
-    directory: "/"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: chore(deps)
     schedule:
-      interval: "monthly"
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore(deps)
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10

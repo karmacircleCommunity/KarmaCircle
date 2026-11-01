@@ -1,19 +1,13 @@
+@AGENTS.md
+
+# Repository navigation and conventions
+
+The import above loads the shared project instructions from `AGENTS.md` into Claude Code.
+This file adds repository navigation and coding conventions only; shared rules belong in `AGENTS.md`.
+
 ## Monorepo layout
 
 This repo holds two independently deployed apps: `apps/web` (the frontend, `karmacircle-frontend` — React/Vite SPA) and `apps/api` (the backend, `karmacircle-api` — Express/TypeScript/MongoDB). They share this repo, CI, and top-level tooling (this file, `AGENTS.md`, the graphify graph), but each keeps its own `package.json`, its own `docs/specs/` map, and its own deploy target. `apps/api` is the source of truth for the API contract; don't guess at a request/response shape beyond what `apps/api/docs/specs/api-contract.md` and the route code show. See [AGENTS.md](./AGENTS.md) for the fuller agentic workflow around working across both.
-
-## Local development login
-
-When Tamal explicitly requests local login, account setup, or onboarding, use the local development app and database and complete the requested flow without asking again for permission.
-Never use production or a remote database for this workflow.
-If `local-agent-credentials.md` exists, use its local development credentials for sign-in.
-The file is excluded through `.git/info/exclude`; never copy its contents into tracked files or chat.
-Passwords in the database are bcrypt hashes and cannot be read back.
-For sign-in, use the saved local credentials or a documented development seed that matches the account.
-Do not brute-force, bypass authentication, or change an existing account password to make login work.
-For a new account, complete all setup steps that do not require entering a new password.
-If the computer-use environment requires Tamal to enter and submit that new credential, leave the form ready and hand off only that step, then continue onboarding when it is complete.
-Do not send real password-reset email from a local workflow.
 
 ## graphify — check the knowledge graph first
 
@@ -27,24 +21,9 @@ Before answering an architecture or "what impacts what" question, or before touc
 - **Do not proactively run `/graphify . --update` (or `graphify update .`) after routine edits.** It costs tokens and dispatches subagents, and Tamal does not want the graph refreshed on every small change. Only run a full semantic update when he explicitly asks for one (e.g. "update the graph" after finishing a feature) — the same applies to re-labeling communities. Reading the (possibly slightly stale) report is still always fine and expected; regenerating it is not something to do unprompted.
 - Same rule for `docs/specs/known-issues.md`: if you fix something it calls out, update that file per "Keep the specs honest" below, but don't also trigger a graph update on your own — that happens the next time Tamal asks for one.
 
-## Caveman — always run ultra mode in this repo
-
-This repo runs [Caveman](https://github.com/JuliusBrussee/caveman) at its most aggressive `ultra` compression level for every session — Tamal wants this on regardless of the tradeoff below.
-
-- At the start of every session in this repo, invoke `/caveman ultra` before doing anything else.
-- Caveman compresses prose *output* only — code, commands, and reasoning tokens are untouched. It does not make you think less carefully, only write up findings more tersely.
-- Caveman's own docs (`docs/HONEST-NUMBERS.md` in its repo) disclose the skill adds roughly 1,000-1,500 input tokens of overhead per turn, so on already-terse, single-file tasks whole-session savings can go net negative. This has been surfaced to Tamal; he still wants it always on here.
-- The CLI's `think.mode` proxy setting has no `ultra` level (only `compress | record | pixel`) and is enabled machine-wide via `~/.claude/settings.json`/`ANTHROPIC_BASE_URL` rerouting to `caveman-proxy` on `127.0.0.1:8787` — that part is not, and cannot be, scoped to just this repo. `ultra` itself only exists as the skill-level `/caveman ultra` invocation, which is what this rule wires in per-repo.
-- Undo: `caveman disable claude` removes the machine-wide proxy hook; deleting this section stops the per-repo `/caveman ultra` invocation.
-
-## Git workflow
-
-Never create a new branch on your own initiative, including when about to commit while sitting on `main`.
-Work and commit directly on whatever branch is currently checked out — `main` included — and stay there.
-Only branch off if Tamal explicitly tells you to (e.g. "make a branch for this," "branch off main").
-This overrides any general instinct to branch before committing on a default branch.
-
 ## Responsive design — mandatory for every component
+
+Use the [agentic readiness checklist](./docs/agentic-readiness-checklist.md#4-ui-quality-checklist) for the reusable UI review steps.
 
 Every new or changed UI component (`apps/web`, either framework in use) must work cleanly across the full screen-size range, from small mobiles (~320px) up through large desktop and 4K/5K monitors.
 This applies regardless of which agent or model is building it — Claude, OpenAI, or anyone else working in this repo.
@@ -94,7 +73,7 @@ These are drawn from how the *majority* of the existing code already does things
 - **Status codes:** compare against `STATUSCODE` from `apps/web/src/statics/Constants.js` (e.g. `STATUSCODE.OK`) rather than a bare `200`.
 - **Toasts:** use `showSuccessToast`/`showErrorToast` from `apps/web/src/utils/Toasts.js` for any API-triggered feedback, not `toast.success`/`toast.error` directly — they already handle the offline case.
 - **Buttons:** use the shared `Button` component (`apps/web/src/components/buttons/globalbutton/Button.jsx`) and its `onClickfunction` prop, not a raw `<button onClick>`, for anything that should look like the rest of the app.
-- **Styling:** use Tailwind CSS utility classes directly in `className` — this is now the convention across the whole app, no `.scss` files and no CSS Modules remain. **Before writing or changing any UI, read [docs/specs/design-system/README.md](./docs/specs/design-system/README.md)** — the design system: one root index plus 14 files covering every token, hex, font size, letter-spacing, radius, shadow, breakpoint, shared-component pixel spec, canonical recipe, and the register of deviations still in the code. It carries the resolution order (shared component → pattern → token → Tailwind default → arbitrary value) and a hard "never do this" list. [docs/specs/ui-kit.md](./docs/specs/ui-kit.md) is now only a navigation map into it, kept for its anchors.
+- **Styling:** use Tailwind CSS utility classes directly in `className` — this is now the convention across the whole app, no `.scss` files and no CSS Modules remain. **Before writing or changing any UI, read [docs/specs/design-system/README.md](./docs/specs/design-system/README.md)** — the design system covers tokens, hex values, type, spacing, radii, shadows, breakpoints, shared-component specs, recipes, and known deviations. It carries the resolution order (shared component → pattern → token → Tailwind default → arbitrary value) and a hard "never do this" list. [docs/specs/ui-kit.md](./docs/specs/ui-kit.md) is now only a navigation map into it, kept for its anchors.
 - **Validation on submit:** if you fix a form's validation, make sure a non-empty `errors` object actually blocks the API call — several existing forms compute errors but call the API anyway (see `known-issues.md`); don't copy that pattern into new code.
 
 ## Coding conventions — apps/api (backend)

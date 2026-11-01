@@ -18,6 +18,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: If this needs a code or documentation change, list observable conditions for completion.
+    validations:
+      required: false
+  - type: textarea
     id: relevant-area
     attributes:
       label: Relevant app or files

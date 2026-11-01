@@ -1,14 +1,20 @@
-# Handoff — backend hardening backlog, in progress
+# Historical handoff — backend hardening backlog
 
-*Written before the monorepo migration, when this was still the separate `KarmaCircle-BE` repo — kept as-is below for historical accuracy. The code it describes now lives at `apps/api` in the unified `KarmaCircle` repo; see the root [CLAUDE.md](../../../../CLAUDE.md) for the current layout.*
+*Written before the monorepo migration, when this was still the separate `KarmaCircle-BE` repo — kept below for historical accuracy. The code it describes now lives at `apps/api` in the unified `KarmaCircle` repo; follow root [AGENTS.md](../../../../AGENTS.md) for shared workflow rules and [CLAUDE.md](../../../../CLAUDE.md) for supplementary navigation.*
 
-Written for picking this work up in a fresh chat. Repo: `KarmaCircle-BE` (`karmacircle-api`), sibling to the frontend repo `KarmaCircle`. Working directly on `main`, no branching (see `CLAUDE.md`/`AGENTS.md`) — every round below is committed and pushed to `origin/main` already; nothing is pending.
+**Status: superseded historical handoff.** Its backlog and process notes record an earlier state and may be stale.
+For current work, follow the repo-root [AGENTS.md](../../../../AGENTS.md); [CLAUDE.md](../../../../CLAUDE.md) is a supplemental navigation guide.
+Current branch, commit, push, review, and testing rules there replace any conflicting instructions below.
+
+At the time of this handoff, the backend was `KarmaCircle-BE` (`karmacircle-api`), a sibling of the frontend repo.
+The rounds below were committed and pushed to `origin/main` then; that historical activity does not authorize future actions.
 
 ## How this started
 
 A prior session read every module in this backend end-to-end and wrote a full spec suite at `docs/specs/` (module-by-module reference, `architecture.md`, `api-contract.md` cross-checking every route against what the frontend actually calls, `known-issues.md`), mirroring the frontend repo's own `docs/specs/` convention. `CLAUDE.md` and `AGENTS.md` were updated/added to point at it. **Read `docs/specs/README.md` first** — it's the map of everything, and it's kept honest: whichever items below are marked "resolved" in `known-issues.md` really are.
 
-That same session gave the codebase an informal architecture rating (~7/10: good layering/validation/error-handling habits, but real scalability/security gaps) and produced a backlog. Since then, we've been working through that backlog one item at a time, each with its own quick plan, live verification (real Supertest/in-memory-Mongo runs, not just reading the diff), doc updates in the same commit, and a push straight to `main`.
+That same session gave the codebase an informal architecture rating (~7/10: good layering/validation/error-handling habits, but real scalability/security gaps) and produced a backlog.
+The historical work below proceeded one item at a time, with a plan, live verification, and documentation updates.
 
 ## Backlog status
 
@@ -30,14 +36,15 @@ Full narrative detail for rounds 1–4 (design reasoning, alternatives considere
 - Session revocation uses a `tokenVersion` counter + one DB read per authenticated request (chosen over a stateless-only expiry, explicitly trading latency for real revocation).
 - `User.userName`'s new index is deliberately **plain, not unique** — a `unique: true` index build fails outright against a live collection with an existing duplicate, and no one has checked production data for that. Don't add `unique: true` to `userName` without that check happening first.
 
-## Process notes for continuing this pattern
+## Historical process notes (superseded)
 
-- Each backlog item gets: a quick `EnterPlanMode` pass (or just an `AskUserQuestion` for the one real decision point, if the item is small and mechanical like indexing was) → implement → `npm run typecheck && npm run lint && npm test` → update the relevant `docs/specs/*.md` + `known-issues.md` in the **same** commit → commit → push to `main`.
+- The earlier workflow used a quick plan (or a question for a real design decision), implementation, `npm run typecheck && npm run lint && npm test`, and documentation updates in the same commit.
+- Its direct-to-`main` commit and push instructions are superseded by root `AGENTS.md` and must not be followed for current work.
 - This repo has a Husky pre-commit hook (`lint-staged`: `eslint --fix` + `prettier --write`) that reformats staged files on commit — expect files to look slightly different on disk right after a commit than what was last `Read`; that's normal, re-run the test suite once more against the reformatted state to be sure nothing broke, don't re-diff against the pre-format version.
 - There's also a **post-commit Husky hook** that auto-rebuilds `graphify-out/` (AST-only, no LLM, resets community labels to generic). It fires after every commit and typically needs a small follow-up `chore: graphify post-commit AST rebuild` commit (sometimes two — it can take 2 cycles to converge; `git status --short` should go clean before moving on). This is expected repo behavior, not something to fix.
 - Prefer verifying behavior live (a Supertest test against real in-memory Mongo, or a disposable throwaway script) over trusting a diff looks right — this has caught real things twice already: a rate-limiter false-positive that looked exactly like a DB-state-leak bug (traced via response body, not the misleading stack trace), and confirming indexes actually got created rather than assuming the schema change was enough.
-- `git push origin main` needs the user's SSH agent to have `~/.ssh/id_ed25519_tc` loaded (`ssh-add ~/.ssh/id_ed25519_tc`) — this tripped once earlier in the session; if push fails with `Permission denied (publickey)`, that's almost certainly it, ask the user to re-add the key rather than debugging further.
+- At the time of writing, a push to `origin/main` failed once because the expected SSH key was not loaded; that old machine-specific diagnosis is not current setup guidance.
 
-## Suggested next step
+## Original next-step note (historical; verify current status before acting)
 
 Item 5 (admin/role concept) is the only thing left open. It was deliberately deferred earlier in favor of doing 7/8 first (explicit user request), not because it's unimportant. The real design question to raise before implementing: does this need a full role system (`admin`/`user` enum on `User`, checked via a new `requireAdmin` middleware alongside the existing `requireAuth`), or is "does this event/product belong to the caller" (ownership-based, no roles at all) actually what's being asked for? `POST /product/addproduct` has no natural "owner" concept today (products aren't tied to a user), so that specifically would need an actual admin flag; event mutations, if ever extended beyond create, would be ownership-based instead. A prior `AskUserQuestion` pass on this offered: (a) a boolean `isAdmin` flag granted DB-only, (b) a `userRole` enum for future growth, or (c) skip for now — worth re-raising the same choice before implementing.

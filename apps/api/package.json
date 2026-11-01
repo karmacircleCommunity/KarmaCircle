@@ -12,6 +12,7 @@
     "start": "node dist/src/server.js",
     "test": "jest",
     "test:e2e-server": "tsx tests/e2e/server.ts",
+    "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts"
   },

@@ -14,7 +14,7 @@ Install the pinned pnpm version and workspace dependencies from the repository r
 
 ```bash
 npm install --global pnpm@11.22.0
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 Copy `apps/web/.env.example` to `apps/web/.env`.
@@ -25,8 +25,9 @@ The local stack guide documents the matching API URL and remaining environment s
 
 ```bash
 pnpm --filter karmacircle-frontend dev
+pnpm --filter karmacircle-frontend lint
 pnpm --filter karmacircle-frontend build
-pnpm --filter karmacircle-frontend type-check
+pnpm type-check
 ```
 
 The development server runs at `http://localhost:3000/`.
