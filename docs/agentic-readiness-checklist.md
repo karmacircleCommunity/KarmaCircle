@@ -41,12 +41,12 @@ GitHub branch protection, secret scanning, and outside-collaborator workflow app
 ## 1. Shared Claude and Codex instructions
 
 - [x] Keep shared project rules in root `AGENTS.md`.
-- [x] Make `CLAUDE.md` point to `AGENTS.md` and serve as a supplemental navigation and convention guide.
+- [x] Make `CLAUDE.md` import `AGENTS.md` using Claude Code's native import syntax and serve as a supplemental navigation and convention guide.
 - [x] Use one rule for branch creation, commits, pushes, merges, and pull requests across both tools.
 - [x] Use one communication-style rule across both tools.
 - [x] Point both tools to the same UI quality checklist, app maps, and known-issue docs.
 - [x] Review shared instructions for conflicts; keep model-specific setup limited to tool-specific entry points.
-- [ ] Confirm Claude Code and Codex both load their entry-point files in a clean checkout.
+- [ ] Confirm Claude Code and Codex both load their entry-point files in a separate clean checkout; the current repository wiring uses Claude Code's documented import syntax and Codex's `AGENTS.md` entry point.
 
 ## 2. Task intake and acceptance criteria
 

@@ -1,25 +1,13 @@
-# Claude-specific repository notes
+@AGENTS.md
 
-Read [AGENTS.md](./AGENTS.md) first.
-It is the shared instruction source for Claude and Codex.
-This file adds codebase navigation and conventions only, and must not redefine shared rules.
+# Repository navigation and conventions
+
+The import above loads the shared project instructions from `AGENTS.md` into Claude Code.
+This file adds repository navigation and coding conventions only; shared rules belong in `AGENTS.md`.
 
 ## Monorepo layout
 
 This repo holds two independently deployed apps: `apps/web` (the frontend, `karmacircle-frontend` — React/Vite SPA) and `apps/api` (the backend, `karmacircle-api` — Express/TypeScript/MongoDB). They share this repo, CI, and top-level tooling (this file, `AGENTS.md`, the graphify graph), but each keeps its own `package.json`, its own `docs/specs/` map, and its own deploy target. `apps/api` is the source of truth for the API contract; don't guess at a request/response shape beyond what `apps/api/docs/specs/api-contract.md` and the route code show. See [AGENTS.md](./AGENTS.md) for the fuller agentic workflow around working across both.
-
-## Local development login
-
-When Tamal explicitly requests local login, account setup, or onboarding, use the local development app and database and complete the requested flow without asking again for permission.
-Never use production or a remote database for this workflow.
-If `local-agent-credentials.md` exists, use its local development credentials for sign-in.
-The file is excluded through `.git/info/exclude`; never copy its contents into tracked files or chat.
-Passwords in the database are bcrypt hashes and cannot be read back.
-For sign-in, use the saved local credentials or a documented development seed that matches the account.
-Do not brute-force, bypass authentication, or change an existing account password to make login work.
-For a new account, complete all setup steps that do not require entering a new password.
-If the computer-use environment requires Tamal to enter and submit that new credential, leave the form ready and hand off only that step, then continue onboarding when it is complete.
-Do not send real password-reset email from a local workflow.
 
 ## graphify — check the knowledge graph first
 
@@ -32,18 +20,6 @@ Before answering an architecture or "what impacts what" question, or before touc
 - A `PreToolUse` hook (`.claude/settings.json`) already reminds you of this before any Glob/Grep call, and a post-commit/post-checkout Husky hook (`.husky/post-commit`, `.husky/post-checkout`) auto-rebuilds the code side of the graph after every commit and branch switch — no LLM cost, AST only. Known limitation: that AST-only rebuild has no LLM step, so it resets every community's plain-language name back to generic "Community N" each time it runs. Live with it between real updates rather than trying to patch it back by hand.
 - **Do not proactively run `/graphify . --update` (or `graphify update .`) after routine edits.** It costs tokens and dispatches subagents, and Tamal does not want the graph refreshed on every small change. Only run a full semantic update when he explicitly asks for one (e.g. "update the graph" after finishing a feature) — the same applies to re-labeling communities. Reading the (possibly slightly stale) report is still always fine and expected; regenerating it is not something to do unprompted.
 - Same rule for `docs/specs/known-issues.md`: if you fix something it calls out, update that file per "Keep the specs honest" below, but don't also trigger a graph update on your own — that happens the next time Tamal asks for one.
-
-## Shared instructions
-
-Follow `AGENTS.md` for communication style, approvals, Git actions, testing permissions, and cross-app rules.
-Do not add a different Caveman intensity or a separate Git policy here.
-
-## Git workflow
-
-Never create a branch on your own initiative.
-Work on the checked-out branch unless Tamal names another existing branch.
-If the checked-out branch is `main` and a commit is requested without a target branch, ask which branch to use.
-Follow `AGENTS.md` for explicit permission requirements around commits, pushes, merges, and pull requests.
 
 ## Responsive design — mandatory for every component
 

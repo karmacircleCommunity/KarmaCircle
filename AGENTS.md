@@ -1,7 +1,8 @@
 ## Cross-agent source of truth
 
 - `AGENTS.md` is the shared project instruction source for Codex and Claude.
-- `CLAUDE.md` adds Claude-specific navigation only; it must not redefine shared rules.
+- `CLAUDE.md` imports `AGENTS.md` using Claude Code's native import syntax and adds repository navigation and coding conventions.
+- Consult the relevant `CLAUDE.md` navigation or convention section when working in an area it covers; shared rules belong in `AGENTS.md`.
 - When instructions conflict, follow `AGENTS.md` and update `CLAUDE.md` to remove the conflict.
 - Track repository readiness work in [docs/agentic-readiness-checklist.md](./docs/agentic-readiness-checklist.md).
 
