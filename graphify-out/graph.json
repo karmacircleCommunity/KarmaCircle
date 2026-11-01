@@ -13971,8 +13971,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L277",
       "weight": 1.0,
-      "_src": "organization_controller_dashboard",
-      "_tgt": "organization_service_toprivate",
+      "_src": "organization_service_toprivate",
+      "_tgt": "organization_controller_dashboard",
       "source": "organization_service_toprivate",
       "target": "organization_controller_dashboard"
     },
@@ -14019,8 +14019,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L319",
       "weight": 1.0,
-      "_src": "organization_controller_trackprofileview",
-      "_tgt": "organization_service_findlivebyhandle",
+      "_src": "organization_service_findlivebyhandle",
+      "_tgt": "organization_controller_trackprofileview",
       "source": "organization_service_findlivebyhandle",
       "target": "organization_controller_trackprofileview"
     },
@@ -14031,8 +14031,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L342",
       "weight": 1.0,
-      "_src": "organization_controller_followorganization",
-      "_tgt": "organization_service_findlivebyhandle",
+      "_src": "organization_service_findlivebyhandle",
+      "_tgt": "organization_controller_followorganization",
       "source": "organization_service_findlivebyhandle",
       "target": "organization_controller_followorganization"
     },
@@ -14103,8 +14103,8 @@
       "source_file": "/Users/tamalcodes/Gh/KarmaCircle/apps/api/src/modules/organizations/organization.controller.ts",
       "source_location": "L160",
       "weight": 1.0,
-      "_src": "organization_controller_dashboard",
-      "_tgt": "organization_service_findorcreateforowner",
+      "_src": "organization_service_findorcreateforowner",
+      "_tgt": "organization_controller_dashboard",
       "source": "organization_service_findorcreateforowner",
       "target": "organization_controller_dashboard"
     },
