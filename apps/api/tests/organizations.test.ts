@@ -1,5 +1,7 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/test-app";
+import { OrganizationAnalyticsEvent } from "../src/modules/organizations/organization.model";
+import { ORDER_STATUS, Order } from "../src/modules/payments/order.model";
 
 const app = buildTestApp();
 
@@ -27,6 +29,60 @@ async function signUpOrganization() {
 }
 
 describe("Organizations", () => {
+  describe("GET /organizations/dashboard", () => {
+    it("separates sample contribution amounts from verified totals and marks sample views", async () => {
+      const { cookie, userName } = await signUpOrganization();
+      await request(app).patch("/organizations/me").set("Cookie", cookie).send({
+        ...completeProfile,
+        sponsorship: { enabled: true },
+      });
+
+      await Order.create([
+        {
+          organizationHandle: userName,
+          amountPaise: 2300,
+          currency: "INR",
+          razorpayOrderId: "dashboard-verified-order",
+          status: ORDER_STATUS.Paid,
+          supporterName: "Verified Supporter",
+        },
+        {
+          organizationHandle: userName,
+          amountPaise: 5000,
+          currency: "INR",
+          razorpayOrderId: "dashboard-sample-order",
+          status: ORDER_STATUS.Paid,
+          supporterName: "Sample Supporter",
+          isDemo: true,
+        },
+      ]);
+      await OrganizationAnalyticsEvent.create([
+        { organizationHandle: userName, eventType: "profile_view", occurredAt: new Date() },
+        { organizationHandle: userName, eventType: "profile_view", occurredAt: new Date(), isDemo: true },
+      ]);
+
+      const res = await request(app).get("/organizations/dashboard").set("Cookie", cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.includesDemoData).toBe(true);
+      expect(res.body.metrics.supporters).toBe(2);
+      expect(res.body.metrics.verifiedSupporters).toBe(1);
+      expect(res.body.metrics.raisedViaPlatform).toBe(23);
+      expect(res.body.metrics.demoSupporters).toBe(1);
+      expect(res.body.metrics.demoRaisedViaPlatform).toBe(50);
+      expect(res.body.viewsByDay.reduce((total: number, row: { demoViews: number }) => total + row.demoViews, 0)).toBe(1);
+      expect(res.body.supporters.map((supporter: { isDemo: boolean }) => supporter.isDemo).sort()).toEqual([false, true]);
+    });
+
+    it("rejects an individual account", async () => {
+      const signup = await request(app).post("/auth/signup").send({ email: "dashboard-solo@example.com", password: "hunter2" });
+
+      const res = await request(app).get("/organizations/dashboard").set("Cookie", signup.headers["set-cookie"][0]);
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe("GET /organizations/me", () => {
     it("returns the draft record created at signup, listing what is still missing", async () => {
       const { cookie } = await signUpOrganization();

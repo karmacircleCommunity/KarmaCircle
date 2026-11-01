@@ -33,8 +33,12 @@ record:
   wizard that publishes a draft organization and doubles as its edit flow
   once live. It has seven questions across "about", "reach", and "support".
   Signup pre-fills the organization name, so a new account starts at question
-  2 and answers six remaining prompts. Optional funding, contact, image,
-  social, street-address, and leadership prompts are no longer part of setup.
+  2 and answers six remaining prompts. Live organizations instead see the
+  sectioned `OrganizationProfileEditor` for basics, public contact/location,
+  website, private owner phone, and social links; draft signup stays short.
+  The editor has section navigation, grouped fields, focus-area selection tiles,
+  and a live profile preview. On mobile, section links scroll horizontally and
+  the preview collapses. Image uploads remain unavailable.
 
 ## File manifest
 
@@ -43,6 +47,7 @@ record:
 | `pages/Organizations.tsx` | The `/organizations` directory | ✅ routed; live data, server-side search/filter, a featured strip for sponsorship-enabled organizations |
 | `pages/OrganizationProfile.tsx` | The `/organization/:userName` public profile | ✅ routed; live, 404s on a draft organization |
 | `pages/OrganizationSetup.tsx` | The `/organization/setup` owner-only wizard | ✅ routed; live; also the edit flow for a live organization |
+| `components/OrganizationProfileEditor.tsx` | Live owner editor for basics, contact/location, website, and supported social links | ✅ shown only for a live authenticated owner's record |
 | `hooks/useOrganizationSetup.ts` | The setup flow's state: record, taxonomy, form, stage, per-step save | ✅ used by `OrganizationSetup.tsx`; fully generic over `SETUP_STEPS` |
 | `hooks/useRazorpayCheckout.ts` | Lazy-loads Razorpay's Checkout script exactly once (module-level cached promise), opens it with caller-supplied options | ✅ used by `SponsorOrganizationModal.tsx` |
 | `constants/organizationSetup.ts` | The wizard's steps as data, `FIELD_SPECS`, `FIELD_CY`, `REQUIRED_LABELS` | ✅ read by the page, the hook and the draft notice |
@@ -434,8 +439,8 @@ it too.
 
 - `getOrganizations()` is fully implemented and correct but never called —
   already in `known-issues.md`.
-- The Follow button on `OrganizationProfile.tsx` is still local state with no
-  endpoint behind it.
+- The profile Follow button now persists through the authenticated follow
+  endpoints and updates owner dashboard counts.
 - No pagination on the directory beyond a `limit: 60` fetch.
 - `Events.tsx`/`EventCard` still render fixture data (a separate,
   pre-existing gap this change didn't touch) — the "Events hosted" section

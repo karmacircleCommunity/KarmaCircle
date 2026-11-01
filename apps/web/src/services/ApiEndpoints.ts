@@ -15,6 +15,8 @@ const organizationEndpoints = {
   details: (userName?: string) => `${API}/organizations?userName=${userName}`,
   createEvent: `${API}/organization/createevent`,
   dashboard: `${API}/organizations/dashboard`,
+  follow: (handle: string) => `${API}/organizations/${encodeURIComponent(handle)}/follow`,
+  profileView: (handle: string) => `${API}/organizations/${encodeURIComponent(handle)}/analytics/profile-view`,
   /** The signed-in organization's own record, private fields included. */
   mine: `${API}/organizations/me`,
   /** The closed tag/domain lists the setup form renders — never hardcode a

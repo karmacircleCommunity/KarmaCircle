@@ -8,7 +8,7 @@ import pinoHttp from "pino-http";
 import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
-import { clearTestOutbox, getLastTestResetUrl } from "./config/mailer";
+import { clearResetOutbox, getLastResetUrl } from "./config/mailer";
 import passport from "./config/passport";
 import { swaggerSpec } from "./config/swagger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
@@ -70,7 +70,8 @@ export function createApp(): Express {
   app.get("/health", (_req, res) => {
     res.json({
       status: "ok",
-      mongo: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+      mongo:
+        mongoose.connection.readyState === 1 ? "connected" : "disconnected",
     });
   });
 
@@ -87,23 +88,53 @@ export function createApp(): Express {
   if (env.NODE_ENV === "test") {
     app.post("/__test__/reset", async (_req, res) => {
       const collections = mongoose.connection.collections;
-      await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
-      clearTestOutbox();
+      await Promise.all(
+        Object.values(collections).map((collection) =>
+          collection.deleteMany({}),
+        ),
+      );
+      clearResetOutbox();
       res.status(204).end();
     });
 
     /**
-     * Reads back the reset URL `sendPasswordResetEmail` would otherwise
-     * have emailed, from the in-memory outbox `config/mailer.ts` fills
-     * instead of calling Resend when NODE_ENV==="test" — see that file's
-     * comment. Lets Playwright complete a real forgot/reset-password
-     * journey without a real mail provider.
+     * Reads the captured reset URL so Playwright can complete a full
+     * forgot/reset-password journey without a real mail provider.
      */
     app.get("/__test__/last-reset-url", (req, res) => {
       const to = String(req.query.email ?? "");
-      const resetUrl = getLastTestResetUrl(to);
+      const resetUrl = getLastResetUrl(to);
       if (!resetUrl) {
-        res.status(404).json({ message: "No reset email sent to this address yet." });
+        res
+          .status(404)
+          .json({ message: "No reset email captured for this address yet." });
+        return;
+      }
+      res.json({ resetUrl });
+    });
+  }
+
+  // Local development helper for inspecting a captured password-reset link.
+  // Keep it loopback-only: reset tokens must not be readable over a network.
+  if (env.NODE_ENV === "development") {
+    app.get("/__dev__/last-reset-url", (req, res) => {
+      const remoteAddress = req.socket.remoteAddress ?? "";
+      const isLoopback =
+        remoteAddress === "::1" ||
+        remoteAddress === "127.0.0.1" ||
+        remoteAddress.startsWith("::ffff:127.");
+
+      if (!isLoopback) {
+        res.sendStatus(404);
+        return;
+      }
+
+      const to = String(req.query.email ?? "");
+      const resetUrl = getLastResetUrl(to);
+      if (!resetUrl) {
+        res
+          .status(404)
+          .json({ message: "No reset email captured for this address yet." });
         return;
       }
       res.json({ resetUrl });

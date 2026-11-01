@@ -37,7 +37,11 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 | `GET /organizations/me` | organizations | `requireAuth` | `organizationEndpoints.mine` | ✅ `OrganizationSetup.tsx`'s SWR key |
 | `PATCH /organizations/me` | organizations | `requireAuth` | `organizationEndpoints.mine` | ✅ `UpdateMyOrganization()` |
 | `GET /organizations/{handle}` | organizations | no | `organizationEndpoints.byHandle(handle)` | ✅ `OrganizationProfile.tsx`'s SWR key. `404`s for a draft organization exactly as for an unknown handle |
-| `GET /organizations/dashboard` | organizations | `requireAuth` | `organizationEndpoints.dashboard` | ✅ `fetchDashboard()` |
+| `GET /organizations/dashboard` | organizations | organization account via `requireAuth` | `organizationEndpoints.dashboard` | ✅ `Dashboard.tsx` — response fields map to the ten dashboard refinement areas; exact response contract is in [organizations.md](./organizations.md#response-contract-and-dashboard-area-mapping) |
+| `POST /organizations/{handle}/analytics/profile-view` | organizations | no | `organizationEndpoints.profileView(handle)` | ✅ public profile load records a raw view for live profiles |
+| `GET /organizations/{handle}/follow` | organizations | `requireAuth` | `organizationEndpoints.follow(handle)` | ✅ `OrganizationProfile.tsx` loads current follow state |
+| `POST /organizations/{handle}/follow` | organizations | `requireAuth` | `organizationEndpoints.follow(handle)` | ✅ profile Follow action persists relationship |
+| `DELETE /organizations/{handle}/follow` | organizations | `requireAuth` | `organizationEndpoints.follow(handle)` | ✅ profile Following action removes relationship |
 | — (no route) | — | — | `organizationEndpoints.createEvent` (`/organization/createevent`) | ❌ dead constant, no backend route either — consistent dead code both sides |
 | `GET /display/users` | directory | no | — | ❌ no frontend constant exists for this route |
 | `GET /display/organizations` | directory | no | — | ❌ no frontend constant exists for this route |
@@ -45,7 +49,7 @@ Every route this API exposes, cross-referenced against the frontend's endpoint c
 | `GET /events?host={handle}` | events | no | `eventEndpoints.byHost` | ✅ `YourEvents.tsx` (`/organization/events`) and, new in September 2026, `OrganizationProfile.tsx`'s "Events hosted" section — one host's own events, matched server-side against **either** `organizerHandle` or the legacy `hostUsername` (see [events.md](./events.md)) |
 | `GET /events/mine` | events | `requireAuth` | `eventEndpoints.mine()` | ✅ `MyEvents.tsx` shows authenticated attendee registrations, paginated by upcoming/past period |
 | `POST /events/create` | events | `requireAuth` | `eventEndpoints.create` | ⚠️ Contract exists and the unmounted `CreateEvents.tsx` + `useEvent` path calls it; the live `/events` button opens the broken `CreateEvent.tsx` instead, so ordinary UI use does not publish an event. See [events.md](./events.md) and the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle--agent-reference) |
-| `POST /events/{uid}/join` | events | `requireAuth` | `eventEndpoints.join(uid)` | ✅ `DetailedEvent.tsx` registers the authenticated attendee, then shows confirmation feedback; API emails the account address and reports `emailSent` |
+| `POST /events/{uid}/join` | events | `requireAuth` | `eventEndpoints.join(uid)` | ✅ `DetailedEvent.tsx` registers the authenticated attendee, then shows confirmation feedback; API sends the account-address email only in production and reports delivery in `emailSent` |
 | `GET /events/{uid}/registration` | events | `requireAuth` | `eventEndpoints.registration(uid)` | ✅ `DetailedEvent.tsx` checks current attendee's saved status on load, preventing an active Join control after returning from email |
 | `POST /payment/razorpay` | payments | no | — (no `paymentEndpoints` constant exists in `ApiEndpoints.ts`) | frontend's `PaymentGateway.ts` calls this URL directly, not through the `ApiEndpoints.ts` registry — see the frontend's own `donate-shop-trending.md`/`SPEC.md` for the exact call site and its own separate response-shape bug (`data.currency`/`data.id` vs. this route's actual `{id, currency, amount}` wrapped in axios's `response.data`) |
 | `POST /payment/organizations/{handle}/order` | payments | no | `paymentEndpoints.sponsorshipOrder(handle)` | ✅ `CreateSponsorshipOrder()`, called from `SponsorOrganizationModal.tsx` — see [payments.md](./payments.md#the-organization-sponsorship-flow--order-model-september-2026) |
@@ -67,7 +71,9 @@ The frontend's `updateUserProfile()` ([KarmaCircleApi.ts](../../../../apps/web/s
 
 ### 2. `GET /user/profile` — **fixed**
 
-The frontend's `Dashboard.tsx` (per its own `api-integration.md`) calls `useSWR(userEndpoints.profile, fetcher)`, i.e. `GET /user/profile` — no route matched this before, so the call 404d every time. **Fixed** by adding a real `GET /user/profile` route (`requireAuth`-gated, looks the caller up by `req.auth.email`, the same pattern `GET /organizations/dashboard` already used), responding `{ user: <sanitized> }` — the wrapper shape `Dashboard.tsx` already reads (`profileData?.user`), not the bare object `GET /organizations/dashboard` returns. `GET /organizations/dashboard` (`fetchDashboard()`) is unaffected and still works exactly as before — this was an addition, not a redirect of one call site to the other.
+Historical note: the dashboard previously called `GET /user/profile`, which had no route and returned 404. The route was added to support that earlier dashboard implementation, but the organization dashboard now calls `GET /organizations/dashboard` for its owner-scoped profile and metrics.
+
+On 31 October 2026, the organization dashboard was wired to `GET /organizations/dashboard`; it now returns owner-only aggregates rather than its former bare user object.
 
 ### 3. `GET /auth/login/success` — **fixed**
 

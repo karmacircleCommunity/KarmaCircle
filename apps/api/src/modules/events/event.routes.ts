@@ -83,7 +83,7 @@ router.get(
  *         required: true
  *         schema: { type: string }
  *     responses:
- *       201: { description: Event joined; confirmation email attempted }
+ *       201: { description: Event joined; confirmation email is sent only in production and reported in emailSent }
  *       200: { description: Already joined }
  *       401: { description: Unauthorized }
  *       403: { description: Event is invite-only }

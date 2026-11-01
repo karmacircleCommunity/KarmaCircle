@@ -318,7 +318,7 @@ describe("Auth", () => {
       const cookie = signupRes.headers["set-cookie"][0];
 
       const before = await request(app)
-        .get("/organizations/dashboard")
+        .get("/user/profile")
         .set("Cookie", cookie);
       expect(before.status).toBe(200);
 
@@ -329,7 +329,7 @@ describe("Auth", () => {
       });
 
       const after = await request(app)
-        .get("/organizations/dashboard")
+        .get("/user/profile")
         .set("Cookie", cookie);
       expect(after.status).toBe(401);
     });
@@ -341,7 +341,7 @@ describe("Auth", () => {
       const cookie = signupRes.headers["set-cookie"][0];
 
       const before = await request(app)
-        .get("/organizations/dashboard")
+        .get("/user/profile")
         .set("Cookie", cookie);
       expect(before.status).toBe(200);
 
@@ -351,7 +351,7 @@ describe("Auth", () => {
       expect(logoutRes.status).toBe(200);
 
       const after = await request(app)
-        .get("/organizations/dashboard")
+        .get("/user/profile")
         .set("Cookie", cookie);
       expect(after.status).toBe(401);
     });

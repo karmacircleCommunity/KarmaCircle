@@ -229,15 +229,6 @@ const Auth = () => {
               })}
             </div>
 
-            <p
-              role="note"
-              className="-mt-2 rounded-lg border border-brand/15 bg-brand/5 px-3.5 py-3 font-outfit text-sm leading-relaxed text-gray-700"
-            >
-              New accounts keep this type after signup. You can’t switch it
-              from account settings later. Existing accounts keep their saved
-              type.
-            </p>
-
             <div className="relative flex w-full flex-col">
               <label className="mb-1.5 font-outfit text-body font-medium text-gray-800">
                 Email

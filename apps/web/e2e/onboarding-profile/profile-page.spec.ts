@@ -30,7 +30,9 @@ async function openProfileMenu(
   width: number,
 ) {
   if (width === 375) {
-    await page.getByRole("button", { name: "Open menu", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Open account menu", exact: true })
+      .click();
   } else {
     await page
       .getByRole("navigation")

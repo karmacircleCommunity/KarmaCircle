@@ -10,7 +10,9 @@ Event detail fetches `GET /events?uid={uid}` and renders the event, organizer, m
 Past events show a completed state, with no join action.
 Upcoming events marked `inviteOnly` remain visible in the public directory and detail page; the detail page replaces Join with “ask the organizer.”
 There is no invitation list, invite delivery, access check, or approval flow, so `inviteOnly` is currently a display flag rather than private access control.
-For an upcoming event that is not invite-only, Join requires a signed-in account and saves one registration per account. The attendee receives a confirmation email; event detail checks the signed-in account's registration on load and shows “You are going” in place of Join when already registered.
+For an upcoming event that is not invite-only, Join requires a signed-in account and saves one registration per account.
+Production sends the attendee a confirmation email; local development suppresses delivery.
+Event detail checks the signed-in account's registration on load and shows “You are going” in place of Join when already registered.
 No capacity or attendee-count endpoint exists, so attendee totals and available spots must not be invented.
 Share uses the browser share sheet or clipboard, and Ask opens a mail link only when the event has a contact email.
 Organizations can find their hosted events at `/organization/events` and on their public organization profile, both backed by `GET /events?host={handle}`.
@@ -179,7 +181,10 @@ It only shows once it's actually needed: `hidden` in `DetailedEventView` is gate
 **Attendee capacity is deliberately not tracked.** `going`/`spotsLeft` stay `undefined` on every live event — same "nothing invented" rule the directory card follows. `EventFacts`'s "Attendance" cell and `EventJoinPanel`'s Going/Spots-left row both render an honest "not tracked" state instead. See [known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built) for what real RSVP/capacity tracking would need — flagged as future scope, not scheduled.
 
 **Joining writes a registration; contribution is not implemented.** The attendee state comes from saved registrations, not local component state:
-- Join calls authenticated `POST /events/:uid/join`; the API saves one registration for the caller and event, then attempts the confirmation email. The joined state is verified through `GET /events/:uid/registration` on page load, so returning from email or My Events shows “You are going” and hides the Join action. Capacity remains untracked, and no attendee count is derived from saved registrations.
+- Join calls authenticated `POST /events/:uid/join`; the API saves one registration for the caller and event, then sends the confirmation email only in production.
+  In development and test, delivery is suppressed and the API reports `emailSent: false`.
+  The joined state is verified through `GET /events/:uid/registration` on page load, so returning from email or My Events shows “You are going” and hides the Join action.
+  Capacity remains untracked, and no attendee count is derived from saved registrations.
 - Contribute toasts "contributions open here soon".
 - Share uses `navigator.share` where it exists and the clipboard otherwise; a dismissed share sheet (`AbortError`) is not treated as an error.
 - The venue's map is a plain Google Maps *search link*, not an embed — an iframe would mean a third-party script and a cookie banner for one address.

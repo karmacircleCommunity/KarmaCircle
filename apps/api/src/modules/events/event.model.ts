@@ -102,6 +102,7 @@ export interface IEvent extends Document {
   /** Set only where there is a real restriction. */
   minimumAge?: number;
   contactEmail?: string;
+  isDemo: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -111,6 +112,7 @@ export interface IEventRegistration extends Document {
   userId: mongoose.Types.ObjectId;
   attendeeEmail: string;
   attendeeName: string;
+  isDemo: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -246,6 +248,7 @@ const eventSchema = new Schema<IEvent>(
     languages: [{ type: String, trim: true }],
     minimumAge: { type: Number, min: 0 },
     contactEmail: { type: String, trim: true },
+    isDemo: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
@@ -258,6 +261,7 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
     userId: { type: Schema.Types.ObjectId, required: true, index: true },
     attendeeEmail: { type: String, required: true },
     attendeeName: { type: String, required: true },
+    isDemo: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

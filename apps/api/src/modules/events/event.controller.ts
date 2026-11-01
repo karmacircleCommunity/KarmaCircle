@@ -67,12 +67,11 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
 
   if (!result.alreadyJoined) {
     try {
-      await sendEventJoinConfirmation(
+      emailSent = await sendEventJoinConfirmation(
         result.attendee.email,
         result.attendee.name || "",
         result.event,
       );
-      emailSent = true;
     } catch (error) {
       logger.error(
         {

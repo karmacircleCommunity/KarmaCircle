@@ -119,7 +119,10 @@ export async function signup(
     await organizationService.createForOwner({
       ownerEmail: email,
       handle: userName,
-      name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : userName,
+      name:
+        typeof data.name === "string" && data.name.trim()
+          ? data.name.trim()
+          : userName,
     });
   }
 
@@ -194,9 +197,10 @@ export async function emailExists(email: string): Promise<boolean> {
 }
 
 /**
- * Issues a forgot-password link for `email` and emails it, if — and only
- * silently if not — an account with that email exists. Always resolves
- * the same way either way (no thrown/returned signal distinguishing
+ * Issues a forgot-password link for `email` and passes it to the mailer,
+ * if — and only silently if not — an account with that email exists.
+ * Production delivers it; development and test capture it locally.
+ * Always resolves the same way either way (no thrown/returned signal distinguishing
  * "sent" from "no such account") so the caller (authController.forgotPassword)
  * can respond with one generic message regardless; see known-issues.md for
  * why this doesn't newly leak account existence (GET /auth/check-email
@@ -210,7 +214,9 @@ export async function requestPasswordReset(email: string): Promise<void> {
 
   const rawToken = crypto.randomBytes(32).toString("hex");
   existingUser.resetPasswordToken = hashResetToken(rawToken);
-  existingUser.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+  existingUser.resetPasswordExpires = new Date(
+    Date.now() + RESET_TOKEN_EXPIRY_MS,
+  );
   await existingUser.save();
 
   const resetUrl = `${env.ORIGIN_URL}/auth/reset-password/${rawToken}`;

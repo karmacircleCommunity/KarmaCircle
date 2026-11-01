@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
   PORT: z.coerce.number().default(5000),
 
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
@@ -21,14 +23,11 @@ const envSchema = z.object({
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
 
-  // Same lazy-optional pattern as Razorpay above: config/mailer.ts builds
-  // the Resend client lazily and throws a 503 AppError if a request that
-  // actually needs to send an email (POST /auth/forgot-password) reaches
-  // it without this set, rather than blocking the whole API from booting.
+  // Optional because Resend is used only in production. Development and
+  // test capture password-reset links locally and never construct a client.
   RESEND_API_KEY: z.string().optional(),
-  // Falls back to Resend's own onboarding@resend.dev test sender if unset
-  // — fine for local dev, but any real deploy should set a verified
-  // sending address. See config/mailer.ts.
+  // Production sender address. Falls back to Resend's onboarding sender
+  // when unset. Development and test do not send mail. See config/mailer.ts.
   RESEND_FROM_EMAIL: z.string().optional(),
 
   // The canonical frontend URL: used for the password-reset link

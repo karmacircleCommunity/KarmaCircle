@@ -125,6 +125,21 @@ export interface IOrganization extends Document {
   updatedAt: Date;
 }
 
+export interface IOrganizationFollow extends Document {
+  organizationHandle: string;
+  followerEmail: string;
+  isDemo: boolean;
+  createdAt: Date;
+}
+
+export interface IOrganizationAnalyticsEvent extends Document {
+  organizationHandle: string;
+  eventType: "profile_view";
+  isDemo: boolean;
+  demoKey?: string;
+  occurredAt: Date;
+}
+
 const memberSchema = new Schema<IOrganizationMember>(
   {
     email: { type: String, required: true },
@@ -217,3 +232,48 @@ export const Organization = mongoose.model<IOrganization>(
   "Organization",
   organizationSchema,
 );
+
+const organizationFollowSchema = new Schema<IOrganizationFollow>(
+  {
+    organizationHandle: { type: String, required: true },
+    followerEmail: { type: String, required: true },
+    isDemo: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+organizationFollowSchema.index(
+  { organizationHandle: 1, followerEmail: 1 },
+  { unique: true },
+);
+organizationFollowSchema.index({ followerEmail: 1, createdAt: -1 });
+
+export const OrganizationFollow = mongoose.model<IOrganizationFollow>(
+  "OrganizationFollow",
+  organizationFollowSchema,
+);
+
+const organizationAnalyticsEventSchema = new Schema<IOrganizationAnalyticsEvent>(
+  {
+    organizationHandle: { type: String, required: true, index: true },
+    eventType: { type: String, enum: ["profile_view"], required: true },
+    isDemo: { type: Boolean, default: false },
+    demoKey: { type: String },
+    occurredAt: { type: Date, required: true, default: Date.now, index: true },
+  },
+  { timestamps: false },
+);
+organizationAnalyticsEventSchema.index({ organizationHandle: 1, occurredAt: -1 });
+organizationAnalyticsEventSchema.index(
+  { demoKey: 1 },
+  { unique: true, sparse: true },
+);
+organizationAnalyticsEventSchema.index(
+  { occurredAt: 1 },
+  { expireAfterSeconds: 365 * 24 * 60 * 60 },
+);
+
+export const OrganizationAnalyticsEvent =
+  mongoose.model<IOrganizationAnalyticsEvent>(
+    "OrganizationAnalyticsEvent",
+    organizationAnalyticsEventSchema,
+  );

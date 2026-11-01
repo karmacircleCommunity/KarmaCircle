@@ -98,12 +98,12 @@ test("an organization signs up, stays hidden, then appears once its profile is c
     await expect(page).toHaveURL(/step=about/);
   });
 
-  await test.step("four questions, one screen each", async () => {
-    // Q1 — the name, already filled in at signup.
-    await expect(page.locator('[data-cy="org-name"]')).toHaveValue(org.name);
-    await page.locator('[data-cy="org-save"]').click();
+  await test.step("complete the unanswered profile questions", async () => {
+    // Signup already saved the organization name, so resume starts at the
+    // first unanswered question: the description (q=2).
+    await expect(page).toHaveURL(/step=about&q=2/);
 
-    // Q2 — what they do. Continue refuses to leave a required question
+    // What they do. Continue refuses to leave a required question
     // blank: the flow can be *left* at any time, but not walked past.
     // The button reports as disabled (`aria-disabled`, which `toBeDisabled`
     // treats the same as the native attribute) but stays clickable, so
@@ -133,14 +133,14 @@ test("an organization signs up, stays hidden, then appears once its profile is c
     await expect(page.locator('[data-cy="org-save"]')).toBeEnabled();
     await page.locator('[data-cy="org-save"]').click();
 
-    // Q3 — a single-choice question. Selecting an option just marks it
+    // Next, a single-choice question. Selecting an option just marks it
     // picked; Continue still needs its own click.
     await expect(page).toHaveURL(/q=3/);
     await page.locator('[data-cy="org-tag-NGO"]').click();
     await page.locator('[data-cy="org-save"]').click();
     await expect(page).toHaveURL(/q=4/, { timeout: 10_000 });
 
-    // Q4 — the causes, and the last question of the step: this Continue is
+    // Causes are the last question of the step: this Continue is
     // the one that saves.
     await page.locator('[data-cy="org-domain-Disaster relief"]').click();
     await page.locator('[data-cy="org-save"]').click();
@@ -152,7 +152,7 @@ test("an organization signs up, stays hidden, then appears once its profile is c
     await expect(page.locator('[data-cy="org-teamsize"]')).toBeVisible();
   });
 
-  await test.step("team size, location and contact — then live", async () => {
+  await test.step("finish required details, then edit optional contact", async () => {
     await page.locator('[data-cy="org-teamsize"]').fill("34");
     await page.locator('[data-cy="org-save"]').click();
 
@@ -169,59 +169,29 @@ test("an organization signs up, stays hidden, then appears once its profile is c
     await tour(page, "4-setup-grouped-question");
     await page.locator('[data-cy="org-save"]').click();
 
-    // Typed without a scheme on purpose — the form normalizes it rather
-    // than 400ing on the backend's URL validation.
-    await page.locator('[data-cy="org-website"]').fill("riverbank.example.org");
-    await page.locator('[data-cy="org-contact-email"]').fill(org.email);
-    await page.locator('[data-cy="org-save"]').click();
-
-    await page.locator('[data-cy="org-funds-raised"]').fill("450000");
-    await page.locator('[data-cy="org-save"]').click();
-
-    // Completing "reach" already satisfies every required field
-    // (organization.service.ts's `missingRequiredFields()`), so the
-    // organization is live from here on — but the wizard has a third step,
-    // "presence" (logo/cover, socials, address/map, leadership,
-    // sponsorship), and every question in it is optional
-    // (constants/organizationSetup.ts's `PRESENCE_QUESTIONS`). The flow
-    // itself doesn't finish, and so doesn't redirect, until its very last
-    // question — so getting to the public profile from here means walking
-    // through these five screens too, answering none of them.
-    // Each Continue crosses to the next question through `useOrganizationSetup`'s
-    // `transition()`, which animates the leaving question out for `EXIT_MS`
-    // (170ms) before committing the move and only then clears its `busy`
-    // guard — a click fired before that guard clears is silently dropped,
-    // not queued. Waiting for each question's own heading between clicks
-    // (rather than firing all five back to back) is what a real visitor's
-    // pace does naturally and what keeps every click landing.
-    await expect(page).toHaveURL(/step=presence/, { timeout: 15_000 });
+    // Completing the required fields publishes the organization and opens
+    // the live-profile editor. Optional contact details are saved there.
     await expect(
-      page.getByRole("heading", { level: 1, name: "Add a logo and a cover photo" }),
-    ).toBeVisible();
-    await page.locator('[data-cy="org-save"]').click();
+      page.getByRole("heading", { level: 1, name: "Edit organization" }),
+    ).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("textbox", { name: "Website" }).fill("riverbank.example.org");
+    await page.getByRole("textbox", { name: "Public contact email" }).fill(org.email);
+    const profileSaved = page.waitForResponse(
+      (response) =>
+        response.url() === `${E2E_API_URL}/organizations/me` &&
+        response.status() === 200,
+    );
+    await page.getByRole("button", { name: "Save changes", exact: true }).click();
+    await profileSaved;
+    await expect(page.getByText("Organization profile updated")).toBeVisible();
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Where can people find you online?" }),
-    ).toBeVisible();
-    await page.locator('[data-cy="org-save"]').click();
+    const mine = await page.request.get(`${E2E_API_URL}/organizations/me`);
+    expect(mine.ok()).toBeTruthy();
+    const organization = await mine.json();
+    expect(organization.website).toBe("https://riverbank.example.org");
+    expect(organization.contactEmail).toBe(org.email);
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Add a street address or a map" }),
-    ).toBeVisible();
-    await page.locator('[data-cy="org-save"]').click();
-
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Who leads this organization?" }),
-    ).toBeVisible();
-    await page.locator('[data-cy="org-save"]').click();
-
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: "Accept direct support through KarmaCircle?",
-      }),
-    ).toBeVisible();
-    await page.locator('[data-cy="org-save"]').click(); // last question — publishes
+    await page.getByRole("link", { name: "View public profile" }).click();
 
     // Completing the required list publishes the organization, and the
     // page hands the owner straight to the profile it just created.
@@ -259,23 +229,15 @@ test("an organization signs up, stays hidden, then appears once its profile is c
   });
 
   await test.step("coming back to edit", async () => {
-    // A live organization skips the intro and lands on the first question.
-    // exact: true — the auth/setup layout's testimonial quote rotates and
-    // can itself contain the substring "live" ("What do we live for…"),
-    // which a non-exact match would occasionally collide with.
     await page.goto("/organization/setup");
-    await expect(page.getByText("Live", { exact: true })).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('[data-cy="org-name"]')).toHaveValue(org.name);
-
-    // Back from the first question is meant to reach the intro
-    // (useOrganizationSetup's back() calls goToIntro()) — but for a live
-    // organization the page's own `stage` fallback immediately overrides
-    // that back to the first question, so this is currently a no-op, not
-    // a navigation. See known-issues.md's "Smaller one-off issues" for the
-    // drift this test surfaced; assert what's actually true, not the
-    // originally-intended behavior.
-    await page.locator('[data-cy="setup-back"]').click();
-    await expect(page.locator('[data-cy="org-name"]')).toBeVisible();
-    await expect(page.locator('[data-cy="setup-start"]')).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Edit organization" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Organization name" }),
+    ).toHaveValue(org.name);
+    await expect(page.getByRole("textbox", { name: "Website" })).toHaveValue(
+      "https://riverbank.example.org",
+    );
   });
 });

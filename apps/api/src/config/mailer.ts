@@ -29,28 +29,23 @@ function getResendClient(): Resend {
 }
 
 /**
- * Test-only outbox. `sendPasswordResetEmail` short-circuits into this
- * instead of calling the real Resend API whenever `NODE_ENV === "test"`.
- * Jest never reaches this branch — `tests/*.test.ts` `jest.mock()`s this
- * whole module (see `payments.test.ts`'s comment on the same pattern for
- * `razorpay`) — but the standalone e2e server (`tests/e2e/server.ts`)
- * executes this file for real, and its placeholder `RESEND_API_KEY`
- * would otherwise fail every send. Exposed read-only via
- * `GET /__test__/last-reset-url` in `app.ts`, so Playwright can complete a
- * real password-reset journey without a real mail provider.
+ * Non-production outbox. Password reset links are captured here in both
+ * development and test so neither environment can reach Resend. The test
+ * route and loopback-only development route expose links for local flows.
  */
-interface TestOutboxEntry {
+interface ResetOutboxEntry {
   to: string;
   resetUrl: string;
 }
-const testOutbox: TestOutboxEntry[] = [];
+const nonProductionOutbox: ResetOutboxEntry[] = [];
 
-export function getLastTestResetUrl(to: string): string | undefined {
-  return [...testOutbox].reverse().find((entry) => entry.to === to)?.resetUrl;
+export function getLastResetUrl(to: string): string | undefined {
+  return [...nonProductionOutbox].reverse().find((entry) => entry.to === to)
+    ?.resetUrl;
 }
 
-export function clearTestOutbox(): void {
-  testOutbox.length = 0;
+export function clearResetOutbox(): void {
+  nonProductionOutbox.length = 0;
 }
 
 function resetEmailHtml(resetUrl: string): string {
@@ -68,8 +63,8 @@ export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string,
 ): Promise<void> {
-  if (env.NODE_ENV === "test") {
-    testOutbox.push({ to, resetUrl });
+  if (env.NODE_ENV !== "production") {
+    nonProductionOutbox.push({ to, resetUrl });
     return;
   }
 
@@ -108,7 +103,9 @@ export async function sendEventJoinConfirmation(
   to: string,
   attendeeName: string,
   event: IEvent,
-): Promise<void> {
+): Promise<boolean> {
+  if (env.NODE_ENV !== "production") return false;
+
   const eventUrl = `${env.ORIGIN_URL.replace(/\/$/, "")}/events/${encodeURIComponent(event.uid)}`;
   const date = new Intl.DateTimeFormat("en", {
     dateStyle: "full",
@@ -118,8 +115,7 @@ export async function sendEventJoinConfirmation(
   const safeName = escapeHtml(attendeeName || "there");
   const safeEventName = escapeHtml(event.name);
 
-  const client = env.NODE_ENV === "test" ? null : getResendClient();
-  if (!client) return;
+  const client = getResendClient();
 
   const { error } = await client.emails.send({
     from: env.RESEND_FROM_EMAIL || DEFAULT_FROM,
@@ -138,7 +134,15 @@ export async function sendEventJoinConfirmation(
   });
 
   if (error) {
-    logger.error({ error, eventUid: event.uid }, "Failed to send event join confirmation");
-    throw new AppError(STATUS_CODE.INTERNAL_SERVER_ERROR, "Failed to send event confirmation email.");
+    logger.error(
+      { error, eventUid: event.uid },
+      "Failed to send event join confirmation",
+    );
+    throw new AppError(
+      STATUS_CODE.INTERNAL_SERVER_ERROR,
+      "Failed to send event confirmation email.",
+    );
   }
+
+  return true;
 }

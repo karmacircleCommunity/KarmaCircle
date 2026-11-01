@@ -22,20 +22,40 @@ The setup flow no longer asks for optional funding figures, contact links, profi
 Those fields remain supported by the organization record and API, but are outside this onboarding flow.
 The direct-support choice remains because it enables the profile's real KarmaCircle support button.
 
+**Owner editing (27 October 2026):** an owner sees an **Edit organization** link on their public profile and dashboard.
+Both open `/organization/setup`; the route checks the authenticated owner's organization record and shows the sectioned editor only for a live organization.
+The public profile link appears only when the handle from `GET /organizations/me` matches the public profile handle.
+Visitors, signed-out users, and owners of another organization do not see the link.
+
+The live editor covers core profile details, public contact/location, website, and Instagram, Facebook, X, LinkedIn, and YouTube links.
+Blank optional fields clear their saved values; required publication fields remain required and changes save through the existing owner-only `PATCH /organizations/me` route.
+The page groups related fields, provides section navigation and a live preview, and adapts the section links and preview for narrow screens.
+Logo and cover file uploads remain unavailable; current API image fields are URL strings and this UI does not claim to upload them.
+See the [organization editing implementation plan](./organization-editing-plan.md) for remaining work and storage decisions.
+
+**Dashboard and community (31 October 2026):** `/dashboard` now reads owner-only organization, event registration, paid support, and follow data from `GET /organizations/dashboard`.
+The public profile Follow control creates/removes an authenticated relationship, and the owner dashboard shows follower/following counts and recent followers.
+Public profile loads now record raw profile views, shown in the dashboard's 7/30/90 day chart.
+This is not unique reach or click analytics; those remain future tracking work.
+
 ## The setup flow — `/organization/setup`
 
-See the detailed [organization setup flowchart](./user-flows.md#organization-profile-setup-and-editing), checked against source on 26 October 2026.
+See the detailed [organization setup and editing flowchart](./user-flows.md#organization-profile-setup-and-editing), checked against source on 27 October 2026.
 It distinguishes required-question validation, per-step persistence, Close, and publication on the save that satisfies the required list.
 The legacy `ProfileUpdate` modal updates the User account through `/user/update`; this wizard updates the separate public Organization record through `/organizations/me`.
+Draft organizations see the optional setup intro and short publish wizard.
+Live organizations see the sectioned profile editor, with a link back to the public profile.
 
 Routed at `/organization/setup` (declared above `/organization/:userName`, though React Router already ranks a static segment above a dynamic one).
-It is a focused flow, not a page inside the app chrome: no navbar, no footer, and the same split shell as the auth pages (see [ui-kit.md](./ui-kit.md#splitpanellayout)) — a dark brand panel on the left, the form on the right.
+Draft setup remains a focused split-shell flow without the main navbar/footer.
+Live editing uses the standard app navbar and footer, grouped into Basics, Contact and website, and Social profiles.
 
 This feature's own files, each with one job:
 
 | File | Job |
 |---|---|
 | `pages/OrganizationSetup.tsx` | Which screen to render, and what each button does |
+| `components/OrganizationProfileEditor.tsx` | Live-organization sections, field validation, explicit blank-field clearing, and save feedback |
 | `hooks/useOrganizationSetup.ts` | The record, the taxonomy, the form state, the position in the flow, the transitions, and the per-step save |
 | `constants/organizationSetup.ts` | The steps **and their questions, as data**, plus `FIELD_SPECS`, `REQUIRED_LABELS` and the domain cap |
 | `utils/organizationSetupForm.ts` | Pure form helpers — seeding, per-step payloads, dirty checks, outstanding counts, the resume path |
@@ -262,7 +282,8 @@ Structure:
   - **The contact card grows a map embed** (an `<iframe>`, `location.mapIframe`) under the existing address/email/followers rows, only when the organization has pasted one.
 - **Not-found state** — an unknown `:userName` renders a dedicated panel with a link back to the directory instead of a blank page.
 
-The Follow button is local `useState` and deliberately so: there is no follow/subscribe endpoint in `KarmaCircleApi.ts`/`ApiEndpoints.ts`, and a control that acknowledges a press beats one that looks live and does nothing (which is what `Profile.tsx`'s Subscribe/Sponsor pair does).
+The Follow control persists through `GET`/`POST`/`DELETE /organizations/{handle}/follow` and requires a signed-in account.
+It is hidden on an organization's own profile.
 It is a plain `<button>` rather than the shared `Button` because it has two visually distinct states, and a `variant` class plus a state-dependent `className` would be two equal-specificity utilities fighting over the same properties with no reliable winner.
 The page is scoped by `useSectionReveal(pageRef, [organization.userName, events.length])`. It used to be called with no dependency array at all, which left every `data-reveal` element (name, tagline, meta row, stats, both sidebar cards) stuck at its pre-animation opacity indefinitely — reproduced on both a client-side redirect straight from "Save and publish" and a hard reload, so it wasn't a first-paint-vs-navigation timing fluke. `events.length` joined the dependency array in September 2026 for the same underlying reason: "Events hosted"'s own `data-reveal` elements arrive from a *second*, later-resolving fetch (`eventEndpoints.byHost`), so without it in the array those elements could get stuck invisible exactly the way the original bug worked. This page's content arrives from the `GET /organizations/{handle}` fetch above, the same "async-loaded content needs a dependency array" case `Organizations.tsx`/`Events.tsx` already guard against — see [ui-kit.md](./ui-kit.md#motion). A user landing here right after finishing setup — the best moment for a first impression — was seeing a near-blank page.
 

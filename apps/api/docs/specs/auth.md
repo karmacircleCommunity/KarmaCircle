@@ -41,14 +41,18 @@ All of that is gone: `Token` is `httpOnly` on both paths, and the three readable
 
 The proper, self-service way for a locked-out user to regain access — unlike `POST /auth/update` above (which needs the *current* password), this pair only needs proof of owning the account's inbox. Both are `authLimiter`-gated like every other route in this module, and unauthenticated (you can't require a token to recover from not having one).
 
-Requires `RESEND_API_KEY` (see [config/mailer.ts](../../src/config/mailer.ts) and `.env.example`) — optional in `env.ts`, same lazy-503 pattern `payment.service.ts` uses for Razorpay: the API boots fine without it, and only a request that actually needs to send an email fails, with `503 Email sending is not configured yet.`, until it's set.
+Real delivery requires `RESEND_API_KEY` and happens only when `NODE_ENV=production` (see [config/mailer.ts](../../src/config/mailer.ts) and `.env.example`).
+Development and test never call Resend, even if a key is present: password-reset links are captured in an in-memory outbox instead.
+Development can read a captured link through loopback-only `GET /__dev__/last-reset-url?email=...`; the test suite uses `GET /__test__/last-reset-url?email=...`.
 
 **`POST /auth/forgot-password`** — `authLimiter` → `validate(forgotPasswordSchema)` → `authController.forgotPassword`. Body: `{ email }`. Always responds `200 { message: PASSWORD_RESET_EMAIL_SENT }`, whether or not `email` has an account — `authService.requestPasswordReset` resolves identically either way (a no-op if there's no such user, no distinguishable timing/response difference for the caller to branch on). This is deliberate: not a new information leak, since `GET /auth/check-email` already answers "does this email exist" directly, just for a different purpose — see that route's own doc comment above.
 
 For a real account, `requestPasswordReset`:
 1. Generates a raw 32-byte random token (`crypto.randomBytes(32).toString("hex")`).
 2. Stores only its **SHA-256 hash** on the `User` document as `resetPasswordToken`, plus `resetPasswordExpires` (now + 1 hour) — same reasoning as storing a bcrypt password hash rather than the password itself: a DB read/leak alone shouldn't be enough to take over an account.
-3. Emails the **raw** token (never the hash) as a link — `${ORIGIN_URL}/auth/reset-password/<rawToken>` — via `sendPasswordResetEmail` ([config/mailer.ts](../../src/config/mailer.ts), Resend). `ORIGIN_URL` is the same env var CORS already uses for the frontend's origin, reused here rather than adding a second "what's the frontend's URL" config value.
+3. Passes the **raw** token (never the hash) as a link — `${ORIGIN_URL}/auth/reset-password/<rawToken>` — to `sendPasswordResetEmail` ([config/mailer.ts](../../src/config/mailer.ts)).
+   Production sends it through Resend; development and test capture it locally.
+   `ORIGIN_URL` is the same env var CORS already uses for the frontend's origin, reused here rather than adding a second "what's the frontend's URL" config value.
 
 **`POST /auth/reset-password`** — `authLimiter` → `validate(resetPasswordSchema)` → `authController.resetPassword`. Body: `{ token, newPassword }` (`newPassword` 5+ chars, same rule as `POST /auth/update`). `authService.resetPassword` re-hashes the incoming `token` and looks up a user by `resetPasswordToken` equal to that hash **and** `resetPasswordExpires` still in the future — `400 INVALID_RESET_TOKEN` if no such user (covers wrong token, expired token, and an already-used token identically, since a used token's fields are cleared, not just expired). On success: hashes `newPassword`, clears `resetPasswordToken`/`resetPasswordExpires` (so the same link can't be replayed — single-use), bumps `tokenVersion` (same as `POST /auth/update` — a password reset should invalidate every existing session, including whichever one happened to make this exact call), and responds `200 { message: PASSWORD_RESET_SUCCESS, email }` — `email` is the account's own address, resolved server-side off the token (the frontend never had it; the token is opaque to the caller), and lets `ResetPassword.tsx` hand it to `/auth/signin` so that page can open straight to the password field (October 2026 — see [authentication.md](../../../../docs/specs/authentication.md#forgot-password--reset-password)).
 
@@ -116,7 +120,7 @@ The payload's nested shape (`{ User: { id: <email> }, tokenVersion }`) is decode
 
 **This is now the one DB read on every authenticated request** — a deliberate architecture trade-off (a few ms of latency per protected call) chosen specifically to get real, on-demand revocation instead of only a time-boxed token; see [known-issues.md](./known-issues.md#auth) for the reasoning. The projection (`.select("tokenVersion")`) keeps the read minimal — just `_id` + `tokenVersion`, not the full document.
 
-Protected routes using it: `GET /user/profile`, `PATCH /user/update`, `PATCH /user/complete` ([users.md](./users.md)), `GET /organizations/dashboard` ([organizations.md](./organizations.md)), `POST /events/create` ([events.md](./events.md)), and — as of the `GET /auth/login/success` fix above — that route itself. Everything else in `auth` remains unauthenticated by design (you can't require a token to sign in).
+Protected routes using it: `GET /user/profile`, `PATCH /user/update`, `PATCH /user/complete` ([users.md](./users.md)), organization `/me`, dashboard, and follow routes ([organizations.md](./organizations.md)), `POST /events/create` ([events.md](./events.md)), and — as of the `GET /auth/login/success` fix above — that route itself. Everything else in `auth` remains unauthenticated by design (you can't require a token to sign in).
 
 ## `GET /auth/logout`
 

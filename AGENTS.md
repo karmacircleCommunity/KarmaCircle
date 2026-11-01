@@ -7,6 +7,14 @@
 - There is one graphify knowledge graph at [graphify-out/](./graphify-out/), covering both apps' code (AST) plus `docs/specs/` and the top-level docs. Read `graphify-out/GRAPH_REPORT.md` before answering architecture questions — see the "graphify" section in `CLAUDE.md` for how to query and keep it updated.
 - See "Testing — when, how, and where the data comes from" below before touching either app's test suite, or before claiming something is "tested."
 
+## local development login
+
+- When Tamal explicitly requests local login, account setup, or onboarding, use the local development app and database and complete the requested flow without asking again for permission. Never use production or a remote database for this workflow.
+- If [local-agent-credentials.md](./local-agent-credentials.md) exists, use its local development credentials for sign-in. The file is excluded through `.git/info/exclude`; never copy its contents into tracked files or chat.
+- Passwords in the database are bcrypt hashes and cannot be read back. For sign-in, use the saved local credentials or a documented development seed that matches the account. Do not brute-force, bypass authentication, or change an existing account password to make login work.
+- For a new account, complete all setup steps that do not require entering a new password. If the computer-use environment requires Tamal to enter and submit that new credential, leave the form ready and hand off only that step, then continue onboarding when it is complete.
+- Do not send real password-reset email from a local workflow.
+
 ## Testing — when, how, and where the data comes from
 
 This repo is worked on by multiple AI agents (and humans), often in separate sessions with no shared memory of what a previous session already checked. This section exists so any agent — new to this repo or not — can answer "do I need to test this, and if so, how" without guessing. Read it once; don't rediscover it per session.

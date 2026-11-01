@@ -327,6 +327,22 @@ export function validateSetupField(
   if (!value) return null;
 
   switch (field) {
+    case "name":
+      if (value.length > 120) return "Organization name must be 120 characters or fewer.";
+      return null;
+
+    case "description":
+      if (value.length > 500) return "Description must be 500 characters or fewer.";
+      return null;
+
+    case "teamSize": {
+      const teamSize = Number(value);
+      if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 1_000_000) {
+        return "Enter a whole number between 1 and 1,000,000.";
+      }
+      return null;
+    }
+
     case "website": {
       if (!WEBSITE.test(value)) {
         return "Enter a full web address, like karmacircle.org.";

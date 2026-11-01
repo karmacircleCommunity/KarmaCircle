@@ -2,6 +2,19 @@
 
 This repo holds two independently deployed apps: `apps/web` (the frontend, `karmacircle-frontend` — React/Vite SPA) and `apps/api` (the backend, `karmacircle-api` — Express/TypeScript/MongoDB). They share this repo, CI, and top-level tooling (this file, `AGENTS.md`, the graphify graph), but each keeps its own `package.json`, its own `docs/specs/` map, and its own deploy target. `apps/api` is the source of truth for the API contract; don't guess at a request/response shape beyond what `apps/api/docs/specs/api-contract.md` and the route code show. See [AGENTS.md](./AGENTS.md) for the fuller agentic workflow around working across both.
 
+## Local development login
+
+When Tamal explicitly requests local login, account setup, or onboarding, use the local development app and database and complete the requested flow without asking again for permission.
+Never use production or a remote database for this workflow.
+If `local-agent-credentials.md` exists, use its local development credentials for sign-in.
+The file is excluded through `.git/info/exclude`; never copy its contents into tracked files or chat.
+Passwords in the database are bcrypt hashes and cannot be read back.
+For sign-in, use the saved local credentials or a documented development seed that matches the account.
+Do not brute-force, bypass authentication, or change an existing account password to make login work.
+For a new account, complete all setup steps that do not require entering a new password.
+If the computer-use environment requires Tamal to enter and submit that new credential, leave the form ready and hand off only that step, then continue onboarding when it is complete.
+Do not send real password-reset email from a local workflow.
+
 ## graphify — check the knowledge graph first
 
 This repo has a graphify knowledge graph at [graphify-out/](./graphify-out/), built from the code (AST) across both `apps/web` and `apps/api`, plus every doc in `docs/specs/`/`apps/api/docs/specs/` and the top-level `.md` files. It exists so you don't have to guess what depends on what.

@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
+import Axios from "axios";
+import { useSelector } from "react-redux";
 import type { ReactNode } from "react";
 import {
   FiArrowLeft,
@@ -7,6 +9,7 @@ import {
   FiCalendar,
   FiCheck,
   FiHeart,
+  FiEdit3,
   FiMail,
   FiMapPin,
   FiUsers,
@@ -24,6 +27,8 @@ import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
 import { useSectionReveal } from "@hooks";
 import { eventEndpoints, organizationEndpoints } from "@services/ApiEndpoints";
+import { selectIsLoggedIn } from "@app/store/slices/userSlice";
+import { showErrorToast } from "@utils/Toasts";
 import fetcher from "@utils/Fetcher";
 import {
   ORGANIZATION_ACCENTS,
@@ -34,6 +39,7 @@ import type { HostedEvent } from "../components/OrganizationEventsList";
 import SponsorOrganizationModal from "../components/SponsorOrganizationModal";
 import { monogram } from "../utils/monogram";
 import { toDisplayOrganization } from "../utils/toDisplayOrganization";
+import { useMyOrganization } from "../hooks/useMyOrganization";
 import type { ApiOrganization, DisplayOrganization } from "../types";
 
 /** Live records store a full URL; the old fixture stored a bare domain. */
@@ -112,15 +118,46 @@ const OrganizationProfileView = ({
 }: {
   organization: DisplayOrganization;
 }) => {
+  const { organization: ownerOrganization } = useMyOrganization();
+  const isOwner = ownerOrganization?.handle === organization.userName;
   const accent =
     ORGANIZATION_ACCENTS[organization.accent % ORGANIZATION_ACCENTS.length];
-  // Local-only, and deliberately so: there is no follow/subscribe endpoint
-  // in `KarmaCircleApi.ts` or `ApiEndpoints.ts` today. The button acknowledging a
-  // press beats a control that looks live and does nothing, which is what
-  // `Profile.tsx`'s Subscribe/Sponsor pair does.
-  const [following, setFollowing] = useState(false);
   const [sponsorOpen, setSponsorOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
+  const trackedViewHandle = useRef<string | null>(null);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  // The API token is httpOnly, so the frontend cannot read it. Redux holds
+  // the hydrated session; the authenticated endpoint remains the authority.
+  const hasSession = isLoggedIn;
+  const { data: followStatus, mutate: refreshFollowStatus } = useSWR<{ following: boolean }>(
+    hasSession && !isOwner ? organizationEndpoints.follow(organization.userName) : null,
+    fetcher,
+  );
+  const following = Boolean(followStatus?.following);
+
+  useEffect(() => {
+    if (trackedViewHandle.current === organization.userName) return;
+    trackedViewHandle.current = organization.userName;
+    void Axios.post(organizationEndpoints.profileView(organization.userName)).catch(() => undefined);
+  }, [organization.userName]);
+
+  const toggleFollowing = async () => {
+    if (!hasSession) {
+      showErrorToast("Sign in to follow organizations.");
+      return;
+    }
+    try {
+      await Axios({
+        method: following ? "delete" : "post",
+        url: organizationEndpoints.follow(organization.userName),
+        withCredentials: true,
+      });
+      await refreshFollowStatus();
+      await globalMutate(organizationEndpoints.byHandle(organization.userName));
+    } catch (error) {
+      showErrorToast((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not update your follow. Try again.");
+    }
+  };
 
   // The real link (Event.organizerHandle, falling back to the legacy
   // hostUsername match) — see event.service.ts#findAll. Not gated behind
@@ -322,6 +359,17 @@ const OrganizationProfileView = ({
                     ))}
                   </ul>
 
+                  {isOwner && (
+                    <Link
+                      to="/organization/setup"
+                      data-cy="edit-organization"
+                      className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand/25 bg-white px-5 py-2.5 font-outfit text-body font-medium text-brand no-underline transition-colors hover:bg-brand/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      <FiEdit3 aria-hidden="true" className="size-4" />
+                      Edit organization
+                    </Link>
+                  )}
+
                   {/* Only the platforms this organization actually filled
                       in render — same "nothing invented" rule the rest of
                       this page follows for drives/milestones. */}
@@ -358,10 +406,11 @@ const OrganizationProfileView = ({
                       fighting over the same properties with no reliable
                       winner (equal specificity — the cascade decides by
                       stylesheet order, not by className order). */}
-                  <button
+                  {!isOwner && <button
                     type="button"
-                    onClick={() => setFollowing((prev) => !prev)}
+                    onClick={() => void toggleFollowing()}
                     aria-pressed={following}
+                    disabled={hasSession && !followStatus}
                     className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-3 font-poppins text-body font-medium transition-colors duration-300 ease-out motion-safe:active:scale-97 ${
                       following
                         ? "border border-brand/40 bg-brand/10 text-brand hover:bg-brand/15"
@@ -377,7 +426,7 @@ const OrganizationProfileView = ({
                         <FiUsers aria-hidden="true" /> Follow
                       </>
                     )}
-                  </button>
+                  </button>}
 
                   {organization.website && (
                     <a

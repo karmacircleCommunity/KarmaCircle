@@ -26,6 +26,7 @@ export interface IOrder extends Document {
   status: OrderStatus;
   supporterName?: string;
   supporterEmail?: string;
+  isDemo: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +46,7 @@ const orderSchema = new Schema<IOrder>(
     },
     supporterName: { type: String, trim: true },
     supporterEmail: { type: String, trim: true },
+    isDemo: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

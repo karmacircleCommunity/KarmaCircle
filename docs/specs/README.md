@@ -69,6 +69,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [onboarding-profile.md](./onboarding-profile.md) | Individual editor, legacy completion components, unrouted UserProfile prototype |
 | [dashboard.md](./dashboard.md) | The logged-in organization/org dashboard |
 | [organizations.md](./organizations.md) | The Organizations directory, `OrganizationCard`, and the public organization profile at `/organization/:userName` |
+| [organization-editing-plan.md](./organization-editing-plan.md) | Shipped owner-edit flow, remaining profile gaps, market patterns, and phased roadmap |
 | [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |

@@ -34,7 +34,11 @@ All of the September 2026 fields above follow the same nested-sub-schema convent
 
 **Capacity counts are still not tracked.** Registrations are stored separately from event documents and do not expose attendee totals or spots remaining.
 
-**Public reads remain unauthenticated, while joining requires `requireAuth`.** `POST /events/:uid/join` stores one registration per event and authenticated user, blocks past and invite-only events, and sends a confirmation email to the account email. A failed email does not undo registration; response includes `emailSent: false`. There is no leave, invite, approval, capacity, or organizer-notification flow. The currently mounted frontend creation modal also does not call this module's `POST /events/create`; see the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference) and [API contract map](./api-contract.md).
+**Public reads remain unauthenticated, while joining requires `requireAuth`.** `POST /events/:uid/join` stores one registration per event and authenticated user, blocks past and invite-only events, and sends a confirmation email to the account email only in production.
+In development and test, delivery is suppressed and `emailSent` is `false`.
+A production email failure does not undo registration; response also includes `emailSent: false`.
+There is no leave, invite, approval, capacity, or organizer-notification flow.
+The currently mounted frontend creation modal also does not call this module's `POST /events/create`; see the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference) and [API contract map](./api-contract.md).
 
 ## `event.service.ts`
 
@@ -52,7 +56,12 @@ No auth. `validate(listEventsQuerySchema, "query")` — `{ uid?: string, slug?: 
 
 ## `POST /events/:uid/join`
 
-Requires `requireAuth`; registration identity and confirmation destination come from the authenticated account, never the request body. Returns `404` for an unknown event, `403` for invite-only events, and `409` once `startTime` has passed. A unique compound index on `(eventUid, userId)` makes the write idempotent across retries and concurrent clicks. New registration returns `201 { joined: true, alreadyJoined: false, emailSent }`; an existing registration returns `200 { joined: true, alreadyJoined: true, emailSent: false }`. Confirmation email failure is logged and reported as `emailSent: false`, while the saved registration remains successful.
+Requires `requireAuth`; registration identity and confirmation destination come from the authenticated account, never the request body.
+Returns `404` for an unknown event, `403` for invite-only events, and `409` once `startTime` has passed.
+A unique compound index on `(eventUid, userId)` makes the write idempotent across retries and concurrent clicks.
+New registration returns `201 { joined: true, alreadyJoined: false, emailSent }`; an existing registration returns `200 { joined: true, alreadyJoined: true, emailSent: false }`.
+In development and test, `emailSent` is `false` because delivery is suppressed.
+A production confirmation failure is logged and also returns `emailSent: false`, while the saved registration remains successful.
 
 ## `GET /events/:uid/registration`
 

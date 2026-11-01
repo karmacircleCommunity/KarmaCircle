@@ -33,7 +33,7 @@ A developer's normal `pnpm dev` runs the web app on port 3000 and the API on por
 | Web port | 3000 | **3001** |
 | API port | 5050 | **5051** |
 | Database | a real MongoDB | `mongodb-memory-server`, fresh per run |
-| Outgoing email | a real Resend account | an in-memory test outbox, never a real send |
+| Outgoing email | an in-memory development outbox, never a real send | an in-memory test outbox, never a real send |
 
 - [`apps/web/e2e/env.ts`](../../apps/web/e2e/env.ts) is the single source of truth for the two e2e ports — imported by `playwright.config.ts`, `global-setup.ts`, and every spec file that needs to call the API directly.
 - [`apps/web/playwright.config.ts`](../../apps/web/playwright.config.ts)'s `webServer` array starts **both** servers itself before any test runs, and tears them down after (locally, `reuseExistingServer: true` keeps them warm across repeated `pnpm test` runs in the same session) — a clean checkout needs nothing running beforehand beyond `pnpm install` and `npx playwright install`.
@@ -44,7 +44,10 @@ A developer's normal `pnpm dev` runs the web app on port 3000 and the API on por
 
 ### The password-reset outbox
 
-`apps/api/src/config/mailer.ts` never calls the real Resend API when `NODE_ENV==="test"` — it pushes to an in-memory outbox instead, readable back via `GET /__test__/last-reset-url?email=...` (gated the same `NODE_ENV==="test"`-only way as `/__test__/reset`). This is what lets [`e2e/authentication/password-reset.spec.ts`](../../apps/web/e2e/authentication/password-reset.spec.ts) complete a real forgot→reset→sign-in-with-the-new-password round trip without a real mail provider. See `apps/api`'s testing spec and that spec file's own comments for the details.
+`apps/api/src/config/mailer.ts` never calls Resend unless `NODE_ENV==="production"`.
+Development and test capture reset links in an in-memory outbox, readable through loopback-only `GET /__dev__/last-reset-url?email=...` locally or `GET /__test__/last-reset-url?email=...` in the isolated e2e server.
+This lets [`e2e/authentication/password-reset.spec.ts`](../../apps/web/e2e/authentication/password-reset.spec.ts) complete a real forgot→reset→sign-in-with-the-new-password round trip without a real mail provider.
+See `apps/api`'s testing spec and that spec file's own comments for the details.
 
 ## Why no reset *between* spec files
 

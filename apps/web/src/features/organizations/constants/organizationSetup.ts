@@ -35,6 +35,9 @@ export const MAX_DOMAINS = 5;
 export const FIELD_SPECS: Partial<
   Record<OrganizationSetupField, OrganizationSetupFieldSpec>
 > = {
+  name: { label: "Organization name", type: "text", maxLength: 120 },
+  description: { label: "Description", type: "text", maxLength: 500 },
+  teamSize: { label: "Team size", type: "number", maxLength: 7 },
   city: { label: "City", type: "text", maxLength: 120 },
   state: { label: "State or region", type: "text", maxLength: 120 },
   /**

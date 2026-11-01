@@ -94,15 +94,65 @@ router.patch(
 
 /**
  * @openapi
+ * /organizations/{handle}/analytics/profile-view:
+ *   post:
+ *     summary: Record a public organization profile view
+ *     tags: [Organizations]
+ *     responses:
+ *       204: { description: View recorded }
+ *       404: { description: Unknown or non-live organization }
+ */
+router.post(
+  "/:handle/analytics/profile-view",
+  validate(organizationHandleParamSchema, "params"),
+  asyncHandler(organizationController.trackProfileView),
+);
+
+/**
+ * @openapi
+ * /organizations/{handle}/follow:
+ *   get:
+ *     summary: Check whether the authenticated account follows this organization
+ *     security: [{ cookieAuth: [] }]
+ *   post:
+ *     summary: Follow a live organization
+ *     security: [{ cookieAuth: [] }]
+ *   delete:
+ *     summary: Unfollow an organization
+ *     security: [{ cookieAuth: [] }]
+ */
+router.get(
+  "/:handle/follow",
+  requireAuth,
+  validate(organizationHandleParamSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(organizationController.getFollowStatus),
+);
+router.post(
+  "/:handle/follow",
+  requireAuth,
+  validate(organizationHandleParamSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(organizationController.followOrganization),
+);
+router.delete(
+  "/:handle/follow",
+  requireAuth,
+  validate(organizationHandleParamSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(organizationController.unfollowOrganization),
+);
+
+/**
+ * @openapi
  * /organizations/dashboard:
  *   get:
- *     summary: Get the authenticated organization's own dashboard data
+ *     summary: Get the authenticated organization's dashboard data
+ *     description: Returns the owner's private organization profile, sanitized account profile, aggregate metrics, daily profile views, recent hosted events, recent supporters, and recent followers. Sample activity is marked separately from verified support.
  *     tags: [Organizations]
  *     security: [{ cookieAuth: [] }]
  *     responses:
- *       200: { description: Dashboard data }
+ *       200: { description: "Dashboard response with organization, profile, includesDemoData, period, metrics, viewsByDay, events, supporters, and followers" }
  *       401: { description: Unauthorized }
- *       404: { description: Not found }
+ *       403: { description: Not an organization account }
+ *       404: { description: Authenticated account not found }
  */
 router.get(
   "/dashboard",

@@ -63,17 +63,77 @@ Four more optional pieces of a public profile, none of them on `REQUIRED_FIELDS`
 | `GET /organizations/taxonomy` | no | `{ tags, domains }` — the closed vocabularies in [organization.taxonomy.ts](../../src/modules/organizations/organization.taxonomy.ts). The frontend renders its filter chips and setup form from this rather than keeping a second copy. |
 | `GET /organizations/me` | ✅ | The owner's own record via `toPrivate()` — public fields plus `ownerEmail`, `contactPhone`, `members`, `status`, `missingFields`, `isLive`. `403` for an individual account. Backfills the record for organizations that predate this collection (`findOrCreateForOwner`). |
 | `PATCH /organizations/me` | ✅ | Saves any subset of `updateOrganizationSchema`, publishes if that completed the required list. Returns `{ message, organization }`. |
-| `GET /organizations/dashboard` | ✅ | Unchanged: the caller's own sanitized **user** document, not this collection. |
+| `GET /organizations/dashboard` | ✅ | Owner-only dashboard contract documented below. Returns organization and sanitized account profile, aggregate metrics, daily profile views, recent events, supporters, and followers. Sample activity is marked and excluded from verified raised totals. Rejects individual accounts. |
+| `POST /organizations/{handle}/analytics/profile-view` | no | Records one public profile view for a live organization; stores no IP or browser identifier. |
+| `GET /organizations/{handle}/follow` | ✅ | Returns whether the caller follows the live organization. |
+| `POST /organizations/{handle}/follow` | ✅ | Idempotently follows a live organization; self-follow is rejected. |
+| `DELETE /organizations/{handle}/follow` | ✅ | Removes the caller's follow relationship. |
 | `GET /organizations/{handle}` | no | One live organization via `toPublic()`. Declared last in the router — `/taxonomy`, `/me` and `/dashboard` would all match this wildcard otherwise. |
 
 `toPublic()` is where the public/private line is drawn, once, rather than at each call site: `ownerEmail`, `members`, `contactPhone` and `status` never reach a public response, so a new public route cannot leak them by forgetting to filter.
 
+## Owner dashboard metrics
+
+### Response contract and dashboard-area mapping
+
+`GET /organizations/dashboard` returns one owner-scoped JSON object with these top-level fields:
+
+| Field | Shape and purpose |
+|---|---|
+| `organization` | `organizationService.toPrivate()` result. Supplies the header name and the organization overview, contact details, and publication state. Private owner fields are allowed here because this endpoint is authenticated and owner-only. |
+| `profile` | `userService.sanitize(user)` result. Sanitized account profile only; no credential fields. |
+| `includesDemoData` | Boolean provenance flag for sample event, follow, contribution, or view records. It describes data provenance and is not a dashboard section. |
+| `period` | `{ days: 30 }`, the default aggregate period. |
+| `metrics` | Aggregate counts and amounts. See exact members below. |
+| `viewsByDay` | Up to 90 daily profile-view buckets, each with `views` and `demoViews`. |
+| `events` | Up to 8 most recently scheduled hosted events, each with its registration count and `isDemo` marker. |
+| `supporters` | Up to 8 latest paid contribution records, with supporter display name, amount, currency, time, and `isDemo`; no email. |
+| `followers` | Up to 8 latest follower display records, with name, optional username, follow time, and `isDemo`; no email. |
+
+`metrics` contains `followers`, `following`, `hostedEvents`, `eventRegistrations`, `supporters`, `verifiedSupporters`, `raisedViaPlatform`, `demoSupporters`, `demoRaisedViaPlatform`, and `profileViews.last7Days` / `profileViews.last30Days`.
+Amounts are returned in whole rupees, floored from stored paise.
+`supporters` counts paid contribution records, not unique people.
+`following` counts organizations followed by this organization account; it does not mean individual followers who follow back.
+
+The ten dashboard refinement areas map to the response as follows:
+
+| Dashboard area | Response fields |
+|---|---|
+| 1. Header and actions | `organization.name`; actions use existing frontend routes and require no new API field. |
+| 2. Organization profile overview | `organization.cover`, `logo`, `name`, `description`, `tag`, `domains`, `location`, `teamSize`, `website`, `socialLinks`, `verified`, `isLive`. The six-item profile checklist is derived in the frontend from these existing fields; the API adds no duplicate score field. |
+| 3. Contact details and status | `organization.contactEmail`, `contactPhone`, `sponsorship.enabled`, `status`, `isLive`. |
+| 4. Community metrics | `metrics.followers`, `metrics.following`. |
+| 5. Event performance metrics | `metrics.hostedEvents`, `metrics.eventRegistrations`. |
+| 6. Support metrics | `metrics.supporters`, `verifiedSupporters`, `raisedViaPlatform`, `demoSupporters`, `demoRaisedViaPlatform`. |
+| 7. Profile reach analytics | `metrics.profileViews`, `viewsByDay`, `period`. |
+| 8. Community and follower list | `followers[]`. |
+| 9. Hosted events list | `events[]`. |
+| 10. Supporter activity and giving breakdown | `supporters[]` plus the support metrics. |
+
+This contract already supplies every field used by the current dashboard header and all ten planned dashboard areas.
+No duplicate `header` payload is needed: `organization.name` is the source of truth.
+
+`OrganizationFollow` stores unique `(organizationHandle, followerEmail)` relationships and supports the public profile's follow action.
+The dashboard derives both follower count and the account's organization-following count from these records rather than trusting a client-provided number.
+The dashboard returns follower display names only; it does not expose follower email addresses.
+
+`OrganizationAnalyticsEvent` stores profile-view events with an organization handle and timestamp, with a one-year TTL index.
+The public profile records a view after loading a live organization.
+These are raw page views, not unique visitors or event impressions, and no IP/user-agent is stored.
+
+Hosted event totals and registrations are read from `Event` and `EventRegistration`.
+Support totals read paid `Order` records; verified counts and raised amounts exclude `isDemo: true` rows, while sample amounts are returned separately. Supporter email addresses are not returned.
+
+Dashboard sample records can be loaded locally with `scripts/seed-organization-dashboard-demo.ts --confirm-demo-data`. The seed also fills reserved sample contact email/phone values, enables community support, and ensures the organization remains public; the email uses the reserved `.example` domain.
+The seeder hard-refuses any database except `karmacircle_dev`, uses stable demo keys for repeatable upserts, and marks events, registrations, follows, contributions, and views as demo data.
+Demo contributions are display-only sample records and do not represent a payment transaction.
+
 ## Tests
 
-[tests/organizations.test.ts](../../tests/organizations.test.ts) covers the draft-to-live transition (including that a partial save stays in draft), the `404` on a draft's public profile, the `401`/`403` gates on `/me`, the public shape's omissions, the search and domain filters, the `400` on an attempt to set `status`/`verified`, and (September 2026) `socialLinks`/`leadership`/`sponsorship`/`location.address`/`location.mapIframe` round-tripping through a save plus the `leadership` length cap and `socialLinks`' `.strict()` rejection of an unknown platform key.
+[tests/organizations.test.ts](../../tests/organizations.test.ts) covers dashboard sample-versus-verified totals and the individual-account gate, the draft-to-live transition (including that a partial save stays in draft), the `404` on a draft's public profile, the `401`/`403` gates on `/me`, the public shape's omissions, the search and domain filters, the `400` on an attempt to set `status`/`verified`, and (September 2026) `socialLinks`/`leadership`/`sponsorship`/`location.address`/`location.mapIframe` round-tripping through a save plus the `leadership` length cap and `socialLinks`' `.strict()` rejection of an unknown platform key.
 `tests/auth.test.ts`'s discriminator test asserts the other half: a fresh organization signup does not appear in the directory.
 [tests/payments.test.ts](../../tests/payments.test.ts) covers the sponsorship order/verify pair from the payments module's side — see [payments.md](./payments.md).
 
 ## What's known-broken here
 
-The `?userName=` branch still looks up **any** user, not only organization-type ones, so `GET /organizations?userName=<an individual>` returns that individual with `200`. `GET /organizations/dashboard` is likewise not filtered to organizations. Both are unchanged legacy behavior, informational rather than bugs unless product intent says otherwise.
+The `?userName=` branch still looks up **any** user, not only organization-type ones, so `GET /organizations?userName=<an individual>` returns that individual with `200`.

@@ -74,7 +74,11 @@ This replaces the fixture-driven version this page ran until September 2026: two
 
 **`event.model.ts` grew the fields this page needs**, in the same pass that wired the fetch: `about`, `agenda`, `bringAlong`, `gettingThere`/`linkDelivery`/`joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`, plus two flags — `isGovernmentSponsored` (server/seed-only, mirrors `Organization.verified`; `EventHero` renders a brand-tinted "Government-backed" pill when set) and `inviteOnly` (organizer-settable; `EventJoinPanel` replaces the Join control with an honest "ask the organizer" state, and `EventFacts`'s "Who can come" cell reports it, when set). See [apps/api/docs/specs/events.md](../../../../apps/api/docs/specs/events.md) for the schema.
 
-**Registration is saved, but capacity is still untracked.** Joining calls authenticated `POST /events/:uid/join`, saves one registration per account, and sends confirmation to the account email. Past and invite-only events are rejected by the API. `going`/`spotsLeft` stay undefined on `DisplayEvent`; do not derive counts from registrations. See [known-issues.md](../../../../docs/specs/known-issues.md#events--attendee-capacity-not-tracked).
+**Registration is saved, but capacity is still untracked.** Joining calls authenticated `POST /events/:uid/join` and saves one registration per account.
+The API sends confirmation to the account email only in production; development and test suppress delivery and report `emailSent: false`.
+Past and invite-only events are rejected by the API.
+`going`/`spotsLeft` stay undefined on `DisplayEvent`; do not derive counts from registrations.
+See [known-issues.md](../../../../docs/specs/known-issues.md#events--attendee-capacity-not-tracked).
 
 **Every `EventSection` with nothing behind it doesn't render** — "About this event" (`detail.about`), "How the day runs" (`detail.agenda`), and "What to bring" (`detail.bringAlong`) are all conditional on their array being non-empty, matching `OrganizationProfileView`'s own rule for sections with nothing behind them. "The details" (`EventFacts`) always renders — it degrades gracefully per-cell instead of disappearing. The location/join section renders unconditionally too, but `EventLocationPanel` itself returns `null` if there's genuinely nothing to show (no address on an offline event, no platform on an online one).
 

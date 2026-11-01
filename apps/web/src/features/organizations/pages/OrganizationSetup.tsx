@@ -8,6 +8,7 @@ import SetupIntro from "../components/setup/SetupIntro";
 import SetupLayout from "@components/setup/SetupLayout";
 import SetupLocateButton from "@components/setup/SetupLocateButton";
 import SetupQuestion from "../components/setup/SetupQuestion";
+import OrganizationProfileEditor from "../components/OrganizationProfileEditor";
 import {
   FIELD_CY,
   FIELD_SPECS,
@@ -23,7 +24,7 @@ import {
 } from "../utils/organizationSetupForm";
 
 /**
- * The organization's own setup page, routed at `/organization/setup`.
+ * The organization's own setup and editing page, routed at `/organization/setup`.
  *
  * This is what stands between signing up and appearing anywhere: an
  * organization is created in `draft` at signup and stays invisible — absent
@@ -126,6 +127,18 @@ const OrganizationSetup = () => {
             : "This page is for organization accounts. Sign in as one to set up a profile."}
         </p>
       </SetupLayout>
+    );
+  }
+
+  // Draft organizations use the short publish flow below. Live organizations
+  // get a sectioned editor on this same owner-only route, so existing callers
+  // retain one stable destination without making signup longer.
+  if (organization.isLive) {
+    return (
+      <OrganizationProfileEditor
+        organization={organization}
+        taxonomy={taxonomy}
+      />
     );
   }
 

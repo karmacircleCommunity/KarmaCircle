@@ -213,11 +213,17 @@ flowchart TD
     classDef decision fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
     classDef terminator fill:#B3E65F,stroke:#6E9A24,color:#2F440B
 
-    os_start(["Organization signup, Navbar resume, draft dashboard / events gate, or direct link"]):::terminator
+    os_start(["Organization signup, draft resume, direct link, or owner chooses Edit organization"]):::terminator
     os_load["/organization/setup - GET /organizations/me and taxonomy; seed saved answers"]:::general
     os_access{{"Signed-in organization record loaded?"}}:::decision
     os_refuse["Failure: organization sign-in message"]:::general
-    os_stage{{"Explicit step in URL or already live?"}}:::decision
+    os_stage{{"Draft setup or live organization?"}}:::decision
+    os_draft_entry{{"New draft intro or resumed step URL?"}}:::decision
+    os_edit["Live owner editor: Basics, Contact and website, Social profiles"]:::general
+    os_edit_save["Validate and save fields via PATCH /organizations/me; blank optional fields clear"]:::general
+    os_edit_ok{{"Save succeeded?"}}:::decision
+    os_edit_retry["Error message; keep edits for retry"]:::general
+    os_view(["View updated public profile - /organization/:handle"]):::terminator
     os_intro["Draft intro: start / continue or Maybe later"]:::general
     os_home(["Home - /"]):::terminator
     os_about["About: prefilled name, description, organization type, 1-5 causes"]:::general
@@ -241,8 +247,13 @@ flowchart TD
     os_start --> os_load --> os_access
     os_access -->|"No"| os_refuse
     os_access -->|"Yes"| os_stage
-    os_stage -->|"No - draft"| os_intro
-    os_stage -->|"Yes - resume URL step, else About"| os_validate
+    os_stage -->|"Live"| os_edit
+    os_edit --> os_edit_save --> os_edit_ok
+    os_edit_ok -->|"No"| os_edit_retry -->|"Retry"| os_edit_save
+    os_edit_ok -->|"Yes"| os_view
+    os_stage -->|"Draft"| os_draft_entry
+    os_draft_entry -->|"New setup"| os_intro
+    os_draft_entry -->|"Resume saved step"| os_validate
     os_intro -->|"Start / continue"| os_about
     os_intro -->|"Maybe later - no save"| os_home
     os_about --> os_validate
@@ -339,12 +350,12 @@ flowchart TD
     o_sponsor{{"Sponsorship enabled?"}}:::decision
     o_sponsor_modal["Sponsor Organization modal"]:::general
     o_scroll["Scroll-to-Drives button"]:::general
-    o_follow["Follow button - local state only, no backend"]:::general
+    o_follow["Follow button - authenticated follow/unfollow API"]:::general
     o_contact["Get in touch card - address, email, followers, map"]:::general
     o_gate{{"Viewer is a live organization account?"}}:::decision
     o_refuse["Gate refusal: this page is for organizations"]:::general
     o_checklist["Draft org: setup checklist + Finish setup link"]:::general
-    o_dashboard_content["Dashboard content: cover, counts, Edit Profile, Analytics coming soon"]:::general
+    o_dashboard_content["Dashboard: organization profile, followers/following, hosted events, registrations, paid support, profile views"]:::general
     o_yourevents_content["Your Events content: this org's live events list"]:::general
 
     o_start --> o_taxonomy

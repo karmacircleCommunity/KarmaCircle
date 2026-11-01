@@ -6,7 +6,7 @@ Playwright specs for `apps/web/src/features/organizations/`. See [docs/specs/org
 
 | File | Covers |
 |---|---|
-| [organization-setup.spec.ts](./organization-setup.spec.ts) | The full organization lifecycle: sign up, stay hidden as a draft, resume from the dashboard gate, fill in each required question across both setup steps, go live, appear in the directory (with its own filters), and come back to edit afterward. Ported from the original Cypress `organizationSetup.spec.js` — see [docs/specs/testing.md](../../../../docs/specs/testing.md) for the migration notes and two real behavior/doc mismatches this port surfaced |
+| [organization-setup.spec.ts](./organization-setup.spec.ts) | The full organization lifecycle: sign up, stay hidden as a draft, resume from the dashboard gate at the first unanswered question, complete required fields, switch to the live-profile editor, save optional contact details, appear in the directory, and reopen edits. Ported from the original Cypress `organizationSetup.spec.js` — see [docs/specs/testing.md](../../../../docs/specs/testing.md) for the migration notes and behavior/doc mismatches this port surfaced |
 
 ## What's not covered, on purpose
 
