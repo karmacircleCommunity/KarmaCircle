@@ -28,7 +28,7 @@ From the repository root, install the pinned pnpm version and workspace dependen
 
 ```bash
 npm install --global pnpm@11.22.0
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ## 2. Start MongoDB

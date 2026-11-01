@@ -1,3 +1,35 @@
+## Cross-agent source of truth
+
+- `AGENTS.md` is the shared project instruction source for Codex and Claude.
+- `CLAUDE.md` adds Claude-specific navigation only; it must not redefine shared rules.
+- When instructions conflict, follow `AGENTS.md` and update `CLAUDE.md` to remove the conflict.
+- Track repository readiness work in [docs/agentic-readiness-checklist.md](./docs/agentic-readiness-checklist.md).
+
+## Communication
+
+- Use Caveman at full intensity for prose; stop only when Tamal says `stop caveman` or `normal mode`.
+- Keep updates short and product-focused.
+- Do not use the em dash character.
+- When writing or substantially editing long Markdown files, put each full sentence on its own line.
+- Never mention AI assistant or agent names in user-facing messages.
+
+## GitHub actions and external effects
+
+- Do not create branches, pull requests, merge branches or pull requests, or push to shared branches unless Tamal explicitly authorizes that action for the current task.
+- Never create a branch automatically.
+- If the checked-out branch is `main` and a commit is requested without a target branch, ask which branch to use.
+- Authorization for one action does not authorize a different action or a later task.
+- Before committing, verify signing is enabled and that the signing key matches the GitHub account for the commit identity.
+- Never create an unsigned commit or alter commit dates to fabricate contribution activity.
+- Do not add an AI assistant as a PR author, co-author, or collaborator.
+- Do not send messages to other people through GitHub or external services without explicit authorization.
+
+## UI quality and verification
+
+- Follow the [UI quality checklist](./docs/agentic-readiness-checklist.md#4-ui-quality-checklist) and the [design system](./docs/specs/design-system/README.md) for user-facing UI changes.
+- Do not open a local browser or test the UI until Tamal explicitly authorizes it.
+- If UI verification is not authorized, say visual review is still pending; do not claim it passed.
+
 ## agentic workflow
 
 - This is a monorepo: `apps/web` (frontend, `karmacircle-frontend`) and `apps/api` (backend, `karmacircle-api`). Read [docs/specs/README.md](./docs/specs/README.md) for the frontend's master map, and [apps/api/docs/specs/README.md](./apps/api/docs/specs/README.md) for the backend's — each covers only its own app.
@@ -5,6 +37,7 @@
 - For anything touching a route path, method, or request/response shape, read [apps/api/docs/specs/api-contract.md](./apps/api/docs/specs/api-contract.md) first — it cross-references every backend route against exactly what the frontend calls, and documents where they currently disagree. Don't assume a route "just works" for the frontend without checking that file.
 - There is no `PRODUCT_SPEC.md`, task-spec template, or Definition-of-Done doc in this repo yet — each app's `docs/specs/` is the closest thing to a source of truth today.
 - There is one graphify knowledge graph at [graphify-out/](./graphify-out/), covering both apps' code (AST) plus `docs/specs/` and the top-level docs. Read `graphify-out/GRAPH_REPORT.md` before answering architecture questions — see the "graphify" section in `CLAUDE.md` for how to query and keep it updated.
+- For UI tasks, use the [UI quality checklist](./docs/agentic-readiness-checklist.md#4-ui-quality-checklist) alongside the feature spec and design system.
 - See "Testing — when, how, and where the data comes from" below before touching either app's test suite, or before claiming something is "tested."
 
 ## local development login
@@ -35,7 +68,9 @@ This repo is worked on by multiple AI agents (and humans), often in separate ses
 
 **Never point a test — new or existing — at real local dev.** Both suites are self-contained by design specifically so an agent can run them without touching a developer's actual running `pnpm dev` session or its real MongoDB data: dedicated ports (3001/5051 vs. local dev's 3000/5050), `mongodb-memory-server` instead of a real database, and a test-only mail outbox instead of real email. If you're ever tempted to hardcode `localhost:3000`/`:5050` into a test, that's a sign something's wired wrong — see `docs/specs/testing.md`'s isolation table.
 
-**CI does not run either suite automatically yet** (as of September 2026 — a deliberate, separate decision, not an oversight). Until that changes, "I made this change" and "I ran the tests for this change" are two different claims — make the second one explicitly, or say you didn't.
+The `CI` workflow runs workspace lint, API and frontend type checks, builds, and both test suites for pull requests.
+GitHub branch protection must still require the `CI / validate` check on `main`; a workflow file alone does not block merges.
+When working locally, "I made this change" and "I ran the tests for this change" are different claims; report exactly what ran.
 
 ## git / branching
 

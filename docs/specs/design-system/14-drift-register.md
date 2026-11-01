@@ -217,7 +217,8 @@ The "standardized August 2026" card hover ([06-radius-elevation.md](./06-radius-
 Those five headings silently rendered at the font's normal line-height instead of the intended tight ratio.
 Rewritten to the bracket form `leading-[1.05]` / `leading-[1.1]` / `leading-[1.12]`.
 
-Note the repo's `eslint-plugin-tailwindcss` `no-unnecessary-arbitrary-value` rule (v3-era, set to `warn`) will ask for the bare form back. **Ignore it for `leading` and `tracking`.**
+The `classnames-order` and `no-unnecessary-arbitrary-value` rules are disabled only in these four components because the installed plugin recommends unsupported bare line-height classes and mis-orders the valid bracket forms here.
+Keep the bracket forms; the generated stylesheet must contain the corresponding line-height rules.
 
 ### F2 — `::selection` used the pre-rebrand orange
 

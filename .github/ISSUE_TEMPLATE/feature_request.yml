@@ -25,6 +25,34 @@ body:
     validations:
       required: true
   - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that define completion, including relevant edge cases.
+    validations:
+      required: true
+  - type: textarea
+    id: user-flow
+    attributes:
+      label: User flow or UI states
+      description: For user-facing work, describe the affected flow and loading, empty, error, or success states.
+    validations:
+      required: false
+  - type: textarea
+    id: users-platforms
+    attributes:
+      label: Affected users and platforms
+      description: Name affected user types and supported browsers, devices, or platforms when relevant.
+    validations:
+      required: false
+  - type: textarea
+    id: constraints-non-goals
+    attributes:
+      label: Constraints and non-goals
+      description: Note important limits and explicitly out-of-scope behavior so the change stays focused.
+    validations:
+      required: false
+  - type: textarea
     id: relevant-area
     attributes:
       label: Relevant app or files

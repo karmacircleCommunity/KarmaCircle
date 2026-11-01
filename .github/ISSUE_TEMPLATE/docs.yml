@@ -26,6 +26,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List what the updated documentation must explain or enable a reader to do.
+    validations:
+      required: true
+  - type: textarea
     id: relevant-area
     attributes:
       label: Relevant docs or files

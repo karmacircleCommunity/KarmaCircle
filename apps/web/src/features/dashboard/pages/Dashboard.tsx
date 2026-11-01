@@ -76,7 +76,7 @@ const Dashboard = () => {
       <main className="min-h-screen bg-surface pb-16">
         <div className="mx-auto max-w-6xl px-9 pt-10 sm:px-10 sm:pt-12 lg:px-12 lg:pt-14">
           <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-8" aria-labelledby="dashboard-page-title">
-            <div className="min-w-0 max-w-2xl">
+            <div className="max-w-2xl min-w-0">
               <p className="m-0 font-outfit text-caption font-semibold tracking-[0.12em] text-brand uppercase">Organization workspace</p>
               <h1 id="dashboard-page-title" className="mt-2 font-outfit text-3xl leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">Dashboard</h1>
               <p className="mt-3 max-w-xl font-poppins text-body leading-6 text-ink/65">A clear view of {name}&apos;s followers, events, support, and profile reach.</p>
@@ -130,7 +130,7 @@ const Dashboard = () => {
                     <Link to={`/organization/${org.handle}`} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-brand-secondary/15 px-5 font-outfit text-body font-medium text-brand-secondary no-underline transition-colors hover:border-brand/40 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:mb-1"><span>Open public page</span><FiArrowUpRight aria-hidden="true" /></Link>
                   </div>
 
-                  <div className="mt-7 rounded-2xl bg-surface-warm/75 px-4 py-4 sm:px-6 sm:py-5">
+                  <div className="mt-7 rounded-2xl bg-surface-warm/75 p-4 sm:px-6 sm:py-5">
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
                       <p className="m-0 font-outfit text-body font-semibold text-brand-secondary">Profile completeness</p>
                       <p className="m-0 font-outfit text-caption font-medium text-brand-secondary">{completedProfileHighlights}/{profileHighlights.length} highlights</p>
@@ -214,6 +214,6 @@ const EmptyLine = ({ title, detail, action }: { title: string; detail: string; a
 
 const DashboardMessage = ({ title, detail, error = false }: { title: string; detail: string; error?: boolean }) => <div role={error ? "alert" : "status"} className="mt-8 rounded-2xl border border-brand-secondary/10 bg-white p-6"><p className="m-0 font-outfit text-lg font-semibold text-brand-secondary">{title}</p><p className="mt-1 font-poppins text-body text-ink/60">{detail}</p></div>;
 
-const Detail = ({ label, value, href }: { label: string; value?: string; href?: string }) => <div className="rounded-2xl border border-brand-secondary/10 bg-white p-4"><p className="m-0 font-poppins text-caption text-ink/50">{label}</p>{href && value ? <a href={href} className="mt-1 block break-all font-poppins text-body font-medium text-brand-secondary no-underline hover:text-brand">{value}</a> : <p className="mt-1 mb-0 font-poppins text-body font-medium text-brand-secondary">{value || "Not added"}</p>}</div>;
+const Detail = ({ label, value, href }: { label: string; value?: string; href?: string }) => <div className="rounded-2xl border border-brand-secondary/10 bg-white p-4"><p className="m-0 font-poppins text-caption text-ink/50">{label}</p>{href && value ? <a href={href} className="mt-1 block font-poppins text-body font-medium break-all text-brand-secondary no-underline hover:text-brand">{value}</a> : <p className="mt-1 mb-0 font-poppins text-body font-medium text-brand-secondary">{value || "Not added"}</p>}</div>;
 
 export default Dashboard;

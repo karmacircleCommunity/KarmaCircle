@@ -101,8 +101,9 @@ An element carrying one of them silently falls back to the font's normal line-he
 **Rule:** for a unitless ratio always write the bracket form, `leading-[1.05]`.
 For a real spacing step the bare form is correct, `leading-6`.
 
-The repo's `eslint-plugin-tailwindcss` `no-unnecessary-arbitrary-value` rule is a v3-era plugin set to `warn`, and it will tell you to rewrite `leading-[1.05]` into `leading-1.05`.
-**Ignore it for `leading` and `tracking`.** The arbitrary form is the correct one.
+The installed `eslint-plugin-tailwindcss` misreads these Tailwind v4 ratios as spacing presets and suggests unsupported bare classes.
+The affected landing components disable that rule and its class-order companion locally so autofix cannot remove their line-height CSS.
+Keep the bracket form; do not copy those rule overrides to unrelated components without confirming the plugin behavior there.
 
 ## Letter spacing
 

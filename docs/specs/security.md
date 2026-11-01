@@ -10,7 +10,7 @@ Instead, the table below scores coverage against a fixed checklist, so a future 
 
 | Area | Checked | Result |
 | --- | --- | --- |
-| GitHub Actions (11 workflows) | triggers, secrets exposure, permissions, action pinning | 1 critical fixed, hardening applied, SHA-pinning still open |
+| GitHub Actions | triggers, secrets exposure, permissions, action pinning | 1 critical fixed, active actions pinned to full SHAs, external settings open |
 | Secrets in git (working tree) | tracked `.env*`, key/token patterns | none committed, `.env.example` only |
 | Secrets in git history | not scanned | **open**, run `gitleaks` or `trufflehog` once |
 | API authn/authz | cookie flags, JWT, revocation, route gating | sound, see open items |
@@ -42,6 +42,9 @@ Reported privately by Humaira Akram (humaira924.github.io), confirmed by reading
 - Vercel CLI was installed as `vercel@canary`, an unreviewed moving target with the deploy token in hand, now `vercel@latest`.
   Pin an exact version when convenient.
 - `BetaHuhn/deploy-to-vercel-action@latest` is now `@v1`.
+- Every active action reference across the workflows is pinned to a full commit SHA, including the welcome action that previously tracked `main`.
+- `.github/workflows/ci.yml` runs on `pull_request` with read-only permissions and no repository secrets.
+  It runs lint, type checks, builds, and both test suites before a pull request can be considered ready.
 
 ### Medium: signup mass assignment (`auth.service.ts`)
 The signup schema is `.passthrough()` and the service spread the rest of the body into the model.
@@ -94,15 +97,19 @@ Ordered by what I would do first.
    Enforce 32+ characters when `NODE_ENV=production`, after confirming the production secret already meets it, otherwise the deploy will not boot.
 8. **No CSP on the SPA.**
    Needs an allowlist for `checkout.razorpay.com`, Geoapify, Google fonts, and the API origin, tested in a browser before shipping, so it was left out rather than risk breaking checkout.
-9. **Third-party actions are pinned to tags, not commit SHAs**, and `EddieHubCommunity/gh-action-community/src/welcome@main` is a moving branch that runs on `pull_request_target` with a write token.
-   Pin every action to a full SHA and let Dependabot's `github-actions` ecosystem bump them (add it to `.github/dependabot.yml`).
+9. **GitHub Actions and workspace dependency updates need review.**
+   All active workflow actions are pinned to full commit SHAs, including the welcome action that previously tracked `main`.
+   `.github/dependabot.yml` now proposes weekly GitHub Actions and npm workspace updates; review and merge those updates through the normal pull request checks.
 10. **`signin` returns faster for unknown emails** (no bcrypt compare), a timing user-enumeration signal.
     Signup's 409 and `/auth/check-email` already reveal existence, so this is low value until those are changed.
 11. **`/docs` (Swagger UI) is served in production**, and `express.json` allows 10 MB bodies.
     Both are low; gate `/docs` behind `NODE_ENV !== "production"` and lower the body limit if no route needs more.
 12. **`POST /user/report` is unauthenticated** and only covered by the global 300 requests per 15 minutes limiter.
     Give it its own tighter limiter.
-13. **Enable GitHub-side controls** (settings, not code): secret scanning with push protection, Dependabot alerts and security updates, private vulnerability reporting, branch protection on `main` requiring the PR checks, and "Require approval for all outside collaborators" for workflow runs.
+13. **Enable GitHub-side controls** (settings, not code): secret scanning with push protection, Dependabot alerts and security updates, private vulnerability reporting, branch protection on `main` requiring `CI / validate`, and "Require approval for all outside collaborators" for workflow runs.
+   The current GitHub API check found no `main` branch protection or repository ruleset, and private vulnerability reporting is disabled.
+   The vulnerability-alert and automated-security-fix endpoints returned 404, consistent with those controls being disabled.
+   The Actions policy endpoints returned 403 because the connected token lacks the required permission, so outside-collaborator approval still needs an owner-side check.
 
 ## Review checklist for future changes
 

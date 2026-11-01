@@ -15,7 +15,7 @@ Install the pinned pnpm version and workspace dependencies from the repository r
 
 ```bash
 npm install --global pnpm@11.22.0
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 Copy `apps/api/.env.example` to `apps/api/.env` and follow the [environment setup table](../../../docs/LocalDevSetup.md#2-set-up-the-backend-appsapi).
@@ -27,7 +27,7 @@ Never commit `.env` files or secrets.
 ```bash
 pnpm --filter karmacircle-api dev
 pnpm --filter karmacircle-api build
-pnpm --filter karmacircle-api typecheck
+pnpm type-check
 pnpm --filter karmacircle-api lint
 pnpm --filter karmacircle-api test
 ```

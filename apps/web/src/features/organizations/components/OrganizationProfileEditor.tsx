@@ -429,7 +429,7 @@ const OrganizationProfileEditor = ({ organization, taxonomy }: Props) => {
                 <p className="mt-1.5 mb-6 font-poppins text-body text-ink/60">
                   Tell people who you are and what your organization works on.
                 </p>
-                <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   {textField("name", "Organization name", { required: true })}
                   <div className="min-w-0">
                     <SetupFieldLabel htmlFor="organization-tag" required>
@@ -554,7 +554,7 @@ const OrganizationProfileEditor = ({ organization, taxonomy }: Props) => {
                   Add details supporters can use to find or contact your
                   organization.
                 </p>
-                <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   {textField("website", "Website")}
                   {textField("contactEmail", "Public contact email")}
                   {textField("city", "City", {
@@ -591,7 +591,7 @@ const OrganizationProfileEditor = ({ organization, taxonomy }: Props) => {
                   Add links where people can follow your work. Leave one blank
                   to remove it.
                 </p>
-                <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   {SOCIAL_FIELDS.map(({ field, label, Icon }) => (
                     <div key={field} className="min-w-0">
                       {textField(field, label, { leadingIcon: Icon })}

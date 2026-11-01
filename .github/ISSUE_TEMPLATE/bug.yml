@@ -11,6 +11,20 @@ body:
     validations:
       required: true
   - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest set of steps that reliably shows the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What happened when you followed the steps?
+    validations:
+      required: true
+  - type: textarea
     id: solution
     attributes:
       label: Proposed Solution
@@ -22,6 +36,13 @@ body:
     attributes:
       label: Expected outcome
       description: What should happen after this bug is fixed?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that will confirm the bug is fixed, including relevant edge cases.
     validations:
       required: true
   - type: textarea
