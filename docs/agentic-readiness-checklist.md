@@ -1,6 +1,6 @@
 # Agentic coding readiness checklist
 
-**Audit date:** 2026-11-01.
+**Audit date:** 2026-11-02.
 **Scope:** prepare KarmaCircle for dependable work across Claude and Codex, including backend, frontend, and UI changes.
 
 This checklist tracks repository readiness, not the completion of any one feature.
@@ -78,9 +78,9 @@ The `main` ruleset requires pull requests, one approval, resolved review threads
 - [x] Keep known issues visible for both apps and tell agents to check them before editing.
 - [x] Document the monorepo boundary and keep the API contract as backend source of truth.
 - [x] Keep a graphify map for navigation across code and docs.
-- [~] Treat the graph as a navigation aid and verify claims against current code and specs; generated graph summaries can lag or use generic community names.
+- [x] Treat graph output as navigation clues only; verify important claims against current code and specs. Audit on 2026-11-02 found stale inferred hyperedges and AST labels, while node/link counts agree with `graph.json`.
 - [x] Assign an owner and quarterly review cadence for feature specs, known issues, setup guides, and linked flow diagrams.
-- [~] Remove obsolete implementation notes when code changes; this guide sweep corrected route, setup, and cross-reference drift, while some older implementation notes still need a focused audit.
+- [x] Remove or mark obsolete implementation notes when code changes; focused 2026-11-02 audit corrected the address-provider, removed-profile, and graph-guidance drift found in older notes.
 - [ ] Keep stated file counts, test counts, route counts, and other changing numbers out of prose unless the source of truth generates them.
 
 ## 4. UI quality checklist
@@ -146,14 +146,14 @@ It is a reusable quality guide, not a requirement for general agentic-coding rea
 - [x] Enable private vulnerability reporting; GitHub reports it enabled.
 - [x] Require approval for all external contributors' workflow runs; GitHub reports `all_external_contributors`.
 - [x] Set the repository default workflow token permission to read-only; GitHub reports `read`.
-- [~] Review repository and organization secrets for least privilege and rotate any credential exposed by old workflow paths; current `main` workflow references were reviewed, but organization secrets need an organization-admin review and the historically exposed `VERCEL_TOKEN` still needs rotation and an audit-log check.
+- [~] Review repository and organization secrets for least privilege and rotate exposed credentials; current `main` workflow references were reviewed, but organization secrets need an organization-admin review, the historically exposed `VERCEL_TOKEN` needs rotation and an audit-log check, and the Geoapify owner must confirm restrictions or remove the historical browser key.
 
 ## 7. Reproducible development environment
 
 - [x] Pin pnpm in the root package manifest and document supported Node.js versions.
 - [x] Document local frontend, backend, and MongoDB setup.
 - [x] Provide root scripts for build and test execution.
-- [~] Verify every root script maps to a real workspace script and behaves consistently on a clean checkout; command targets match both apps and root `dev` now starts against local MongoDB, while a clean-checkout run remains outstanding.
+- [x] Verify every root script maps to a real workspace script and behaves consistently on a clean checkout; all five root scripts were exercised on 2026-11-02.
 - [x] Document environment variables without copying real secrets into tracked files; examples use local-only placeholders and no longer include a shared Geoapify key.
 - [x] Keep setup steps and package-manager instructions consistent across the contributor and app-specific guides.
 - [x] Provide a clean-checkout smoke procedure using frozen install and isolated tests that do not touch production or a developer's local database.
@@ -163,8 +163,9 @@ It is a reusable quality guide, not a requirement for general agentic-coding rea
 - Root `dev`, `build`, `lint`, `type-check`, and `test` tasks map to scripts present in both workspace apps.
 - Local setup examples target only `localhost` MongoDB; no preloaded records or real credentials are needed for startup. Docker is documented as an optional way to run MongoDB.
 - On 2026-11-02, `pnpm install --frozen-lockfile` completed with Node.js 22.23.4 and the pinned pnpm 11.22.0.
-- Root `pnpm dev` started the frontend on port 3000 and the API on port 5050; the API connected to local MongoDB at `localhost:27017/karmacircle`.
-- `GET http://localhost:5050/health` returned `{"status":"ok","mongo":"connected"}`.
+- The clean-checkout root `build`, `lint`, `type-check`, and `test` scripts passed; lint reported 8 existing conditional-assertion warnings. API tests: 96 passed. Browser tests: 159 passed across Chromium, Firefox, and WebKit.
+- Clean-checkout root `dev` started both apps using temporary ports 3100 and 5150 and a separate `karmacircle_script_check` database; `/health` returned `{"status":"ok","mongo":"connected"}`.
+- The default clean-checkout `dev` attempt could not bind port 3000 because the existing local frontend already owned it; that server was left untouched.
 
 ## 8. Pull request and release workflow
 

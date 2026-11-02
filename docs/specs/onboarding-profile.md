@@ -56,7 +56,11 @@ Scope is deliberately narrow: three questions — a bio (`description`), city/st
 
 See [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md) for the full file-by-file breakdown.
 
-**Same-day addition: address-line autocomplete.** The "Address line 1" question's field is backed by Google Places (New) when `VITE_GOOGLE_MAPS_API_KEY` is set (`apps/web/.env.example`) — picking a suggestion fills `line1`/`line2`/`city`/`state`/`country`/`pincode` at once, the same "pick one thing, several fields update" shape the city/state location question already has. No key: the field is the plain text input it always was, no broken UI. **Not yet verified against a live key** as of this pass — see [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#address-line-autocomplete-utilsgoogleplacests-hooksuseaddressautocompletets) for the full breakdown and [known-issues.md](./known-issues.md) for the live-verification gap.
+**Address-line autocomplete:** `ProfileSetupQuestion` uses the optional Geoapify integration in `utils/geoapify.ts` when `VITE_GEOAPIFY_API_KEY` is set.
+Without a key, the address remains a plain text field.
+Selecting a suggestion fills line1, city, state, country, and postcode/pincode; line2 remains blank.
+Source behavior was checked on 2026-11-02, but a live provider-key/browser check remains open.
+See [onboarding-profile/SPEC.md](../../apps/web/src/features/onboarding-profile/SPEC.md#address-line-autocomplete-utilsgeoapifyts-hooksuseaddressautocompletets).
 
 ## Field metadata: `ProfileElements` and `getProfileFields`
 
@@ -77,13 +81,13 @@ One unrouted profile prototype remains in the feature tree:
 `Profile.tsx` and `/user/:userName` no longer exist.
 The existing editor is the only routed individual profile experience.
 
-### `UserProfile.tsx` — not routed
+### `UserProfile.tsx` — retained inactive prototype, not routed
 [apps/web/src/features/onboarding-profile/pages/UserProfile.tsx](../../apps/web/src/features/onboarding-profile/pages/UserProfile.tsx) is a second, more visually developed profile page (profile picture, social icons, an "Events Attending" `Swiper` carousel with 6–8 hardcoded placeholder slides, responsive slide count).
 Fetches via SWR: `userEndpoints.details(params.slug)` (`GET /user?userName=...`).
 **This page is not referenced by `routesConfig.tsx` at all** — there is no route for it, so it is currently unreachable through normal navigation.
 Its "own profile" branch compares `currentUser?.userName` from Redux with `params.slug`.
 This is an unrouted prototype, so the branch is not part of the current application flow.
-Treat this as a work-in-progress replacement for (or alternate design of) `Profile.tsx` rather than a currently-active page.
+This is a retained legacy prototype only; it is not a replacement for the removed public profile route and is not part of the active user flow. Do not register it without a separate product decision.
 
 When asked to add individual profile features, distinguish the routed `/user/setup` editor from the unrouted `UserProfile.tsx` prototype; the old public `Profile.tsx` page and `/user/:userName` route were removed.
 

@@ -22,7 +22,7 @@ Organization account editing retains the dashboard's `ProfileUpdate` modal; publ
 | `constants/profileSetup.ts` | **New.** `PROFILE_SETUP_QUESTIONS`, `FIELD_SPECS`, `FIELD_CY` for the setup flow | ✅ yes |
 | `utils/profileSetupForm.ts` | **New.** Seeding (`toProfileSetupForm`) and the full-form save payload (`toProfileSetupPayload`) | ✅ yes |
 | `components/setup/ProfileSetupQuestion.tsx`, `ProfileSetupLocationFields.tsx`, `ProfileSetupIntro.tsx` | **New.** The setup flow's own question/location/intro screens — forks of organizations' equivalents, not a shared/parameterized version (see organizations.md) | ✅ yes |
-| `utils/googlePlaces.ts`, `hooks/useAddressAutocomplete.ts` | **New, same day.** Google Places (New) autocomplete for the address question's `line1` field — see "Address-line autocomplete" below | ✅ yes, when `VITE_GOOGLE_MAPS_API_KEY` is set; plain input otherwise |
+| `utils/geoapify.ts`, `hooks/useAddressAutocomplete.ts` | Optional Geoapify autocomplete for the address question's `line1` field — see "Address-line autocomplete" below | ✅ yes, when `VITE_GEOAPIFY_API_KEY` is set; plain input otherwise |
 | `components/ProfileCompletion.tsx` | Modal: first-time profile completion (organization-shaped; unreachable from anywhere today) | ❌ unreachable |
 | `components/ProfileUpdate.tsx` | Modal: profile editing for the authenticated organization owner | ✅ yes, opened from the organization dashboard |
 | `hooks/useProfileCompletion.ts` | Local form state + validation + submit for `ProfileCompletion` | ✅ yes (feeds an unreachable component) |
@@ -38,10 +38,10 @@ Old handle URLs reach the normal not-found screen; `UserProfile` remains unroute
 The automatic completion nudge, `utils/checkMissingFields.ts`, its types, and completion-bypass cookie writes were removed.
 Save, Close, and Maybe later return Home; cancellation discards unsaved changes.
 
-## `pages/UserProfile.tsx` — not routed, work-in-progress
+## `pages/UserProfile.tsx` — retained inactive prototype, not routed
 
-**No entry exists for this component in `routesConfig.tsx`** — it is unreachable through normal navigation.
-Confirm with whoever's asking before investing effort here; treat it as an alternate design still being finished, not a page you can assume anyone will see.
+**No entry exists for this component in `routesConfig.tsx`** — it is unreachable through normal navigation and is not a planned replacement for the removed public profile route.
+It has no active product route or approved replacement role. Confirm product scope before implementing or exposing any part of this prototype.
 
 **Data source:** `useSWR(userEndpoints.details(params.slug), fetcher)`. This unrouted prototype uses a different endpoint builder from the legacy `organizationEndpoints.details(userName)` builder; neither is part of the current routed profile flow.
 
@@ -155,55 +155,23 @@ The intro explains this save boundary and warns that closing discards changes.
 The final Save changes stays on the question when saving fails; a 401 clears the session and redirects to sign-in.
 See [the current flowchart](../../../../../docs/specs/user-flows.md#individual-profile-setup-and-editing) and [the audit gaps](../../../../../docs/specs/known-issues.md#individual-profile-setup---flow-audit-26-october-2026).
 
-## Address-line autocomplete (`utils/googlePlaces.ts`, `hooks/useAddressAutocomplete.ts`)
+## Address-line autocomplete (`utils/geoapify.ts`, `hooks/useAddressAutocomplete.ts`)
 
-**New, October 2026, same day as the flow itself.** The person using this app compared the address question to the location question next to it and asked for the same kind of auto-population — Google Places (New) backs the "Address line 1" field in `ProfileSetupQuestion.tsx`'s `group` branch, reusing the existing `Combobox` component (the same one `ProfileSetupLocationFields`/organizations' `SetupLocationFields` already use for city/state) rather than rendering Google's own autocomplete widget, so the suggestion list stays visually consistent with the rest of the app instead of looking like a second product.
+The address question optionally uses Geoapify Autocomplete through `fetchAddressSuggestions()`.
+`VITE_GEOAPIFY_API_KEY` enables suggestions; with no key, the field stays a plain text input.
 
-**Deliberately the programmatic API, not the `PlaceAutocompleteElement` web component.** Google's current recommendation for new integrations is the new widget, but it renders its own shadow-DOM UI with Google's own styling — feeding its suggestions into this app's own `Combobox` instead keeps one visual language. `AutocompleteSuggestion.fetchAutocompleteSuggestions()` (text in, predictions out) and `PlacePrediction.toPlace().fetchFields()` (prediction in, full place out) are what `useAddressAutocomplete.ts` calls — see that file's header comment for exactly which Google docs/samples this was checked against. **This could not be verified against a live key** — the person building this hadn't gotten a Google Cloud API key yet as of this pass (see `known-issues.md`'s "needs live verification" entry) — so treat the exact field/method names as "checked against current docs, not run," not "confirmed working," until someone adds a real `VITE_GOOGLE_MAPS_API_KEY` and clicks through it.
+The existing app `Combobox` renders suggestions.
+`useAddressAutocomplete` debounces searches and maps a selected Geoapify result through `addressResultToFields()`.
+The mapping fills line1, city, state, country, postcode/pincode, and leaves line2 blank.
 
-**Why the legacy `google.maps.places.Autocomplete` widget wasn't used:** it's closed to API keys created after March 2025 (confirmed via web search during this pass — Google's own migration docs), so a fresh KarmaCircle key would never have been able to use it anyway.
-
-**Script loading:** `utils/googlePlaces.ts`'s `loadGooglePlaces()` is the same module-level-cached-promise pattern as `useRazorpayCheckout.ts`'s `loadCheckoutScript` — one `<script>` tag for the whole app session, every caller after the first awaits the same promise. `loading=async` on the script URL plus `google.maps.importLibrary("places")` once it loads is the combination both of Google's fetched-and-read current code samples use for the new `AutocompleteSuggestion`/`Place` classes.
-
-**Graceful when unconfigured.** `isAddressAutocompleteConfigured()` (reads `import.meta.env.VITE_GOOGLE_MAPS_API_KEY`) gates whether `ProfileSetupQuestion` even renders the `Combobox` branch for `line1` — no key, no Google-specific code path at all, just the plain text input this replaced. A configured-but-failing lookup (network error, bad key, etc.) degrades the same way mid-use: `useAddressAutocomplete.search()`'s `catch` just empties the suggestion list for that keystroke rather than surfacing an error, so a flaky connection costs the autocomplete, not the field.
-
-**Session tokens, for billing.** Google bills Autocomplete + the following Place Details call as one unit only when they share a session token (`AutocompleteSessionToken`) — `useAddressAutocomplete.ts` creates one on the first search after a reset, reuses it across every keystroke, and drops it right after a successful `fetchFields` so the *next* address lookup starts its own fresh session rather than silently billing against a finished one. Searches are also debounced 300ms (`DEBOUNCE_MS`), unlike Google's own sample code (which fires on every keystroke) — this is a cost-conscious deviation from the sample, not a correctness one.
-
-**Field mapping** (`addressComponentsToFields`): `street_number` + `route` → `line1`; `subpremise` (an apartment/unit, when Google has one) → `line2`, rather than being dropped; `locality`, falling back to `sublocality_level_1` for addresses Google tags that way instead (seen in some Indian address data); `administrative_area_level_1` → `state`; `country` → `country`; `postal_code` → `pincode`. Picking a suggestion fills all six fields via `ProfileSetupQuestion`'s `addressAutocomplete`'s `onFill` — including `city`/`state`, which live on the *previous* question screen, not this one; that's intentional, matching "pick one thing, several fields update" the same way the location question's own city pick already fills state.
-
-**Types:** Google ships none for this (loaded via `<script>`, not an npm package) — `onboarding-profile/types/interfaces.ts` has a minimal hand-written `declare global { interface Window { google?: ... } }`, the same convention `donate-shop-trending/types/interfaces.ts` already uses for `window.Razorpay`. Deliberately narrow: only the members these two files actually call, not the full Places API (New) surface.
-
-## `constants/ProfileElements.ts` + `constants/index.ts` — unused scaffolding
-
-`ProfileElements` is an array of 10 field descriptors (`name`, `firstName`, `lastName`, `tagLine`, `description`, `city`, `state`, `address`, `country`, `pincode`), each with `id`/`label`/`placeholder`/`minimumLength`/`errorMessage`/`type`.
-Not imported by `ProfileCompletion.tsx` or `ProfileUpdate.tsx` — both hardcode their own JSX per field instead.
-**Its `minimumLength` values don't agree with what's actually validated elsewhere** — e.g. `firstName`/`lastName` here say `minimumLength: 5`, while `hooks/useValidation.ts` (in the authentication feature, also unused) says 3–30 characters; `description` here says `minimumLength: 100` with no upper bound listed, while both live validators (`useProfileCompletion.ts`, `ProfileUpdate.tsx`) enforce 100–500. If you build a generic field-renderer around this file, reconcile these numbers against the live validators first rather than trusting this file's numbers in isolation.
-`constants/index.ts` is a one-line barrel (`export { default as ProfileElements } from "./ProfileElements"`) — its only plausible purpose is enabling `import { ProfileElements } from "@features/onboarding-profile/constants"` shorthand, but nothing uses that import path either.
-
-## `utils/getProfileFields.ts`
-
-Default export `getProfileFields(info)`, wrapping two module-private (not separately exported) helpers:
-- `getMissingElements(info)` — for `userType === "organization"` only, returns which of `brandingFields` (`["tagLine", "description"]`, from `statics/Constants.ts`) are `undefined` on `info`. Returns `[]` unconditionally for non-organization users (note: unlike `checkMissingFields.ts`, this function does **not** check `addressFields` at all — it's narrower in scope, branding-only).
-- `getEditableFields(info)` — returns `[...mandatoryFields, ...brandingFields, ...addressFields]` for organizations, or `[...mandatoryFields, ...addressFields]` for individuals (`mandatoryFields = ["name", "username"]`, `addressFields = ["city","state","address","country","pincode"]`, both from `statics/Constants.ts`).
-
-`getProfileFields(info)` itself picks between the two: if `userType === "organization"` **and** `tagLine` is falsy/empty, returns `getMissingElements(info)` (i.e. "what's still missing"); otherwise returns `getEditableFields(info)` (i.e. "everything this user type can edit").
-**Correction to the centralized docs/specs/onboarding-profile.md**, which describes `getMissingElements`/`getEditableFields` as though they're independently importable — they are not exported from this file at all; only the `getProfileFields` default export is reachable from outside.
-Not imported by any component today, same status as `ProfileElements.ts` — both look like scaffolding for a single future generic/dynamic profile-form component that was never built.
-
-## Data flow summary
-
-Individual desktop/mobile navbar Edit profile -> `/user/setup` -> load `GET /user/profile` -> seed full form.
-Continue/Back change questions without saving.
-Final Save changes sends the complete form to `PATCH /user/update`, revalidates the profile cache, shows success, and returns Home.
-Close and Maybe later discard unsaved edits and return Home without a save request.
-Organization account editing remains on the dashboard; public organization setup uses its own feature.
-Legacy `ProfileCompletion` and `UserProfile` remain inactive.
+The implementation and fallback were checked against source on 2026-11-02.
+A live provider-key/browser check has not been run, so provider acceptance and real suggestions remain unverified.
 
 ## Known issues specific to this feature (superset of known-issues.md's entries, plus new findings from this review)
 
 - **New, October 2026: `/user/setup` (`ProfileSetup.tsx`) and its shared/forked components.** See the dedicated section above for the full breakdown — the short version: the generic parts of organization setup's shell moved to shared locations (`@components/setup/`, `@hooks/useLocateCity`), the question-rendering parts were forked (not generalized), and the new flow covers exactly two fields with nothing required.
-- **New, same day: Google Places address-line autocomplete, not yet verified against a live key.** See "Address-line autocomplete" above — the integration code is written and typechecked against Google's current documented API shape, but nobody has plugged in a real `VITE_GOOGLE_MAPS_API_KEY` and clicked through it. Flag this if asked to touch the area, and update this note once someone has.
-- **Superseded, 2026-11-01:** the earlier note said `VITE_GEOAPIFY_API_KEY` was unused. `apps/web/src/features/onboarding-profile/utils/geoapify.ts` reads it for optional address autocomplete. The shared demo key was removed from `apps/web/.env.example`; provide a restricted key of your own or leave it blank.
+- **Address-line autocomplete has not been verified with a live Geoapify key.** The source uses `VITE_GEOAPIFY_API_KEY` through `utils/geoapify.ts`; see "Address-line autocomplete" above. A local browser check with an owner-provided key remains open.
+- **Superseded, 2026-11-01:** the earlier note that `VITE_GEOAPIFY_API_KEY` was unused was wrong. `apps/web/src/features/onboarding-profile/utils/geoapify.ts` reads it for optional address autocomplete. The shared demo key was removed from `apps/web/.env.example`; use a restricted key of your own or leave it blank.
 - **`ProfileUpdate.tsx`'s `handleResetFields` drops the `name` field** — copy-pasted from `useProfileCompletion.ts`'s version, whose credentials shape never had `name` to begin with; closing and reopening the modal after a reset shows a blank Organization Name. New finding, surfaced by converting this file to strict TypeScript.
 - **`UserProfile.tsx`'s Logout button passes a plain `onClick`** the shared `Button` component silently discards (`Button.tsx` spreads `...props` and then explicitly overwrites `onClick` with its own `onClickfunction`, which is `undefined` here) — this button has never actually worked. New finding, also surfaced by strict typing; low-priority since this page isn't routed.
 - Two profile-edit modals with different endpoints, different field coverage, and inconsistent reachability from the two "view profile" surfaces (table above).
@@ -218,7 +186,7 @@ Legacy `ProfileCompletion` and `UserProfile` remain inactive.
 ## Types
 
 This folder is TypeScript (`.ts`/`.tsx`) as of this conversion pass — see [authentication/SPEC.md](../authentication/SPEC.md#types) for the general pattern.
-`types/index.ts` holds `Address`, `ProfileCompletionCredentials`/`ProfileCompletionErrors`/`ProfileCompletionProps`, `ProfileUpdateProfileData`/`ProfileUpdateProps`, `ProfileFieldsInfo`, `ProfileFieldElement`, `UserProfileDetails`, `LogoutResponse` (asserted at each `Logout()` call site, since `KarmaCircleApi.ts`'s own catch block returns the caught error as-is), and, **added October 2026** for the setup flow: `MyProfile` (`GET /user/profile`'s `{ user }` shape), `ProfileSetupForm`/`ProfileSetupField`, `ProfileSetupFieldSpec`, `ProfileSetupQuestion`, and `ProfileSetupStepStatus` (satisfies the shared `SetupStepStatus` in `@/types/setup` structurally — not an explicit `extends`, matching how organizations' own `OrganizationSetupStepStatus` also isn't changed to extend it). Same day, also added: `GoogleAddressComponent`/`GoogleAutocompleteSessionToken`/`GooglePlace`/`GooglePlacePrediction`/`GooglePlacesLibrary` plus a `declare global { interface Window { google?: ... } }` block for the address-autocomplete integration — same "hand-written minimal ambient types for a script-tag-loaded third party" pattern `donate-shop-trending/types/interfaces.ts` already uses for `window.Razorpay`.
+`types/index.ts` holds `Address`, `ProfileCompletionCredentials`/`ProfileCompletionErrors`/`ProfileCompletionProps`, `ProfileUpdateProfileData`/`ProfileUpdateProps`, `ProfileFieldsInfo`, `ProfileFieldElement`, `UserProfileDetails`, `LogoutResponse` (asserted at each `Logout()` call site, since `KarmaCircleApi.ts`'s own catch block returns the caught error as-is), and, **added October 2026** for the setup flow: `MyProfile` (`GET /user/profile`'s `{ user }` shape), `ProfileSetupForm`/`ProfileSetupField`, `ProfileSetupFieldSpec`, `ProfileSetupQuestion`, and `ProfileSetupStepStatus` (satisfies the shared `SetupStepStatus` in `@/types/setup` structurally — not an explicit `extends`, matching how organizations' own `OrganizationSetupStepStatus` also isn't changed to extend it). Superseded historical note: the original autocomplete draft added Google Places ambient types. That provider was replaced before shipping; active address autocomplete uses Geoapify types and code in `utils/geoapify.ts`.
 Three pre-existing bugs now surface as real compile errors under strict typing and are left in place behind documented `@ts-expect-error` suppressions rather than fixed, consistent with this pass's types-only scope — the `ProfileUpdate.tsx` reset bug and the `UserProfile.tsx` Logout-button bug listed above, plus `Dashboard.tsx`'s `ProfileCompletion` prop mismatch (see [dashboard/SPEC.md](../dashboard/SPEC.md#types), already documented before this pass).
 Converting `Profile.tsx` is also what surfaced the "Edit profile button does nothing" finding above — not a type error exactly, but writing accurate JSDoc-style comments while typing this file forced actually tracing whether `showProfileModal` was read anywhere, which the previous prose-only spec had gotten wrong.
 
@@ -227,7 +195,7 @@ Converting `Profile.tsx` is also what surfaced the "Edit profile button does not
 - **"Fix the edit profile modal"** → ask which one: `Dashboard.tsx`'s `ProfileCompletion` path (only reachable when the profile is incomplete, hits `/user/complete`, currently crashes on its header Save button — see dashboard/SPEC.md), the `ProfileUpdate` path (hits `/user/update`, works correctly, rendered from the organization dashboard only), or the individual-account `/user/setup` flow (`ProfileSetup.tsx` — not a modal at all).
 - **"Make profile completion actually block on validation errors"** → `ProfileUpdate.validateForm` already does this (fixed October 2026, `if (Object.keys(newErrors).length > 0) return false;` before the `updateUserProfile` call). `useProfileCompletion.validateForm` (feeding the still-unreachable `ProfileCompletion`) still needs the same guard before its `completeProfileApiCall` call if asked to fix it too. `ProfileSetup.tsx`'s flow has no validation to block on in the first place — nothing in it is required or format-checked.
 - **"Add a field to the individual profile-setup flow"** → an entry in `constants/profileSetup.ts`'s `PROFILE_SETUP_QUESTIONS` (plus a `FIELD_SPECS` row if it's part of a `group` question), same shape as organizations' `SETUP_STEPS` but flat (no step grouping). Check first whether `PATCH /user/update`'s `updateProfileSchema` (`apps/api/src/modules/users/user.validation.ts`) actually persists the field you want to add — this flow was scoped to exactly what that endpoint accepts (`description`, `address`); `name`/`coverImage` are accepted by the endpoint but were deliberately left out of this flow's three questions, so adding either is a real scope decision, not a one-line addition — ask first.
-- **"Finish `UserProfile.tsx`"** → register a route, fix the `userName` cookie check (use authenticated Redux identity), and remove/replace the Lorem-Ipsum and hardcoded-address/pronoun text — treat as a multi-part task, confirm scope first.
+- **"Finish `UserProfile.tsx`"** → clarify intended product scope first. It is an inactive prototype, not a planned public individual-profile route; do not register it by assumption.
 - **"Build a generic profile-field form"** → `ProfileElements.ts` + `getProfileFields.ts` are the closest existing scaffolding; reconcile their validation numbers against the live `useProfileCompletion.ts`/`ProfileUpdate.tsx` bounds before using them as-is. Neither was used for `ProfileSetup.tsx` — that flow's two fields didn't need a generic renderer.
 
 ## Profile setup access and loading errors

@@ -169,8 +169,8 @@ flowchart TD
     p_bio["1. Bio - optional"]:::general
     p_city["2. City and state - optional; city suggestions / use my location"]:::general
     p_address["3. Address - optional; line1, line2, country, pincode"]:::general
-    p_places["Google key set: address suggestions fill all six address fields; otherwise plain text"]:::general
-    p_google_gap(["Live Google Places behavior remains unverified"]):::terminator
+    p_places["Geoapify key set: address suggestions fill line1, city, state, country, and postcode; otherwise plain text"]:::general
+    p_google_gap(["Live Geoapify key behavior remains unverified"]):::terminator
     p_save["Save changes: PATCH /user/update; full bio and all six address fields"]:::general
     p_ok{{"Save succeeded?"}}:::decision
     p_refresh["Revalidate own-profile cache; success toast"]:::general

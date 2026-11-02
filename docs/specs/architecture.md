@@ -49,7 +49,7 @@ See [known-issues.md](./known-issues.md) for unreachable feature code.
 
 - `vite.config.mjs` configures the path aliases (see [README.md](./README.md)), dev server (`port: 3000`, `host: true`, `usePolling: true` for the watcher — relevant in Docker/WSL setups), and `vite-plugin-pwa` with a `CacheFirst` runtime-caching strategy for Google Fonts and image files.
 - Environment variables are read via `import.meta.env.*` and must be prefixed `VITE_`.
-  The names currently read in frontend source are `VITE_API_URL`, `VITE_GEOAPIFY_API_KEY`, `VITE_GOOGLE_MAPS_API_KEY`, and `VITE_RAZORPAY_KEY_ID`.
+  The frontend reads `VITE_API_URL`, optional `VITE_GEOAPIFY_API_KEY`, and `VITE_RAZORPAY_KEY_ID`.
   See [LocalDevSetup.md](../LocalDevSetup.md) for which ones are required or optional.
 - `eslint.config.js` and `.prettierrc` define lint/format rules; `husky` + `lint-staged` run `eslint --fix` and `prettier --write` on staged `.js`/`.jsx`/`.ts`/`.tsx` files pre-commit.
 - `commitlint.config.js` enforces Conventional Commits via a husky `commit-msg` hook.

@@ -147,7 +147,7 @@ const ProfileSetupQuestion = ({
         if (field === "description") return null;
         const spec = FIELD_SPECS[field];
 
-        // Street address gets Google Places suggestions when a key is
+        // Street address gets Geoapify suggestions when a key is
         // configured — picking one fills line2/city/state/country/pincode
         // too (`addressAutocomplete`'s `onFill`, above), the same
         // "pick one thing, several fields update" shape the location

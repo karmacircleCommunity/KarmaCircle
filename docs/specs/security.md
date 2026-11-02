@@ -12,7 +12,7 @@ Instead, the table below scores coverage against a fixed checklist, so a future 
 | --- | --- | --- |
 | GitHub Actions | triggers, secrets exposure, permissions, action pinning | 1 critical fixed, active actions pinned to full SHAs, repository security settings enabled; exposed Vercel token rotation remains open |
 | Secrets in git (working tree) | tracked `.env*`, key/token patterns | none committed, `.env.example` only |
-| Secrets in git history | not scanned | **open**, run `gitleaks` or `trufflehog` once |
+| Secrets in git history | Gitleaks scan through 2026-11-02 | One historical client-visible Geoapify key found in the old root `.env.example`; current tracked examples omit it, local frontend config was cleared, and provider-side status remains unverified |
 | API authn/authz | cookie flags, JWT, revocation, route gating | sound, see open items |
 | API input handling | Zod on routes, NoSQL/regex injection, mass assignment | 1 medium fixed (signup mass assignment) |
 | API payments | signature check, amount limits, replay/race | 2 fixed, see below |
@@ -83,8 +83,11 @@ Ordered by what I would do first.
 
 1. **Rotate `VERCEL_TOKEN`** and audit Vercel deployment history (see above).
    The connected Vercel CLI identity cannot see KarmaCircle's deployment projects, and the Vercel app connection needs reauthentication, so the replacement token could not be safely created from this session.
-2. **Scan git history for secrets** (`gitleaks detect`).
-   Only the working tree was checked.
+2. **Resolve the historical Geoapify browser key.**
+   Gitleaks scanned Git history through 2026-11-02 and found one `VITE_GEOAPIFY_API_KEY` in the old root `.env.example` from 2023; it found no other candidates.
+   The key is absent from current tracked files, and the matching value was cleared from the ignored local `apps/web/.env` so the local app no longer uses it.
+   Geoapify documents that browser keys are visible to users and should be limited by allowed origins or HTTP referrers; see its [API key guidance](https://myprojects.geoapify.com/help/api-keys/).
+   The Geoapify account is not connected here, so confirm the old key is restricted or remove it, and create a replacement only if autocomplete is still needed.
 3. **Google OAuth `state` is used as `userType` with no CSRF nonce** (`auth.controller.ts`, `config/passport.ts`).
    It enables login CSRF and lets a crafted link choose the account type.
    Fix: sign `state` with a nonce cookie and verify it in the callback.
