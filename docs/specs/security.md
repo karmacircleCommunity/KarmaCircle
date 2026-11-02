@@ -10,7 +10,7 @@ Instead, the table below scores coverage against a fixed checklist, so a future 
 
 | Area | Checked | Result |
 | --- | --- | --- |
-| GitHub Actions | triggers, secrets exposure, permissions, action pinning | 1 critical fixed, active actions pinned to full SHAs, external settings open |
+| GitHub Actions | triggers, secrets exposure, permissions, action pinning | 1 critical fixed, active actions pinned to full SHAs, repository security settings enabled; exposed Vercel token rotation remains open |
 | Secrets in git (working tree) | tracked `.env*`, key/token patterns | none committed, `.env.example` only |
 | Secrets in git history | not scanned | **open**, run `gitleaks` or `trufflehog` once |
 | API authn/authz | cookie flags, JWT, revocation, route gating | sound, see open items |
@@ -82,6 +82,7 @@ Still unauthenticated, see open items.
 Ordered by what I would do first.
 
 1. **Rotate `VERCEL_TOKEN`** and audit Vercel deployment history (see above).
+   The connected Vercel CLI identity cannot see KarmaCircle's deployment projects, and the Vercel app connection needs reauthentication, so the replacement token could not be safely created from this session.
 2. **Scan git history for secrets** (`gitleaks detect`).
    Only the working tree was checked.
 3. **Google OAuth `state` is used as `userType` with no CSRF nonce** (`auth.controller.ts`, `config/passport.ts`).
@@ -107,12 +108,12 @@ Ordered by what I would do first.
     Both are low; gate `/docs` behind `NODE_ENV !== "production"` and lower the body limit if no route needs more.
 12. **`POST /user/report` is unauthenticated** and only covered by the global 300 requests per 15 minutes limiter.
     Give it its own tighter limiter.
-13. **Enable remaining GitHub-side controls** (settings, not code): secret scanning with push protection, private vulnerability reporting, read-only default workflow token permissions, and "Require approval for all outside collaborators" for workflow runs.
+13. **GitHub-side controls are enabled**: secret scanning, push protection, and private vulnerability reporting are on; default workflow token permissions are read-only; all external contributors require workflow approval.
+   GitHub API confirmed each setting after the update on 2026-11-02.
    The active `main` ruleset requires pull requests, one approval, resolved review threads, and the `validate` check for everyone except Tamal, who can push directly.
-   Private vulnerability reporting is disabled.
-   GitHub API confirms Dependabot alerts and automated security fixes are enabled.
-   Repository-wide workflow token permissions currently default to `write`; the CI workflow itself sets read-only permissions.
-   The Actions policy endpoints returned 403 because the connected token lacks the required permission, so outside-collaborator approval still needs an owner-side check.
+   GitHub API also confirms Dependabot alerts and automated security fixes are enabled.
+   The connected account cannot inspect organization secrets because it lacks the `admin:org` scope.
+   Current `main` workflows do not reference `ADDLABELPAT`, `GH_PAT`, `MILAN_CICD`, `MILAN_SECRET_TOKEN`, `NPM_TOKEN`, or `VERCEL_PROJECT_ID_BETA`; review these repository secrets before removing them because their values and any use outside current `main` are unknown.
 
 ## Review checklist for future changes
 

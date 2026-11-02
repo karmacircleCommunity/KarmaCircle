@@ -26,7 +26,7 @@ Section 9 is a roll-up of completed first-pass work, so it is excluded to avoid 
 Score completed items in sections 1-3 and 5-8 as 1, partial items as 0.5, and open or external items as 0, divided by all scored items.
 Update the bar when checklist statuses change.
 
-`[████████░░] 78%` (46 done, 5 partial, 11 open or external; 62 scored items).
+`[█████████░] 87%` (52 done, 6 partial, 5 open or external; 63 scored items).
 
 ## Current readiness summary
 
@@ -55,6 +55,7 @@ The `main` ruleset requires pull requests, one approval, resolved review threads
 - [x] Use one Git rule across both tools: Tamal works directly on `main`; everyone else uses pull requests for changes to `main`.
 - [x] Use one communication-style rule across both tools.
 - [x] Point both tools to the same UI quality checklist, app maps, and known-issue docs.
+- [x] Link a project-specific AI-assisted development guide from the README.
 - [x] Review shared instructions for conflicts; keep model-specific setup limited to tool-specific entry points.
 - [~] Verify both tools load root instructions from an isolated temporary repository; Codex read `AGENTS.md`, while Claude Code's runtime check awaits reauthentication. Its documented `@AGENTS.md` import is present.
 
@@ -139,23 +140,31 @@ It is a reusable quality guide, not a requirement for general agentic-coding rea
 - [x] Pin actions used by the CI workflow to full commit SHAs.
 - [x] Document approval boundaries for external messages, merges, deployments, and GitHub settings.
 - [x] Pin all active third-party GitHub Actions to full commit SHAs across every workflow.
-- [ ] Enable secret scanning and push protection.
+- [x] Enable secret scanning and push protection; GitHub reports both enabled.
 - [x] Enable Dependabot alerts and security updates; GitHub API confirms both are enabled.
 - [x] Configure Dependabot to propose weekly updates for pinned GitHub Actions and the pnpm workspace dependencies.
-- [external] Enable private vulnerability reporting; GitHub API currently reports it disabled.
-- [external] Confirm or require approval for outside-collaborator workflow runs; current token cannot read Actions policy settings.
-- [external] Set the repository default workflow token permission to read-only; GitHub currently reports `write`, while the CI workflow sets read-only permissions explicitly.
-- [ ] Review repository and organization secrets for least privilege and rotate any credential exposed by old workflow paths.
+- [x] Enable private vulnerability reporting; GitHub reports it enabled.
+- [x] Require approval for all external contributors' workflow runs; GitHub reports `all_external_contributors`.
+- [x] Set the repository default workflow token permission to read-only; GitHub reports `read`.
+- [~] Review repository and organization secrets for least privilege and rotate any credential exposed by old workflow paths; current `main` workflow references were reviewed, but organization secrets need an organization-admin review and the historically exposed `VERCEL_TOKEN` still needs rotation and an audit-log check.
 
 ## 7. Reproducible development environment
 
 - [x] Pin pnpm in the root package manifest and document supported Node.js versions.
 - [x] Document local frontend, backend, and MongoDB setup.
 - [x] Provide root scripts for build and test execution.
-- [~] Verify every root script maps to a real workspace script and behaves consistently on a clean checkout; root `dev` still needs an isolated smoke run.
-- [ ] Document environment variables without copying real secrets into tracked files.
+- [~] Verify every root script maps to a real workspace script and behaves consistently on a clean checkout; command targets match both apps and root `dev` now starts against local MongoDB, while a clean-checkout run remains outstanding.
+- [x] Document environment variables without copying real secrets into tracked files; examples use local-only placeholders and no longer include a shared Geoapify key.
 - [x] Keep setup steps and package-manager instructions consistent across the contributor and app-specific guides.
 - [x] Provide a clean-checkout smoke procedure using frozen install and isolated tests that do not touch production or a developer's local database.
+
+### Priority 2 follow-up evidence (2026-11-01 to 2026-11-02)
+
+- Root `dev`, `build`, `lint`, `type-check`, and `test` tasks map to scripts present in both workspace apps.
+- Local setup examples target only `localhost` MongoDB; no preloaded records or real credentials are needed for startup. Docker is documented as an optional way to run MongoDB.
+- On 2026-11-02, `pnpm install --frozen-lockfile` completed with Node.js 22.23.4 and the pinned pnpm 11.22.0.
+- Root `pnpm dev` started the frontend on port 3000 and the API on port 5050; the API connected to local MongoDB at `localhost:27017/karmacircle`.
+- `GET http://localhost:5050/health` returned `{"status":"ok","mongo":"connected"}`.
 
 ## 8. Pull request and release workflow
 

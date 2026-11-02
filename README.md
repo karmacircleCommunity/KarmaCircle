@@ -53,6 +53,12 @@ New contributors can start by browsing [open issues](https://github.com/karmacir
 KarmaCircle uses conventional commit messages and pull request titles.
 The contribution guide explains how to claim issues, set up the project, run checks, and prepare a pull request.
 
+## Using AI on this project
+
+AI coding tools can help explain the codebase, plan changes, write code and documentation, and identify gaps.
+Contributors remain responsible for understanding and checking every change.
+Read the [AI-assisted development guide](./docs/AI-assisted-development.md) for a project-specific workflow, which guides to read, safety rules, and useful ways to ask for help.
+
 ## 1. Setting up the project locally
 
 - [Full local dev setup (frontend, backend, and MongoDB)](./docs/LocalDevSetup.md)
@@ -60,7 +66,6 @@ The contribution guide explains how to claim issues, set up the project, run che
 - [Setting up the Frontend](./docs/FrontendSetup.md)
 - [Setting up the Backend](./apps/api/docs/BackendSetup.md)
 - [Setting up with docker](./docs/DockerSetup.md)
-- [**Full local dev setup (frontend + backend + MongoDB in one go)**](./docs/LocalDevSetup.md) - the fastest path if you just want everything running
 
 ## 2. Contributing guidelines & more
 

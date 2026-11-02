@@ -59,6 +59,7 @@ AI tools are allowed.
 If you use AI assistance, disclose it in the pull request description and say which parts it helped with.
 Review and understand all submitted changes, and remain responsible for their correctness, tests, security, and license compatibility.
 Do not provide AI tools with credentials, private user data, or other confidential project information.
+See the [AI-assisted development guide](./docs/AI-assisted-development.md) for KarmaCircle-specific workflow and context.
 
 ## Checks
 
