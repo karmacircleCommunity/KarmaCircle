@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Run PR Triage Labeler
-        uses: hoho4190/issue-pr-labeler@3119d75bcf2f4d531f1dd46be119b17bb3b73aaa # v1.3.0
+        uses: hoho4190/issue-pr-labeler@dbc51f1487125c3b5ada33bc077fc59bf3659c72 # v3.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           disable-bot: false
