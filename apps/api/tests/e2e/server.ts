@@ -22,15 +22,21 @@
  * docs/specs/testing.md (apps/web) for the full picture.
  */
 import "./env.setup";
+import express from "express";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { createApp } from "../../src/app";
+import { createE2eTestRouter } from "./test-routes";
 
 async function main() {
   const mongoServer = await MongoMemoryServer.create();
   await mongoose.connect(mongoServer.getUri());
 
-  const app = createApp();
+  // Test-only helpers (see ./test-routes.ts) sit in front of the real app
+  // and are not part of `createApp()`.
+  const app = express();
+  app.use(createE2eTestRouter());
+  app.use(createApp());
   const port = Number(process.env.PORT);
 
   const server = app.listen(port, () => {

@@ -13,7 +13,7 @@ import { sendEventJoinConfirmation } from "../../config/mailer";
 import { logger } from "../../config/logger";
 
 export async function listEvents(req: Request, res: Response) {
-  const { uid, slug, host, page, limit } =
+  const { uid, slug, host, search, period, mode, inviteOnly, page, limit } =
     req.query as unknown as ListEventsQuery;
   const eventUid = uid ?? slug;
 
@@ -28,7 +28,7 @@ export async function listEvents(req: Request, res: Response) {
   }
 
   const { data, total } = await eventService.findAll(
-    { host },
+    { host, search, period, mode, inviteOnly },
     toSkipLimit({ page, limit }),
   );
   return res

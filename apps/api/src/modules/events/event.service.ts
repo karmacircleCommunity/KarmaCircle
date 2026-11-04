@@ -10,11 +10,22 @@ export async function findByUid(uid: string) {
   return Event.findOne({ uid });
 }
 
+export interface EventListFilters {
+  host?: string;
+  search?: string;
+  period?: "upcoming" | "past";
+  mode?: "Online" | "Offline";
+  inviteOnly?: boolean;
+}
+
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export async function findAll(
-  filters: { host?: string },
+  filters: EventListFilters,
   pagination: { skip: number; limit: number },
 ) {
-  const query: FilterQuery<IEvent> = {};
+  const conditions: FilterQuery<IEvent>[] = [];
 
   if (filters.host) {
     // `organizerHandle` is the real link (see event.model.ts); matching
@@ -22,14 +33,55 @@ export async function findAll(
     // field existed, with no backfill migration needed — for an
     // organization host the two values have always been identical anyway
     // (`hostUsername` is set from the same `userName`/`handle`).
-    query.$or = [
-      { hostUsername: filters.host },
-      { organizerHandle: filters.host },
-    ];
+    conditions.push({
+      $or: [{ hostUsername: filters.host }, { organizerHandle: filters.host }],
+    });
   }
 
+  if (filters.search) {
+    // Escaped, so the text is matched literally and never read as a pattern.
+    const pattern = new RegExp(escapeRegExp(filters.search), "i");
+    conditions.push({
+      $or: [{ name: pattern }, { city: pattern }, { hostName: pattern }],
+    });
+  }
+
+  if (filters.period) {
+    const now = new Date();
+    conditions.push({
+      startTime: filters.period === "upcoming" ? { $gte: now } : { $lt: now },
+    });
+  }
+
+  if (filters.mode) conditions.push({ mode: filters.mode });
+
+  if (filters.inviteOnly !== undefined) {
+    // Events saved before `inviteOnly` existed have no value, and read as
+    // open to everyone, so "open" must match a missing field too.
+    conditions.push(
+      filters.inviteOnly ? { inviteOnly: true } : { inviteOnly: { $ne: true } },
+    );
+  }
+
+  const query: FilterQuery<IEvent> = conditions.length
+    ? { $and: conditions }
+    : {};
+
+  // `_id` breaks ties between events that start at the same moment, so a
+  // page boundary can never repeat or skip one.
+  // Newest first for `past`, and for one host's whole list (`host` with no
+  // `period`): a host with more events than fit in a page must keep its
+  // newest and upcoming ones, and lose its oldest. Every other list is
+  // soonest first.
+  const newestFirst =
+    filters.period === "past" ||
+    (filters.period === undefined && !!filters.host);
+  const direction = newestFirst ? -1 : 1;
   const [data, total] = await Promise.all([
-    Event.find(query).skip(pagination.skip).limit(pagination.limit),
+    Event.find(query)
+      .sort({ startTime: direction, _id: direction })
+      .skip(pagination.skip)
+      .limit(pagination.limit),
     Event.countDocuments(query),
   ]);
   return { data, total };
@@ -74,7 +126,9 @@ export async function createEvent(
   email: string,
   data: CreateEventInput,
 ): Promise<IEvent> {
-  const existingEvent = await Event.findOne({ uid: data.uid });
+  // Friendly early answer. This is not race-safe on its own: the unique
+  // index on `uid` is the real guard, handled at `save()` below.
+  const existingEvent = await Event.exists({ uid: data.uid });
   if (existingEvent) {
     throw new AppError(
       STATUS_CODE.CONFLICT,
@@ -118,7 +172,19 @@ export async function createEvent(
     organizerHandle: organization.handle,
   });
 
-  return event.save();
+  try {
+    return await event.save();
+  } catch (error) {
+    // Two organizers submitting the same address at once can both pass the
+    // pre-check above; the unique index rejects the loser with 11000.
+    if ((error as { code?: number }).code === 11000) {
+      throw new AppError(
+        STATUS_CODE.CONFLICT,
+        STATUS_MESSAGE.EVENT_UID_ALREADY_EXISTS,
+      );
+    }
+    throw error;
+  }
 }
 
 export async function joinEvent(email: string, uid: string) {
