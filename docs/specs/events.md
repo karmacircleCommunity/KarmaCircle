@@ -196,8 +196,10 @@ from browser JavaScript. Personal accounts and signed-out visitors see no
 creation link; browsing, search, and filters remain public. The API
 independently rejects personal-account creation requests with `403`, using the
 stored account type. `e2e/events/events-responsive.spec.ts` covers the public
-directory's Upcoming/Past filtering and responsive layout. The full-page
-creation flow and My Events do not yet have browser coverage.
+directory's Upcoming/Past filtering, search, type filter and responsive layout,
+plus an organization publishing an in-person event from the full-page form.
+Event detail, joining, the registration check and My Events have no browser
+coverage yet.
 
 **Width fixed to `max-w-6xl` (September 2026).** Both content wrappers here were
 `max-w-7xl`, wider than `Navbar` and every other page's container — the
