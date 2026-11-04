@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectIsLoggedIn, selectUser } from "@app/store/slices/userSlice";
 import { FaPlus } from "react-icons/fa6";
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import { DirectoryToolbar, Footer, Navbar } from "@components";
 import ComponentHelmet from "@components/ComponentHelmet";
 import { useSectionReveal } from "@hooks";
@@ -36,11 +36,32 @@ const TYPE_FILTERS: TypeFilter[] = [
   "Offline",
 ];
 
+/** Cards per page: divides evenly into the 1, 2 and 3 column grids. */
+const PAGE_SIZE = 12;
+/** How long typing must pause before the search is sent to the API. */
+const SEARCH_DEBOUNCE_MS = 300;
+
+/** The API query params a `TypeFilter` choice stands for. */
+const typeToParams = (type: TypeFilter) => {
+  switch (type) {
+    case "Invite only":
+      return { inviteOnly: true };
+    case "Open to all":
+      return { inviteOnly: false };
+    case "Online":
+      return { mode: "Online" as const };
+    case "Offline":
+      return { mode: "Offline" as const };
+    default:
+      return {};
+  }
+};
+
 /**
  * The events directory, routed at `/events`.
  *
  * **Live data, September 2026** — `GET /events` (`eventEndpoints.directory()`)
- * via `useSWR`, mapped through `utils/toDisplayEvent.ts`. Replaces the
+ * via `useSWRInfinite`, mapped through `utils/toDisplayEvent.ts`. Replaces the
  * fixture `constants/eventDirectory.ts` used to render — that file, its
  * `eventDetails.ts` companion, and the `cause`/`going`/`spotsLeft` fields
  * they invented are deleted, not just unused; `DetailedEvent.tsx` is wired
@@ -63,12 +84,14 @@ const TYPE_FILTERS: TypeFilter[] = [
  *   the headers added structure without adding information; `EventCard`'s
  *   own date badge already says which day an event is on.
  *
- * `GET /events` has no server-side search filter to send (unlike
- * `organizations`' `search`/`domain` params — `listEventsQuerySchema` only
- * knows `uid`/`slug`/`host`/pagination), so search, the Upcoming/Past split
- * and the type filter all run client-side over one generously-paged fetch
- * (`eventEndpoints.directory()`'s default `limit=100`) rather than being
- * sent to the backend.
+ * Search, the Upcoming/Past split and the type filter all run on the API
+ * (`GET /events`, `eventEndpoints.directory()`), one page of
+ * `PAGE_SIZE` at a time, loaded with `useSWRInfinite` and a "Load more
+ * events" button. The API orders every page (`startTime`, then `_id`), so
+ * pages never repeat or skip an event and the count above the grid is the
+ * API's own `pagination.total`, not the number of cards fetched so far.
+ * Search is matched on event name, city and organizer, and is sent after a
+ * short pause in typing so a request is not fired for every keystroke.
  *
  * Organization accounts can open the shared, working creation form.
  */
@@ -80,64 +103,64 @@ const Events = () => {
   const [when, setWhen] = useState<TimeFilter>("Upcoming");
   const [type, setType] = useState<TypeFilter>("All");
 
-  const { data, isLoading } = useSWR<ApiEventList>(
-    eventEndpoints.directory(),
-    fetcher,
+  // The box updates on every keystroke; the API only hears about it once
+  // typing pauses.
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setSearch(query.trim()),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const getKey = (pageIndex: number, previousPage: ApiEventList | null) => {
+    if (previousPage && pageIndex >= previousPage.pagination.totalPages) {
+      return null;
+    }
+    return eventEndpoints.directory({
+      period: when === "Upcoming" ? "upcoming" : "past",
+      search,
+      ...typeToParams(type),
+      page: pageIndex + 1,
+      limit: PAGE_SIZE,
+    });
+  };
+
+  const { data, error, isLoading, mutate, size, setSize } =
+    useSWRInfinite<ApiEventList>(
+      getKey,
+      (url: string) => fetcher<ApiEventList>(url),
+      {
+        // Keeps the cards on screen while a new search or filter loads,
+        // instead of flashing an empty grid between the two.
+        keepPreviousData: true,
+        // Returning to /events after publishing an event refetches every
+        // page already loaded, not just the first. A new event shifts the
+        // items after it, so a stale page two would repeat the last card of
+        // page one. A global `mutate(filter)` cannot do this for us: SWR
+        // skips the `$inf$` keys that `useSWRInfinite` subscribes to.
+        revalidateAll: true,
+      },
+    );
+
+  const results = useMemo(
+    () => (data ?? []).flatMap((page) => page.data).map(toDisplayEvent),
+    [data],
   );
 
-  // Stable for the life of the page, not recomputed on every render — an
-  // event doesn't need to hop from "Upcoming" to "Past" mid-scroll because
-  // a re-render happened to land a few milliseconds later.
-  const now = useMemo(() => Date.now(), []);
-
-  const events = useMemo(() => (data?.data ?? []).map(toDisplayEvent), [data]);
-
-  const results = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-
-    const matches = events.filter((event) => {
-      const upcoming = new Date(event.startsAt).getTime() >= now;
-      if (when === "Upcoming" && !upcoming) return false;
-      if (when === "Past" && upcoming) return false;
-
-      if (type === "Invite only" && !event.inviteOnly) return false;
-      if (type === "Open to all" && event.inviteOnly) return false;
-      if (type === "Online" && event.mode !== "Online") return false;
-      if (type === "Offline" && event.mode !== "Offline") return false;
-
-      if (!needle) return true;
-
-      return [
-        event.title,
-        event.organizer,
-        event.summary,
-        event.city ?? "",
-        event.country ?? "",
-        event.platform ?? "",
-        event.mode,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(needle);
-    });
-
-    // Soonest-first for what's coming up; most-recent-first for history —
-    // the direction someone actually wants to read each list in.
-    matches.sort((a, b) => {
-      const diff =
-        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
-      return when === "Upcoming" ? diff : -diff;
-    });
-
-    return matches;
-  }, [events, query, when, type, now]);
+  const total = data?.[0]?.pagination.total ?? 0;
+  const hasMore = results.length < total;
+  const isLoadingMore =
+    size > 1 && data !== undefined && typeof data[size - 1] === "undefined";
+  const hasFilters = Boolean(query || type !== "All");
 
   // Scoped to the grid so the reveal never reaches the page chrome above
   // it, and re-run on filter changes so cards revealed by a new filter
   // don't stay at the hook's starting opacity.
   const gridRef = useRef<HTMLDivElement>(null);
 
-  useSectionReveal(gridRef, [results.length, when, type]);
+  useSectionReveal(gridRef, [results.length, when, type, search]);
 
   return (
     <>
@@ -172,11 +195,9 @@ const Events = () => {
             <>
               {isLoading && !data
                 ? "Loading events"
-                : `${results.length} ${results.length === 1 ? "event" : "events"}`}
-              {when === "Past" && results.length > 0 && " · past"}
-              {type !== "All" &&
-                results.length > 0 &&
-                ` · ${type.toLowerCase()}`}
+                : `${total} ${total === 1 ? "event" : "events"}`}
+              {when === "Past" && total > 0 && " · past"}
+              {type !== "All" && total > 0 && ` · ${type.toLowerCase()}`}
             </>
           }
           action={
@@ -197,27 +218,48 @@ const Events = () => {
       </div>
 
       <div className="mx-auto max-w-6xl px-9 pb-20 sm:px-10 lg:px-12">
-        {results.length === 0 ? (
+        {error && results.length === 0 ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-8 py-12">
+            <h2 className="font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
+              Could not load events
+            </h2>
+            <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
+              Please try again.
+            </p>
+            <button
+              type="button"
+              onClick={() => void mutate()}
+              className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
+            >
+              Try again
+            </button>
+          </div>
+        ) : results.length === 0 && isLoading ? (
+          <p className="font-poppins text-body text-ink/55" role="status">
+            Loading events
+          </p>
+        ) : results.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-brand-secondary/15 bg-white/60 px-8 py-16 text-center">
             <h2 className="font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
-              {query || type !== "All"
+              {hasFilters
                 ? "Nothing matches that yet"
                 : when === "Upcoming"
                   ? "No upcoming events yet"
                   : "No past events yet"}
             </h2>
             <p className="mx-auto mt-2 max-w-sm font-poppins text-body leading-6 text-ink/65">
-              {query || type !== "All"
+              {hasFilters
                 ? "Try a broader search, or clear the filters to see every event in the circle."
                 : when === "Upcoming"
                   ? "Nothing's on the calendar right now — check back soon, or look at past events."
                   : "Nothing's happened here yet."}
             </p>
-            {(query || type !== "All") && (
+            {hasFilters && (
               <button
                 type="button"
                 onClick={() => {
                   setQuery("");
+                  setSearch("");
                   setType("All");
                 }}
                 className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
@@ -234,6 +276,28 @@ const Events = () => {
             {results.map((event) => (
               <EventCard event={event} key={event.id} />
             ))}
+          </div>
+        )}
+
+        {error && results.length > 0 && (
+          <p className="mt-8 font-poppins text-sm text-red-700" role="status">
+            Could not load more events. Try again below.
+          </p>
+        )}
+        {hasMore && (
+          <div className="mt-10 flex justify-center sm:justify-start">
+            <button
+              type="button"
+              disabled={isLoadingMore}
+              onClick={() => (error ? void mutate() : void setSize(size + 1))}
+              className="cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-97"
+            >
+              {isLoadingMore
+                ? "Loading more events"
+                : error
+                  ? "Retry loading events"
+                  : "Load more events"}
+            </button>
           </div>
         )}
       </div>

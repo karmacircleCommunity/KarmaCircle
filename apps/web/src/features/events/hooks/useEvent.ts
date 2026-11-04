@@ -1,10 +1,16 @@
 import { useSWRConfig } from "swr";
+import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
+import { RESERVED_EVENT_ADDRESSES } from "@features/events/constants/reservedEventAddresses";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import { CreateEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
-import type { EventFormErrors, EventFormState, UseEventResult } from "@features/events/types";
+import type {
+  EventFormErrors,
+  EventFormState,
+  UseEventResult,
+} from "@features/events/types";
 
 const EVENT_UID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -53,6 +59,8 @@ export function useEvent(event: EventFormState): UseEventResult {
 
     if (uid && !EVENT_UID_PATTERN.test(uid)) {
       errors.uid = "Use lowercase letters, numbers, and single hyphens only";
+    } else if (RESERVED_EVENT_ADDRESSES.includes(uid)) {
+      errors.uid = "That event page address is reserved. Choose another one";
     }
 
     if (data.mode === "Offline") {
@@ -86,8 +94,12 @@ export function useEvent(event: EventFormState): UseEventResult {
         ? combineDateAndTime(data.endDate, data.endTime)
         : null;
 
-    if (startAt && endAt && endAt.isBefore(startAt)) {
+    if (startAt && endAt && !endAt.isAfter(startAt)) {
       errors.endTime = "End date and time must follow the start date and time";
+    }
+
+    if (startAt && startAt.isBefore(dayjs())) {
+      errors.startTime = "Start date and time must be in the future";
     }
 
     return errors;
@@ -123,7 +135,10 @@ export function useEvent(event: EventFormState): UseEventResult {
         showSuccessToast(response.data?.message);
         onSuccess();
 
-        void mutate(eventEndpoints.directory());
+        // The public directory (`useSWRInfinite` in `Events.tsx`) is not
+        // refreshed from here: SWR's global `mutate` skips infinite keys. It
+        // refetches every loaded page itself when `/events` is next opened
+        // (`revalidateAll`).
         if (organization?.handle) {
           void mutate(eventEndpoints.byHost(organization.handle));
         }

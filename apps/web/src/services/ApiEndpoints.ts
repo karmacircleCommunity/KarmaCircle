@@ -54,17 +54,23 @@ const paymentEndpoints = {
     `${API}/payment/organizations/${handle}/verify`,
 };
 
+/** Largest `limit` the API accepts (`paginationQuerySchema`). */
+const HOST_EVENTS_LIMIT = 100;
+
 const eventEndpoints = {
-  all: `${API}/events`,
   create: `${API}/events/create`,
   mine: () => `${API}/events/mine`,
   /**
    * One host's own events, filtered server-side by `hostUsername` — the
    * organization's "Your events" page. Filtering a fetched page in the
    * browser instead would hide anything on page two.
+   * Asks for the largest page the API allows. With no `period` the API lists
+   * a host's events newest first, so a host with more than 100 events loses
+   * its oldest, never its newest or upcoming ones. (The default limit of 20
+   * used to cut the list off after 20 events.)
    */
   byHost: (handle: string) =>
-    `${API}/events?host=${encodeURIComponent(handle)}`,
+    `${API}/events?host=${encodeURIComponent(handle)}&limit=${HOST_EVENTS_LIMIT}`,
   /**
    * One event's full record, for the detail page (`DetailedEvent.tsx`).
    * There's no dedicated `GET /events/:uid` route — the same `GET /events`
@@ -77,16 +83,33 @@ const eventEndpoints = {
   registration: (uid: string) =>
     `${API}/events/${encodeURIComponent(uid)}/registration`,
   /**
-   * The public directory. Unlike `organizationEndpoints.directory()`,
-   * `GET /events` has no server-side `search`/domain filter to send
-   * (`listEventsQuerySchema` — apps/api/src/modules/events/event.validation.ts
-   * — only knows `uid`/`slug`/`host`/pagination), so `Events.tsx` filters
-   * the fetched page in the browser instead. `limit` is set generously high
-   * (the API caps it at 100) rather than left at the default 20, so that
-   * client-side filtering isn't quietly hiding events sitting on a second
-   * page it never fetched.
+   * One page of the public directory, filtered, split and ordered by the
+   * API (`GET /events`, see `listEventsQuerySchema` in
+   * apps/api/src/modules/events/event.validation.ts). `period` is always
+   * sent: the directory is either upcoming or past, never both.
+   * Pages are `limit` long (the API caps it at 100) and carry their own
+   * `pagination.total`, so the directory loads more instead of fetching
+   * everything up front.
    */
-  directory: (limit = 100) => `${API}/events?limit=${limit}`,
+  directory: (params: {
+    period: "upcoming" | "past";
+    search?: string;
+    mode?: "Online" | "Offline";
+    inviteOnly?: boolean;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    query.set("period", params.period);
+    if (params.search) query.set("search", params.search);
+    if (params.mode) query.set("mode", params.mode);
+    if (params.inviteOnly !== undefined) {
+      query.set("inviteOnly", String(params.inviteOnly));
+    }
+    query.set("page", String(params.page ?? 1));
+    query.set("limit", String(params.limit ?? 12));
+    return `${API}/events?${query.toString()}`;
+  },
 };
 
 const authEndpoints = {

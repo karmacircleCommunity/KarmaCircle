@@ -2,22 +2,6 @@ import type { Dayjs } from "dayjs";
 import type { Cause } from "@features/organizations/types";
 import type { EventMode, EventFormErrors } from "./types";
 
-/** Retired credential shape used only by the disconnected legacy form. */
-export interface CreateEventCredentials {
-  description: string;
-  name: string;
-  coverImage: string;
-  eventMode: "online" | "offline";
-  address: {
-    line1: string;
-    line2: string;
-    city: string;
-    state: string;
-    country: string;
-    pincode: string;
-  };
-}
-
 export interface EventFormState {
   name: string;
   startDate: Dayjs | null;

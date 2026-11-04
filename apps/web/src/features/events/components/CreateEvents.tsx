@@ -15,6 +15,11 @@ import OrganizationSetupGate from "@features/organizations/components/Organizati
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import countries from "@statics/CountryList";
 import platforms from "@statics/OnlinePlatform";
+import {
+  COVER_IMAGE_ACCEPT,
+  COVER_IMAGE_MIME_TYPES,
+  COVER_IMAGE_TYPE_ERROR,
+} from "@features/events/constants/coverImageTypes";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { useEvent } from "@features/events/hooks/useEvent";
 import type { EventFormErrors, EventFormState } from "@features/events/types";
@@ -73,8 +78,8 @@ const CreateEvents = () => {
     e.target.value = "";
     setCoverError("");
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setCoverError("Choose an image file to use as your event cover.");
+    if (!COVER_IMAGE_MIME_TYPES.includes(file.type)) {
+      setCoverError(COVER_IMAGE_TYPE_ERROR);
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -256,7 +261,7 @@ const CreateEvents = () => {
                             Choose a cover image
                           </span>
                           <span className="mt-1 font-poppins text-caption text-ink/55">
-                            PNG, JPG, or WebP
+                            PNG, JPEG, WebP or GIF
                           </span>
                         </span>
                       )}
@@ -264,7 +269,7 @@ const CreateEvents = () => {
                     <input
                       id="coverImage"
                       type="file"
-                      accept="image/*"
+                      accept={COVER_IMAGE_ACCEPT}
                       onChange={handleCoverChange}
                       className="sr-only"
                       aria-invalid={Boolean(errors.coverImage || coverError)}

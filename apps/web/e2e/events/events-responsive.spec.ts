@@ -37,6 +37,15 @@ async function signUpOrganization(page: Page, stamp: number) {
   return { name: `Events Host ${suffix}` };
 }
 
+/**
+ * The directory loads 12 cards at a time and searches on the API, so a test
+ * that shares the E2E database with other specs narrows to its own events
+ * by the unique stamp in their names instead of hoping they land on page one.
+ */
+async function searchDirectory(page: Page, text: string) {
+  await page.getByRole("searchbox", { name: "Search events" }).fill(text);
+}
+
 async function createEvent(
   page: Page,
   opts: {
@@ -120,6 +129,7 @@ test("the directory renders both an upcoming and a past event, filterable by tim
 
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toBeVisible();
+  await searchDirectory(page, String(stamp));
 
   // Default filter is Upcoming — the future event shows, the past one
   // doesn't.
@@ -167,7 +177,7 @@ test("search narrows the directory by city", async ({ page }) => {
     description: "Offline event in Mumbai.",
     mode: "Offline",
     startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    city: "Mumbai",
+    city: `Mumbai ${stamp}`,
   });
   await createEvent(page, {
     uid: `evt-e2e-delhi-${stamp}`,
@@ -175,14 +185,16 @@ test("search narrows the directory by city", async ({ page }) => {
     description: "Offline event in Delhi.",
     mode: "Offline",
     startDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-    city: "Delhi",
+    city: `Delhi ${stamp}`,
   });
 
   await page.goto("/events");
+  await searchDirectory(page, String(stamp));
   await expect(page.getByText(`Mumbai Drive ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Delhi Drive ${stamp}`)).toBeVisible();
 
-  await page.getByRole("searchbox", { name: "Search events" }).fill("Mumbai");
+  // The city is matched by the API, not by the browser.
+  await searchDirectory(page, `Mumbai ${stamp}`);
   await expect(page.getByText(`Mumbai Drive ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Delhi Drive ${stamp}`)).toHaveCount(0);
 });
@@ -215,6 +227,7 @@ test("the type filter narrows by invite-only/open-to-all and online/offline", as
   });
 
   await page.goto("/events");
+  await searchDirectory(page, String(stamp));
   await expect(page.getByText(`Founders Preview ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Open Webinar ${stamp}`)).toBeVisible();
 
