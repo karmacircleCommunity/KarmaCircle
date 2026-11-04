@@ -10,12 +10,9 @@ import { E2E_API_URL } from "../env";
  * sections (grouping removed the same month it shipped, once the seed
  * data's real date spread showed most day-sections holding one event).
  *
- * Test events are created via a direct authenticated `POST /events/create`
- * call, not through either "create event" UI component — both are
- * documented as broken/unreachable (`known-issues.md`), and
- * `createEvent()`'s own required-field contract (`event.validation.ts`)
- * doesn't require the host organization to be "live"/complete the way
- * viewing an organization's *profile* does, so signup alone is enough.
+ * Directory fixtures use direct authenticated API calls so each browser
+ * test controls exact dates and filters.
+ * The final test exercises the organizer's full-page publishing flow.
  */
 
 type EventMode = "Online" | "Offline";
@@ -88,7 +85,9 @@ async function expectNoHorizontalOverflow(page: Page) {
     window.scrollTo(9999, window.scrollY);
     return window.scrollX;
   });
-  expect(scrollX, "the page itself must not be horizontally scrollable").toBe(0);
+  expect(scrollX, "the page itself must not be horizontally scrollable").toBe(
+    0,
+  );
 }
 
 test("the directory renders both an upcoming and a past event, filterable by time, with no horizontal overflow at mobile or desktop", async ({
@@ -152,7 +151,9 @@ test("the directory renders both an upcoming and a past event, filterable by tim
   const mobileLogoBox = await page.locator('nav a[href="/"]').boundingBox();
   const mobileHeadingBox = await heading.boundingBox();
   if (mobileLogoBox && mobileHeadingBox) {
-    expect(Math.abs(mobileLogoBox.x - mobileHeadingBox.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(mobileLogoBox.x - mobileHeadingBox.x)).toBeLessThanOrEqual(
+      1,
+    );
   }
 });
 
@@ -192,7 +193,8 @@ test("the type filter narrows by invite-only/open-to-all and online/offline", as
   const stamp = Date.now() + Math.floor(Math.random() * 1_000_000);
   await signUpOrganization(page, stamp);
 
-  const soon = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const soon = (days: number) =>
+    new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
   await createEvent(page, {
     uid: `evt-e2e-invite-${stamp}`,
@@ -227,4 +229,87 @@ test("the type filter narrows by invite-only/open-to-all and online/offline", as
   await page.getByRole("option", { name: "Online" }).click();
   await expect(page.getByText(`Open Webinar ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Founders Preview ${stamp}`)).toHaveCount(0);
+});
+
+test("an organization publishes an in-person event from the full-page form", async ({
+  page,
+}) => {
+  const stamp = `${Date.now()}${process.pid}`;
+  await signUpOrganization(page, Number(stamp.slice(-12)));
+  const publishedProfile = await page.request.patch(
+    `${E2E_API_URL}/organizations/me`,
+    {
+      data: {
+        description:
+          "We bring local communities together through practical support and shared events.",
+        tag: "NGO",
+        domains: ["Disaster relief"],
+        teamSize: 12,
+        city: "Guwahati",
+        state: "Assam",
+      },
+    },
+  );
+  expect(publishedProfile.ok(), await publishedProfile.text()).toBeTruthy();
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/organization/events/new");
+  await expect(
+    page.getByRole("heading", { name: "Bring people together" }),
+  ).toBeVisible();
+  await expect(page.getByText("Live preview")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  const eventName = `Riverbank Cleanup ${stamp.slice(-8)}`;
+  const eventSlug = eventName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  await expect(page.getByText("0 / 80")).toBeVisible();
+  await expect(page.getByLabel("About this event")).toHaveAttribute(
+    "placeholder",
+    /What will people do together/,
+  );
+  await page.getByLabel("Event name").fill(eventName);
+  await expect(page.getByText(`${eventName.length} / 80`)).toBeVisible();
+  await expect(page.getByLabel("Event page address")).toHaveValue(eventSlug);
+  await page
+    .getByLabel("About this event")
+    .fill(
+      "Join our community team to clear the riverbank and prepare the neighborhood for the rainy season.",
+    );
+  await expect(page.getByText("97 / 200")).toBeVisible();
+  await page.locator("#coverImage").setInputFiles({
+    name: "riverbank.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lqUAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  });
+  await page.getByRole("button", { name: /Online/ }).click();
+  await page.getByLabel("Meeting link").fill("zoom.example.com/j/123");
+  await page.getByRole("button", { name: "Publish event" }).click();
+  await expect(
+    page.getByText("Enter a complete link starting with http:// or https://", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /In person/ }).click();
+  await page.getByLabel("Street address").fill("12 River Road");
+  await page.getByLabel("City").fill("Guwahati");
+  await page.getByLabel("State or region").fill("Assam");
+  await page.getByRole("button", { name: "Publish event" }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/events/${eventSlug}$`), {
+    timeout: 15_000,
+  });
+  await expect(
+    page.getByRole("heading", { level: 1, name: eventName }),
+  ).toBeVisible();
+  await expect(page.getByText("Hosted by", { exact: true })).toBeVisible();
+  await page.goto("/organization/events");
+  await expect(
+    page.getByRole("link", { name: new RegExp(eventName) }),
+  ).toBeVisible();
 });

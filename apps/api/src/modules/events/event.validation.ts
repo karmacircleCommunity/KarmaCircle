@@ -6,12 +6,26 @@ const OFFLINE_REQUIRED_FIELDS = [
   "state",
   "country",
   "address",
-  "mapIframe",
 ] as const;
+const ONLINE_REQUIRED_FIELDS = ["platform", "platformLink"] as const;
+
+const isHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
 
 export const createEventSchema = z
   .object({
-    uid: z.string().min(1, "Missing Required Fields"),
+    uid: z
+      .string()
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "Use lowercase letters, numbers, and single hyphens in the event page address",
+      ),
     name: z.string().min(1, "Missing Required Fields"),
     description: z.string().min(1, "Missing Required Fields"),
     coverImage: z.string().min(1, "Missing Required Fields"),
@@ -26,7 +40,7 @@ export const createEventSchema = z
     address: z.string().optional(),
     mapIframe: z.string().optional(),
     platform: z.string().optional(),
-    platformLink: z.string().optional(),
+    platformLink: z.string().trim().optional(),
     /**
      * Organizer-settable, unlike `isGovernmentSponsored` (server/seed-only
      * — see event.model.ts). A statement about their own event, not a
@@ -36,11 +50,12 @@ export const createEventSchema = z
     inviteOnly: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.mode !== "Offline") {
-      return;
-    }
+    const requiredFields =
+      data.mode === "Offline"
+        ? OFFLINE_REQUIRED_FIELDS
+        : ONLINE_REQUIRED_FIELDS;
 
-    for (const field of OFFLINE_REQUIRED_FIELDS) {
+    for (const field of requiredFields) {
       if (!data[field]) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -48,6 +63,18 @@ export const createEventSchema = z
           message: "Missing Required Fields",
         });
       }
+    }
+
+    if (
+      data.mode === "Online" &&
+      data.platformLink &&
+      !isHttpUrl(data.platformLink)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["platformLink"],
+        message: "Meeting link must start with http:// or https://",
+      });
     }
   });
 

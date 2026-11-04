@@ -47,9 +47,9 @@ flowchart TD
     events_dir["Events Directory - /events"]:::general
     event_detail["Event Detail - /events/:eventId"]:::general
     create_access{{"Redux says signed in, organization account?"}}:::decision
-    create_hidden["Browse events - no creation button or modal"]:::general
+    create_hidden["Browse events - no creation link"]:::general
     create_event["Create event from directory or hosted-events workspace"]:::general
-    create_form["Shared CreateEvents form"]:::general
+    create_form["Full-page CreateEvents route - /organization/events/new"]:::general
     create_saved["POST /events/create saves event"]:::terminator
     personal_setup["Individual profile setup - /user/setup"]:::general
     not_found["404 - unmatched route"]:::terminator
@@ -413,7 +413,8 @@ flowchart TD
     e_access{{"Redux says signed in, organization account?"}}:::decision
     e_browse["Personal account or visitor - public browsing only"]:::general
     e_create_btn["Create event - Events directory or hosted workspace"]:::general
-    e_modal["Shared CreateEvents.tsx form"]:::general
+    e_form_route["Full-page form - /organization/events/new"]:::general
+    e_form["Basics, schedule, location or meeting link, access and live preview"]:::general
     e_validate{{"Required fields and selected mode valid?"}}:::decision
     e_errors["Show field errors and keep form open"]:::general
     e_post_create["POST /events/create"]:::general
@@ -449,7 +450,7 @@ flowchart TD
     e_past["GET /events/mine?period=past"]:::general
     e_return["Open event details from email or My Events"]:::general
     e_hosted["Your Events - /organization/events; GET /events?host"]:::general
-    e_lists_refresh["Close form and refresh public and hosted event lists"]:::terminator
+    e_lists_refresh["Open event detail and refresh public and hosted event lists"]:::terminator
     e_organizer_count["Proposed: organizer attendee list and count per hosted event"]:::terminator
     e_organizer["Organizer Panel - Hosted by, links to organization profile"]:::general
     e_fundraiser["Fundraiser Panel - shown only if the event has one"]:::general
@@ -464,14 +465,16 @@ flowchart TD
     e_access -->|"Yes"| e_create_btn
     e_access -->|"No"| e_browse
     e_hosted --> e_create_btn
-    e_create_btn --> e_modal
-    e_modal --> e_validate
+    e_create_btn --> e_form_route
+    e_form_route --> e_form
+    e_form --> e_validate
     e_validate -->|"No"| e_errors
     e_validate -->|"Yes"| e_post_create
     e_post_create --> e_backend
     e_backend -->|"No"| e_rejected
     e_backend -->|"Yes"| e_saved
     e_saved --> e_lists_refresh
+    e_lists_refresh --> e_detail_fetch
     e_lists_refresh --> e_fetch
     e_lists_refresh --> e_hosted
     e_grid --> e_detail_fetch

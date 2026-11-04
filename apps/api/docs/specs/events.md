@@ -1,85 +1,194 @@
 # Events Module
 
-[src/modules/events/](../../src/modules/events/) — list events (all, or one by `uid`) and create an event as the authenticated host. Owns the `Event` model.
+[src/modules/events/](../../src/modules/events/) — list events (all, or one by
+`uid`) and create an event as the authenticated host. Owns the `Event` model.
 
 ## `event.model.ts`
 
-`model<IEvent>("Event", ...)`, `{ timestamps: true }` (adds `createdAt`/`updatedAt` automatically).
+`model<IEvent>("Event", ...)`, `{ timestamps: true }` (adds
+`createdAt`/`updatedAt` automatically).
 
-| Field | Type | Notes |
-|---|---|---|
-| `name`, `description` | `string` (required, trimmed) | |
-| `uid` | `string` (required, `unique: true`) | The event's slug/identifier — see `createEvent`'s duplicate check below |
-| `hostUsername`, `hostName` | `string` (required) | **Set by the server** from the authenticated caller's own `User` record — never accepted from the request body (see below) |
-| `organizerHandle` | `string?`, indexed | **September 2026, tightened later the same month.** The real link to the `organizations` collection, set by the server (never from the request body) from the host's own `Organization` record. `createEvent()` now rejects a non-organization host outright (`403 NOT_AN_ORGANIZATION` - see `event.service.ts` below), so this is never unset for a newly created event; still `?`/optional on the schema only for defensive typing against a pre-existing/malformed document. `hostUsername`/`hostName` above are unchanged and stay as the free-text snapshot; this is the field an organization's public profile actually queries by (see below) |
-| `coverImage` | `string?` (trimmed) | |
-| `mode` | `"Online" \| "Offline"` (required, `enum`) | The only field with a real Mongoose `enum:` constraint in this module |
-| `address`, `city`, `state`, `country`, `mapIframe` | `string?` (trimmed) | Conditionally required at the validation layer when `mode === "Offline"` — see below; the *schema* itself doesn't enforce that conditional, only `createEventSchema` does |
-| `platform`, `platformLink` | `string?` (trimmed) | Presumably for `Online` events (e.g. "Zoom" + a join link) — not validated as required even when `mode === "Online"`, unlike the offline-required fields |
-| `startTime`, `endTime`, `startDate`, `endDate` | `Date` (all required) | Four separate date/time fields rather than two combined datetimes — see the frontend's own event-creation spec for how its date/time pickers populate these |
-| `isGovernmentSponsored` | `boolean`, default `false` | **September 2026.** A trust badge, not a real government API integration — mirrors `Organization.verified` exactly: server/seed-set only, absent from `createEventSchema` entirely, so a client-supplied value is silently stripped by Zod before it ever reaches `event.service.ts` (see `tests/events.test.ts`). Letting an event's own creator self-declare government backing would be trivially fake-able, which is the whole reason `Organization.verified` isn't client-writable either |
-| `inviteOnly` | `boolean`, default `false` | **September 2026.** Unlike `isGovernmentSponsored`, this one *is* in `createEventSchema` and organizer-settable at creation — it's a statement about their own event, not a claim about a third party, so there's no equivalent abuse concern |
-| `about` | `string[]?` | Long-form paragraphs for the detail page's "About this event" section |
-| `agenda` | `{ time, title, detail? }[]?`, own sub-schema | The timeline/run-sheet. `time` is a pre-formatted wall-clock label ("9:00 am"), not a `Date` — a schedule is written in the event's own timezone, and converting it to a reader's own would be actively wrong for anyone reading from elsewhere |
-| `bringAlong` | `string[]?` | What an attendee should turn up with, or be ready for |
-| `gettingThere` | `string?` | Offline events — directions, alongside `address`/`city` |
-| `linkDelivery`, `joinRequirements` | `string?` | Online events — how/when the join link reaches an attendee, and anything they need ready before joining |
-| `cost` | `{ amount, currency, note? }?`, own sub-schema | Absent means free, which is nearly every event on the circle — never set `amount: 0` for a free event; omit the field entirely instead |
-| `fundraiser` | `{ purpose, goal, raised, currency, supporters }?`, own sub-schema | The money an event is raising alongside the volunteering, if any — same vocabulary as `Organization.fundsRaised`/`fundsGoal` |
-| `languages` | `string[]?` | Languages the session is actually run in |
-| `minimumAge` | `number?` | Set only where there's a real restriction |
-| `contactEmail` | `string?` | Shown on the detail page's join panel |
+| Field                                              | Type                                                               | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `description`                              | `string` (required, trimmed)                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `uid`                                              | `string` (required, unique URL-safe slug)                          | The final path segment for the event's KarmaCircle page at `/events/:uid`; it is not an external website URL                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `hostUsername`, `hostName`                         | `string` (required)                                                | **Set by the server** from the authenticated caller's own `User` record — never accepted from the request body (see below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `organizerHandle`                                  | `string?`, indexed                                                 | **September 2026, tightened later the same month.** The real link to the `organizations` collection, set by the server (never from the request body) from the host's own `Organization` record. `createEvent()` now rejects a non-organization host outright (`403 NOT_AN_ORGANIZATION` - see `event.service.ts` below), so this is never unset for a newly created event; still `?`/optional on the schema only for defensive typing against a pre-existing/malformed document. `hostUsername`/`hostName` above are unchanged and stay as the free-text snapshot; this is the field an organization's public profile actually queries by (see below) |
+| `coverImage`                                       | `string?` (trimmed)                                                |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `mode`                                             | `"Online" \| "Offline"` (required, `enum`)                         | The only field with a real Mongoose `enum:` constraint in this module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `address`, `city`, `state`, `country`, `mapIframe` | `string?` (trimmed)                                                | Offline events require address, city, state, and country; the legacy `mapIframe` field remains optional and is not rendered by event detail                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `platform`, `platformLink`                         | `string?` (trimmed)                                                | Online events require a platform and an absolute HTTP or HTTPS meeting URL; offline events do not require these fields                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `startTime`, `endTime`, `startDate`, `endDate`     | `Date` (all required)                                              | Four separate date/time fields rather than two combined datetimes — see the frontend's own event-creation spec for how its date/time pickers populate these                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `isGovernmentSponsored`                            | `boolean`, default `false`                                         | **September 2026.** A trust badge, not a real government API integration — mirrors `Organization.verified` exactly: server/seed-set only, absent from `createEventSchema` entirely, so a client-supplied value is silently stripped by Zod before it ever reaches `event.service.ts` (see `tests/events.test.ts`). Letting an event's own creator self-declare government backing would be trivially fake-able, which is the whole reason `Organization.verified` isn't client-writable either                                                                                                                                                        |
+| `inviteOnly`                                       | `boolean`, default `false`                                         | **September 2026.** Unlike `isGovernmentSponsored`, this one _is_ in `createEventSchema` and organizer-settable at creation — it's a statement about their own event, not a claim about a third party, so there's no equivalent abuse concern                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `about`                                            | `string[]?`                                                        | Long-form paragraphs for the detail page's "About this event" section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `agenda`                                           | `{ time, title, detail? }[]?`, own sub-schema                      | The timeline/run-sheet. `time` is a pre-formatted wall-clock label ("9:00 am"), not a `Date` — a schedule is written in the event's own timezone, and converting it to a reader's own would be actively wrong for anyone reading from elsewhere                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `bringAlong`                                       | `string[]?`                                                        | What an attendee should turn up with, or be ready for                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `gettingThere`                                     | `string?`                                                          | Offline events — directions, alongside `address`/`city`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `linkDelivery`, `joinRequirements`                 | `string?`                                                          | Online events — how/when the join link reaches an attendee, and anything they need ready before joining                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `cost`                                             | `{ amount, currency, note? }?`, own sub-schema                     | Absent means free, which is nearly every event on the circle — never set `amount: 0` for a free event; omit the field entirely instead                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `fundraiser`                                       | `{ purpose, goal, raised, currency, supporters }?`, own sub-schema | The money an event is raising alongside the volunteering, if any — same vocabulary as `Organization.fundsRaised`/`fundsGoal`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `languages`                                        | `string[]?`                                                        | Languages the session is actually run in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `minimumAge`                                       | `number?`                                                          | Set only where there's a real restriction                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `contactEmail`                                     | `string?`                                                          | Shown on the detail page's join panel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
-All of the September 2026 fields above follow the same nested-sub-schema convention `organization.model.ts` established for `leadership`/`socialLinks`/`sponsorship` — `_id: false` sub-schemas for structured fields (`agenda`, `cost`, `fundraiser`) rather than flat scalars, and a plain default for the two booleans.
+All of the September 2026 fields above follow the same nested-sub-schema
+convention `organization.model.ts` established for
+`leadership`/`socialLinks`/`sponsorship` — `_id: false` sub-schemas for
+structured fields (`agenda`, `cost`, `fundraiser`) rather than flat scalars, and
+a plain default for the two booleans.
 
-**Capacity counts are still not tracked.** Registrations are stored separately from event documents and do not expose attendee totals or spots remaining.
+**Capacity counts are still not tracked.** Registrations are stored separately
+from event documents and do not expose attendee totals or spots remaining.
 
-**Public reads remain unauthenticated, while joining requires `requireAuth`.** `POST /events/:uid/join` stores one registration per event and authenticated user, blocks past and invite-only events, and sends a confirmation email to the account email only in production.
-In development and test, delivery is suppressed and `emailSent` is `false`.
-A production email failure does not undo registration; response also includes `emailSent: false`.
-There is no leave, invite, approval, capacity, or organizer-notification flow.
-The shared frontend form calls this `POST /events/create` from both `/events` and `/organization/events`; the API independently enforces organization account access.
-See the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference) and [API contract map](./api-contract.md).
+**Public reads remain unauthenticated, while joining requires `requireAuth`.**
+`POST /events/:uid/join` stores one registration per event and authenticated
+user, blocks past and invite-only events, and sends a confirmation email to the
+account email only in production. In development and test, delivery is
+suppressed and `emailSent` is `false`. A production email failure does not undo
+registration; response also includes `emailSent: false`. There is no leave,
+invite, approval, capacity, attendee-roster, check-in, or organizer-notification
+flow. The separate organization dashboard aggregates registration counts but
+does not return attendee identities. The full-page frontend form at
+`/organization/events/new` calls this `POST /events/create`; the API
+independently enforces organization account access. See the frontend's
+[event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference)
+and [API contract map](./api-contract.md).
 
 ## `event.service.ts`
 
-- **`findByUid(uid)`** / **`findAll(filters, pagination)`** — thin wrappers, no projection (unlike `users`, nothing here strips fields — an `Event` document has no secret fields to hide, so this is fine as-is).
-- **`createEvent(email, data)`** — `409 EVENT_UID_ALREADY_EXISTS` if `data.uid` is already taken (a plain existence check, not relying on the schema's own `unique: true` to surface a friendlier error — same race-condition caveat as `users`' `generateUniqueUsername`: two concurrent requests with the same `uid` could both pass this check before either saves, in which case the second `.save()` would hit the schema's unique index and surface as the error handler's generic Mongo-11000 → `409` path instead of this specific message). Looks up the host via `findByEmail(email)` (from `requireAuth`'s `req.auth.email`) — `401 UNAUTHORIZED` if that somehow fails (same "token valid but account gone" edge case as [organizations.md](./organizations.md#get-organizationsdashboard)). **`403 NOT_AN_ORGANIZATION` if that host isn't an organization** (tightened after September 2026's own launch of this pass - previously an individual host was allowed through with `organizerHandle` left `undefined`, which meant a card/detail page for one of those events had no organization to link back to; every event on the circle is meant to be an NGO-run drive). For an organization host, resolves the `Organization` record via `organizations`' `findOrCreateForOwner` (not `findByOwnerEmail`) - the same backfill `organization.controller.ts#getMine`/`updateMine` already rely on, so a pre-split legacy organization account still resolves to a real document rather than `null`. Builds the `Event` as `{ ...data, hostName: host.name, hostUsername: host.userName, organizerHandle: organization.handle }` — **`hostName`/`hostUsername`/`organizerHandle` in the request body, if sent, are silently overwritten** by the authenticated caller's own values; there's no way to create an event on someone else's behalf through this endpoint, which is presumably intentional.
+- **`findByUid(uid)`** / **`findAll(filters, pagination)`** — thin wrappers, no
+  projection (unlike `users`, nothing here strips fields — an `Event` document
+  has no secret fields to hide, so this is fine as-is).
+- **`createEvent(email, data)`** — `409 EVENT_UID_ALREADY_EXISTS` if `data.uid`
+  is already taken (a plain existence check, not relying on the schema's own
+  `unique: true` to surface a friendlier error — same race-condition caveat as
+  `users`' `generateUniqueUsername`: two concurrent requests with the same `uid`
+  could both pass this check before either saves, in which case the second
+  `.save()` would hit the schema's unique index and surface as the error
+  handler's generic Mongo-11000 → `409` path instead of this specific message).
+  Looks up the host via `findByEmail(email)` (from `requireAuth`'s
+  `req.auth.email`) — `401 UNAUTHORIZED` if that somehow fails (same "token
+  valid but account gone" edge case as
+  [organizations.md](./organizations.md#get-organizationsdashboard)).
+  **`403 NOT_AN_ORGANIZATION` if that host isn't an organization** (tightened
+  after September 2026's own launch of this pass - previously an individual host
+  was allowed through with `organizerHandle` left `undefined`, which meant a
+  card/detail page for one of those events had no organization to link back to;
+  every event on the circle is meant to be an NGO-run drive). For an
+  organization host, resolves the `Organization` record via `organizations`'
+  `findOrCreateForOwner` (not `findByOwnerEmail`) - the same backfill
+  `organization.controller.ts#getMine`/`updateMine` already rely on, so a
+  pre-split legacy organization account still resolves to a real document rather
+  than `null`. Builds the `Event` as
+  `{ ...data, hostName: host.name, hostUsername: host.userName, organizerHandle: organization.handle }`
+  — **`hostName`/`hostUsername`/`organizerHandle` in the request body, if sent,
+  are silently overwritten** by the authenticated caller's own values; there's
+  no way to create an event on someone else's behalf through this endpoint,
+  which is presumably intentional.
 
 ## `GET /events`
 
-No auth. `validate(listEventsQuerySchema, "query")` — `{ uid?: string, slug?: string, host?: string, page?: number, limit?: number }` (pagination merged in from [src/utils/pagination.ts](../../src/utils/pagination.ts), default `page=1`/`limit=20`, capped at 100), and the controller reads **either** `uid`/`slug` (`const eventUid = uid ?? slug`, `uid` wins if both are present). If either is set: `findByUid` → `404 NOT_FOUND` if none, single event object (`page`/`limit` accepted but ignored on this branch). Otherwise: the events as `{ data, pagination }` — `eventService.findAll({ host }, { skip, limit })` runs the `find` and a `countDocuments` in parallel over the same filter.
-**`host`** (August 2026, matching widened September 2026) narrows that list to one host's own events, matched with `$or` against **either** `organizerHandle` (the real link) **or** the legacy `hostUsername` string — so an event created before `organizerHandle` existed still matches with no backfill migration needed, since an organization's `hostUsername` has always equalled its `handle`. It backs the frontend's `/organization/events` page and, new in September 2026, an organization's public profile ("Events hosted"); the filter is server-side precisely so a host with more events than one page still sees all of them (see the frontend's [events.md](../../../../docs/specs/events.md)). The `slug` alias exists because the frontend's `eventEndpoints`/route naming uses "slug" in some places and "uid" in others for what is the same field on this side — see [api-contract.md](./api-contract.md#get-events) before assuming which query param name a given frontend call site actually sends.
+No auth. `validate(listEventsQuerySchema, "query")` —
+`{ uid?: string, slug?: string, host?: string, page?: number, limit?: number }`
+(pagination merged in from
+[src/utils/pagination.ts](../../src/utils/pagination.ts), default
+`page=1`/`limit=20`, capped at 100), and the controller reads **either**
+`uid`/`slug` (`const eventUid = uid ?? slug`, `uid` wins if both are present).
+If either is set: `findByUid` → `404 NOT_FOUND` if none, single event object
+(`page`/`limit` accepted but ignored on this branch). Otherwise: the events as
+`{ data, pagination }` — `eventService.findAll({ host }, { skip, limit })` runs
+the `find` and a `countDocuments` in parallel over the same filter. **`host`**
+(August 2026, matching widened September 2026) narrows that list to one host's
+own events, matched with `$or` against **either** `organizerHandle` (the real
+link) **or** the legacy `hostUsername` string — so an event created before
+`organizerHandle` existed still matches with no backfill migration needed, since
+an organization's `hostUsername` has always equalled its `handle`. It backs the
+frontend's `/organization/events` page and, new in September 2026, an
+organization's public profile ("Events hosted"); the filter is server-side
+precisely so a host with more events than one page still sees all of them (see
+the frontend's [events.md](../../../../docs/specs/events.md)). The `slug` alias
+exists because the frontend's `eventEndpoints`/route naming uses "slug" in some
+places and "uid" in others for what is the same field on this side — see
+[api-contract.md](./api-contract.md#get-events) before assuming which query
+param name a given frontend call site actually sends.
 
 ## `POST /events/create`
 
-`requireAuth` → `validate(createEventSchema)` → `eventController.createEvent`. **`403 NOT_AN_ORGANIZATION` if the authenticated account isn't an organization** (see `event.service.ts` above) - every event needs a real organization behind it, so this is checked before anything else in the service. Required always: `uid`, `name`, `description`, `coverImage`, `mode`, `startTime`, `endTime`, `startDate`, `endDate` (the four dates go through `z.coerce.date()`, so ISO strings or anything `Date`-constructible are accepted, not just already-`Date` values). Required **only if `mode === "Offline"`** (`createEventSchema`'s `superRefine`): `city`, `state`, `country`, `address`, `mapIframe` — each missing one adds its own Zod issue at that field's path, so a partially-filled offline event gets one `400` response listing every missing field at once, not just the first. `platform`/`platformLink` are always optional regardless of mode, even though they're the fields an `Online` event would actually need to be useful — nothing in this validation schema requires an online event to specify how to join it. `inviteOnly` is optional, defaults `false`. Every other September-2026 detail-page field (`about`, `agenda`, `bringAlong`, `gettingThere`, `linkDelivery`, `joinRequirements`, `cost`, `fundraiser`, `languages`, `minimumAge`, `contactEmail`, and `isGovernmentSponsored`) is **not** in `createEventSchema` at all today — this route can create the basic event, but populating the detail-page-only fields currently means writing to the collection directly (as `scripts/seed-demo-data.ts` does), not through this endpoint; extending the schema to accept them is future work, deliberately out of scope for the pass that added the fields themselves. On success: `201 { message: "Event Created", savedEvent }` — note this response's top-level shape (`message` + `savedEvent`, not `message` + `user`/`event`) is unique to this route; every other module's create/success response in this API uses a different key name for the payload (compare `users`' `user`, `products`' bare object).
+`requireAuth` → `validate(createEventSchema)` → `eventController.createEvent`.
+**`403 NOT_AN_ORGANIZATION` if the authenticated account isn't an organization**
+(see `event.service.ts` above) - every event needs a real organization behind
+it, so this is checked before anything else in the service. Required always:
+`uid`, `name`, `description`, `coverImage`, `mode`, `startTime`, `endTime`,
+`startDate`, `endDate` (the four dates go through `z.coerce.date()`, so ISO
+strings or anything `Date`-constructible are accepted, not just already-`Date`
+values). Required **only if `mode === "Offline"`** (`createEventSchema`'s
+`superRefine`): `city`, `state`, `country`, and `address` — each missing one
+adds its own Zod issue at that field's path, so a partially-filled offline event
+gets one `400` response listing every missing field at once, not just the first.
+The old `mapIframe` field remains optional for legacy records and is not part of
+the create form; event detail builds a map search link from the address. Online
+events require `platform` and `platformLink` at the validation layer, matching
+the organizer form. `inviteOnly` is optional, defaults `false`. Every other
+September-2026 detail-page field (`about`, `agenda`, `bringAlong`,
+`gettingThere`, `linkDelivery`, `joinRequirements`, `cost`, `fundraiser`,
+`languages`, `minimumAge`, `contactEmail`, and `isGovernmentSponsored`) is
+**not** in `createEventSchema` at all today — this route can create the basic
+event, but populating the detail-page-only fields currently means writing to the
+collection directly (as `scripts/seed-demo-data.ts` does), not through this
+endpoint; extending the schema to accept them is future work, deliberately out
+of scope for the pass that added the fields themselves. On success:
+`201 { message: "Event Created", savedEvent }` — note this response's top-level
+shape (`message` + `savedEvent`, not `message` + `user`/`event`) is unique to
+this route; every other module's create/success response in this API uses a
+different key name for the payload (compare `users`' `user`, `products`' bare
+object).
 
 ## `POST /events/:uid/join`
 
-Requires `requireAuth`; registration identity and confirmation destination come from the authenticated account, never the request body.
-Returns `404` for an unknown event, `403` for invite-only events, and `409` once `startTime` has passed.
-A unique compound index on `(eventUid, userId)` makes the write idempotent across retries and concurrent clicks.
-New registration returns `201 { joined: true, alreadyJoined: false, emailSent }`; an existing registration returns `200 { joined: true, alreadyJoined: true, emailSent: false }`.
-In development and test, `emailSent` is `false` because delivery is suppressed.
-A production confirmation failure is logged and also returns `emailSent: false`, while the saved registration remains successful.
+Requires `requireAuth`; registration identity and confirmation destination come
+from the authenticated account, never the request body. Returns `404` for an
+unknown event, `403` for invite-only events, and `409` once `startTime` has
+passed. A unique compound index on `(eventUid, userId)` makes the write
+idempotent across retries and concurrent clicks. New registration returns
+`201 { joined: true, alreadyJoined: false, emailSent }`; an existing
+registration returns
+`200 { joined: true, alreadyJoined: true, emailSent: false }`. In development
+and test, `emailSent` is `false` because delivery is suppressed. A production
+confirmation failure is logged and also returns `emailSent: false`, while the
+saved registration remains successful.
 
 ## `GET /events/:uid/registration`
 
-Requires `requireAuth`; looks up only the caller's registration and returns `{ joined: boolean }`. Event detail calls this after loading when Redux reports an authenticated session, so returning attendees see the registered state without exposing attendee data publicly. Unknown event returns `404`.
+Requires `requireAuth`; looks up only the caller's registration and returns
+`{ joined: boolean }`. Event detail calls this after loading when Redux reports
+an authenticated session, so returning attendees see the registered state
+without exposing attendee data publicly. Unknown event returns `404`.
 
 ## `GET /events/mine`
 
-Requires `requireAuth`; resolves the caller from the auth cookie and returns only events linked to that user's saved registrations as `{ data, pagination }`. Accepts shared `page`/`limit` parameters (default page 1, limit 20, max 100) and `period=upcoming|past` (default `upcoming`). Upcoming events have `startTime >= now` and sort ascending; past events have `startTime < now` and sort descending. The endpoint does not accept a user identifier and never returns registration attendee details.
-The registration schema indexes `userId` for this attendee lookup, alongside its unique `(eventUid, userId)` constraint.
+Requires `requireAuth`; resolves the caller from the auth cookie and returns
+only events linked to that user's saved registrations as `{ data, pagination }`.
+Accepts shared `page`/`limit` parameters (default page 1, limit 20, max 100) and
+`period=upcoming|past` (default `upcoming`). Upcoming events have
+`startTime >= now` and sort ascending; past events have `startTime < now` and
+sort descending. The endpoint does not accept a user identifier and never
+returns registration attendee details. The registration schema indexes `userId`
+for this attendee lookup, alongside its unique `(eventUid, userId)` constraint.
 
 ## What's known-broken here
 
-See [known-issues.md](./known-issues.md#events). The frontend's broken profile-editor copy remains retired; both live creation entry points use the shared form and this route. Within this module, `Online`-mode fields (`platform`/`platformLink`) remain optional even though an online event needs a join link to be useful.
+See [known-issues.md](./known-issues.md#events). The frontend's broken
+profile-editor copy remains retired; both live creation entry points use the
+full-page form and this route.
 
 ## Refreshing local demo events
 
-Demo event dates are relative to when the seed script runs, so an old seed can leave the default Upcoming view empty even while the API returns events.
-From `apps/api`, run `pnpm exec tsx scripts/seed-demo-data.ts --events-only` to refresh only the known demo event records in the configured database.
-This upserts the demo events with fresh relative dates, including future and past examples, without changing users, organizations, products, reports, or non-demo events.
-The directory keeps its normal date filters; past records belong under Past.
+Demo event dates are relative to when the seed script runs, so an old seed can
+leave the default Upcoming view empty even while the API returns events. From
+`apps/api`, run `pnpm exec tsx scripts/seed-demo-data.ts --events-only` to
+refresh only the known demo event records in the configured database. This
+upserts the demo events with fresh relative dates, including future and past
+examples, without changing users, organizations, products, reports, or non-demo
+events. The directory keeps its normal date filters; past records belong under
+Past.

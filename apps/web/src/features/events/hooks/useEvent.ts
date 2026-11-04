@@ -6,13 +6,20 @@ import { CreateEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { EventFormErrors, EventFormState, UseEventResult } from "../types";
 
+const EVENT_UID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const isHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 /** Validates and submits the shared event form, then refreshes public and host lists. */
 const combineDateAndTime = (date: Dayjs, time: Dayjs) =>
-  date
-    .hour(time.hour())
-    .minute(time.minute())
-    .second(0)
-    .millisecond(0);
+  date.hour(time.hour()).minute(time.minute()).second(0).millisecond(0);
 
 export function useEvent(event: EventFormState): UseEventResult {
   const { uid, ...data } = event;
@@ -34,7 +41,7 @@ export function useEvent(event: EventFormState): UseEventResult {
       !data.endTime
     ) {
       if (!data.name) errors.name = "Name is required";
-      if (!uid) errors.uid = "UID is required";
+      if (!uid) errors.uid = "Event page address is required";
       if (!data.description) errors.description = "Description is required";
       if (!data.coverImage) errors.coverImage = "Cover image is required";
       if (!data.mode) errors.mode = "Mode is required";
@@ -44,14 +51,23 @@ export function useEvent(event: EventFormState): UseEventResult {
       if (!data.endTime) errors.endTime = "End time is required";
     }
 
+    if (uid && !EVENT_UID_PATTERN.test(uid)) {
+      errors.uid = "Use lowercase letters, numbers, and single hyphens only";
+    }
+
     if (data.mode === "Offline") {
       if (!data.city) errors.city = "City is required";
       if (!data.state) errors.state = "State is required";
       if (!data.country) errors.country = "Country is required";
       if (!data.address) errors.address = "Address is required";
-      if (!data.mapIframe) errors.mapIframe = "Map iframe is required";
-    } else if (!data.platformLink) {
-      errors.platformLink = "Please provide a platform link";
+    } else {
+      if (!data.platform) errors.platform = "Choose an online platform";
+      if (!data.platformLink) {
+        errors.platformLink = "Please provide a meeting link";
+      } else if (!isHttpUrl(data.platformLink)) {
+        errors.platformLink =
+          "Enter a complete link starting with http:// or https://";
+      }
     }
 
     if (data.name.length < 10 || data.name.length > 80)
@@ -79,7 +95,7 @@ export function useEvent(event: EventFormState): UseEventResult {
 
   const submitCallback = async (
     event: EventFormState,
-    setshowCreateModal: (open: boolean) => void,
+    onSuccess: () => void,
     errors: EventFormErrors,
   ): Promise<void> => {
     if (Object.keys(errors).length === 0) {
@@ -105,7 +121,7 @@ export function useEvent(event: EventFormState): UseEventResult {
 
       if (response.status === 201) {
         showSuccessToast(response.data?.message);
-        setshowCreateModal(false);
+        onSuccess();
 
         void mutate(eventEndpoints.directory());
         if (organization?.handle) {
@@ -113,7 +129,8 @@ export function useEvent(event: EventFormState): UseEventResult {
         }
       } else {
         showErrorToast(
-          response.response?.data?.message ?? "Could not create event. Try again.",
+          response.response?.data?.message ??
+            "Could not create event. Try again.",
         );
       }
     } else {

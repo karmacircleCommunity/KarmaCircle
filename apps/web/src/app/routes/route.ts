@@ -16,6 +16,7 @@ export { default as Events } from "@features/events/pages/Events";
 export { default as DetailedEvent } from "@features/events/pages/DetailedEvent";
 export { default as YourEvents } from "@features/events/pages/YourEvents";
 export { default as MyEvents } from "@features/events/pages/MyEvents";
+export { default as CreateEvents } from "@features/events/components/CreateEvents";
 
 export { default as ProfileSetup } from "@features/onboarding-profile/pages/ProfileSetup";
 

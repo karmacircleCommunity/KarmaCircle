@@ -41,6 +41,8 @@ const validOnlineEvent = {
   endTime: "2026-01-01T12:00:00.000Z",
   startDate: "2026-01-01T00:00:00.000Z",
   endDate: "2026-01-01T00:00:00.000Z",
+  platform: "Zoom Meeting",
+  platformLink: "https://zoom.example.com/j/123",
 };
 
 describe("Events", () => {
@@ -243,6 +245,70 @@ describe("Events", () => {
       .post("/events/create")
       .set("Cookie", cookie)
       .send({ ...validOnlineEvent, uid: "test-event-2", mode: "Offline" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("creates an Offline event with its address and no obsolete map embed", async () => {
+    const cookie = await signupAndGetCookie();
+
+    const res = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({
+        ...validOnlineEvent,
+        uid: "offline-with-address",
+        mode: "Offline",
+        address: "12 River Road",
+        city: "Guwahati",
+        state: "Assam",
+        country: "India",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.savedEvent.mapIframe).toBeUndefined();
+  });
+
+  it("rejects an Online event without its platform and join link", async () => {
+    const cookie = await signupAndGetCookie();
+
+    const res = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({
+        ...validOnlineEvent,
+        uid: "online-missing-join-link",
+        platformLink: "",
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it.each(["ftp://zoom.example.com/j/123", "zoom.example.com/j/123"])(
+    "rejects an Online event meeting link without HTTP or HTTPS (%s)",
+    async (platformLink) => {
+      const cookie = await signupAndGetCookie();
+
+      const res = await request(app)
+        .post("/events/create")
+        .set("Cookie", cookie)
+        .send({
+          ...validOnlineEvent,
+          uid: "invalid-meeting-link",
+          platformLink,
+        });
+
+      expect(res.status).toBe(400);
+    },
+  );
+
+  it("requires the event page address to be a URL-safe slug", async () => {
+    const cookie = await signupAndGetCookie();
+
+    const res = await request(app)
+      .post("/events/create")
+      .set("Cookie", cookie)
+      .send({ ...validOnlineEvent, uid: "Event name with spaces" });
 
     expect(res.status).toBe(400);
   });

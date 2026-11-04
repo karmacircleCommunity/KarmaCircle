@@ -9,6 +9,7 @@ import {
   Dashboard,
   Error404,
   Events,
+  CreateEvents,
   ProfileSetup,
   YourEvents,
   MyEvents,
@@ -88,6 +89,14 @@ const routesConfig: RouteConfigEntry[] = [
   // where the navbar's "Your events" points; it used to point at
   // "/event/create", which no route has ever matched.
   { path: "/organization/events", element: <YourEvents /> },
+  {
+    path: "/organization/events/new",
+    element: (
+      <RequireSignIn>
+        <CreateEvents />
+      </RequireSignIn>
+    ),
+  },
   {
     path: "/events/mine",
     element: (

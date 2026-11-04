@@ -5,13 +5,13 @@ import { FaPlus } from "react-icons/fa6";
 import useSWR from "swr";
 import { DirectoryToolbar, Footer, Navbar } from "@components";
 import ComponentHelmet from "@components/ComponentHelmet";
-import { useMagnetic, useSectionReveal } from "@hooks";
+import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
-import CreateEvents from "../components/CreateEvents";
 import EventCard from "../components/EventCard";
 import { toDisplayEvent } from "../utils/toDisplayEvent";
 import type { ApiEventList } from "../types";
+import { Link } from "react-router-dom";
 
 type TimeFilter = "Upcoming" | "Past";
 const TIME_FILTERS: TimeFilter[] = ["Upcoming", "Past"];
@@ -76,7 +76,6 @@ const Events = () => {
   const user = useSelector(selectUser);
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const canCreateEvent = isLoggedIn && user.userType === "organization";
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [query, setQuery] = useState("");
   const [when, setWhen] = useState<TimeFilter>("Upcoming");
   const [type, setType] = useState<TypeFilter>("All");
@@ -133,16 +132,6 @@ const Events = () => {
     return matches;
   }, [events, query, when, type, now]);
 
-  // Magnetic, matching `Organizations.tsx`'s "Your dashboard" button
-  // (September 2026) — both directories' one primary action now lean
-  // toward the cursor, rather than one gaining it and the other visibly
-  // not. No `hover:-translate-*`/`active:scale-*` here: the hook owns the
-  // element's transform.
-  const createEventButtonRef = useMagnetic<HTMLButtonElement>({
-    strength: 0.3,
-    max: 8,
-  });
-
   // Scoped to the grid so the reveal never reaches the page chrome above
   // it, and re-run on filter changes so cards revealed by a new filter
   // don't stay at the hook's starting opacity.
@@ -192,18 +181,16 @@ const Events = () => {
           }
           action={
             canCreateEvent ? (
-              <button
-                ref={createEventButtonRef}
-                type="button"
-                onClick={() => setShowCreateModal(true)}
-                className="group flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand px-6 font-poppins text-body font-medium whitespace-nowrap text-white shadow-[0_8px_24px_-14px_var(--color-brand)] transition-[background-color,box-shadow] duration-300 ease-out hover:bg-brand-hover hover:shadow-[0_16px_34px_-12px_var(--color-brand)]"
+              <Link
+                to="/organization/events/new"
+                className="group flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-brand px-6 font-poppins text-body font-medium whitespace-nowrap text-white no-underline shadow-[0_8px_24px_-14px_var(--color-brand)] transition-[background-color,box-shadow] duration-300 ease-out hover:bg-brand-hover hover:shadow-[0_16px_34px_-12px_var(--color-brand)]"
               >
                 <FaPlus
                   aria-hidden="true"
                   className="size-3.5 transition-transform duration-300 ease-out motion-safe:group-hover:rotate-90"
                 />
                 Create an event
-              </button>
+              </Link>
             ) : undefined
           }
         />
@@ -250,10 +237,6 @@ const Events = () => {
           </div>
         )}
       </div>
-
-      {canCreateEvent && showCreateModal && (
-        <CreateEvents setshowCreateModal={setShowCreateModal} />
-      )}
 
       <Footer />
     </>

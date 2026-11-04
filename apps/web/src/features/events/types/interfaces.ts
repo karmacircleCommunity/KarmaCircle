@@ -2,13 +2,7 @@ import type { Dayjs } from "dayjs";
 import type { Cause } from "@features/organizations/types";
 import type { EventMode, EventFormErrors } from "./types";
 
-/**
- * State shape used by the broken `CreateEvent.tsx` — copy-pasted from
- * `ProfileUpdate.tsx`/`ProfileCompletion.tsx` (profile-editing shape,
- * not an event shape) and never swapped over. Kept exactly as the
- * component actually uses it; see SPEC.md for the "eight inputs share
- * two state slots" bug this shape enables.
- */
+/** Retired credential shape used only by the disconnected legacy form. */
 export interface CreateEventCredentials {
   description: string;
   name: string;
@@ -37,17 +31,17 @@ export interface EventFormState {
   state: string;
   address: string;
   country: string;
-  mapIframe: string;
   coverImage: string;
   platform: string;
   platformLink: string;
+  inviteOnly: boolean;
 }
 
 export interface UseEventResult {
   validateEvent: () => EventFormErrors;
   submitCallback: (
     event: EventFormState,
-    setshowCreateModal: (open: boolean) => void,
+    onSuccess: () => void,
     errors: EventFormErrors,
   ) => Promise<void>;
 }

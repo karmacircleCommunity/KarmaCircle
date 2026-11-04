@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { Footer, Navbar } from "@components";
 import OrganizationSetupGate from "@features/organizations/components/OrganizationSetupGate";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
-import CreateEvents from "@features/events/components/CreateEvents";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
 import { FiArrowUpRight, FiCalendar, FiMapPin, FiPlus, FiVideo } from "react-icons/fi";
@@ -29,7 +27,6 @@ import type { ApiEventList } from "../types";
  */
 const YourEvents = () => {
   const { organization } = useMyOrganization();
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data, isLoading } = useSWR<ApiEventList>(
     organization?.isLive ? eventEndpoints.byHost(organization.handle) : null,
@@ -56,14 +53,13 @@ const YourEvents = () => {
               it appears to everyone else.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 font-outfit text-body font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          <Link
+            to="/organization/events/new"
+            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 font-outfit text-body font-semibold text-white no-underline transition-colors hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <FiPlus aria-hidden="true" />
             Create event
-          </button>
+          </Link>
         </header>
 
         {isLoading ? (
@@ -121,10 +117,6 @@ const YourEvents = () => {
           </ul>
         )}
       </div>
-
-      {showCreateModal && (
-        <CreateEvents setshowCreateModal={setShowCreateModal} />
-      )}
 
       <Footer />
     </OrganizationSetupGate>
