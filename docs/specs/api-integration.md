@@ -31,13 +31,14 @@ reset, organization directory, and sponsorship calls do not require that cookie.
 
 Goes through [ApiConnector.ts](../../apps/web/src/services/ApiConnector.ts), a
 thin wrapper around a separate `axios.create({})` instance (`axiosInstance`),
-exposing `apiConnector(method, url, bodyData, headers, params)`. Its two helper
-functions are `getOrganizations()` in
-[Organizations.ts](../../apps/web/src/features/organizations/services/Organizations.ts)
-and `getEvents()` in
-[Events.ts](../../apps/web/src/features/events/services/Events.ts), but neither
-is called by a page today. The routed organization and event directories use SWR
-with `Fetcher.ts` and the live API instead of hardcoded demo arrays. See
+exposing `apiConnector(method, url, bodyData, headers, params)`. Its one helper
+function is `getOrganizations()` in
+[Organizations.ts](../../apps/web/src/features/organizations/services/Organizations.ts),
+which no page calls today. (`getEvents()` and `features/events/services/` were
+deleted in November 2026; the events feature has no `services/` folder, and all
+event writes live in `KarmaCircleApi.ts`.) The routed organization and event
+directories use SWR with `Fetcher.ts` and the live API instead of hardcoded demo
+arrays. See
 [known-issues.md](./known-issues.md) for other integration gaps.
 `ApiConnector`'s dead status-600 check
 (`if (response.status === 400) console.error("Logout triggered due to status 600 response")`)
@@ -47,7 +48,7 @@ through the normal success path.
 
 **When adding a new call, follow Layer A's pattern** (`KarmaCircleApi.ts` +
 direct `axios`) unless you're specifically building on top of the existing
-`getOrganizations`/`getEvents` read helpers.
+`getOrganizations` read helper.
 
 ## Endpoint registry — `apps/web/src/services/ApiEndpoints.ts`
 
@@ -57,10 +58,18 @@ by both layers above.
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
 organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, follow(handle), profileView(handle), byHandle(handle), directory({...})
-eventEndpoints: all, create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory(limit)
+eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, inviteOnly, page, limit })
 paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)
 authEndpoints:  signin, signup, checkEmail, forgotPassword, resetPassword, googleLogin, googleLoginSuccess, logout
 ```
+
+`eventEndpoints.all` was removed in November 2026 (only the deleted
+`getEvents()` used it). `eventEndpoints.directory(params)` takes an object with a
+required `period` (`upcoming` or `past`) and optional `search`, `mode`,
+`inviteOnly`, `page` (default 1) and `limit` (default 12), and builds the
+`GET /events?...` URL; it no longer returns a fixed URL. `eventEndpoints.byHost(handle)`
+is `/events?host=<handle>&limit=100`. There is no `isDirectoryKey` helper: SWR's
+global `mutate` skips `useSWRInfinite` keys, so the directory refreshes itself.
 
 This list was itself out of date before the September 2026 pass that added
 `paymentEndpoints` —
@@ -97,7 +106,7 @@ Current routed SWR call sites (including `useSWRInfinite`):
 | `OrganizationProfile.tsx`                          | `organizationEndpoints.byHandle()`, `organizationEndpoints.follow()`, and `eventEndpoints.byHost()` | Loads a public organization profile, authenticated follow state, and hosted events |
 | `OrganizationSetup.tsx` and `useMyOrganization.ts` | `organizationEndpoints.mine` and taxonomy endpoint                                                  | Loads the signed-in organization's editable record and setup taxonomy              |
 | `Dashboard.tsx`                                    | `organizationEndpoints.dashboard`                                                                   | Loads the owner-only organization workspace and its dashboard data                 |
-| `Events.tsx`                                       | `eventEndpoints.directory()`                                                                        | Loads and filters the public event directory                                       |
+| `Events.tsx`                                       | `eventEndpoints.directory()` via `useSWRInfinite`                                                   | Loads the public event directory a page at a time; search and filters are applied by the API, not in the browser |
 | `DetailedEvent.tsx`                                | `eventEndpoints.byUid()` and `eventEndpoints.registration()`                                        | Loads public event details and, for a signed-in visitor, saved registration state  |
 | `YourEvents.tsx`                                   | `eventEndpoints.byHost()`                                                                           | Loads the signed-in organization's hosted events                                   |
 | `MyEvents.tsx`                                     | `eventEndpoints.mine()` via `useSWRInfinite`                                                        | Loads the signed-in individual's paginated attendee registrations                  |
@@ -106,8 +115,13 @@ Current routed SWR call sites (including `useSWRInfinite`):
 `CreateEvents.tsx` is routed as a full page at `/organization/events/new` for
 signed-in organization accounts with a live profile. The public directory and
 hosted-events workspace both link to that route. After `POST /events/create`
-succeeds, `useEvent.ts` revalidates the public directory key and the current
-organization's hosted-events key; the page then opens the new event detail. The
+succeeds, `useEvent.ts` revalidates the current organization's hosted-events key
+and the page opens the new event detail; the public directory refetches every
+loaded page when `/events` is reopened (`revalidateAll`). `POST /events/create`
+can now return `400` for the create rules (name and description length, end after
+start, start in the future, cover image type and size, reserved page address,
+maximum field lengths) and `409` for a taken page address, including when two
+requests race for it. The
 event `uid` is the URL-safe ending of that KarmaCircle event page, not an
 external website URL. For online events, the API requires the meeting URL to use
 HTTP or HTTPS.
@@ -121,7 +135,7 @@ verified raised totals.
 [apps/web/src/statics/Constants.ts](../../apps/web/src/statics/Constants.ts)
 exports `STATUSCODE` (a full HTTP status-code map) and `STATUSMESSAGE` (a set of
 canned backend message strings). `STATUSCODE.OK` is used in a handful of places
-(`useProfileCompletion.ts`, `ProfileUpdate.tsx`, `CreateEvent.tsx`) to check
+(`useProfileCompletion.ts`, `ProfileUpdate.tsx`) to check
 `data.status === STATUSCODE.OK`; most other call sites just compare raw numbers
 (`response?.status === 201 || response?.status === 200`) inline instead of using
 the constant — prefer `STATUSCODE` in new code for consistency. `STATUSMESSAGE`

@@ -57,16 +57,19 @@ and [API contract map](./api-contract.md).
 
 ## `event.service.ts`
 
-- **`findByUid(uid)`** / **`findAll(filters, pagination)`** — thin wrappers, no
-  projection (unlike `users`, nothing here strips fields — an `Event` document
-  has no secret fields to hide, so this is fine as-is).
+- **`findByUid(uid)`** / **`findAll(filters, pagination)`** - no projection
+  (unlike `users`, nothing here strips fields - an `Event` document has no
+  secret fields to hide, so this is fine as-is). `findAll` builds one `$and` of
+  the optional filters (`host`, `search`, `period`, `mode`, `inviteOnly`; see
+  `GET /events`), sorts by `startTime` then `_id`, and counts with the same
+  filter.
 - **`createEvent(email, data)`** — `409 EVENT_UID_ALREADY_EXISTS` if `data.uid`
-  is already taken (a plain existence check, not relying on the schema's own
-  `unique: true` to surface a friendlier error — same race-condition caveat as
-  `users`' `generateUniqueUsername`: two concurrent requests with the same `uid`
-  could both pass this check before either saves, in which case the second
-  `.save()` would hit the schema's unique index and surface as the error
-  handler's generic Mongo-11000 → `409` path instead of this specific message).
+  is already taken. A friendly `Event.exists({ uid })` pre-check answers the
+  common case; because that check is not race-safe on its own, `event.save()` is
+  wrapped so a Mongo `11000` duplicate-key error from the schema's unique `uid`
+  index (two organizers submitting the same address at once) is also turned into
+  `AppError(409, EVENT_UID_ALREADY_EXISTS)` (`'Please choose another unique event
+  uid !'`). The unique index is the real guard (fixed November 2026, was CH-7).
   Looks up the host via `findByEmail(email)` (from `requireAuth`'s
   `req.auth.email`) — `401 UNAUTHORIZED` if that somehow fails (same "token
   valid but account gone" edge case as
@@ -90,15 +93,17 @@ and [API contract map](./api-contract.md).
 ## `GET /events`
 
 No auth. `validate(listEventsQuerySchema, "query")` —
-`{ uid?: string, slug?: string, host?: string, page?: number, limit?: number }`
+`{ uid?, slug?, host?, search?, period?, mode?, inviteOnly?, page?, limit? }`
 (pagination merged in from
 [src/utils/pagination.ts](../../src/utils/pagination.ts), default
 `page=1`/`limit=20`, capped at 100), and the controller reads **either**
 `uid`/`slug` (`const eventUid = uid ?? slug`, `uid` wins if both are present).
 If either is set: `findByUid` → `404 NOT_FOUND` if none, single event object
 (`page`/`limit` accepted but ignored on this branch). Otherwise: the events as
-`{ data, pagination }` — `eventService.findAll({ host }, { skip, limit })` runs
-the `find` and a `countDocuments` in parallel over the same filter. **`host`**
+`{ data, pagination }` - `eventService.findAll({ host, search, period, mode,
+inviteOnly }, { skip, limit })` runs the `find` and a `countDocuments` in
+parallel over the same filter, so `pagination.total` counts every matching event,
+not the page size. The response shape is unchanged. **`host`**
 (August 2026, matching widened September 2026) narrows that list to one host's
 own events, matched with `$or` against **either** `organizerHandle` (the real
 link) **or** the legacy `hostUsername` string — so an event created before
@@ -113,6 +118,33 @@ places and "uid" in others for what is the same field on this side — see
 [api-contract.md](./api-contract.md#get-events) before assuming which query
 param name a given frontend call site actually sends.
 
+**Directory filters (November 2026).** All optional, all combinable with `host`
+and with each other:
+
+- **`search`** - trimmed, at most 100 characters; a blank value is ignored. A
+  case-insensitive literal match (regex characters are escaped) on `name`,
+  `city` or `hostName`. It is an unindexed scan.
+- **`period`** - `upcoming` (`startTime >= now`, server clock) or `past`
+  (`startTime < now`). Left out, every event is returned.
+- **`mode`** - `Online` or `Offline`.
+- **`inviteOnly`** - the strings `true` or `false`. `false` also matches events
+  with no stored flag (events saved before the field existed read as open).
+- **Order** - `startTime` then `_id` (the tiebreaker, so a page boundary never
+  repeats or skips an event), soonest first, except `period=past` (most recent
+  first). A host-filtered list with no `period` is newest first, so a host with
+  more events than one page keeps its newest and upcoming ones and loses its
+  oldest; the web `byHost` call asks for `limit=100`. Any other list with no
+  `period` is soonest first.
+- **Paging** - `page` and `limit` as before: default `limit` 20, hard maximum
+  100. The web directory asks for 12 per page.
+
+The `uid`/`slug` single-event branch ignores all of these. Tests:
+`tests/events-directory.test.ts` (period split and order, search by name, city
+and host, literal handling of regex characters, blank search, filter
+combinations, mode and invite-only including events with no stored flag, `400`
+for bad input, tied start times, totals, a page past the end, the 100 maximum,
+the host filter, and a host with 21 events).
+
 ## `POST /events/create`
 
 `requireAuth` → `validate(createEventSchema)` → `eventController.createEvent`.
@@ -122,7 +154,29 @@ it, so this is checked before anything else in the service. Required always:
 `uid`, `name`, `description`, `coverImage`, `mode`, `startTime`, `endTime`,
 `startDate`, `endDate` (the four dates go through `z.coerce.date()`, so ISO
 strings or anything `Date`-constructible are accepted, not just already-`Date`
-values). Required **only if `mode === "Offline"`** (`createEventSchema`'s
+values).
+
+**Validation rules (November 2026)**, mirroring the browser form
+(`useEvent.ts`). A failure returns `400 { message: "Validation failed", errors:
+[{ path, message }] }`, one entry per broken rule:
+
+- `uid` - lowercase letters, numbers and single hyphens, and not a reserved
+  word: `mine`, `new`, `create`, `edit`, `admin`, `api`
+  (`RESERVED_EVENT_UIDS` in `event.constants.ts`; the browser keeps its own copy).
+- `name` 10 to 80 characters, `description` 20 to 200 characters.
+- `endTime` must be strictly after `startTime` (error path `endTime`).
+- `startTime` must not be in the past (error path `startTime`). Owner decision:
+  past events cannot be created. A test that needs a past or already-started
+  event therefore creates it through the `Event` model (and its registrations
+  through the `EventRegistration` model), not through this route; the seed
+  scripts write through the model too, so they are unaffected.
+- `coverImage` - an https URL (at most 2048 characters) or a base64 data URL of
+  `image/png`, `image/jpeg`, `image/webp` or `image/gif` that decodes to at most
+  5 MiB. `http`, `javascript:`, `file:`, SVG, other data types, invalid base64
+  and oversized values are rejected (a `data:` string longer than about 6.99
+  million characters is rejected before it is parsed).
+- Maximum lengths: `city`, `state`, `country` 100; `address` 200; `platform` 60;
+  `platformLink` 2048. `mapIframe` is still unbounded. Required **only if `mode === "Offline"`** (`createEventSchema`'s
 `superRefine`): `city`, `state`, `country`, and `address` — each missing one
 adds its own Zod issue at that field's path, so a partially-filled offline event
 gets one `400` response listing every missing field at once, not just the first.
@@ -137,7 +191,9 @@ September-2026 detail-page field (`about`, `agenda`, `bringAlong`,
 event, but populating the detail-page-only fields currently means writing to the
 collection directly (as `scripts/seed-demo-data.ts` does), not through this
 endpoint; extending the schema to accept them is future work, deliberately out
-of scope for the pass that added the fields themselves. On success:
+of scope for the pass that added the fields themselves. A duplicate `uid` is
+`409` (see `createEvent` above), including the race where two requests pass the
+pre-check together. On success:
 `201 { message: "Event Created", savedEvent }` — note this response's top-level
 shape (`message` + `savedEvent`, not `message` + `user`/`event`) is unique to
 this route; every other module's create/success response in this API uses a
@@ -175,6 +231,24 @@ Accepts shared `page`/`limit` parameters (default page 1, limit 20, max 100) and
 sort descending. The endpoint does not accept a user identifier and never
 returns registration attendee details. The registration schema indexes `userId`
 for this attendee lookup, alongside its unique `(eventUid, userId)` constraint.
+
+## Tests
+
+`tests/events.test.ts` (78 tests when last run) covers create, list, host filter,
+the create-validation rules above (valid and invalid values, boundaries, and the
+`11000` path, tested by mocking the pre-check to return `null` so the real unique
+index rejects the second save), join, the registration check, and `/events/mine`.
+Its "join rules and My Events" block covers: joining an invite-only event
+(`403`), an already-started event (`409`), an unknown event (`404`); the
+registration check for an unknown event (`404`), for a known event not joined
+(`{ joined: false }`) and without sign-in (`401`); and `/events/mine`
+defaulting to upcoming, `period=past` order, paging for both periods, a page
+past the end, `limit=101` and an unknown `period` returning `400`, and one
+attendee's registrations never showing for another. Order of checks in
+`joinEvent`: event not found (`404`), attendee not found (`401`), invite-only
+(`403`), already started (`409`), so an invite-only event that has also started
+returns `403`. `tests/events-directory.test.ts` covers the list filters (see
+`GET /events`). See [testing.md](./testing.md) for counts.
 
 ## What's known-broken here
 

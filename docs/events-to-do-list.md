@@ -88,21 +88,26 @@ Decide whether it links to the existing organization donation flow.
 ## 2. Code health (dead code and structure)
 
 ### CH-1 Delete the retired `CreateEvent.tsx`
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 `apps/web/src/features/events/components/CreateEvent.tsx` is 509 lines and not mounted anywhere.
 It looks like an event form but saves to the user profile route, and several address fields are bound to the wrong keys.
 It exists only as a trap.
 Fix: delete it together with the `CreateEventCredentials` type, then update the events specs and the Miro "retired" note.
+Result: the file and the `CreateEventCredentials` type are deleted, and the events specs are updated.
+The Miro "retired" note for `CreateEvent.tsx` still needs updating (see D-1).
 
 ### CH-2 Delete the empty `HostedEvents.tsx`
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 The file is 0 bytes and nothing imports it.
+Result: deleted.
 
 ### CH-3 Remove or wire `services/Events.ts`
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 The feature-level service is not used by any routed page.
 All live calls go through `services/KarmaCircleApi.ts`.
 Remove it, or move the live calls into it, so there is one place for event API calls.
+Result: `services/Events.ts` (and the now-empty `services/` folder) is deleted, together with `eventEndpoints.all`, which only it used.
+The write calls live in `services/KarmaCircleApi.ts` and the reads use `useSWR` with `eventEndpoints`.
 
 ### CH-4 `EventsMarqueeCards.tsx` and `getFormattedDate.ts`
 Status: needs decision. Priority: P3.
@@ -116,48 +121,67 @@ Status: open. Priority: P3.
 Replace it with the precise `ApiEvent` type and remove the loose one.
 
 ### CH-6 Directory search runs in the browser
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 `/events` fetches up to 100 events and filters them in the browser.
 Past 100 events, extra events silently never appear.
 Fix: move search and the upcoming or past split to the API with real pagination.
+Result: `GET /events` now takes `search`, `period`, `mode` and `inviteOnly`, sorts by start time with the id as tiebreaker, and the directory loads 12 events at a time with a "Load more events" button.
+The directory still has no text index, so search is an unindexed scan on name, city and host name.
+That is fine at today's scale and should become an index or prefix search if the collection grows.
 
 ### CH-7 Duplicate-address race on create
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 Create checks whether the page address exists and then saves.
 Two organizers submitting the same address at the same moment can both pass the check.
 The database already has a unique index, so the fix is to rely on it and turn error code 11000 into a friendly 409 for this route.
 Also listed in the API known issues.
+Result: create keeps the friendly pre-check, and now also turns error code 11000 on save into the same `409`.
+The entry is removed from the API known issues.
 
 ## 3. Testing
 
 ### T-1 API tests missing for join rules
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 Covered today: create, list, host filter, validation, join happy path, duplicate join, registration check, and a non-organization creating.
 Missing: joining an invite-only event returns 403.
 Missing: joining an event that already started returns 409.
 Missing: joining an unknown event returns 404.
 Missing: the registration check for an unknown event returns 404.
+Result: all four are covered in the "join rules and My Events" block of `apps/api/tests/events.test.ts`, plus the registration check for a known event the attendee has not joined and the `401` without sign-in.
 
 ### T-2 API tests missing for My Events
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 Missing: the upcoming and past period filter and its sort order.
 Missing: pagination on `/events/mine`.
 Missing: another user's registrations never appear.
+Result: covered in the same block, plus an unknown `period` returning `400`, a `limit` over 100 returning `400`, and an empty page for an attendee who joined nothing.
 
 ### T-3 No browser tests for the attendee journey
-Status: open. Priority: P1.
+Status: open, written but not yet run. Priority: P1.
 Covered today: directory filters, search, responsive layout, and an organization publishing an in-person event.
 Missing: opening the detail page, joining, the "You are going" state, My Events, the invite-only state, and the past-event state.
+Result: `apps/web/e2e/events/attendee-journey.spec.ts` has 5 tests for these.
+They are written but have never been run, because Playwright was not authorized.
+Keep this item open until a real run passes.
+A signed-out visitor clicking Join is not covered, because the intended behavior is not decided.
 
 ### T-4 No test for online event publishing in the browser
-Status: open. Priority: P2.
+Status: open, written but not yet run. Priority: P2.
 The publish test covers an in-person event.
 Add the online path with platform and meeting link, including a bad link.
+Result: `apps/web/e2e/events/online-event-publishing.spec.ts` has 2 tests (platform and link errors with nothing published, then a successful publish, plus the default platform and the Online type filter).
+They are written but have never been run.
+Keep this item open until a real run passes.
+The tests keep the form's default start (one hour from now), so they can fail within an hour of local midnight.
 
 ### T-5 No frontend unit tests
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 Pure helpers such as the date, duration and funded-percent helpers have no unit tests.
 Add a small unit test setup for pure functions.
+Result: Vitest is set up in `apps/web` (`vitest.config.mjs`, `pnpm test:unit`) with colocated `*.test.ts` files for the events helpers and `formatMoney`.
+The `test` script is now `vitest run && playwright test`, so root `pnpm test` and CI run the unit tests first.
+Not covered: `convertToBase64` (needs a browser `FileReader`, so it would need jsdom or happy-dom), components and hooks.
+The tests found three helper bugs, tracked as T-8.
 
 ### T-6 No coverage threshold
 Status: open. Priority: P3.
@@ -165,8 +189,27 @@ The API Jest config has no coverage report or minimum.
 Add a coverage report, then a threshold per module once a baseline is known.
 
 ### T-7 API tests were not run in the last audit
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 Run `pnpm --filter karmacircle-api test` and record the result here.
+Result, 2026-11-04: `npx --no-install jest` in `apps/api` passed 10 suites of 10 and 183 tests of 183, about 8 seconds.
+`apps/web` `npx --no-install vitest run` passed 4 files of 4, 63 tests and 2 todo (65 total).
+Playwright was not run, so no browser result is recorded.
+
+### T-8 Helper bugs found by the new unit tests
+Status: open. Priority: P3.
+`formatDuration` in `formatEventFacts.ts` returns "NaN days" when either date cannot be read.
+`getFormattedDate` returns "NaNth undefined" for a missing or invalid date, and is only used by the unused marquee card (see CH-4).
+`fundedPercent` has no lower clamp, so a negative raised amount gives a negative percent, and a NaN goal or raised value gives NaN.
+`isEventPast` treats an unreadable date as not past, which the tests record as current behavior.
+Two of these are recorded as `it.todo` in the test files.
+Fix: decide the fallback for an unreadable date, then change the helpers and the tests together.
+
+### T-9 The existing responsive spec posts events the API now rejects
+Status: open. Priority: P1.
+`apps/web/e2e/events/events-responsive.spec.ts` builds events through `POST /events/create` with an end time equal to the start time, and one of them in the past.
+The create rules from V-1 and V-2 reject both, so three of its four tests (all but the UI publishing test) will fail on a real run.
+Fix: create the events in the future with an end after the start, and move the past one into the past with the E2E-only backdate route (`apps/api/tests/e2e/test-routes.ts`).
+Not run, because Playwright was not authorized.
 
 ## 4. UI audit
 
@@ -204,37 +247,48 @@ Check the new form and panels against `docs/specs/design-system/README.md`: toke
 ## 5. Backend API validation
 
 ### V-1 End time is never checked on the server
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 Only the browser checks that the end is after the start.
 A direct call to the API can create an event that ends before it starts.
 Fix: add the check to the create schema.
+Result: the create schema rejects an end time equal to or before the start time (`400`, path `endTime`).
+The browser check is now strict too.
 
 ### V-2 Past start dates are accepted
-Status: open. Priority: P2.
+Status: done (2026-11-04), decided: not allowed. Priority: P2.
 The API accepts an event that starts in the past.
 Decide whether that is allowed, for example to log a past drive, and enforce it either way.
+Result: decided with Tamal's owner decision that past start dates are not allowed.
+The create schema rejects a start time in the past (`400`, path `startTime`) and the browser form checks it as well.
 
 ### V-3 Name and description length only checked in the browser
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 The browser requires name 10 to 80 characters and description 20 to 200.
 The API only requires not empty, so one call can store a huge description.
 Fix: mirror the limits in the Zod schema.
+Result: the schema now enforces name 10 to 80 and description 20 to 200 characters, with the same wording as the browser.
 
 ### V-4 Cover image is not really validated
-Status: open. Priority: P1.
+Status: done (2026-11-04). Priority: P1.
 The API only requires a non-empty string and relies on the global 10 MB body limit.
 Fix: accept only an image data URL of a known type with a size cap, or an https link, and reject anything else.
 See also DB-1 and S-4 for why this matters.
+Result: the cover image must be an https link (up to 2048 characters) or a base64 data URL of PNG, JPEG, WebP or GIF that decodes to 5 MiB or less.
+The browser picker accepts only the same four types.
+This does not fix DB-1 or S-4: images are still stored inside the event document.
 
 ### V-5 Reserved page addresses
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 An event whose address is `mine` would clash with the `/events/mine` page, and similar words can clash with future routes.
 Fix: reject a small list of reserved words in the address rule on both sides.
+Result: `mine`, `new`, `create`, `edit`, `admin` and `api` are rejected by the API and by the create form, from one constant per app.
 
 ### V-6 Free-text fields have no length limits
-Status: open. Priority: P2.
+Status: done (2026-11-04). Priority: P2.
 City, state, country, address, platform and the meeting link have no maximum length.
 Add sensible maximums.
+Result: city, state and country are capped at 100, address at 200, platform at 60 and the meeting link at 2048 characters.
+`mapIframe` is still an unbounded optional string.
 
 ### V-7 Online platform is free text
 Status: open. Priority: P3.
@@ -261,6 +315,8 @@ Status: open. Priority: P1.
 The list query uses skip and limit with no sort.
 Without a sort, MongoDB does not guarantee a stable order, so pages can repeat or skip events.
 Fix: sort by start time with the id as a tiebreaker, and add a matching index.
+Partly done 2026-11-04: `GET /events` now sorts by start time with the id as tiebreaker (see CH-6), so pages no longer repeat or skip events.
+The matching index is still missing, so this item stays open until DB-3 adds it.
 
 ### DB-3 Missing indexes
 Status: open. Priority: P1.
@@ -359,7 +415,7 @@ Fix: clear the stored attempt when it fails so the next request retries.
 
 ### O-2 Unbounded work in some queries
 Status: open. Priority: P2.
-See CH-6 and DB-4.
+CH-6 is done, so the events directory now loads 12 at a time and the API list is capped at 100 per page; DB-4 remains.
 Add a hard maximum page size everywhere, which exists for events at 100.
 
 ### O-3 No connection settings
@@ -387,6 +443,7 @@ Decide whether to queue and retry.
 Status: open. Priority: P3.
 The Miro "Claude Dashboard" board has three Events frames: inputs, data flow, and discover, join and follow up.
 When any item above ships, update the matching frame, for example the proposed roster box after PG-6.
+Pending from 2026-11-04: the "retired" note for `CreateEvent.tsx` (CH-1) now describes a deleted file, and the directory data flow (CH-6) is now server-side search with paging.
 
 ### D-2 Keep specs in step
 Status: open. Priority: P2.
@@ -401,7 +458,7 @@ Add the database and security findings above to the API known issues, so they su
 
 1. Invite-only: remove the flag until it is real, or build invitations (PG-4).
 2. Cancel: keep a cancelled event visible, or remove it (PG-2).
-3. Past start dates: allowed or not (V-2).
+3. Decided 2026-11-04: past start dates are not allowed (V-2).
 4. Marquee cards: wire to live data or delete (CH-4).
 5. Anonymous donations: intended or not (S-6).
 6. Cover images: move to object storage now, or ship the short-term fix first (DB-1).
@@ -412,3 +469,19 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-04: `formatMoney` and `fundedPercent` moved to the shared `apps/web/src/utils/formatMoney.ts`.
 - 2026-11-04: corrected the events spec sentence that said the create form had no browser test.
 - 2026-11-04: Miro Events section split into three frames (inputs, data flow, discover and follow up).
+- 2026-11-04: CH-1, deleted the retired `CreateEvent.tsx` and the `CreateEventCredentials` type.
+- 2026-11-04: CH-2, deleted the empty `HostedEvents.tsx`.
+- 2026-11-04: CH-3, deleted the unused `services/Events.ts` and `eventEndpoints.all`.
+- 2026-11-04: CH-6, `GET /events` has `search`, `period`, `mode` and `inviteOnly` with a stable order, and the directory pages 12 at a time.
+- 2026-11-04: CH-7, a duplicate address that slips past the pre-check now returns `409` instead of a generic error.
+- 2026-11-04: V-1, the API rejects an end time that is not after the start time.
+- 2026-11-04: V-2, decided not allowed, and the API and the form reject a start time in the past.
+- 2026-11-04: V-3, the API enforces name 10 to 80 and description 20 to 200 characters.
+- 2026-11-04: V-4, the API only accepts an https cover link or a base64 PNG, JPEG, WebP or GIF up to 5 MiB.
+- 2026-11-04: V-5, reserved page addresses are rejected on both sides.
+- 2026-11-04: V-6, maximum lengths added for city, state, country, address, platform and meeting link.
+- 2026-11-04: T-1, API tests added for the join rules and the registration check.
+- 2026-11-04: T-2, API tests added for My Events (period, order, paging, isolation).
+- 2026-11-04: T-5, Vitest unit tests added for the events helpers and `formatMoney`; `pnpm test` now runs them.
+- 2026-11-04: T-7, API suite run: 10 suites and 183 tests passed; web unit suite run: 63 passed and 2 todo.
+- 2026-11-04: T-3 and T-4 are written (7 Playwright tests in 2 files) but not run, so they stay open above.

@@ -58,7 +58,7 @@ This repo is worked on by multiple AI agents (and humans), often in separate ses
 
 **What exists, in one sentence each:**
 - `apps/api`: Jest + Supertest, every module covered, runs in-process against `mongodb-memory-server` — `npm test` / `pnpm --filter karmacircle-api test`.
-- `apps/web`: Playwright E2E, organized feature-first under `apps/web/e2e/<feature>/` (mirroring `apps/web/src/features/<feature>/`), each folder with its own `README.md` — `pnpm test` (from `apps/web`) or `npx playwright test e2e/<folder>/` for one feature.
+- `apps/web`: Vitest unit tests for pure helpers (`src/**/*.test.ts`, `pnpm test:unit`), plus Playwright E2E, organized feature-first under `apps/web/e2e/<feature>/` (mirroring `apps/web/src/features/<feature>/`), each folder with its own `README.md` - `pnpm test` (from `apps/web`, runs the unit tests first, then Playwright) or `npx playwright test e2e/<folder>/` for one feature.
 - Root `pnpm test` runs **both**, concurrently, via Turborepo — the API and the UI, at the same time, no server needs to be running beforehand. This is the one command to reach for by default.
 
 **The full picture — read before writing or changing a test, not just before running one:**
@@ -101,7 +101,7 @@ Concrete "don't reintroduce this" rules, accumulated as issues get found and fix
 **Backend (`apps/api`):**
 - Don't add a new ad-hoc auth check. `requireAuth` (`apps/api/src/middleware/auth.ts`) reading the `Token` cookie is the one mechanism this API uses — see `apps/api/docs/specs/auth.md`.
 - Don't return a raw Mongoose `User` document to a client. Always go through `userService.sanitize()` or the `PUBLIC_FIELDS` projection — see `apps/api/docs/specs/users.md`.
-- Don't add a new "create X, checking uniqueness first" flow that assumes the existence-check-then-save pattern is race-safe — it isn't (see the `uid`/`userName`/`productSlug` races cataloged in `apps/api/docs/specs/known-issues.md`); rely on the schema's own `unique: true` index and handle the resulting Mongo-11000 error if you need this to be truly race-safe.
+- Don't add a new "create X, checking uniqueness first" flow that assumes the existence-check-then-save pattern is race-safe - it isn't (see the `userName`/`productSlug` races cataloged in `apps/api/docs/specs/known-issues.md`); rely on the schema's own `unique: true` index and handle the resulting Mongo-11000 error if you need this to be truly race-safe.
 - Don't wire a new mutation to identify "which user" purely by an `email` string in the request body without also gating it behind `requireAuth`. `POST /product/cart/add` already does this and it's cataloged as the most significant access-control gap in the codebase, not a pattern to repeat — see `apps/api/docs/specs/known-issues.md#products`.
 
 ## when you're not sure which duplicate a request means

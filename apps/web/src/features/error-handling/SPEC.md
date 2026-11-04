@@ -70,7 +70,7 @@ On mount, immediately full-page-redirects the browser to Google — this would o
 
 **Any code that calls `checkInternetConnection()` directly** (not through `showSuccessToast`/`showErrorToast`) — e.g. `useAuth.ts`'s `authenticateUser`, see [authentication/SPEC.md](../authentication/SPEC.md) — gets this same connectivity toast for free as its only offline feedback; there's no additional field-level or contextual messaging layered on top in those call sites.
 
-## Playwright E2E (lives outside this feature folder, but is this app's only automated test tooling)
+## Playwright E2E (lives outside this feature folder; Vitest unit tests for pure helpers were added in November 2026)
 
 See [docs/specs/testing.md](../../../../../docs/specs/testing.md) for the full picture — this repo's Cypress suite was replaced with Playwright (September 2026). Briefly: `apps/web/e2e/smoke.spec.ts` is a minimal smoke test, `apps/web/e2e/organizations/organization-setup.spec.ts` covers the full organization setup flow end to end, and `pnpm test` runs them headlessly against a self-contained stack (its own dedicated ports, its own in-memory MongoDB) — nothing needs to be running beforehand, and nothing here touches a developer's real local dev servers. There is still no separate unit-test runner in this repo (no component/hook-level tests) — Playwright's E2E suite is the only automated test tooling for `apps/web`. If you're asked to add coverage for anything in this feature (or any feature), there's no unit-test pattern to follow yet — you'd either extend the E2E suite or introduce a unit-test runner as a separate decision, not something to do incidentally while fixing a bug elsewhere.
 

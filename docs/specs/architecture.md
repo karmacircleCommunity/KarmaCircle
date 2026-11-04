@@ -100,5 +100,5 @@ Two deliberate exceptions, both added with the organization setup flow's locatio
 They are shared because of what they are rather than how many places import them - a suggest-as-you-type form field is a UI-kit primitive and is documented as one ([ui-kit.md](./ui-kit.md#combobox)), and "where is this" is a question events will ask in the same words organizations do.
 The reference data they read (`statics/IndiaStates.ts`, `statics/IndiaCities.ts`) belongs in `statics/` on the existing rule, which is where `CountryList.ts` already sits with one consumer.
 
-Two backend-call layers coexist: `apps/web/src/services/KarmaCircleApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.ts` / `services/Events.ts` helpers under `apps/web/src/features/organizations/` and `apps/web/src/features/events/` (go through `apps/web/src/services/ApiConnector.ts`; neither helper is called by a routed page today).
+Two backend-call layers coexist: `apps/web/src/services/KarmaCircleApi.ts` (raw `axios`, most calls) and the feature-level `services/Organizations.ts` helper under `apps/web/src/features/organizations/` (goes through `apps/web/src/services/ApiConnector.ts`; not called by a routed page today). The events feature has no `services/` folder since November 2026.
 See [api-integration.md](./api-integration.md) for which one each feature actually uses.

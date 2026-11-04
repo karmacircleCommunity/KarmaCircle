@@ -1,14 +1,16 @@
 # Events
 
-Covers the events directory, the shared event-creation form and its retired
-legacy predecessor, and the event display components.
+Covers the events directory, the shared event-creation form, and the event
+display components. The retired legacy form (`CreateEvent.tsx`) was deleted in
+November 2026.
 
 ## Event lifecycle: agent reference
 
 This section records the current end-to-end behavior, including the gaps that
 matter when changing the module. The Events page is public: visitors fetch
-`GET /events`, search and filter the returned events in the browser, then open
-`/events/:eventId` from an event card. Event detail fetches
+`GET /events` a page of 12 at a time, with search, the Upcoming/Past split and
+the type filter applied by the API, then open `/events/:eventId` from an event
+card. Event detail fetches
 `GET /events?uid={uid}` and renders the event, organizer, mode-specific location
 or online information, and any optional detail fields present on the record.
 Past events show a completed state, with no join action. Upcoming events marked
@@ -45,12 +47,15 @@ create action opens that same page. The public directory shows its creation
 action from Redux's authenticated organization state, without trying to read the
 HTTP-only `Token` cookie in browser JavaScript. The shared page submits to
 authenticated `POST /events/create` through `useEvent.ts`, then opens the
-published event detail page. The public directory and current organization's
-hosted-event list caches are revalidated after success. The form covers event
+published event detail page. The current organization's hosted-event list cache
+is revalidated after success, and the public directory refetches when `/events`
+is next opened. The form covers event
 basics, date/time, online or in-person details, invite-only visibility, and a
-live preview. The old `CreateEvent.tsx` component remains as unused legacy code
-and must not be reconnected; it calls `PATCH /user/update` instead of creating
-an event. The create endpoint currently accepts the basic event fields and
+live preview. The old `CreateEvent.tsx` component (which called
+`PATCH /user/update` instead of creating an event) was deleted in November 2026.
+The events feature has no `services/` folder: every event API call is in
+`src/services/KarmaCircleApi.ts` (writes) or goes through `useSWR` with
+`eventEndpoints` (reads). The create endpoint currently accepts the basic event fields and
 `inviteOnly`; most long-form detail fields shown by the detail page are not
 accepted by its request schema yet. Read the frontend deep spec at
 [events/SPEC.md](../../apps/web/src/features/events/SPEC.md), the backend spec
@@ -62,7 +67,7 @@ before changing this path.
 ```mermaid
 flowchart TD
     A([Visitor or organization opens Events]) --> B[GET /events: public paginated event list]
-    B --> C[Browser search and filters: date, invite flag, mode]
+    B --> C[API search and filters: period, invite flag, mode, with Load more]
     C --> D{Choose event card}
     D --> E[GET /events?uid: public event detail]
     E --> F{Event already past?}
@@ -98,8 +103,8 @@ flowchart TD
     S -->|No| T[Show field errors; keep form open]
     S -->|Yes| U[POST /events/create with authenticated session]
     U --> V[API validates payload and organization account]
-    V --> W[Save event with server-derived organizer identity]
-    W --> X[201 response; open event detail and refresh public and host event lists]
+    V --> W[Save event with server-derived organizer identity, or 400 on a rule failure, or 409 on a taken address]
+    W --> X[201 response: open event detail and refresh the host event list]
 ```
 
 The dashed organizer roster/check-in view is a product proposal, not current
@@ -123,9 +128,9 @@ second invite/mode `FilterDropdown` via its `secondaryFilter` prop, live result
 count, primary button), one flat grid of `<EventCard />` with an empty state,
 and `<Footer />`.
 
-**Live data, September 2026.** `GET /events` (`eventEndpoints.directory()`, a
-generous `limit=100` — the route has no server-side search filter to send, see
-below) via `useSWR`, mapped through
+**Live data, September 2026.** `GET /events` (`eventEndpoints.directory({ period, search, mode, inviteOnly,
+page, limit })`, 12 per page) via `useSWRInfinite`, with `keepPreviousData` and
+`revalidateAll`, mapped through
 [utils/toDisplayEvent.ts](../../apps/web/src/features/events/utils/toDisplayEvent.ts)
 into the looser `EventCardEvent` shape `EventCard` actually needs. Replaces the
 twelve-event fixture that used to live in `constants/eventDirectory.ts` — that
@@ -162,15 +167,22 @@ else a full weekday+date. With the seed data's actual date spread, most
 day-sections held exactly one event, so the headers added visual structure
 without adding real information; `EventCard`'s own cover-photo date badge
 already tells a visitor which day an event falls on. Sort direction still flips
-with the time filter: soonest-first for Upcoming, most-recent-first for Past.
+with the time filter: soonest-first for Upcoming, most-recent-first for Past,
+now decided by the API (start time, with the event id as tiebreaker).
 
-`GET /events` (`listEventsQuerySchema`, apps/api) only knows
-`uid`/`slug`/`host`/pagination — no `search` or domain param the way
-`GET /organizations` has — so the text search, the Upcoming/Past split and the
-type filter all run client-side over the one fetched page, not sent to the
-backend. Acceptable at today's scale; would need a real backend filter (or real
-pagination-aware fetching) if the directory grows past what one `limit=100` page
-holds.
+**Search, filters and paging are server-side (November 2026).** `GET /events`
+(`listEventsQuerySchema`, apps/api) takes `search`, `period`, `mode` and
+`inviteOnly` as well as `uid`/`slug`/`host`/pagination. The search box is
+debounced by 300 ms and matched by the API against the name, city and host name
+(the old browser search also matched summary, country, platform and mode). The
+type filter maps `Invite only` to `inviteOnly=true`, `Open to all` to
+`inviteOnly=false`, and `Online`/`Offline` to `mode`. The count above the grid is
+`pagination.total`, and a "Load more events" pill button (same style as "Reset
+filters") fetches the next page; the page has error and retry states. A newly
+created event appears when `/events` is reopened because the page passes
+`revalidateAll: true` (SWR's global `mutate` skips `useSWRInfinite` keys, so
+`useEvent.ts` does not refresh the directory itself). Search is an unindexed
+case-insensitive scan on the API side, fine at today's scale.
 
 **`EventCard` now handles a live record's real gaps rather than a fixture that
 had none:** no cover photo → an accent-gradient block with a calendar mark (same
@@ -198,8 +210,13 @@ independently rejects personal-account creation requests with `403`, using the
 stored account type. `e2e/events/events-responsive.spec.ts` covers the public
 directory's Upcoming/Past filtering, search, type filter and responsive layout,
 plus an organization publishing an in-person event from the full-page form.
-Event detail, joining, the registration check and My Events have no browser
-coverage yet.
+`e2e/events/attendee-journey.spec.ts` (detail page, joining, "You are going", My
+Events, invite-only, past event) and `e2e/events/online-event-publishing.spec.ts`
+(online platform and meeting link) were added in November 2026 and are written
+but have not been run. `events-responsive.spec.ts` seeds an event with its end
+equal to its start and one in the past through `POST /events/create`, which the
+API now rejects, so it needs fixing before its next run. Pure helpers have
+Vitest unit tests (see [testing.md](./testing.md)).
 
 **Width fixed to `max-w-6xl` (September 2026).** Both content wrappers here were
 `max-w-7xl`, wider than `Navbar` and every other page's container — the
@@ -246,24 +263,9 @@ not imply that event creation is the only way registrations can exist.
 
 ## Event creation components
 
-Two differently implemented event forms remain in the source tree, but only one
-is connected to a live route:
-
-### `CreateEvent` (retired legacy component)
-
-[apps/web/src/features/events/components/CreateEvent.tsx](../../apps/web/src/features/events/components/CreateEvent.tsx).
-A retired generic dropzone-based form (cover image preview, name, description,
-contact details, mode, and address fields) — structurally copied from the
-profile editor. Its `validateForm()` calls **`updateUserProfile(...)`**
-(`PATCH /user/update`), not an event-creation endpoint — this form does not
-actually create an event; it patches the user's own profile with whatever was
-typed into the "event" fields. This looks like `ProfileUpdate.tsx` was
-duplicated as a starting point for event creation and the API call was never
-swapped out. Several address-block inputs bind to the wrong
-`credentials.address.*` keys (e.g. the "City"/"State" row and the "Address Line
-1/2" row both read/write `line1`/`line2` instead of `city`/`state` — copy-paste
-from the row above them). This component is not mounted and must stay retired;
-do not reconnect it.
+One event form is connected to a live route. The legacy `CreateEvent.tsx`
+(retired profile-editor copy that called `PATCH /user/update`) was deleted in
+November 2026.
 
 ### `CreateEvents` (full-page organizer publishing flow)
 
@@ -277,22 +279,25 @@ organization accounts with a live profile. Validation and submission go through
 [useEvent](../../apps/web/src/features/events/hooks/useEvent.ts), which calls
 the real `POST /events/create` API function.
 
-The retired component is documented so it is not accidentally reconnected; all
-live creation work belongs in the `CreateEvents` page and `useEvent` hook.
+All creation work belongs in the `CreateEvents` page and `useEvent` hook. The
+cover picker accepts PNG, JPEG, WebP and GIF up to 5 MB, the same four types the
+API accepts (`constants/coverImageTypes.ts`).
 
 ## `useEvent` hook
 
 [apps/web/src/features/events/hooks/useEvent.ts](../../apps/web/src/features/events/hooks/useEvent.ts)
-— pairs with the `CreateEvents` page, not the retired `CreateEvent` component.
-`validateEvent()` checks required fields, mode-specific fields, name and
-description lengths, and the combined start/end date and time order. Submission
+- pairs with the `CreateEvents` page. `validateEvent()` checks required fields,
+mode-specific fields, reserved page addresses (`mine`, `new`, `create`, `edit`,
+`admin`, `api`; `constants/reservedEventAddresses.ts`), name and description
+lengths, that the end is strictly after the start, and that the start is in the
+future, matching the API. Submission
 receives the exact validation result for the current form, avoiding stale
 closure state. Before sending, it combines each selected date and clock time
 into the API's `startTime` and `endTime` timestamps and sends date-only values
 in `startDate` and `endDate`. On success (`response.status === 201`), it shows a
-success toast, opens the new event detail page, and revalidates both
-`eventEndpoints.directory()` and the current organization's
-`eventEndpoints.byHost()` key.
+success toast, opens the new event detail page, and revalidates the current
+organization's `eventEndpoints.byHost()` key. The public directory is not
+revalidated here; `Events.tsx` refetches all loaded pages itself.
 
 ## Event display components
 
@@ -320,7 +325,8 @@ success toast, opens the new event detail page, and revalidates both
 **Net effect:** the `/events` directory and the event detail page reflect real
 backend data, and organization owners can create events from either the
 directory or hosted-event workspace. The shared form sends `POST /events/create`
-and refreshes both event lists after success.
+and refreshes the host's event list after success; the directory refetches when
+reopened.
 
 ## `DetailedEvent.tsx` — routed at `/events/:eventId`
 
@@ -441,18 +447,11 @@ state comes from saved registrations, not local component state:
 - The venue's map is a plain Google Maps _search link_, not an embed — an iframe
   would mean a third-party script and a cookie banner for one address.
 
-## `HostedEvents` (empty stub)
-
-- [apps/web/src/features/events/components/HostedEvents.tsx](../../apps/web/src/features/events/components/HostedEvents.tsx)
-  — file exists but is **completely empty** (0 bytes); importing it would fail.
-
 ## Types
 
 This entire folder is TypeScript. See
 [events/SPEC.md](../../apps/web/src/features/events/SPEC.md#types) for the full
-breakdown, including which pre-existing bugs (the `EventCard` prop mismatch,
-`CreateEvent`'s stray `htmlFor` on a `div`) now surface as suppressed compile
-errors.
+breakdown, including which pre-existing bugs now surface as suppressed compile errors.
 
 ## Refreshing local demo events
 
@@ -464,3 +463,14 @@ upserts the demo events with fresh relative dates, including future and past
 examples, without changing users, organizations, products, reports, or non-demo
 events. The directory keeps its normal date filters; past records belong under
 Past.
+
+## Unit tests
+
+Pure helpers have colocated Vitest tests, run with `pnpm test:unit` from
+`apps/web` (see [testing.md](./testing.md)): `formatEventFacts.test.ts`,
+`getFormattedDate.test.ts`, `toDisplayEvent.test.ts` (which also covers
+`toDisplayEventDetail`), and the shared `src/utils/formatMoney.test.ts`.
+`formatEventDate`'s real en-US output is "Sat · Sep 12, 9:00 PM"; its JSDoc
+example ("Sat 12 Sep · 9:00 pm") is en-GB style, and only the first ", " is
+replaced. Open helper bugs found by the tests are listed in
+[known-issues.md](./known-issues.md).

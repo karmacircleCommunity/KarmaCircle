@@ -8,7 +8,7 @@ The workflow uses the `pull_request` event, read-only repository permissions, an
 The GitHub ruleset for `main` requires the `validate` check for pull requests and requires one approval with review threads resolved.
 Tamal's account is the only bypass actor, so he can push directly to `main`.
 
-`apps/web`'s only automated test tooling is a **Playwright** E2E suite (`apps/web/e2e/`), added September 2026, replacing an earlier Cypress setup (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`) that existed but was never actually wired into CI. There is still no component/unit-test runner for this app — see "What this doesn't cover" below.
+`apps/web` has two kinds of automated tests. A **Playwright** E2E suite (`apps/web/e2e/`), added September 2026, replaced an earlier Cypress setup (`cypress/e2e/smoke.spec.js`, `organizationSetup.spec.js`) that existed but was never actually wired into CI. **Vitest** unit tests for pure functions were added in November 2026 (see "Unit tests (Vitest)" below). There is still no component or hook test runner for this app - see "What this doesn't cover" below.
 
 This suite is deliberately **full-stack**: a real browser (via Playwright) drives a real, running `apps/web` dev server, which itself makes real HTTP requests to a real, running `apps/api` instance — nothing here is mocked, except email delivery (see "The password-reset outbox" below). `apps/api` has its own, separate Jest+Supertest suite for API-level coverage; see [apps/api/docs/specs/testing.md](../../apps/api/docs/specs/testing.md) for that side. Running `pnpm test` from the repo root runs both suites, via Turborepo, at the same time — that's what "test the API and the UI at once" means in this repo.
 
@@ -22,7 +22,7 @@ This suite is deliberately **full-stack**: a real browser (via Playwright) drive
 | [`e2e/landing-home/`](../../apps/web/e2e/landing-home/) | The marketing home page, hero CTA, footer newsletter | [README](../../apps/web/e2e/landing-home/README.md) |
 | [`e2e/onboarding-profile/`](../../apps/web/e2e/onboarding-profile/) | Individual editor navigation/save/exit and retired profile URLs; browser specs updated but not rerun for removal | [README](../../apps/web/e2e/onboarding-profile/README.md) |
 | [`e2e/organizations/`](../../apps/web/e2e/organizations/) | The organization signup→draft→live setup wizard | [README](../../apps/web/e2e/organizations/README.md) |
-| [`e2e/events/`](../../apps/web/e2e/events/) | Public event directory filtering and responsive layout; attendee My Events page is not covered yet | [README](../../apps/web/e2e/events/README.md) |
+| [`e2e/events/`](../../apps/web/e2e/events/) | Public event directory filtering and responsive layout, organizer publishing, and (written, not yet run) the attendee journey and online-event publishing | [README](../../apps/web/e2e/events/README.md) |
 
 `e2e/smoke.spec.ts` stays at the top level — it's cross-cutting infrastructure (backend reachability, basic nav) rather than any one feature's own behavior. `e2e/env.ts` and `e2e/global-setup.ts` are shared plumbing, not tests.
 
@@ -45,7 +45,7 @@ A developer's normal `pnpm dev` runs the web app on port 3000 and the API on por
 
 - [`apps/web/e2e/env.ts`](../../apps/web/e2e/env.ts) is the single source of truth for the two e2e ports — imported by `playwright.config.ts`, `global-setup.ts`, and every spec file that needs to call the API directly.
 - [`apps/web/playwright.config.ts`](../../apps/web/playwright.config.ts)'s `webServer` array starts **both** servers itself before any test runs, and tears them down after (locally, `reuseExistingServer: true` keeps them warm across repeated `pnpm test` runs in the same session) — a clean checkout needs nothing running beforehand beyond `pnpm install --frozen-lockfile` and `npx playwright install`.
-  - The API entry runs [`apps/api/tests/e2e/server.ts`](../../apps/api/tests/e2e/server.ts) — a real, listening instance of the API backed by `mongodb-memory-server`, distinct from how Jest drives the same `createApp()` in-process with nothing listening. See `apps/api`'s own testing spec for that file's details, including the test-only `POST /__test__/reset` route it exposes.
+  - The API entry runs [`apps/api/tests/e2e/server.ts`](../../apps/api/tests/e2e/server.ts) - a real, listening instance of the API backed by `mongodb-memory-server`, distinct from how Jest drives the same `createApp()` in-process with nothing listening. See `apps/api`'s own testing spec for that file's details, including the test-only `POST /__test__/reset` route it exposes. Since November 2026 that server is an outer Express app that mounts [`tests/e2e/test-routes.ts`](../../apps/api/tests/e2e/test-routes.ts) in front of `createApp()`. It adds one E2E-only route, `POST /__test__/events/:uid/backdate` (body `{ daysAgo }`, a positive number, default 1), which moves an event into the past: `startTime` becomes `daysAgo` days before now, `endTime` two hours later, and `startDate`/`endDate` the matching UTC day starts. It returns `204`, `400` for a bad `daysAgo`, or `404` for an unknown uid, and leaves registrations untouched. It exists because the API refuses to create a past event and refuses to join one that has started, so browser tests publish a future event, optionally join it, then backdate it. It exists only on the isolated E2E server (port 5051), never in the real app.
   - The web entry runs `vite --port 3001 --strictPort` with `VITE_API_URL` overridden to the e2e API's URL, so the dev server built for this run points at the isolated API, not local dev's 5050.
   - Both commands run via `npx <bin>` with an explicit `cwd`, not `pnpm --filter`/`pnpm exec` — pnpm itself isn't guaranteed to be on `PATH` in every environment (this repo's local dev has the same gap; pnpm is invoked via `npx pnpm@<version>` when it isn't installed globally). `npx` resolves each package's own local devDependency bin from its own `node_modules/.bin` regardless of what's on `PATH`.
 - [`apps/web/e2e/global-setup.ts`](../../apps/web/e2e/global-setup.ts) runs once, after the servers are up and before any test, and `POST`s the e2e API's `/__test__/reset` — guaranteeing the suite starts from an empty database every run.
@@ -61,11 +61,20 @@ See `apps/api`'s testing spec and that spec file's own comments for the details.
 
 Playwright runs spec files in parallel across workers by default (`fullyParallel: true`). A mid-suite database reset would race whichever other file's tests are running concurrently, so there isn't one. Instead, every spec generates its own unique data — almost always a `Date.now()`-based suffix on emails/names (see any feature folder's `uniqueEmail()` helper) — the same isolation pattern the Cypress specs this suite replaced already used, kept because it's still the right approach under Playwright's parallelism.
 
+## Unit tests (Vitest)
+
+Added November 2026 for pure functions (no DOM, no components). Vitest `^5.1.0` is an `apps/web` devDependency; the config is [`apps/web/vitest.config.mjs`](../../apps/web/vitest.config.mjs), deliberately separate from `vite.config.mjs` (no PWA, SVGR, React or Tailwind plugins) and from `playwright.config.ts`. It includes only `src/**/*.test.ts` (tests sit next to the helper they test) and excludes `e2e/**`, so neither runner can pick up the other's files. The environment is `node`, and the config pins `TZ=UTC` and `LC_ALL`/`LANG=en_US.UTF-8` so date and currency assertions are deterministic on every machine and in CI. Its path aliases mirror `vite.config.mjs` and `tsconfig.json`; keep all three in sync when an alias is added.
+
+- `pnpm test:unit` (`vitest run`) - run once. `pnpm test:unit:watch` - watch mode.
+- The `test` script is now `vitest run && playwright test`, so `pnpm test` from `apps/web`, root `pnpm test` (Turborepo) and the CI step all run the unit tests before Playwright.
+- Last run, 2026-11-04: 4 test files passed, 63 tests passed and 2 todo (65 total). The files are `formatEventFacts.test.ts`, `getFormattedDate.test.ts` and `toDisplayEvent.test.ts` under `src/features/events/utils/`, and `src/utils/formatMoney.test.ts`.
+- Not covered: `convertToBase64` (needs a browser `FileReader`; it would need jsdom or happy-dom), components and hooks. The two `it.todo` entries record open helper bugs (`formatDuration` returns "NaN days" and `getFormattedDate` returns "NaNth undefined" for unreadable dates); see [known-issues.md](./known-issues.md).
+
 ## Running it
 
 From `apps/web`, or from the repo root with `--filter karmacircle-frontend`:
 
-- `pnpm test` — headless, all configured browser projects, matches CI.
+- `pnpm test` - runs the Vitest unit tests, then Playwright headless on all configured browser projects; matches CI.
 - `pnpm test:ui` — Playwright's interactive UI mode (time-travel through a run, pick a single test).
 - `pnpm test:headed` — headed (visible) browser windows.
 - `pnpm test:report` — reopen the last run's HTML report.
@@ -93,8 +102,8 @@ Real, current app behavior the suite had to be written against — not aspiratio
 
 ## What this doesn't cover
 
-- No component or hook-level unit tests exist for `apps/web` — Playwright's E2E suite is the only automated coverage. If you're asked to add test coverage for a component or hook in isolation, there's no existing pattern to follow; introducing a unit-test runner (Vitest, most likely, given the Vite toolchain) is a separate decision, not something to do incidentally while fixing something else.
-- **Feature folders with no E2E coverage at all yet:** `dashboard`, `donate-shop-trending` (payments), `products`. The Events directory has responsive/filter coverage; attendee My Events page still needs browser coverage. See each feature's own summary spec (`docs/specs/<feature>.md`) before writing tests for one of these — several have the same "less is actually reachable than the docs used to claim" texture the `authentication`/`onboarding-profile` work above surfaced.
+- No component or hook-level tests exist for `apps/web`. Vitest covers pure helpers only (see "Unit tests (Vitest)"); components and hooks have no existing pattern to follow, and would need a DOM environment (jsdom or happy-dom) first.
+- **Feature folders with no E2E coverage at all yet:** `dashboard`, `donate-shop-trending` (payments), `products`. The Events directory has responsive/filter coverage; the attendee journey (`attendee-journey.spec.ts`) and online-event publishing (`online-event-publishing.spec.ts`) specs are written but have never been run, and `events-responsive.spec.ts` seeds events the API now rejects (see the Events README). See each feature's own summary spec (`docs/specs/<feature>.md`) before writing tests for one of these - several have the same "less is actually reachable than the docs used to claim" texture the `authentication`/`onboarding-profile` work above surfaced.
 - **Google OAuth sign-in** isn't covered anywhere — it needs a real (or mocked) Google consent screen, which this suite doesn't attempt.
 - **Animation/motion and responsive breakpoints** are asserted on nowhere in this suite (see `landing-home/README.md`) — this is DOM/behavior testing, not visual regression testing, and this repo has no visual-snapshot tooling set up.
 

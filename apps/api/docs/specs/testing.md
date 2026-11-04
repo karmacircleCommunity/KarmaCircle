@@ -21,12 +21,16 @@ This backend has two separate, independent test setups, for two different jobs:
 |---|---|
 | `auth` | [tests/auth.test.ts](../../tests/auth.test.ts) |
 | `directory` | [tests/directory.test.ts](../../tests/directory.test.ts) |
-| `events` | [tests/events.test.ts](../../tests/events.test.ts) |
+| `events` | [tests/events.test.ts](../../tests/events.test.ts) (create validation, join rules, registration check, `/events/mine`), [tests/events-directory.test.ts](../../tests/events-directory.test.ts) (`GET /events` filters, order and paging) |
 | `organizations` | [tests/organizations.test.ts](../../tests/organizations.test.ts) |
 | `payments` | [tests/payments.test.ts](../../tests/payments.test.ts) |
 | `products` | [tests/products.test.ts](../../tests/products.test.ts) |
 | `reports` | [tests/reports.test.ts](../../tests/reports.test.ts) |
 | `users` | [tests/users.test.ts](../../tests/users.test.ts) |
+
+Last full run, 2026-11-04: `npx --no-install jest` in `apps/api` passed 10 suites of 10 and 183 tests of 183 (about 8 seconds). `tests/events.test.ts` has 78 tests and `tests/events-directory.test.ts` has 26. Re-read these from the Jest output rather than trusting this line.
+
+Tests that need a past or already-started event must create it through the `Event` model (and its registrations through the `EventRegistration` model), because `POST /events/create` rejects a past `startTime`. Event fixtures in `events.test.ts` use a start time of tomorrow computed at runtime; the old fixed 2026 dates would now fail the future-start rule.
 
 Every module has a test file (as of September 2026 — `directory`, `payments`, and `reports` were the last three added). If you add a ninth module, follow the existing files' pattern: `buildTestApp()` + Supertest, no mocking of Mongoose (real writes against the in-memory Mongo) — the one standing exception is `payments.test.ts`, which mocks the `razorpay` package itself (see below), since that's a real external payment API, not a database.
 
@@ -45,6 +49,7 @@ A real, listening instance of this API, started only by Playwright (`apps/web/pl
   `POST /__test__/reset` clears the outbox too (`clearResetOutbox()`), alongside wiping the database.
   This lets both Playwright and local developers complete password-reset flows without a real mail provider.
   Jest never touches the outbox because `tests/auth.test.ts` mocks the whole `mailer` module instead (same pattern as `payments.test.ts` and `razorpay` — see above).
+- **A test-only events router, since November 2026.** `server.ts` is now an outer Express app that mounts the router from [tests/e2e/test-routes.ts](../../tests/e2e/test-routes.ts) and then `createApp()`, so these routes sit in front of the real app and never exist in it. The one route is `POST /__test__/events/:uid/backdate` (body `{ daysAgo }`, a positive number, default 1): it sets `startTime` to `daysAgo` days before now, `endTime` two hours later, and `startDate`/`endDate` to the matching UTC day starts, returning `204`, `400` for a bad `daysAgo`, or `404` for an unknown uid. It exists because the API refuses to create a past event or join a started one; browser tests publish a future event, optionally join it, then backdate it. Registrations are not touched. Nothing else in the Jest suite uses it.
 - **Unlike the real entry points** (`src/server.ts`, `api/index.ts`), this script connects to Mongo itself via `mongoServer.getUri()` rather than `config/database.ts`'s `connectToMongo()` — mirroring exactly what `jest.setup.ts` does, for the same reason (an ephemeral, self-contained instance, not the real deployment's connection logic).
 
 If you change what `createApp()` needs at boot (a new required env var, a new startup side effect), check both `tests/helpers/env.setup.ts` (Jest) and `tests/e2e/env.setup.ts` (Playwright's server) — they're meant to carry the same placeholder values (the e2e one literally `import`s the Jest one and adds `PORT`/`ORIGIN_URL` on top), but nothing enforces that beyond this note.

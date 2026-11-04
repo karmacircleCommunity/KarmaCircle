@@ -54,7 +54,7 @@ See [AGENTS.md](./AGENTS.md) for the fuller workflow around this.
 
 ## When two implementations exist, ask
 
-`apps/web` has several overlapping or retired implementations (two profile-edit modals, two create-event forms, two auth-validation systems, and an unrouted legacy user-profile prototype alongside the live organization profile).
+`apps/web` has several overlapping or retired implementations (two profile-edit modals, two auth-validation systems, and an unrouted legacy user-profile prototype alongside the live organization profile).
 If a request is ambiguous about which form or flow it means, check the route table and feature specs, then ask before editing an alternate or unrouted implementation.
 `apps/api` doesn't currently have this problem — each module has exactly one code path per route.
 
@@ -73,7 +73,7 @@ These are drawn from how the *majority* of the existing code already does things
   Don't reach for `any` or inline object-shape props when the feature already has a type defined nearby.
 - **Folder structure:** the codebase is organized feature-first under `apps/web/src/features/<name>/` (each with its own `pages/`, `components/`, `hooks/`, `services/`, `utils/`, `constants/` as needed), not by page/component/hook type. `apps/web/src/app/` is the app shell (entry, root component, routes, store). `apps/web/src/components/`, `apps/web/src/services/`, `apps/web/src/statics/`, `apps/web/src/styles/`, `apps/web/src/utils/`, `apps/web/src/assets/` hold code shared across more than one feature. See [docs/specs/architecture.md](./docs/specs/architecture.md).
 - **API calls:** add new backend calls to `apps/web/src/services/KarmaCircleApi.ts` following its existing pattern (plain `axios`, catch and return `error.response` rather than throwing, `withCredentials: true` on writes).
-  The feature-level `services/Organizations.ts` and `services/Events.ts` helpers go through `apps/web/src/services/ApiConnector.ts` and are not called by routed pages today.
+  The feature-level `services/Organizations.ts` helper goes through `apps/web/src/services/ApiConnector.ts` and is not called by routed pages today (the events feature has no `services/` folder since November 2026).
   See `docs/specs/api-integration.md` before adding or changing a call.
 - **Reads inside components:** use `useSWR(endpoint, fetcher)` with `apps/web/src/utils/Fetcher.ts` where it fits the feature's existing pattern.
   Routed examples include `Events.tsx`, `OrganizationProfile.tsx`, and `Dashboard.tsx`.
@@ -99,6 +99,6 @@ Drawn from how the existing code already does things — match them in new/chang
 ## Keep the specs honest
 
 If you fix something a `known-issues.md` calls out ([docs/specs/known-issues.md](./docs/specs/known-issues.md) for `apps/web`, [apps/api/docs/specs/known-issues.md](./apps/api/docs/specs/known-issues.md) for `apps/api`), remove that entry and update the relevant feature/module spec in the same change.
-If you build out something a spec marks as an unused or unwired stub (e.g. wiring `getOrganizations()`/`getEvents()` into routed pages, or finishing the unrouted `UserProfile.tsx` prototype), update that spec to describe the new, real behavior instead of the old placeholder.
+If you build out something a spec marks as an unused or unwired stub (e.g. wiring `getOrganizations()` into routed pages, or finishing the unrouted `UserProfile.tsx` prototype), update that spec to describe the new, real behavior instead of the old placeholder.
 If a fix touches the API contract between the two apps, update the spec on **both** sides — see "the apps/web ↔ apps/api boundary" in `AGENTS.md`.
 If you notice something new and wrong while working nearby, add it to the relevant `known-issues.md` rather than leaving it undocumented.

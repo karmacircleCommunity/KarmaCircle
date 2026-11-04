@@ -54,8 +54,7 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 ## Events
 
-- `createEvent`'s `uid`-uniqueness check is a plain existence query before `.save()`, not relying on the schema's own unique index to surface the friendlier `409 EVENT_UID_ALREADY_EXISTS` — a genuine race (two requests with the same `uid` in flight at once) would instead surface as the generic Mongo-11000 `409` from the global error handler.
-- `platform`/`platformLink` are optional even when `mode === "Online"` — an online event can be created with no way for an attendee to actually join it; only `Offline` mode has a conditional-required-fields check (`city`/`state`/`country`/`address`/`mapIframe`).
+No open issues specific to this module are cataloged. The event `uid` create race was fixed in November 2026 (`createEvent` maps a Mongo `11000` on save to `409`), and `platform`/`platformLink` are required for online events by `createEventSchema`. Open work (edit, cancel, capacity, indexes, cover image storage) is tracked in [docs/events-to-do-list.md](../../../../docs/events-to-do-list.md).
 
 ## Products
 
