@@ -37,7 +37,7 @@
     "pino": "^8.17.2",
     "pino-http": "^9.0.0",
     "razorpay": "^2.8.3",
-    "resend": "^4.8.0",
+    "resend": "^6.37.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "zod": "^3.22.4"
