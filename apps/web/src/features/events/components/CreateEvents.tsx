@@ -17,7 +17,7 @@ import countries from "@statics/CountryList";
 import platforms from "@statics/OnlinePlatform";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { useEvent } from "@features/events/hooks/useEvent";
-import type { EventFormErrors, EventFormState } from "../types";
+import type { EventFormErrors, EventFormState } from "@features/events/types";
 
 const inputClasses =
   "min-h-12 w-full rounded-lg border border-brand-secondary/15 bg-white px-4 py-3 font-outfit text-body text-ink outline-none transition focus:border-brand/55 focus:ring-2 focus:ring-brand/15";

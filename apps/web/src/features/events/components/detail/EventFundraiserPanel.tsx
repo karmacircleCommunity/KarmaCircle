@@ -1,8 +1,8 @@
 import { FiHeart } from "react-icons/fi";
 import Button from "@components/buttons/Button";
 import { showSuccessToast } from "@utils/Toasts";
-import { formatMoney, fundedPercent } from "../../utils/formatEventFacts";
-import type { EventFundraiserPanelProps } from "../../types";
+import { formatMoney, fundedPercent } from "@utils/formatMoney";
+import type { EventFundraiserPanelProps } from "@features/events/types";
 
 /**
  * What the event is raising alongside the volunteering, when it raises

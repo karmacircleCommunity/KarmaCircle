@@ -1,7 +1,8 @@
 import { FiCheck, FiCheckCircle, FiMail, FiShare2, FiUserCheck, FiUserPlus } from "react-icons/fi";
-import { formatEventDate, formatMoney, isEventPast } from "../../utils/formatEventFacts";
+import { formatEventDate, isEventPast } from "@features/events/utils/formatEventFacts";
+import { formatMoney } from "@utils/formatMoney";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
-import type { EventJoinPanelProps } from "../../types";
+import type { EventJoinPanelProps } from "@features/events/types";
 
 /**
  * The decision panel: cost, remaining spots, and the join control.

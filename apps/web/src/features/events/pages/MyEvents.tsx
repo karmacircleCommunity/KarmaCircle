@@ -7,8 +7,8 @@ import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
 import { FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import type { ApiEventList } from "../types";
-import { formatEventDate } from "../utils/formatEventFacts";
+import type { ApiEventList } from "@features/events/types";
+import { formatEventDate } from "@features/events/utils/formatEventFacts";
 
 type EventTab = "Upcoming" | "Past";
 const PAGE_SIZE = 100;

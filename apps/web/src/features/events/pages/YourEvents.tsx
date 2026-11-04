@@ -6,8 +6,8 @@ import fetcher from "@utils/Fetcher";
 import { FiArrowUpRight, FiCalendar, FiMapPin, FiPlus, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import useSWR from "swr";
-import { formatEventDate } from "../utils/formatEventFacts";
-import type { ApiEventList } from "../types";
+import { formatEventDate } from "@features/events/utils/formatEventFacts";
+import type { ApiEventList } from "@features/events/types";
 
 /**
  * The organization's own events, routed at `/organization/events` — where

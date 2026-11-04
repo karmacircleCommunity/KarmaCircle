@@ -10,8 +10,8 @@ import {
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import { formatEventDate, formatDuration, isEventPast } from "../../utils/formatEventFacts";
-import type { EventHeroProps } from "../../types";
+import { formatEventDate, formatDuration, isEventPast } from "@features/events/utils/formatEventFacts";
+import type { EventHeroProps } from "@features/events/types";
 
 /** Same derivation as `EventCard`/`toDisplayEvent.ts#accentFor` - a stable,
  *  un-stored gradient for an event with no cover photo, so the same event

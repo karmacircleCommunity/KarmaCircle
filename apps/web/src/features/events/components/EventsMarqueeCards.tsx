@@ -1,6 +1,6 @@
 import { CiCalendar, CiLocationOn } from "react-icons/ci";
 import getFormattedDate from "@features/events/utils/getFormattedDate";
-import type { EventRecord } from "../types";
+import type { EventRecord } from "@features/events/types";
 
 interface EventsMarqueeCardsProps {
   event?: EventRecord;

@@ -1,4 +1,4 @@
-import type { ApiEvent, DetailedEventRecord } from "../types";
+import type { ApiEvent, DetailedEventRecord } from "@features/events/types";
 
 /**
  * Maps one live `GET /events?uid=` record onto what `DetailedEvent.tsx`

@@ -1,8 +1,8 @@
 import { FiCalendar, FiCheckCircle, FiClock, FiMapPin, FiShield, FiUserCheck, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import { formatEventBadge, formatEventTime, isEventPast } from "../utils/formatEventFacts";
-import type { EventCardProps } from "../types";
+import { formatEventBadge, formatEventTime, isEventPast } from "@features/events/utils/formatEventFacts";
+import type { EventCardProps } from "@features/events/types";
 
 /**
  * One event in the `/events` directory.

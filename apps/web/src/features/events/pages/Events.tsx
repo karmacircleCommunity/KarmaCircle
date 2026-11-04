@@ -8,9 +8,9 @@ import ComponentHelmet from "@components/ComponentHelmet";
 import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
-import EventCard from "../components/EventCard";
-import { toDisplayEvent } from "../utils/toDisplayEvent";
-import type { ApiEventList } from "../types";
+import EventCard from "@features/events/components/EventCard";
+import { toDisplayEvent } from "@features/events/utils/toDisplayEvent";
+import type { ApiEventList } from "@features/events/types";
 import { Link } from "react-router-dom";
 
 type TimeFilter = "Upcoming" | "Past";

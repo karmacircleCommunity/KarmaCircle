@@ -6,7 +6,7 @@ import { useState } from "react";
 import type { ChangeEvent } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { Button } from "@components";
-import type { CreateEventCredentials } from "../types";
+import type { CreateEventCredentials } from "@features/events/types";
 
 const authInputClasses = clsx(
   "block w-full appearance-none rounded-md border border-input-border bg-white bg-clip-padding px-3 py-1.5 font-outfit text-body leading-normal font-normal text-ink transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-body! focus:border-black/[51%] focus:shadow-none focus:outline-none",

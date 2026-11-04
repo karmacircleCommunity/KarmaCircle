@@ -1,6 +1,6 @@
 import { FiArrowUpRight, FiInfo, FiMapPin, FiVideo } from "react-icons/fi";
-import { mapsUrl } from "../../utils/formatEventFacts";
-import type { EventLocationPanelProps } from "../../types";
+import { mapsUrl } from "@features/events/utils/formatEventFacts";
+import type { EventLocationPanelProps } from "@features/events/types";
 
 /**
  * Where the event happens - a venue with directions for an offline event,

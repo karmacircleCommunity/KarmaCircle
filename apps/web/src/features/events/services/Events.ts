@@ -1,6 +1,6 @@
 import { apiConnector } from "@services/ApiConnector";
 import { eventEndpoints } from "@services/ApiEndpoints";
-import type { EventRecord } from "../types";
+import type { EventRecord } from "@features/events/types";
 
 /**
  * Correct and fully implemented, never called (see SPEC.md). Same

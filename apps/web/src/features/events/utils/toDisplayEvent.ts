@@ -1,5 +1,5 @@
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import type { ApiEvent, EventCardEvent } from "../types";
+import type { ApiEvent, EventCardEvent } from "@features/events/types";
 
 /**
  * Same derivation as `organizations/utils/toDisplayOrganization.ts`'s

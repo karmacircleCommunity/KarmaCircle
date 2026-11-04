@@ -1,7 +1,8 @@
 import { FiArrowRight, FiCheck, FiMail, FiUserPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { formatMoney, isEventPast } from "../../utils/formatEventFacts";
-import type { EventJoinPanelProps } from "../../types";
+import { isEventPast } from "@features/events/utils/formatEventFacts";
+import { formatMoney } from "@utils/formatMoney";
+import type { EventJoinPanelProps } from "@features/events/types";
 
 /**
  * The persistent join CTA below `lg`, fixed to the bottom of the viewport

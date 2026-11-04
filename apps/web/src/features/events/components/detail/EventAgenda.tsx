@@ -1,4 +1,4 @@
-import type { EventAgendaProps } from "../../types";
+import type { EventAgendaProps } from "@features/events/types";
 
 /**
  * The run sheet, as a rail-and-bead timeline.

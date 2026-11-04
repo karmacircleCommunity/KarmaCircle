@@ -1,6 +1,6 @@
 import { FiGlobe, FiTag, FiUserCheck, FiUsers } from "react-icons/fi";
-import { formatMoney } from "../../utils/formatEventFacts";
-import type { EventFactsProps } from "../../types";
+import { formatMoney } from "@utils/formatMoney";
+import type { EventFactsProps } from "@features/events/types";
 
 /**
  * The four-cell fact strip: cost, attendance, languages, and who can come.

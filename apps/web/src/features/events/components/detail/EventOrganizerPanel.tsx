@@ -1,6 +1,6 @@
 import { FiArrowRight, FiUsers } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import type { EventOrganizerPanelProps } from "../../types";
+import type { EventOrganizerPanelProps } from "@features/events/types";
 
 /**
  * The "Hosted by" sidebar card (September 2026) - a dedicated section

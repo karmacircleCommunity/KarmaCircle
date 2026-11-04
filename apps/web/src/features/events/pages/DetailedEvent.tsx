@@ -12,17 +12,17 @@ import { selectUser } from "@app/store/slices/userSlice";
 import fetcher from "@utils/Fetcher";
 import { JoinEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast, showWarningToast } from "@utils/Toasts";
-import EventAgenda from "../components/detail/EventAgenda";
-import EventFacts from "../components/detail/EventFacts";
-import EventFundraiserPanel from "../components/detail/EventFundraiserPanel";
-import EventHero from "../components/detail/EventHero";
-import EventJoinPanel from "../components/detail/EventJoinPanel";
-import EventLocationPanel from "../components/detail/EventLocationPanel";
-import EventMobileActionBar from "../components/detail/EventMobileActionBar";
-import EventOrganizerPanel from "../components/detail/EventOrganizerPanel";
-import EventSection from "../components/detail/EventSection";
-import { toDisplayEventDetail } from "../utils/toDisplayEventDetail";
-import type { ApiEvent, DetailedEventRecord } from "../types";
+import EventAgenda from "@features/events/components/detail/EventAgenda";
+import EventFacts from "@features/events/components/detail/EventFacts";
+import EventFundraiserPanel from "@features/events/components/detail/EventFundraiserPanel";
+import EventHero from "@features/events/components/detail/EventHero";
+import EventJoinPanel from "@features/events/components/detail/EventJoinPanel";
+import EventLocationPanel from "@features/events/components/detail/EventLocationPanel";
+import EventMobileActionBar from "@features/events/components/detail/EventMobileActionBar";
+import EventOrganizerPanel from "@features/events/components/detail/EventOrganizerPanel";
+import EventSection from "@features/events/components/detail/EventSection";
+import { toDisplayEventDetail } from "@features/events/utils/toDisplayEventDetail";
+import type { ApiEvent, DetailedEventRecord } from "@features/events/types";
 
 /**
  * The event detail page, routed at `/events/:eventId` - the page an

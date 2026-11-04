@@ -4,7 +4,7 @@ import { useMyOrganization } from "@features/organizations/hooks/useMyOrganizati
 import { eventEndpoints } from "@services/ApiEndpoints";
 import { CreateEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
-import type { EventFormErrors, EventFormState, UseEventResult } from "../types";
+import type { EventFormErrors, EventFormState, UseEventResult } from "@features/events/types";
 
 const EVENT_UID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
