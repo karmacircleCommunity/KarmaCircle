@@ -13,7 +13,7 @@ The page reads `GET /organizations/dashboard` and refreshes the aggregate data e
 - Contact details show contact email, contact phone, community-support availability, and public visibility with plain-language status (`Public page is live` or `Not public yet`). The local dashboard demo seeder supplies reserved sample contact details, enables community support, and keeps the demo organization public.
 - Metric cards show followers, organizations followed, hosted events, attendee registrations, verified support contributions, and 30-day profile views.
 - Analytics shows total and recorded views, average daily views, busiest day, and a daily line/area chart for 7, 30, or 90 days. Sample views use a separate series from recorded views.
-- Hosted events lists the eight most recently scheduled events, with attendee registration totals; `Manage events` links to `/events`.
+- Hosted events lists the eight most recently scheduled events, with attendee registration totals; `Manage events` and the empty-state action link to `/organization/events`, where organization owners can create events and manage their hosted list.
 - Community lists the latest five followers; the total is shown separately.
 - Support received separates verified contribution totals from sample totals, and labels sample supporter rows explicitly.
 - Demo records carry `isDemo` markers. They are excluded from verified raised totals and displayed as sample activity; sample contributions are not payments.

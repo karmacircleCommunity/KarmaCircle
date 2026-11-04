@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import Cookies from "js-cookie";
 import { useSelector } from "react-redux";
-import { selectUser } from "@app/store/slices/userSlice";
+import { selectIsLoggedIn, selectUser } from "@app/store/slices/userSlice";
 import { FaPlus } from "react-icons/fa6";
 import useSWR from "swr";
 import { DirectoryToolbar, Footer, Navbar } from "@components";
@@ -9,7 +8,7 @@ import ComponentHelmet from "@components/ComponentHelmet";
 import { useMagnetic, useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
-import CreateEvent from "../components/CreateEvent";
+import CreateEvents from "../components/CreateEvents";
 import EventCard from "../components/EventCard";
 import { toDisplayEvent } from "../utils/toDisplayEvent";
 import type { ApiEventList } from "../types";
@@ -71,16 +70,12 @@ const TYPE_FILTERS: TypeFilter[] = [
  * (`eventEndpoints.directory()`'s default `limit=100`) rather than being
  * sent to the backend.
  *
- * The "Create An Event" button still opens `CreateEvent`, which per
- * `docs/specs/known-issues.md` patches the user's profile instead of
- * creating an event. That bug is untouched here — it is the modal's, not
- * this page's.
+ * Organization accounts can open the shared, working creation form.
  */
 const Events = () => {
   const user = useSelector(selectUser);
-  const canCreateEvent = Boolean(
-    Cookies.get("Token") && user.isLoggedIn && user.userType === "organization",
-  );
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const canCreateEvent = isLoggedIn && user.userType === "organization";
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [query, setQuery] = useState("");
   const [when, setWhen] = useState<TimeFilter>("Upcoming");
@@ -257,7 +252,7 @@ const Events = () => {
       </div>
 
       {canCreateEvent && showCreateModal && (
-        <CreateEvent setShowCreateModal={setShowCreateModal} />
+        <CreateEvents setshowCreateModal={setShowCreateModal} />
       )}
 
       <Footer />

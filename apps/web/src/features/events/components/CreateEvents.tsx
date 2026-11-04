@@ -30,13 +30,7 @@ interface CreateEventsProps {
   setshowCreateModal: (open: boolean) => void;
 }
 
-/**
- * The correct, MUI-based "create event" implementation — not rendered
- * from any page today (see SPEC.md). Pairs with `useEvent.ts`; the
- * closure-identity mechanic documented there is why `handleSubmit`
- * calls `validateEvent()`/`submitCallback()` synchronously in that
- * exact order.
- */
+/** The shared organization event form used by the public directory and host workspace. */
 const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
   const user = useSelector((state: { user?: { name?: string } }) => state.user);
   const [errors, seterrors] = useState<Record<string, string>>({});
@@ -44,9 +38,9 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
   const [event, setevent] = useState<EventFormState>({
     name: "",
     startDate: dayjs(),
-    endDate: dayjs(),
-    startTime: dayjs("2022-04-17T15:30"),
-    endTime: dayjs("2022-04-17T15:30"),
+    endDate: dayjs().add(1, "hour"),
+    startTime: dayjs(),
+    endTime: dayjs().add(1, "hour"),
     mode: "Offline",
     uid: "",
     description: "",
@@ -82,8 +76,9 @@ const CreateEvents = ({ setshowCreateModal }: CreateEventsProps) => {
   };
 
   const handleSubmit = () => {
-    seterrors(validateEvent());
-    submitCallback(event, setshowCreateModal);
+    const validationErrors = validateEvent();
+    seterrors(validationErrors);
+    void submitCallback(event, setshowCreateModal, validationErrors);
   };
 
   return (

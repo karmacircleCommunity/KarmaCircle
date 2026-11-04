@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Footer, Navbar } from "@components";
 import OrganizationSetupGate from "@features/organizations/components/OrganizationSetupGate";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
+import CreateEvents from "@features/events/components/CreateEvents";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
-import { FiArrowUpRight, FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
+import { FiArrowUpRight, FiCalendar, FiMapPin, FiPlus, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import useSWR from "swr";
 import { formatEventDate } from "../utils/formatEventFacts";
@@ -19,8 +21,7 @@ import type { ApiEventList } from "../types";
  * still missing and a link that resumes setup, because an account that
  * nobody can find has nothing to host events for yet.
  *
- * **This is a live list, not the fixture** the public `/events` directory
- * still renders. It fetches `GET /events?host={handle}` — the filter runs
+ * This is a live host list. It fetches `GET /events?host={handle}` — the filter runs
  * server-side, so nothing is hidden on page two. Live records carry no
  * cover photo, cause or capacity, which is why these are plain rows rather
  * than `EventCard`s: the card needs three fields a real event does not
@@ -28,6 +29,7 @@ import type { ApiEventList } from "../types";
  */
 const YourEvents = () => {
   const { organization } = useMyOrganization();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data, isLoading } = useSWR<ApiEventList>(
     organization?.isLive ? eventEndpoints.byHost(organization.handle) : null,
@@ -44,13 +46,25 @@ const YourEvents = () => {
       <Navbar />
 
       <div className="mx-auto max-w-4xl px-9 pt-10 pb-20 sm:px-10 lg:px-12 lg:pt-14">
-        <h1 className="font-outfit text-[2rem] leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">
-          Your events
-        </h1>
-        <p className="mt-3 max-w-xl font-poppins text-body leading-6 text-ink/70 sm:text-body-lg sm:leading-7">
-          Everything {organization?.name ?? "your organization"} is hosting, as
-          it appears to everyone else.
-        </p>
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="font-outfit text-[2rem] leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">
+              Your events
+            </h1>
+            <p className="mt-3 max-w-xl font-poppins text-body leading-6 text-ink/70 sm:text-body-lg sm:leading-7">
+              Everything {organization?.name ?? "your organization"} is hosting, as
+              it appears to everyone else.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 font-outfit text-body font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <FiPlus aria-hidden="true" />
+            Create event
+          </button>
+        </header>
 
         {isLoading ? (
           <p className="mt-10 font-poppins text-body text-ink/55">
@@ -65,13 +79,6 @@ const YourEvents = () => {
               Your first event shows up here the moment you create one, and on
               your public profile at the same time.
             </p>
-            <Link
-              to="/events"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 font-poppins text-[15px] font-semibold text-white no-underline transition-colors hover:bg-brand-hover"
-            >
-              Create an event
-              <FiArrowUpRight aria-hidden />
-            </Link>
           </div>
         ) : (
           <ul className="mt-10 flex list-none flex-col gap-3 p-0">
@@ -114,6 +121,10 @@ const YourEvents = () => {
           </ul>
         )}
       </div>
+
+      {showCreateModal && (
+        <CreateEvents setshowCreateModal={setShowCreateModal} />
+      )}
 
       <Footer />
     </OrganizationSetupGate>

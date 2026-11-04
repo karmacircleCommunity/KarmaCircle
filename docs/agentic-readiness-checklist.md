@@ -24,9 +24,9 @@ Check an item only when the repository or its GitHub settings provide evidence t
 The UI quality checklist in section 4 is an on-demand guide for UI work, not an agentic-readiness requirement, so it is excluded from this score.
 Section 9 is a roll-up of completed first-pass work, so it is excluded to avoid counting the same work twice.
 Score completed items in sections 1-3 and 5-8 as 1, partial items as 0.5, and open or external items as 0, divided by all scored items.
-Update the bar when checklist statuses change.
+After changing checklist statuses, run `pnpm readiness:score` to regenerate the score and item counts from those statuses.
 
-`[█████████░] 87%` (52 done, 6 partial, 5 open or external; 63 scored items).
+`[█████████░] 93%` (57 done, 3 partial, 3 open or external; 63 scored items).
 
 ## Current readiness summary
 
@@ -81,7 +81,7 @@ The `main` ruleset requires pull requests, one approval, resolved review threads
 - [x] Treat graph output as navigation clues only; verify important claims against current code and specs. Audit on 2026-11-02 found stale inferred hyperedges and AST labels, while node/link counts agree with `graph.json`.
 - [x] Assign an owner and quarterly review cadence for feature specs, known issues, setup guides, and linked flow diagrams.
 - [x] Remove or mark obsolete implementation notes when code changes; focused 2026-11-02 audit corrected the address-provider, removed-profile, and graph-guidance drift found in older notes.
-- [ ] Keep stated file counts, test counts, route counts, and other changing numbers out of prose unless the source of truth generates them.
+- [x] Keep stated file counts, test counts, route counts, and other changing numbers out of prose unless the source of truth generates them; readiness counts now generate from checklist statuses, test totals stay in CI output, and performance measurements live in the dated audit.
 
 ## 4. UI quality checklist
 
@@ -146,14 +146,14 @@ It is a reusable quality guide, not a requirement for general agentic-coding rea
 - [x] Enable private vulnerability reporting; GitHub reports it enabled.
 - [x] Require approval for all external contributors' workflow runs; GitHub reports `all_external_contributors`.
 - [x] Set the repository default workflow token permission to read-only; GitHub reports `read`.
-- [~] Review repository and organization secrets for least privilege and rotate exposed credentials; current `main` workflow references were reviewed, but organization secrets need an organization-admin review, the historically exposed `VERCEL_TOKEN` needs rotation and an audit-log check, and the Geoapify owner must confirm restrictions or remove the historical browser key.
+- [~] Review repository and organization secrets for least privilege and rotate exposed credentials; organization secrets were reviewed, the exposed `VERCEL_TOKEN` was replaced in both repositories and deployment history checked, the Atlas password for the historical URI was rotated, and a new Geoapify key is origin-restricted, live-checked, and deployed to production; provider restrictions on legacy Vercel Geoapify values remain unverified. Tamal accepts the historical key's residual exposure and has decided not to pursue recovery or revocation.
 
 ## 7. Reproducible development environment
 
 - [x] Pin pnpm in the root package manifest and document supported Node.js versions.
 - [x] Document local frontend, backend, and MongoDB setup.
 - [x] Provide root scripts for build and test execution.
-- [x] Verify every root script maps to a real workspace script and behaves consistently on a clean checkout; all five root scripts were exercised on 2026-11-02.
+- [x] Verify every root script maps to a real workspace script and behaves consistently on a clean checkout; all root scripts were exercised on 2026-11-02.
 - [x] Document environment variables without copying real secrets into tracked files; examples use local-only placeholders and no longer include a shared Geoapify key.
 - [x] Keep setup steps and package-manager instructions consistent across the contributor and app-specific guides.
 - [x] Provide a clean-checkout smoke procedure using frozen install and isolated tests that do not touch production or a developer's local database.
@@ -163,7 +163,7 @@ It is a reusable quality guide, not a requirement for general agentic-coding rea
 - Root `dev`, `build`, `lint`, `type-check`, and `test` tasks map to scripts present in both workspace apps.
 - Local setup examples target only `localhost` MongoDB; no preloaded records or real credentials are needed for startup. Docker is documented as an optional way to run MongoDB.
 - On 2026-11-02, `pnpm install --frozen-lockfile` completed with Node.js 22.23.4 and the pinned pnpm 11.22.0.
-- The clean-checkout root `build`, `lint`, `type-check`, and `test` scripts passed; lint reported 8 existing conditional-assertion warnings. API tests: 96 passed. Browser tests: 159 passed across Chromium, Firefox, and WebKit.
+- The clean-checkout root `build`, `lint`, `type-check`, and `test` scripts passed; lint reported existing conditional-assertion warnings. API and browser test suites passed across Chromium, Firefox, and WebKit; consult the recorded CI run for exact counts.
 - Clean-checkout root `dev` started both apps using temporary ports 3100 and 5150 and a separate `karmacircle_script_check` database; `/health` returned `{"status":"ok","mongo":"connected"}`.
 - The default clean-checkout `dev` attempt could not bind port 3000 because the existing local frontend already owned it; that server was left untouched.
 
@@ -175,7 +175,7 @@ It is a reusable quality guide, not a requirement for general agentic-coding rea
 - [x] Document WOCS labels and apply them before eligible pull requests merge.
 - [x] Require a pull request summary of changed behavior, checks run, and known limitations.
 - [x] Request screenshots or other visual evidence when they materially help review a UI change.
-- [ ] Keep deployment workflows separate from validation; only deploy after required checks and approvals.
+- [x] Keep deployment workflows separate from validation; production, dev, and same-repository preview deployments wait for the reusable CI workflow. Production and dev jobs are limited to their matching branches, and production merges require validation and review under the `main` ruleset.
 
 ## 9. Completed first-pass summary (not scored)
 

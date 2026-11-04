@@ -1,21 +1,27 @@
 import { useSWRConfig } from "swr";
+import type { Dayjs } from "dayjs";
+import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import { CreateEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { EventFormErrors, EventFormState, UseEventResult } from "../types";
 
-/**
- * Pairs with `CreateEvents.tsx` only. See SPEC.md for the same-render
- * closure-identity mechanic `validateEvent`/`submitCallback` depend on —
- * both are recreated (with a fresh `errors` object) on every call to
- * this hook, so they must be invoked from the same render's closures.
- */
+/** Validates and submits the shared event form, then refreshes public and host lists. */
+const combineDateAndTime = (date: Dayjs, time: Dayjs) =>
+  date
+    .hour(time.hour())
+    .minute(time.minute())
+    .second(0)
+    .millisecond(0);
+
 export function useEvent(event: EventFormState): UseEventResult {
   const { uid, ...data } = event;
-  const errors: EventFormErrors = {};
   const { mutate } = useSWRConfig();
+  const { organization } = useMyOrganization();
 
   const validateEvent = (): EventFormErrors => {
+    const errors: EventFormErrors = {};
+
     if (
       !data.name ||
       !uid ||
@@ -36,17 +42,16 @@ export function useEvent(event: EventFormState): UseEventResult {
       if (!data.endDate) errors.endDate = "End date is required";
       if (!data.startTime) errors.startTime = "Start time is required";
       if (!data.endTime) errors.endTime = "End time is required";
+    }
 
-      if (data?.mode === "Offline") {
-        if (!data.city) errors.city = "City is required";
-        if (!data.state) errors.state = "State is required";
-        if (!data.country) errors.country = "Country is required";
-        if (!data.address) errors.address = "Address is required";
-        if (!data.mapIframe) errors.mapIframe = "Map iframe is required";
-      } else {
-        if (!data.platformLink)
-          errors.platformLink = "Please provide a platform link";
-      }
+    if (data.mode === "Offline") {
+      if (!data.city) errors.city = "City is required";
+      if (!data.state) errors.state = "State is required";
+      if (!data.country) errors.country = "Country is required";
+      if (!data.address) errors.address = "Address is required";
+      if (!data.mapIframe) errors.mapIframe = "Map iframe is required";
+    } else if (!data.platformLink) {
+      errors.platformLink = "Please provide a platform link";
     }
 
     if (data.name.length < 10 || data.name.length > 80)
@@ -56,11 +61,18 @@ export function useEvent(event: EventFormState): UseEventResult {
       errors.description =
         "Description should be between 20 and 200 characters";
 
-    if (data.endDate && data.startDate && data.endDate < data.startDate)
-      errors.endDate = "End date should be greater than start date";
+    const startAt =
+      data.startDate && data.startTime
+        ? combineDateAndTime(data.startDate, data.startTime)
+        : null;
+    const endAt =
+      data.endDate && data.endTime
+        ? combineDateAndTime(data.endDate, data.endTime)
+        : null;
 
-    if (data.endTime && data.startTime && data.endTime < data.startTime)
-      errors.endTime = "End time should be greater than start time";
+    if (startAt && endAt && endAt.isBefore(startAt)) {
+      errors.endTime = "End date and time must follow the start date and time";
+    }
 
     return errors;
   };
@@ -68,14 +80,24 @@ export function useEvent(event: EventFormState): UseEventResult {
   const submitCallback = async (
     event: EventFormState,
     setshowCreateModal: (open: boolean) => void,
+    errors: EventFormErrors,
   ): Promise<void> => {
     if (Object.keys(errors).length === 0) {
-      // KarmaCircleApi.ts's CreateEvent() returns the caught error object as-is on
-      // failure (not error.response, unlike most KarmaCircleApi.ts functions —
-      // see SPEC.md), so its inferred return type collapses to include
-      // `unknown`. Asserted here to the shape this hook actually reads,
-      // including the pre-existing doubled `.response.response` access below.
-      const response = (await CreateEvent(event)) as {
+      // CreateEvent() returns the caught Axios error as-is on failure.
+      const requestEvent = {
+        ...event,
+        startDate: event.startDate?.startOf("day").toDate(),
+        endDate: event.endDate?.startOf("day").toDate(),
+        startTime:
+          event.startDate && event.startTime
+            ? combineDateAndTime(event.startDate, event.startTime).toDate()
+            : event.startTime,
+        endTime:
+          event.endDate && event.endTime
+            ? combineDateAndTime(event.endDate, event.endTime).toDate()
+            : event.endTime,
+      };
+      const response = (await CreateEvent(requestEvent)) as {
         status?: number;
         data?: { message?: string };
         response?: { data?: { message?: string } };
@@ -85,9 +107,14 @@ export function useEvent(event: EventFormState): UseEventResult {
         showSuccessToast(response.data?.message);
         setshowCreateModal(false);
 
-        mutate(eventEndpoints.all);
+        void mutate(eventEndpoints.directory());
+        if (organization?.handle) {
+          void mutate(eventEndpoints.byHost(organization.handle));
+        }
       } else {
-        showErrorToast(response.response?.data?.message);
+        showErrorToast(
+          response.response?.data?.message ?? "Could not create event. Try again.",
+        );
       }
     } else {
       showErrorToast("Please fill all the required fields");

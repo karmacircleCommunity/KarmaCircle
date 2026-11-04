@@ -48,6 +48,7 @@ export interface UseEventResult {
   submitCallback: (
     event: EventFormState,
     setshowCreateModal: (open: boolean) => void,
+    errors: EventFormErrors,
   ) => Promise<void>;
 }
 

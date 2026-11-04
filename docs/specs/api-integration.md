@@ -63,8 +63,8 @@ Current routed SWR call sites (including `useSWRInfinite`):
 | `MyEvents.tsx` | `eventEndpoints.mine()` via `useSWRInfinite` | Loads the signed-in individual's paginated attendee registrations |
 | `ProfileSetup.tsx` | `userEndpoints.profile` | Loads the signed-in individual's saved profile answers |
 
-`CreateEvents.tsx` is not routed, so its `useEvent.ts` submit callback is not part of the current page flow.
-That callback invalidates `eventEndpoints.all`, while the routed directory uses `eventEndpoints.directory()`; verify the exact cache key if this form is ever wired in.
+`CreateEvents.tsx` is rendered from both `/events` and `/organization/events` for organization accounts.
+After `POST /events/create` succeeds, `useEvent.ts` revalidates the public directory key and the current organization's hosted-events key.
 
 The organization dashboard includes sample markers for local demo records.
 Sample contribution amounts are displayed separately and never included in verified raised totals.

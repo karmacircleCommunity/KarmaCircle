@@ -77,7 +77,7 @@ The sibling-`.d.ts`-bridge pattern this doc used to describe (`Constants.d.ts`, 
 | [dashboard.md](./dashboard.md) | The logged-in organization/org dashboard |
 | [organizations.md](./organizations.md) | The Organizations directory, `OrganizationCard`, and the public organization profile at `/organization/:userName` |
 | [organization-editing-plan.md](./organization-editing-plan.md) | Shipped owner-edit flow, remaining profile gaps, market patterns, and phased roadmap |
-| [events.md](./events.md) | Events listing, event creation modal(s), event cards/slider |
+| [events.md](./events.md) | Events listing, shared event creation flow, event cards |
 | [landing-home.md](./landing-home.md) | Home page, marketing Landing hero |
 | [layout-navigation.md](./layout-navigation.md) | Navbar, Footer, Header, Modal, Loading, ScrollProgress, BackToTop, page `<Helmet>` usage |
 | [user-flows.md](./user-flows.md) | Mermaid flowcharts of the real page-to-page navigation, redirects, and gated states - the visual complement to the specs below, not a replacement for them |

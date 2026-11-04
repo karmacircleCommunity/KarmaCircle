@@ -68,11 +68,34 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
   // meant to read as one consistent rule, not a per-page opt-in.
   const isHome = location.pathname === "/";
   const isSticky = isHome || !isLoggedIn;
+  const isPrimarySectionActive = (path: string) => {
+    if (path === "/events") {
+      return (
+        location.pathname === "/events" ||
+        location.pathname.startsWith("/events/") ||
+        location.pathname === "/organization/events"
+      );
+    }
+
+    if (path === "/organizations") {
+      return (
+        location.pathname === "/organizations" ||
+        /^\/organization\/[^/]+$/.test(location.pathname)
+      );
+    }
+
+    return location.pathname === path;
+  };
 
   // A draft organization needs one always-visible way back into setup —
   // it opted out of finishing it, and nothing else on screen tells it that
   // it is still invisible. Fetches nothing for anyone else.
   const { organization, isDraft } = useMyOrganization();
+  const greetingName = (
+    user?.userType === "organization" ? organization?.name : user?.name
+  )
+    ?.trim()
+    .split(/\s+/)[0];
 
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
 
@@ -194,28 +217,27 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
             which has no such hidden state, carries its own constant
             `ml-8` instead — same 32px the shared gap used to give it. */}
         <div className="hidden items-center min-[900px]:flex">
-          {/* No active-route underline: that's an app-internal-tab
-              pattern, not a marketing-nav one — a visitor already knows
-              which page they're on from the page itself. Hover gets a
-              colour shift plus a rule that wipes in from the left and, on
-              leaving, continues out to the right (`origin-left` on hover,
-              `origin-right` at rest) rather than retracting the way it
-              came — the directional version reads as a swipe instead of a
-              rubber band.
+          {/* Active sections stay underlined so visitors can tell which
+              part of the site they are browsing. Hover keeps its
+              directional reveal for every link.
               `gap-10`, not the original `gap-7` (October 2026, direct
               feedback the link row read as cramped) — a deliberate, scroll-
               independent spacing change; see the Sign Up button below for
               the separate scroll-driven slide/reveal. */}
           <div className="z-1 flex items-center gap-10">
-            {Links.map((item, index) => (
-              <Link
-                key={index}
-                className="relative font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:text-brand-secondary hover:after:origin-left hover:after:scale-x-100 motion-reduce:after:transition-none"
-                to={item.link}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {Links.map((item) => {
+              const isActive = isPrimarySectionActive(item.link);
+              return (
+                <Link
+                  key={item.link}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`relative font-outfit text-body-lg leading-none font-normal no-underline transition-colors duration-200 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:text-brand-secondary hover:after:origin-left hover:after:scale-x-100 motion-reduce:after:transition-none ${isActive ? "text-brand-secondary after:origin-left after:scale-x-100" : "text-ink/65"}`}
+                  to={item.link}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
           {isLoggedIn ? (
             // `relative` here, not on some ancestor further up, is
@@ -246,7 +268,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
               <div className="nav_dropdown absolute top-full right-0 z-10 mt-2 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
                 <div className="flex flex-col justify-center">
                   <span className="mb-1.25 p-2.5 font-outfit text-base">
-                    Hello @{user?.userName}
+                    Hello{greetingName ? `, ${greetingName}` : ""}
                   </span>
                   <div
                     role="separator"
@@ -424,15 +446,19 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                 }}
               />
 
-              {Links.map((item, index) => (
-                <Link
-                  key={index}
-                  className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink no-underline transition-colors duration-200 hover:text-brand motion-safe:active:scale-97"
-                  to={item.link}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {Links.map((item) => {
+                const isActive = isPrimarySectionActive(item.link);
+                return (
+                  <Link
+                    key={item.link}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`relative m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none no-underline transition-colors duration-200 motion-safe:active:scale-97 after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 ${isActive ? "font-medium text-brand-secondary after:origin-left after:scale-x-100" : "font-normal text-ink hover:text-brand hover:after:origin-left hover:after:scale-x-100"}`}
+                    to={item.link}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
 
               {isLoggedIn ? (
                 <>

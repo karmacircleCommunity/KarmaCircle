@@ -45,7 +45,7 @@ There is no third shell. If a new flow needs one, it needs `SplitPanelLayout` wi
 
 ## Ambiguity warning
 
-`apps/web` has several places where two components do overlapping things: two profile-edit modals, two "create event" forms (`CreateEvent.tsx` and `CreateEvents.tsx`), and two auth-validation systems.
+`apps/web` has several places where two components do overlapping things: two profile-edit modals, a live `CreateEvents.tsx` form plus its retired profile-editor copy `CreateEvent.tsx`, and two auth-validation systems.
 `UserProfile.tsx` is an unrouted legacy profile prototype; the only routed public profile is the organization profile.
 All are catalogued in [docs/specs/known-issues.md](../known-issues.md).
 

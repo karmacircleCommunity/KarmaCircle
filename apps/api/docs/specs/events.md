@@ -38,7 +38,8 @@ All of the September 2026 fields above follow the same nested-sub-schema convent
 In development and test, delivery is suppressed and `emailSent` is `false`.
 A production email failure does not undo registration; response also includes `emailSent: false`.
 There is no leave, invite, approval, capacity, or organizer-notification flow.
-The currently mounted frontend creation modal also does not call this module's `POST /events/create`; see the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference) and [API contract map](./api-contract.md).
+The shared frontend form calls this `POST /events/create` from both `/events` and `/organization/events`; the API independently enforces organization account access.
+See the frontend's [event lifecycle reference](../../../../docs/specs/events.md#event-lifecycle-agent-reference) and [API contract map](./api-contract.md).
 
 ## `event.service.ts`
 
@@ -74,7 +75,7 @@ The registration schema indexes `userId` for this attendee lookup, alongside its
 
 ## What's known-broken here
 
-See [known-issues.md](./known-issues.md#events). The main cross-repo item: the frontend has **two** competing "create event" UI components per its own spec, and only one of them is known (by the frontend's own docs) to send a body shape compatible with this route — check which component a given frontend change actually touches before assuming `POST /events/create`'s contract is being exercised correctly. Within this module alone, the `Online`-mode fields (`platform`/`platformLink`) not being required is the one asymmetry worth a second look if online events start showing up without a join link.
+See [known-issues.md](./known-issues.md#events). The frontend's broken profile-editor copy remains retired; both live creation entry points use the shared form and this route. Within this module, `Online`-mode fields (`platform`/`platformLink`) remain optional even though an online event needs a join link to be useful.
 
 ## Refreshing local demo events
 

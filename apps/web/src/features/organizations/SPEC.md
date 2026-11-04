@@ -443,8 +443,9 @@ it too.
 - No pagination on the directory beyond a `limit: 60` fetch.
 - The public `/events` directory and `/events/:eventId` detail page now use
   live API records, and the hosted-events section uses the same live event
-  route through its own query. Event creation remains a separate known issue;
-  see [events/SPEC.md](../events/SPEC.md).
+  route through its own query. Event creation is available from the shared
+  form on the public directory and hosted-events workspace; see
+  [events/SPEC.md](../events/SPEC.md).
 - No file-upload endpoint exists — `logo`/`cover`/`gallery`/leadership
   `photo` are all pasted URLs, an explicit, deliberately deferred choice
   (see [known-issues.md](../../../../../docs/specs/known-issues.md)), not an

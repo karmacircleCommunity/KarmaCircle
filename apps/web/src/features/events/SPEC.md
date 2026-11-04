@@ -1,24 +1,29 @@
 # Events — Feature Spec
 
 Colocated, implementation-level companion to [docs/specs/events.md](../../../../../docs/specs/events.md).
-This is the most duplicated-and-broken feature in the codebase — two separate "create event" implementations, one of which cannot ever be submitted (see below, a new finding beyond what the centralized spec documents) — so read this one carefully before touching anything under `components/`.
+The event feature previously had two competing creation forms and neither organizer entry point worked end to end.
+The organizer flow was repaired in November 2026: the shared `CreateEvents` form now serves both the public directory and hosted-event workspace, while the broken copy-pasted form remains retired legacy code.
 
 ## Event creation access
 
-`Events.tsx` renders its creation button and modal only with a `Token` cookie, Redux `isLoggedIn`, and `userType === "organization"`.
-Personal accounts and signed-out visitors can browse events but cannot open the creation modal.
+`Events.tsx` renders its creation button and modal for Redux `isLoggedIn` organization accounts.
+It does not inspect the HTTP-only `Token` cookie from browser JavaScript.
+`YourEvents.tsx` is an organization-only workspace behind `OrganizationSetupGate` and includes the same creation form.
+Personal accounts and signed-out visitors can browse events but cannot open either creation entry point.
 The API also checks the stored account type and returns `403` for individual hosts.
-The existing duplicate creation forms and their documented limitations remain unchanged.
 `e2e/events/events-responsive.spec.ts` covers live directory cards, Upcoming/Past filtering, city search, and mobile/desktop overflow; event-detail and event-creation flows still lack browser coverage.
 
 ## What this feature is responsible for
 
 The public `/events` directory and `/events/:eventId` detail page, attendee registration and My Events, hosted-event listings, event display, and event creation.
-The directory, detail, registration status, My Events, and hosted-event pages read real API data; the mounted create-event modal remains non-functional, and capacity plus organizer attendee data remain unsupported.
+The directory, detail, registration status, My Events, and hosted-event pages read real API data.
+Both organization event-creation entry points submit through `POST /events/create`.
+Capacity and organizer attendee data remain unsupported.
 
 ## Why it's shaped this way
 
-Two unrelated event-creation UIs were built at different times and never reconciled: `CreateEvent.tsx` was evidently built by copy-pasting `ProfileUpdate.tsx`/`ProfileCompletion.tsx` (same class-naming convention, same dropzone markup, same `credentials`/`address` state shape) as a starting point, and its API call was never swapped from the profile-update endpoint to an event-creation endpoint — so structurally it's a profile-editing form wearing event-creation labels. `CreateEvents.tsx` (plural) is a separate, purpose-built MUI form that does call the real event-creation endpoint correctly. Only one of the two is reachable from the live `/events` page.
+`CreateEvent.tsx` was copied from profile editing and still calls `PATCH /user/update`; it is now retired and not mounted.
+The purpose-built `CreateEvents.tsx` form is the sole live event-creation flow and is shared by `/events` and `/organization/events`.
 
 ## File manifest
 
@@ -31,9 +36,9 @@ Two unrelated event-creation UIs were built at different times and never reconci
 | `components/detail/` | The eight pieces that page composes — `EventHero`, `EventFacts`, `EventAgenda`, `EventLocationPanel`, `EventJoinPanel`, `EventMobileActionBar`, `EventFundraiserPanel`, `EventSection` | ✅ rendered by `DetailedEvent.tsx` only |
 | `utils/toDisplayEventDetail.ts` | Maps a live `ApiEvent` onto the `{ event, detail }` shape `DetailedEvent.tsx` renders | ✅ used by `DetailedEvent.tsx` |
 | `utils/formatEventFacts.ts` | `formatEventDate`/`formatEventBadge`/`formatEventTime` plus money, funded-percent, duration and maps-URL helpers — one home for "format an event" (the first three moved here from the now-deleted `constants/eventDirectory.ts` fixture) | ✅ used across `EventCard` and the detail components |
-| `components/CreateEvent.tsx` | "Create event" modal opened from `Events.tsx` | ✅ reachable, but **non-functional** (see below) |
-| `components/CreateEvents.tsx` | The other, MUI-based, actually-correct "create event" modal | ❌ not rendered from any page |
-| `hooks/useEvent.ts` | Validator + submit handler paired with `CreateEvents` | ✅ used by `CreateEvents` only |
+| `components/CreateEvent.tsx` | Retired profile-editor copy with event labels | ❌ not mounted; do not reconnect |
+| `components/CreateEvents.tsx` | Shared MUI event-creation form | ✅ rendered by `Events.tsx` and `YourEvents.tsx` for organization accounts |
+| `hooks/useEvent.ts` | Validator, date/time payload conversion, submit and list refresh | ✅ used by `CreateEvents` |
 | `components/EventCard.tsx` | Card rendered in the `/events` grid | ✅ rendered, typed against `EventCardEvent` |
 | `utils/toDisplayEvent.ts` | Maps a live `ApiEvent` onto `EventCardEvent` | ✅ used by `Events.tsx` |
 | `components/EventsMarqueeCards.tsx` | Data-driven event card (correctly reads an `event` prop) | ❌ not rendered anywhere |
@@ -60,7 +65,8 @@ Both directories still render the same `DirectoryToolbar` component, so its sear
 
 Gone with that rewrite: the inert "Filters" button (it never had a handler), the `<EventSlider />` carousel and its `FeaturedEventCard`/`FeaturedEventImage` slides (all hardcoded, nothing else imported them - files deleted), the `<hr>`, the unused `swiper/css` imports, and the `Loading` fallback that could never render.
 
-The "Create An Event" button survives, restyled to match `/organizations`' primary button — including that button's September 2026 `useMagnetic()` upgrade, so neither directory's primary action was left visibly behind the other; its plus icon rotates 90° on `group-hover` instead of the arrow-translate the other button uses, since a leading icon doesn't read the same way a trailing one does. It still opens `CreateEvent.tsx`, which patches the user's profile instead of creating an event (below) - so it cannot yet put a card in this grid.
+The "Create an event" action is available only to authenticated organization accounts and opens the shared `CreateEvents.tsx` form.
+After successful creation, the public directory cache is revalidated so the new event can appear in the grid.
 
 ## `DetailedEvent.tsx` — the page a card opens
 
@@ -91,11 +97,11 @@ See [known-issues.md](../../../../../docs/specs/known-issues.md#events--attendee
 **Below `lg`, the join CTA also lives in a floating "liquid glass" bottom capsule (September 2026, `EventMobileActionBar`)**, so it's reachable regardless of scroll position, not just at the top of the page. `backdrop-blur-2xl backdrop-saturate-150` over a translucent white, inset the same `px-9` margin as `EventHero`/`EventJoinPanel` above it rather than flush with the screen edges. It shares the same `joined` state and `onToggleJoin` callback as `EventJoinPanel` — one state, mirrored in two places, not two controls that could disagree — and mirrors only the primary action (cost, spots-left, Join/Ask), not `EventJoinPanel`'s Share/Ask pair or its "Starts …" line. `lg:hidden` — the sidebar's own `lg:sticky` already keeps the join control in view at that width, so there's nothing for this bar to solve there.
 Two independent checks gate its `hidden` prop rather than showing it unconditionally, deliberately using two different mechanisms. An `IntersectionObserver` on `EventJoinPanel` itself covers "is the real button on screen right now" — a symmetric, bidirectional question `IntersectionObserver` answers correctly regardless of scroll jump size (the first cut of this showed both at once right after the hero, an exact duplicate control caught in review before it shipped). "Has the footer been reached" is **not** symmetric — it should stay true for every scroll position past the sentinel, not just the frame it crosses — and `IntersectionObserver` only calls back when `isIntersecting` itself flips: verified live, scrolling from deep in the footer back toward the top skipped straight from "sentinel above the viewport" to "sentinel below it" with `isIntersecting` false both times, so no callback ever fired and `nearFooter` got stuck `true`, hiding the bar permanently. That check instead reads the sentinel's `getBoundingClientRect()` off a rAF-throttled native `scroll`/`resize` listener - correct for any jump size because it's polling the sentinel's actual position, not waiting on a threshold-crossing notification that can be skipped. Also fixed in the same pass: `hidden` translated by `translate-y-full` (the bar's own height) rather than height-plus-its-`bottom`-gap, which left a real sliver of the "Join event" button visible over the footer - reported as the glass bar "glitching."
 
-## Two different "create event" components — the central thing to get right
+## Event creation form history and current flow
 
-### `CreateEvent.tsx` — reachable from `/events`, but cannot ever be submitted
+### `CreateEvent.tsx` — retired legacy component, formerly mounted from `/events`
 
-Opened by `Events.tsx`'s "Create An Event" button.
+This component is no longer imported by a routed page.
 Structurally near-identical to `ProfileUpdate.tsx`/`ProfileCompletion.tsx` (same `credentials = { description, name, coverImage, address: {...} }` shape, same dropzone markup, same `createevent_*` BEM class convention).
 
 **Wrong endpoint (already known):** `validateForm()` calls `updateUserProfile({ credentials })` — `PATCH /user/update`, the **profile**-update endpoint — not an event-creation endpoint. Submitting this form patches the logged-in user's own profile with whatever was typed into the "event" fields; it does not create an event.
@@ -118,32 +124,32 @@ Walk through every input in the form and which state key it actually reads/write
 Meanwhile, `credentials.address.city`, `.state`, `.country`, and `.pincode` **exist in the initial state object but no `<input>` in this component ever writes to them** — they stay `""` forever.
 The Save button's `disabled` condition checks exactly those four keys (`!credentials?.address?.city || !credentials?.address?.state || !credentials?.address?.country || !credentials?.address?.pincode`, alongside `line1`/`line2`) — **since those four keys can never become non-empty, the button is permanently disabled, for every user, regardless of what they type.**
 This form is not just "wired to the wrong endpoint" — it is currently impossible to submit at all through normal interaction.
-**If asked to fix event creation from `/events`, treat `CreateEvents.tsx` (below) as the implementation to build from, not this one** — per the existing guidance in `docs/specs/events.md`, and now doubly true given this form can't even be submitted to test the wrong-endpoint bug in the first place.
+This component remains retired and is not part of either live creation path.
 
 **Event mode picker:** a plans-style radio UI (`.plan.basic-plan` = Online, `.plan.complete-plan` = Offline) sets `credentials.eventMode` via `onClick` on the wrapping `<div>` rather than the actual `<input type="radio">`'s own `onChange` — the radio inputs are visually present but not the actual event source; only the first (`Online`) has `checked` hardcoded, so the radio UI doesn't even visually reflect `eventMode` after a click (clicking "Offline" changes `credentials.eventMode` but the "Online" radio stays visually checked, since neither `checked` prop is bound to state).
 
-### `CreateEvents.tsx` — the correct implementation, not rendered anywhere
+### `CreateEvents.tsx` — the shared live implementation
 
-Not imported by `Events.tsx` or any other page — no reachable entry point today.
+Rendered by `Events.tsx` and `YourEvents.tsx` for organization accounts.
 
 **Local state, `event`:**
 ```js
 {
-  name: "", startDate: dayjs(), endDate: dayjs(),
-  startTime: dayjs("2022-04-17T15:30"), endTime: dayjs("2022-04-17T15:30"),
+  name: "", startDate: dayjs(), endDate: dayjs().add(1, "hour"),
+  startTime: dayjs(), endTime: dayjs().add(1, "hour"),
   mode: "Offline", uid: "", description: "",
   city: "", state: "", address: "", country: "India", mapIframe: "",
   coverImage: "<hardcoded Pexels placeholder URL>",
   platform: "Zoom Meeting", platformLink: "",
 }
 ```
-Note `startTime`/`endTime` default to a fixed hardcoded date-time (`2022-04-17T15:30`) — only the *time* portion is meaningful (MUI's `TimePicker` extracts just the time), but if this component's date-handling is ever touched, be aware the year/month/day on these two fields is stale and never used for anything except being a syntactically valid `dayjs` object.
+The date and time pickers hold separate values; `useEvent` combines each pair into a timestamp before sending the API request.
 
 **Cover image:** `handleCreateBase64` (wrapped in `useCallback`) calls `convertToBase64(e)` (this feature's own util, see below) and stores the result directly in `event.coverImage` as a base64 data URI — **unlike the profile/`CreateEvent.tsx` dropzones, this one actually attaches the uploaded file to the data that gets submitted**, rather than only previewing it.
 
 **Mode-dependent fields (MUI `Accordion`):** `mode === "Offline"` shows city/state/address (plain text inputs) + a country `<Select>` populated from [`src/statics/CountryList.ts`](../../../src/statics/CountryList.ts) + a `mapIframe` text input (a raw iframe *string*, not validated as one, no live preview). `mode === "Online"` shows a platform `<Select>` populated from [`src/statics/OnlinePlatform.ts`](../../../src/statics/OnlinePlatform.ts) (Zoom/Google Meet/Microsoft Teams/etc., each entry with an `icon` rendered inline in the `<MenuItem>`) + a `platformLink` text input.
 
-**Submit:** `handleSubmit()` calls `seterrors(validateEvent())` then, in the same synchronous call, `submitCallback(event, setshowCreateModal)` — see `useEvent.ts` below for why calling both in this exact order, from the same render, matters.
+**Submit:** `handleSubmit()` passes its current validation result into `submitCallback`, then the form closes only after the API confirms creation.
 
 ## `hooks/useEvent.ts` — pairs with `CreateEvents` only
 
@@ -152,18 +158,18 @@ export function useEvent(event) → { validateEvent, submitCallback }
 ```
 
 **Called once per render** of `CreateEvents.tsx` (it's invoked directly in the component body, not memoized), receiving that render's current `event` state.
-Each call creates a **fresh, closure-local `errors = {}`** object — this is the key mechanic to understand: `validateEvent` and `submitCallback`, from the *same* `useEvent(event)` call, close over the *same* `errors` object reference, so `validateEvent()` mutating `errors` is visible to `submitCallback` **only if both are called from that same render's closures, synchronously, before the component re-renders and `useEvent` is invoked again with a new empty `errors`.**
-`CreateEvents.tsx`'s `handleSubmit` does exactly this — `seterrors(validateEvent()); submitCallback(event, setshowCreateModal);`, both calls using this render's `validateEvent`/`submitCallback` — so it works today, but only because of this precise call ordering, not because of any explicit synchronization. **If `handleSubmit` is ever refactored to `await` something (e.g. an async pre-check) between the two calls, or if `submitCallback` is invoked from a different render's closure (e.g. via a `setTimeout` capturing a stale reference), `submitCallback` would validate against a stale or empty `errors` object instead of the one just computed** — this is a real footgun for anyone modifying this form, not a hypothetical one, since the whole mechanism relies on same-tick closure identity rather than a `useRef`/passed-argument.
+The submit handler passes the validation result directly to `submitCallback`, so a later render cannot replace it with an empty or stale error object.
 
 **`validateEvent()`:**
 1. `const { uid, ...data } = event;` — `uid` is checked separately from the rest of `data`.
-2. Required-field pass: `name`, `uid`, `description`, `coverImage`, `mode`, `startDate`, `endDate`, `startTime`, `endTime` — plus, nested inside the *same* `if` block, either (`mode === "Offline"`) `city`/`state`/`country`/`address`/`mapIframe`, or (else) `platformLink`. **This nested mode-specific check only runs if at least one of the top-level required fields was already missing** — i.e. `validateEvent` does not independently check mode-specific fields when all top-level fields are present; if `name`/`uid`/`description`/etc. are all filled in but `mapIframe` (for an Offline event) is empty, this block is skipped entirely and no error is set for the missing `mapIframe` — a real validation gap: **an Offline event can pass validation with no address/mapIframe if every other required field happens to be filled**, and an Online event can similarly pass with no `platformLink`.
-3. **Unconditional length/order checks, run regardless of step 2's outcome:** `name.length` must be 10–80, `description.length` must be 20–200, `endDate >= startDate`, `endTime >= startTime`. These run even if `data.name`/`data.description` are empty strings (`"".length` is `0`, which fails the `< 10`/`< 20` bound — so an empty required field still produces a length-related error message rather than (or in addition to) the presence-based one from step 2 — the messages can end up slightly misleading, e.g. "Name should be between 10 and 80 characters" for a name that's simply blank, rather than "Name is required"). Would throw a `TypeError` if `data.name`/`data.description` were ever literally `undefined` rather than `""` — not reachable today since `CreateEvents.tsx`'s initial state always supplies strings, but worth knowing if this hook is ever reused with a different initial shape.
-4. Returns the `errors` object (not a boolean, not throwing) — callers must inspect `Object.keys(errors).length`.
+2. Offline events require city, state, country, address, and map iframe; online events require a platform link.
+3. Name length must be 10–80 characters, description length must be 20–200 characters, and the combined end date/time must follow the combined start date/time.
+4. Returns the field-error object for display and submission.
 
-**`submitCallback(event, setshowCreateModal)`:**
-- If the closure's `errors` is empty (see the same-render caveat above): calls `CreateEvent(event)` (`KarmaCircleApi.ts`, `POST /events/create`). On `response.status === 201`, it shows a success toast, closes the modal, and invalidates `eventEndpoints.all` through SWR. This alternate form is not routed, and the live directory uses `eventEndpoints.directory()` instead.
-- On any other status: `showErrorToast(response.response.data.message)` — note the doubled `.response.response` — this only works if `CreateEvent()` (the `KarmaCircleApi.ts` function) returned a raw Axios error object with `.response.data.message` rather than the `error.response` shape `KarmaCircleApi.ts`'s other functions typically return; check `CreateEvent`'s own catch block in `KarmaCircleApi.ts` before assuming this path is exercised correctly (it returns the caught `error` object as-is, not `error.response`, unlike most other `KarmaCircleApi.ts` functions — so `response` here actually holds the full Axios error, and `response.response.data.message` is consistent with that, if unusual compared to sibling functions).
+**`submitCallback(event, setshowCreateModal, errors)`:**
+- If the supplied error object is empty, calls `CreateEvent()` (`KarmaCircleApi.ts`, `POST /events/create`). It combines each selected date with its selected clock time before sending `startTime` and `endTime`, and sends date-only `startDate` and `endDate` values.
+- On `response.status === 201`, it shows a success toast, closes the modal, and revalidates `eventEndpoints.directory()` plus the current organization's `eventEndpoints.byHost()` key.
+- On failure, it shows the API error message when available, otherwise a generic retry message.
 - If `errors` is non-empty: a single generic toast, "Please fill all the required fields" — no per-field detail in the toast (per-field detail is shown inline via `errors.name`/`errors.uid`/etc. in the form itself).
 
 ## Event display components
@@ -205,7 +211,7 @@ Correctly handles the 11th–13th "th" exception.
 No timezone handling — relies on `new Date(dateString)`'s local-timezone interpretation, whatever that resolves to in the visitor's browser.
 Only consumer is `EventsMarqueeCards.tsx` (itself unused) — so this function currently has no live call path either.
 
-## Data flow summary — live event reads and current creation gap
+## Data flow summary — live event reads and creation
 
 ```
 Events.tsx render
@@ -218,22 +224,15 @@ EventCard renders the live event
 ```
 
 ```
-CreateEvent.tsx — the modal currently mounted by Events.tsx
-   ▼
-Save is disabled and its handler targets PATCH /user/update; it does not create events
-```
-
-```
-CreateEvents.tsx (not rendered anywhere) — an alternate form that calls the create API
+CreateEvents.tsx — shared form mounted by Events.tsx and YourEvents.tsx
    ▼
 local `event` state (name/dates/mode/uid/description/coverImage/mode-specific fields)
    ▼
-handleSubmit() → seterrors(validateEvent()); submitCallback(event, setshowCreateModal);
-                    (same render's useEvent(event) closures — order-dependent, see above)
+handleSubmit() → validateEvent() → submitCallback(event, setshowCreateModal, errors)
    ▼
 CreateEvent(event)   [KarmaCircleApi.ts, POST /events/create]
    ▼
-201 ──► toast, close modal, mutate(eventEndpoints.all)
+201 ──► toast, close modal, revalidate directory and current host list
 ```
 
 ## Types
@@ -241,18 +240,18 @@ CreateEvent(event)   [KarmaCircleApi.ts, POST /events/create]
 `types/index.ts` re-exports the feature interfaces and types.
 `ApiEvent` models the API event response, `EventCardEvent` is the directory card view model, and `DisplayEvent` plus `EventDetailContent` provide the detail-page view model.
 `Events.tsx` maps `ApiEvent` records with `toDisplayEvent()` and passes the resulting `EventCardEvent` to `EventCard`.
-`CreateEventCredentials` describes the mounted broken form, while `EventFormState`, `EventFormErrors`, and `UseEventResult` describe the unmounted alternate form and its hook.
+`CreateEventCredentials` describes the retired broken form, while `EventFormState`, `EventFormErrors`, and `UseEventResult` describe the shared live form and its hook.
 
 **September 2026, detail-page types:** `DirectoryEvent`/`EventDetail`/`EventVenue`/`EventOnlineAccess` (the fixture-shaped types `constants/eventDirectory.ts`/`eventDetails.ts` used to satisfy) are gone from `types/interfaces.ts`, replaced by `DisplayEvent` (the detail page's near-superset of `EventCardEvent`, plus `address`/`state`/`platformLink`/`endsAt`/the two always-boolean trust flags) and `EventDetailContent` (the long-form/timeline/mode-specific fields, flat rather than nested in a `venue`/`onlineAccess` sub-object — `EventLocationPanel` reads `event.address`/`city`/`platform`/`platformLink` and `detail.gettingThere`/`linkDelivery`/`joinRequirements` directly). `ApiEvent` grew the matching fields 1:1 with `event.model.ts`'s `IEvent`; the two must keep changing together.
 
 ## Known issues specific to this feature (superset of known-issues.md's events entries, plus new findings)
 
-- **`CreateEvent.tsx`'s Save button can never be enabled** — four required address fields are permanently unreachable through the UI (new finding, more severe than the "wrong endpoint" bug already documented).
+- **Retired legacy form limitation:** `CreateEvent.tsx`'s Save button can never be enabled because four required address fields are permanently unreachable through its UI.
 - **Eight `CreateEvent.tsx` inputs share only two real state slots** (`address.line1`/`line2`), several with copy-pasted/wrong placeholder text — new finding.
 - `CreateEvent.tsx` calls the profile-update endpoint instead of an event-creation endpoint — already in `known-issues.md`.
 - `CreateEvent.tsx`'s event-mode radio UI doesn't visually reflect the actual selected mode after a click — new finding.
-- `validateEvent()`'s mode-specific field checks (address/mapIframe or platformLink) only run if a top-level required field is also missing, letting an event with all top-level fields but no address/platform link pass validation — new finding, refines the existing known-issues.md entry about this hook.
-- `submitCallback`'s reliance on same-render closure identity between `validateEvent()` and `submitCallback()` — already flagged in `known-issues.md`, precise mechanism explained above.
+- **Fixed November 2026:** `validateEvent()` now checks mode-specific fields independently of top-level required fields.
+- **Fixed November 2026:** `submitCallback` now receives the validation result directly, so validation no longer depends on a shared closure object.
 - `EventsMarqueeCards.tsx` still isn't rendered anywhere, and `getFormattedDate.ts` exists only for it. `utils/formatEventFacts.ts` has its own `formatEventDate`/`formatEventBadge` (real ISO timestamps, matching every live `Event` field) while `getFormattedDate` takes the API's `{ date, time }` string pair — if `EventsMarqueeCards.tsx` is ever wired up against a live record, the two date formatters should collapse into one rather than staying split.
 - `HostedEvents.tsx` is a 0-byte file; importing it throws — already in `known-issues.md`. Its `.scss` sibling has a typo'd filename (`Hosed` not `Hosted`) — new finding.
 - `convertToBase64.ts`'s `converter` can hang forever on a falsy file (currently unreachable via the guarded call site) — new finding.
@@ -260,7 +259,7 @@ CreateEvent(event)   [KarmaCircleApi.ts, POST /events/create]
 
 ## If you're asked to...
 
-- **"Add event creation" / "fix the create event button"** → clarify which surface: `/events`'s button opens the non-functional `CreateEvent.tsx`. The correct implementation to build from is `CreateEvents.tsx` + `useEvent.ts`, which isn't wired into any page — the fix is very likely swapping `Events.tsx`'s import from `CreateEvent` to `CreateEvents` (checking prop-name compatibility — `CreateEvent` takes `setShowCreateModal`, `CreateEvents` takes `setshowCreateModal`, different casing) rather than patching the broken component in place. Note that `createEventSchema` (backend) only accepts the basic fields plus `inviteOnly` today — none of the September 2026 detail-page fields (`about`/`agenda`/`cost`/`fundraiser`/etc.) are creatable through either UI component yet, only through `scripts/seed-demo-data.ts` writing the model directly.
+- **"Add event creation" / "fix the create event button"** → both `/events` and `/organization/events` now mount `CreateEvents.tsx` + `useEvent.ts`, which submit to `POST /events/create`. Keep the retired `CreateEvent.tsx` profile-editor copy disconnected. The backend schema accepts the basic fields plus `inviteOnly`; detail-page fields (`about`/`agenda`/`cost`/`fundraiser`/etc.) are still not creatable through the endpoint and require a future API change.
 - **"Review the Events page SEO label"** → `Events.tsx` currently uses `type="Events"`; verify the route and title branch before changing it.
 - **"Build a 'my hosted events' view for the dashboard"** → `HostedEvents.tsx` is the intended file (currently empty) — there's no existing logic to preserve, treat it as new work.
 - **"Show a real event's location/platform info somewhere"** -> the routed event directory, event detail page, organization profile's hosted-event section, and My Events page already render live event data. Check the relevant feature spec before wiring the unused `EventsMarqueeCards.tsx` into a new surface.

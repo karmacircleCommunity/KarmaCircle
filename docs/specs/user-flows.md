@@ -46,10 +46,11 @@ flowchart TD
     gate_pass["Dashboard / Your Events content"]:::general
     events_dir["Events Directory - /events"]:::general
     event_detail["Event Detail - /events/:eventId"]:::general
-    create_access{{"Token cookie, signed in, organization account?"}}:::decision
+    create_access{{"Redux says signed in, organization account?"}}:::decision
     create_hidden["Browse events - no creation button or modal"]:::general
-    create_event["Create an event button"]:::general
-    create_broken["Modal opens but cannot submit"]:::terminator
+    create_event["Create event from directory or hosted-events workspace"]:::general
+    create_form["Shared CreateEvents form"]:::general
+    create_saved["POST /events/create saves event"]:::terminator
     personal_setup["Individual profile setup - /user/setup"]:::general
     not_found["404 - unmatched route"]:::terminator
 
@@ -83,9 +84,11 @@ flowchart TD
     gate_pass --> event_detail
     events_dir --> event_detail
     events_dir --> create_access
+    gate_pass --> create_access
     create_access -->|"Yes"| create_event
     create_access -->|"No"| create_hidden
-    create_event --> create_broken
+    create_event --> create_form
+    create_form --> create_saved
     event_detail -->|"Hosted by card"| org_profile
     personal_setup -->|"Save, Close, or Maybe later"| home
     home -.->|"unmatched path"| not_found
@@ -390,7 +393,7 @@ flowchart TD
 ## Events - directory, detail, and creating one
 
 See [events.md](./events.md) and [known-issues.md](./known-issues.md).
-The map below covers the current attendee and organizer paths, including the known publishing UI gap.
+The map below covers the current attendee and organizer paths, including event creation from both organization entry points.
 The organizer attendee roster and attendance counts are explicitly marked as proposed; no organizer endpoint or UI exposes registration totals today.
 Upcoming is the default directory filter and compares each event start time to the current time when the page opens.
 My Events is a signed-in individual page with Upcoming and Past periods, backed by the caller-scoped registration lookup.
@@ -407,14 +410,13 @@ flowchart TD
     e_time["Upcoming / Past filter - client-side"]:::general
     e_type["Type filter: invite-only, open, online, offline - client-side"]:::general
     e_grid["Grid of Event Cards"]:::general
-    e_access{{"Token cookie, signed in, organization account?"}}:::decision
+    e_access{{"Redux says signed in, organization account?"}}:::decision
     e_browse["Personal account or visitor - public browsing only"]:::general
-    e_create_btn["Create an event button"]:::general
-    e_modal["CreateEvent.tsx modal opens"]:::general
-    e_wired{{"Are the address fields wired to inputs?"}}:::decision
-    e_disabled["Save button stays disabled - cannot submit"]:::terminator
-    e_wrong["If it could submit: patches the USER profile, not an event"]:::general
-    e_real["CreateEvents.tsx - the correct version, never rendered anywhere"]:::terminator
+    e_create_btn["Create event - Events directory or hosted workspace"]:::general
+    e_modal["Shared CreateEvents.tsx form"]:::general
+    e_validate{{"Required fields and selected mode valid?"}}:::decision
+    e_errors["Show field errors and keep form open"]:::general
+    e_post_create["POST /events/create"]:::general
     e_backend{{"Backend: is the host an organization account?"}}:::decision
     e_rejected["403 NOT_AN_ORGANIZATION"]:::terminator
     e_saved["Event saved with organizerHandle from host"]:::terminator
@@ -447,6 +449,7 @@ flowchart TD
     e_past["GET /events/mine?period=past"]:::general
     e_return["Open event details from email or My Events"]:::general
     e_hosted["Your Events - /organization/events; GET /events?host"]:::general
+    e_lists_refresh["Close form and refresh public and hosted event lists"]:::terminator
     e_organizer_count["Proposed: organizer attendee list and count per hosted event"]:::terminator
     e_organizer["Organizer Panel - Hosted by, links to organization profile"]:::general
     e_fundraiser["Fundraiser Panel - shown only if the event has one"]:::general
@@ -460,14 +463,17 @@ flowchart TD
     e_start --> e_access
     e_access -->|"Yes"| e_create_btn
     e_access -->|"No"| e_browse
+    e_hosted --> e_create_btn
     e_create_btn --> e_modal
-    e_modal --> e_wired
-    e_wired -->|"No - never wired"| e_disabled
-    e_disabled -.->|"hypothetically, if it could submit"| e_wrong
-    e_modal -.->|"correct component exists separately"| e_real
-    e_real -.-> e_backend
+    e_modal --> e_validate
+    e_validate -->|"No"| e_errors
+    e_validate -->|"Yes"| e_post_create
+    e_post_create --> e_backend
     e_backend -->|"No"| e_rejected
     e_backend -->|"Yes"| e_saved
+    e_saved --> e_lists_refresh
+    e_lists_refresh --> e_fetch
+    e_lists_refresh --> e_hosted
     e_grid --> e_detail_fetch
     e_detail_fetch -->|"No"| e_404
     e_detail_fetch -->|"Yes"| e_hero
@@ -501,7 +507,6 @@ flowchart TD
     e_my_events --> e_period
     e_period -->|"Upcoming"| e_upcoming
     e_period -->|"Past"| e_past
-    e_saved --> e_hosted
     e_hosted -.->|"Future organizer feature"| e_organizer_count
     e_join --> e_organizer
     e_join --> e_fundraiser

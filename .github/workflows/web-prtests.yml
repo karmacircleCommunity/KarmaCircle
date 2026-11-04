@@ -18,9 +18,13 @@ permissions:
   contents: read
 
 jobs:
+  Validate:
+    uses: ./.github/workflows/ci.yml
+
   Deploy-Preview:
     # Only PRs from branches in this repo. Fork PRs never receive secrets.
     if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: Validate
     runs-on: ubuntu-latest
     permissions:
       contents: read
