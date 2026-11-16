@@ -1,3 +1,5 @@
+import { eventZone } from "@features/events/utils/eventTimezone";
+
 /**
  * Formatting for the dates, numbers and spans this feature renders -
  * one home for "format an event" instead of split across two files.
@@ -18,24 +20,36 @@
  * helper): that one takes the API's `{ date, time }` string pair, while
  * this one takes a real ISO timestamp, which is what a live `Event`
  * record's `startTime` actually is.
+ *
+ * **With an event's `timezone` (PG-11)** the time is the event's own clock, not
+ * the viewer's, and ends with the zone ("Sat · Sep 12, 9:00 PM GMT+5:30") so
+ * nobody has to guess which clock it is. With none (an older event, or a
+ * moment that is not an event's, such as when someone registered) it is the
+ * viewer's own clock, as before.
  */
-export const formatEventDate = (startsAt: string) =>
-  new Date(startsAt)
+export const formatEventDate = (startsAt: string, timezone?: string) => {
+  const zone = eventZone(timezone);
+  return new Date(startsAt)
     .toLocaleString(undefined, {
       weekday: "short",
       day: "numeric",
       month: "short",
       hour: "numeric",
       minute: "2-digit",
+      ...(zone ? { timeZone: zone, timeZoneName: "short" as const } : {}),
     })
     .replace(", ", " · ");
+};
 
-/** Short form for the badge on the cover: "12 SEP". */
-export const formatEventBadge = (startsAt: string) =>
-  new Date(startsAt).toLocaleDateString(undefined, {
+/** Short form for the badge on the cover: "12 SEP", in the event's zone if it has one. */
+export const formatEventBadge = (startsAt: string, timezone?: string) => {
+  const zone = eventZone(timezone);
+  return new Date(startsAt).toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
+    ...(zone ? { timeZone: zone } : {}),
   });
+};
 
 /**
  * "Sat · 9:00 pm" - weekday and start time, no day number.
@@ -43,14 +57,17 @@ export const formatEventBadge = (startsAt: string) =>
  * The companion to `formatEventBadge` on a card that shows both: the badge
  * carries the date, this carries the part the badge can't fit.
  */
-export const formatEventTime = (startsAt: string) => {
+export const formatEventTime = (startsAt: string, timezone?: string) => {
   const date = new Date(startsAt);
+  const zone = eventZone(timezone);
 
   return `${date.toLocaleDateString(undefined, {
     weekday: "short",
+    ...(zone ? { timeZone: zone } : {}),
   })} · ${date.toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
+    ...(zone ? { timeZone: zone, timeZoneName: "short" as const } : {}),
   })}`;
 };
 

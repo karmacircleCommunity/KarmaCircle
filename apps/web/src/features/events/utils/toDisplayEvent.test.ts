@@ -248,3 +248,16 @@ describe("event type and tags", () => {
     expect(toDisplayEventDetail(baseEvent).event.tags).toEqual([]);
   });
 });
+
+describe("timezone", () => {
+  it("passes the event's timezone to the card and the detail page", () => {
+    const zoned = { ...baseEvent, timezone: "Asia/Kolkata" };
+    expect(toDisplayEvent(zoned).timezone).toBe("Asia/Kolkata");
+    expect(toDisplayEventDetail(zoned).event.timezone).toBe("Asia/Kolkata");
+  });
+
+  it("leaves it empty for an older event", () => {
+    expect(toDisplayEvent(baseEvent).timezone).toBeUndefined();
+    expect(toDisplayEventDetail(baseEvent).event.timezone).toBeUndefined();
+  });
+});

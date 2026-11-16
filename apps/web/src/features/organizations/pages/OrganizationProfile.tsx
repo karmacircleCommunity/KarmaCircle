@@ -22,7 +22,7 @@ import {
   FaYoutube,
 } from "react-icons/fa6";
 import { MdVerified } from "react-icons/md";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
 import { useSectionReveal } from "@hooks";
@@ -122,7 +122,15 @@ const OrganizationProfileView = ({
   const isOwner = ownerOrganization?.handle === organization.userName;
   const accent =
     ORGANIZATION_ACCENTS[organization.accent % ORGANIZATION_ACCENTS.length];
-  const [sponsorOpen, setSponsorOpen] = useState(false);
+  // `?support=1` (the event page's Contribute link, PG-8) opens the Support
+  // dialog straight away, but only for an organization that has turned direct
+  // support on: the page itself is the same either way.
+  const [searchParams] = useSearchParams();
+  const [sponsorOpen, setSponsorOpen] = useState(
+    () =>
+      searchParams.get("support") === "1" &&
+      Boolean(organization.sponsorship?.enabled),
+  );
   const pageRef = useRef<HTMLDivElement>(null);
   const trackedViewHandle = useRef<string | null>(null);
   const isLoggedIn = useSelector(selectIsLoggedIn);

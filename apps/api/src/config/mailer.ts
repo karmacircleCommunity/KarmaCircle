@@ -86,6 +86,16 @@ export async function sendPasswordResetEmail(
   }
 }
 
+/** Whether the runtime knows `zone`, so a bad stored value never breaks an email. */
+function isUsableZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
     const entities: Record<string, string> = {
@@ -107,10 +117,14 @@ export async function sendEventJoinConfirmation(
   if (env.NODE_ENV !== "production") return false;
 
   const eventUrl = `${env.ORIGIN_URL.replace(/\/$/, "")}/events/${encodeURIComponent(event.uid)}`;
+  // In the event's own timezone when it has one (PG-11), named in the text
+  // ("... 4:58 PM GMT+5:30"); otherwise in UTC, labelled, as before.
+  const zone =
+    event.timezone && isUsableZone(event.timezone) ? event.timezone : undefined;
   const date = new Intl.DateTimeFormat("en", {
     dateStyle: "full",
-    timeStyle: "short",
-    timeZone: "UTC",
+    timeStyle: zone ? "long" : "short",
+    timeZone: zone ?? "UTC",
   }).format(new Date(event.startTime));
   const safeName = escapeHtml(attendeeName || "there");
   const safeEventName = escapeHtml(event.name);
@@ -126,7 +140,7 @@ export async function sendEventJoinConfirmation(
         <h2>You're going!</h2>
         <p>Hi ${safeName},</p>
         <p>Your place at <strong>${safeEventName}</strong> is confirmed.</p>
-        <p>${escapeHtml(date)} UTC</p>
+        <p>${escapeHtml(zone ? date : `${date} UTC`)}</p>
         <p><a href="${eventUrl}" style="display:inline-block;padding:12px 20px;background:#a8623e;color:#fff;border-radius:8px;text-decoration:none;">View event details</a></p>
         <p>See you there,<br />KarmaCircle</p>
       </div>

@@ -21,7 +21,7 @@ import type {
 /** The limits mirror `event.constants.ts` in the API. */
 export const DETAIL_LIMITS = {
   aboutParagraphs: 20,
-  aboutParagraphLength: 2000,
+  aboutParagraphLength: 4000,
   bringAlongItems: 20,
   bringAlongItemLength: 100,
   languagesItems: 10,
@@ -121,7 +121,8 @@ const orNull = (value: string) =>
   trimmed(value) === "" ? null : trimmed(value);
 const lines = (value: string) =>
   value.split(/\r?\n/).map(trimmed).filter(Boolean);
-const paragraphs = (value: string) =>
+/** The write-up's text as the paragraphs the API stores (split on blank lines). */
+export const paragraphs = (value: string) =>
   value
     .split(/\r?\n\s*\r?\n/)
     .map(trimmed)

@@ -112,7 +112,7 @@ const EventCard = ({ event }: EventCardProps) => {
         {/* Date badge, the one thing a visitor scans an event grid for.
             Top-left on the photo so it costs no vertical space. */}
         <span className="absolute top-3 left-3 rounded-full bg-white/92 px-3 py-1 font-outfit text-caption font-semibold tracking-widest text-brand-secondary uppercase backdrop-blur-sm">
-          {formatEventBadge(event.startsAt)}
+          {formatEventBadge(event.startsAt, event.timezone)}
         </span>
         {/* Trust/access badges, top-right — same slot `OrganizationCard`'s
             "Featured" pill uses. Government-backed is a brand-tinted pill
@@ -238,7 +238,7 @@ const EventCard = ({ event }: EventCardProps) => {
         >
           <span className="inline-flex items-center gap-1.5">
             <FiClock aria-hidden="true" className="size-3.5 shrink-0" />
-            {formatEventTime(event.startsAt)}
+            {formatEventTime(event.startsAt, event.timezone)}
           </span>
           <span className="inline-flex items-center gap-1.5 truncate">
             {online ? (

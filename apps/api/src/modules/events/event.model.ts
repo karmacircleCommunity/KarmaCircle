@@ -95,6 +95,14 @@ export interface IEvent extends Document {
    * rather than a button that looks live and silently does nothing.
    */
   inviteOnly: boolean;
+  /**
+   * The IANA timezone the event is held in, such as `Asia/Kolkata` (PG-11).
+   * The start and end are real instants either way; this says which clock the
+   * organizer meant, so every viewer sees the event's own time (and their own
+   * beside it). Absent on events saved before it existed, which are shown in the
+   * viewer's own timezone as they always were.
+   */
+  timezone?: string;
   /** What kind of event this is (PG-9). Absent on events saved before it existed. */
   eventType?: EventType;
   /** Free-text tags, lower-case, at most 8 (PG-9). */
@@ -270,6 +278,10 @@ const eventSchema = new Schema<IEvent>(
     inviteOnly: {
       type: Boolean,
       default: false,
+    },
+    timezone: {
+      type: String,
+      trim: true,
     },
     eventType: {
       type: String,

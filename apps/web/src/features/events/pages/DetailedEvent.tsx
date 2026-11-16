@@ -16,6 +16,7 @@ import {
   showSuccessToast,
   showWarningToast,
 } from "@utils/Toasts";
+import RichText from "@features/events/components/RichText";
 import ConfirmDialog from "@features/events/components/ConfirmDialog";
 import EventAgenda from "@features/events/components/detail/EventAgenda";
 import EventFacts from "@features/events/components/detail/EventFacts";
@@ -282,15 +283,10 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                   to tell (see toDisplayEventDetail.ts). */}
               {detail.about.length > 0 && (
                 <EventSection title="About this event" id="about">
-                  {detail.about.map((paragraph, index) => (
-                    <p
-                      key={index}
-                      data-reveal
-                      className="mt-4 font-poppins text-body leading-7 text-ink/75 first:mt-0 sm:text-body-lg sm:leading-8"
-                    >
-                      {paragraph}
-                    </p>
-                  ))}
+                  <RichText
+                    paragraphs={detail.about}
+                    className="font-poppins text-body leading-7 text-ink/75 sm:text-body-lg sm:leading-8"
+                  />
                 </EventSection>
               )}
 
@@ -359,7 +355,11 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
               {/* Most events raise nothing, and the page simply has no
                   fundraiser section when they don't. */}
               {detail.fundraiser && (
-                <EventFundraiserPanel fundraiser={detail.fundraiser} />
+                <EventFundraiserPanel
+                  fundraiser={detail.fundraiser}
+                  organizer={event.organizer}
+                  organizerUserName={event.organizerUserName}
+                />
               )}
             </aside>
           </div>

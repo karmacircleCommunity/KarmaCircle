@@ -10,6 +10,10 @@ import {
   UpdateEvent,
 } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
+import {
+  combineInZone,
+  startOfDayInZone,
+} from "@features/events/utils/eventTimezone";
 import { parseTags, validateTags } from "@features/events/utils/eventTags";
 import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import { buildEventChanges } from "@features/events/utils/buildEventChanges";
@@ -37,8 +41,9 @@ const isHttpUrl = (value: string) => {
   }
 };
 
-const combineDateAndTime = (date: Dayjs, time: Dayjs) =>
-  date.hour(time.hour()).minute(time.minute()).second(0).millisecond(0);
+/** The exact moment a date and a clock time mean in the event's timezone (PG-11). */
+const combineDateAndTime = (date: Dayjs, time: Dayjs, timezone: string) =>
+  dayjs(combineInZone(date, time, timezone));
 
 /**
  * Validates and submits the shared event form, then refreshes public and host
@@ -116,11 +121,11 @@ export function useEvent(
 
     const startAt =
       data.startDate && data.startTime
-        ? combineDateAndTime(data.startDate, data.startTime)
+        ? combineDateAndTime(data.startDate, data.startTime, data.timezone)
         : null;
     const endAt =
       data.endDate && data.endTime
-        ? combineDateAndTime(data.endDate, data.endTime)
+        ? combineDateAndTime(data.endDate, data.endTime, data.timezone)
         : null;
 
     if (startAt && endAt && !endAt.isAfter(startAt)) {
@@ -226,15 +231,19 @@ export function useEvent(
         capacity: event.capacity.trim() ? Number(event.capacity) : undefined,
         tags: parseTags(event.tags),
         ...(intent === "draft" ? { status: "draft" } : {}),
-        startDate: event.startDate?.startOf("day").toDate(),
-        endDate: event.endDate?.startOf("day").toDate(),
+        startDate: event.startDate
+          ? startOfDayInZone(event.startDate, event.timezone)
+          : undefined,
+        endDate: event.endDate
+          ? startOfDayInZone(event.endDate, event.timezone)
+          : undefined,
         startTime:
           event.startDate && event.startTime
-            ? combineDateAndTime(event.startDate, event.startTime).toDate()
+            ? combineInZone(event.startDate, event.startTime, event.timezone)
             : event.startTime,
         endTime:
           event.endDate && event.endTime
-            ? combineDateAndTime(event.endDate, event.endTime).toDate()
+            ? combineInZone(event.endDate, event.endTime, event.timezone)
             : event.endTime,
       };
       const response = (await CreateEvent(requestEvent)) as {

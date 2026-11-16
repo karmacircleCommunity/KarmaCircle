@@ -297,7 +297,7 @@ describe("validateDetails", () => {
       "about",
       { about: Array.from({ length: 21 }, (_, i) => `p${i}`).join("\n\n") },
     ],
-    ["about", { about: "x".repeat(2001) }],
+    ["about", { about: "x".repeat(4001) }],
     ["agenda", { agenda: [{ time: "", title: "No time", detail: "" }] }],
     ["agenda", { agenda: [{ time: "9 am", title: "", detail: "" }] }],
     [

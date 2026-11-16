@@ -234,3 +234,37 @@ describe("formatSpotsLeft", () => {
     expect(formatSpotsLeft(0)).toBe("0 spots left");
   });
 });
+
+describe("formatting in an event's own timezone", () => {
+  // 04:30 UTC is 10:00 in Kolkata and 13:30 in Tokyo; the test runner is UTC.
+  const instant = "2030-05-01T04:30:00.000Z";
+
+  it("formats the date with the event's clock and names the zone", () => {
+    expect(formatEventDate(instant, "Asia/Kolkata")).toBe(
+      "Wed · May 1, 10:00 AM GMT+5:30",
+    );
+    expect(formatEventDate(instant, "Asia/Tokyo")).toBe(
+      "Wed · May 1, 1:30 PM GMT+9",
+    );
+  });
+
+  it("uses the viewer's clock, with no zone name, when there is no timezone", () => {
+    expect(formatEventDate(instant)).toBe("Wed · May 1, 4:30 AM");
+    expect(formatEventDate(instant, "Mars/Base")).toBe("Wed · May 1, 4:30 AM");
+  });
+
+  it("puts the badge on the event's own calendar day", () => {
+    // 20:00 UTC on 30 April is already 1 May in Tokyo.
+    expect(formatEventBadge("2030-04-30T20:00:00.000Z")).toBe("Apr 30");
+    expect(formatEventBadge("2030-04-30T20:00:00.000Z", "Asia/Tokyo")).toBe(
+      "May 1",
+    );
+  });
+
+  it("formats the card's weekday and time in the event's zone", () => {
+    expect(formatEventTime(instant, "Asia/Kolkata")).toBe(
+      "Wed · 10:00 AM GMT+5:30",
+    );
+    expect(formatEventTime(instant)).toBe("Wed · 4:30 AM");
+  });
+});

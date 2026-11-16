@@ -60,6 +60,8 @@ export interface EventFormState extends EventDetailFormFields {
   inviteOnly: boolean;
   /** Most people who can join, as typed. Empty means no limit. */
   capacity: string;
+  /** The IANA timezone the date and time pickers are read in (PG-11). */
+  timezone: string;
   /** The chosen `EventType`, or empty until one is picked. */
   eventType: EventType | "";
   /** Tags as typed, separated by commas. */
@@ -134,6 +136,8 @@ export interface EventCardEvent {
   cancelled?: boolean;
   /** What kind of event it is; the card shows its label when there is one. */
   eventType?: EventType;
+  /** The event's own timezone; the card shows its time in it (PG-11). */
+  timezone?: string;
   /** Which `ORGANIZATION_ACCENTS` gradient to fall back to when `cover` is
    *  unset — same "stable per record, not stored" derivation as
    *  `organizations/utils/toDisplayOrganization.ts#accentFor`. */
@@ -224,6 +228,8 @@ export interface DisplayEvent {
   cancelled: boolean;
   /** A draft: saved but visible only to its own organization (PG-15). */
   draft: boolean;
+  /** The event's own timezone, if it has one (PG-11). */
+  timezone?: string;
   eventType?: EventType;
   tags: string[];
 }
@@ -272,6 +278,9 @@ export interface EventAgendaProps {
 
 export interface EventFundraiserPanelProps {
   fundraiser: EventFundraiser;
+  /** The hosting organization, for the Contribute link (PG-8). */
+  organizer?: string;
+  organizerUserName?: string;
 }
 
 /** `EventJoinPanel` also needs to start leaving; the mobile bar does not. */
@@ -328,6 +337,8 @@ export interface ApiEvent {
    *  `published`. */
   status?: EventStatus;
   cancelledAt?: string;
+  /** The IANA timezone the event is held in; absent on older events. */
+  timezone?: string;
   /** What kind of event it is; absent on events saved before it existed. */
   eventType?: EventType;
   tags?: string[];

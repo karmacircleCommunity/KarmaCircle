@@ -114,9 +114,14 @@ The government-backed badge stays server-only.
 Not done: `fundraiser`, which waits on the money decision (PG-26).
 
 ### PG-8 Contribute button does nothing
-Status: open. Priority: P3.
+Status: done (2026-11-16). Priority: P3.
 The Contribute button on the detail page only shows a "coming soon" message.
 Decide whether it links to the existing organization donation flow.
+Result (decided while building it, easy to change): it links to the hosting organization's existing Support flow.
+Contribute goes to the organization's profile with `?support=1`, which opens the Razorpay "Support" dialog straight away when that organization has direct support on, and just shows the profile when it does not.
+The helper line now says the money goes to the organization through its Support page, not to this event alone.
+An event from an individual host (no organization link) shows no button, and the "coming soon" toast is gone.
+Still open under PG-26: the panel's raised figure is not fed by any payment, and a fundraiser still cannot be set through the API.
 
 ### Added 2026-11-16: gaps found by comparing with other event platforms
 
@@ -147,18 +152,27 @@ The event page shows both a venue card and a joining card under "Where it is and
 Switching a Hybrid event to In person or Online drops the side that no longer applies.
 
 ### PG-11 No timezone on events
-Status: open. Priority: P2.
+Status: done (2026-11-16). Priority: P2.
 The form has no timezone field, and the code has no timezone handling.
 A time is shown in each viewer's own browser timezone, so an event in one city can show the wrong clock time to someone elsewhere.
 The agenda labels are plain wall-clock text for the same reason.
 Fix: store the event's timezone, show times in it, and optionally show the viewer's local time beside it.
+Result: events have an optional `timezone` (an IANA name such as `Asia/Kolkata`, checked against the runtime's own database; abbreviations like `IST` are refused).
+The form has a Timezone picker (defaulting to the browser's) and reads its date and time pickers in that zone, so an organizer in London can set 10:00 in Tokyo and the stored start is 01:00 UTC; editing reads the times back in the event's zone, and changing only the zone moves the real moment.
+Cards, the event page, the join panel, My Events, Your events and the organization's events list show the event's own clock with the zone named, the hero and the panel add the viewer's own time when it differs, and the join confirmation email uses the event's zone.
+Older events have no timezone and keep showing in each viewer's own zone; the browser's zone is pinned onto one only when something else is saved.
+Not built: a search box in the picker, the viewer note on cards and lists, and a timezone on the demo seed events.
 
 ### PG-12 Description is short and plain text
-Status: open. Priority: P2.
+Status: done (2026-11-16). Priority: P2.
 The create rule is 20 to 200 characters of plain text.
 Devfolio's About accepts Markdown and Luma accepts formatted text.
 Fix: decide a longer limit and a safe formatted-text format, and make sure it is sanitized before it is shown.
 This pairs with PG-7, which adds the long-form about text.
+Result (decided while building it): the short description stays plain text, 20 to 200 characters, because it is the card summary; the full write-up from PG-7 is where the longer formatted text lives.
+The write-up now takes up to 4000 characters per paragraph (was 2000) and a small safe format: bold, italic, http and https links, bullet and numbered lists and line breaks.
+It is parsed into data and rendered as React elements, never HTML, so organizer text cannot inject markup (tested with a script tag, an image tag and a `javascript:` link), and the form shows a live preview.
+Not supported on purpose: headings, images, tables, code and nesting.
 
 ### PG-13 No registration window and no registration questions
 Status: open. Priority: P2.
@@ -724,4 +738,10 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-16: API tests `events-hybrid.test.ts` (14), `events-types.test.ts` (23) and `events-drafts.test.ts` (27); the API suite passed 17 suites and 365 tests.
 - 2026-11-16: web unit tests for `eventMode`, `eventTags`, the kinds and the new change builder cases; the web unit suite passed 150 tests and 2 todo.
 - 2026-11-16: Playwright `event-hybrid.spec.ts` (3), `event-kind.spec.ts` (3) and `event-drafts.spec.ts` (5); all 37 tests of the events folder passed on Chromium.
+- 2026-11-16: PG-8, Contribute opens the organization's Support dialog (`?support=1`) instead of a placeholder toast.
+- 2026-11-16: PG-12, the full write-up takes bold, italic, links and lists (safe, no HTML), a live preview, and 4000 characters a paragraph.
+- 2026-11-16: PG-11, event timezones (picker, pickers read in the event's zone, event's own clock with the viewer's beside it, email in the event's zone).
+- 2026-11-16: API test `events-timezone.test.ts` (17) and two mailer tests; the API suite passed 18 suites and 386 tests.
+- 2026-11-16: web unit tests for `eventTimezone`, `richText` and `RichText` plus new cases in the mapper, change builder and formatters; the web unit suite passed 196 tests and 2 todo.
+- 2026-11-16: Playwright `event-contribute.spec.ts` (3), `event-timezone.spec.ts` (4) and a formatted write-up test; all 45 tests of the events folder passed on Chromium.
 - 2026-11-16: the API tests' flaky `404`, `501` and timeouts fixed at the root: `buildTestApp()` now listens on 127.0.0.1 (see `apps/api/docs/specs/testing.md`).

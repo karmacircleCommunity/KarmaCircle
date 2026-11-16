@@ -1,6 +1,5 @@
 import { FiHeart } from "react-icons/fi";
 import Button from "@components/buttons/Button";
-import { showSuccessToast } from "@utils/Toasts";
 import { formatMoney, fundedPercent } from "@utils/formatMoney";
 import type { EventFundraiserPanelProps } from "@features/events/types";
 
@@ -12,12 +11,20 @@ import type { EventFundraiserPanelProps } from "@features/events/types";
  * `DrivesRail`'s cards, down to the percentage and the supporters line, so
  * one progress bar means one thing across the app.
  *
- * The contribute button is honest about being a stub: there is no payment
- * endpoint in `KarmaCircleApi.ts` today, so it acknowledges the press rather than
- * pretending to take money - the same call `OrganizationProfile.tsx` makes
- * for its Follow button.
+ * **Contribute (PG-8)** opens the hosting organization's existing Support flow:
+ * it links to `/organization/:handle?support=1`, where the profile opens its
+ * Razorpay "Support" dialog straight away if that organization has turned
+ * direct support on (and otherwise just shows the profile). The money goes to
+ * the organization, not to this event's own `raised` figure, which is still
+ * written by the organizer's seed data only: no payment is tied to an event, and
+ * the helper line under the button says so. With no organization link (an event
+ * from an individual host) there is nothing to open, so no button is shown.
  */
-const EventFundraiserPanel = ({ fundraiser }: EventFundraiserPanelProps) => {
+const EventFundraiserPanel = ({
+  fundraiser,
+  organizer,
+  organizerUserName,
+}: EventFundraiserPanelProps) => {
   const percent = fundedPercent(fundraiser.raised, fundraiser.goal);
 
   return (
@@ -60,18 +67,19 @@ const EventFundraiserPanel = ({ fundraiser }: EventFundraiserPanelProps) => {
         </p>
       </div>
 
-      <Button
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border-none px-6 py-3 font-poppins text-body font-medium"
-        onClickfunction={() =>
-          showSuccessToast("Noted - contributions open here soon")
-        }
-      >
-        <FiHeart aria-hidden="true" /> Contribute
-      </Button>
+      {organizerUserName && (
+        <Button
+          to={`/organization/${organizerUserName}?support=1`}
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border-none px-6 py-3 font-poppins text-body font-medium no-underline"
+        >
+          <FiHeart aria-hidden="true" /> Contribute
+        </Button>
+      )}
 
       <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/45">
-        KarmaCircle takes no cut. Every unit goes to the organizer running this
-        event.
+        {organizerUserName
+          ? `Contributions go to ${organizer ?? "the organization"} through its Support page, not to this event alone. KarmaCircle takes no cut.`
+          : "KarmaCircle takes no cut. Every unit goes to the organizer running this event."}
       </p>
     </div>
   );

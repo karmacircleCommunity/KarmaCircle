@@ -291,3 +291,61 @@ test("an online event shows the link notes instead of directions", async ({
   expect(stored.joinRequirements).toBe("A working microphone");
   expect(stored.gettingThere).toBeUndefined();
 });
+
+test("the write-up supports bold, italic, links and lists, shows a preview, and never runs markup", async ({
+  page,
+}) => {
+  const stamp = uniqueStamp();
+  const name = `Riverbank Cleanup ${stamp}`;
+  const uid = slugFromName(name);
+  await signedInHost(page, stamp);
+  await page.goto("/organization/events/new");
+  await fillInPersonBasics(page, name);
+
+  await page
+    .getByLabel("Full write-up")
+    .fill(
+      [
+        "We meet at **the river gate** at nine, rain or *shine*.",
+        "Bring:\n- a water bottle\n- a hat\nSee our [route map](https://maps.example.org/route).",
+        "1. Sign in\n2. Pick up gloves",
+        "Not a link: [bad](javascript:alert(1)) and <script>window.__pwned = true</script>",
+      ].join("\n\n"),
+    );
+
+  // A live preview shows how it will look before anything is published.
+  const preview = page.getByRole("group", { name: "Preview of the write-up" });
+  await expect(preview.locator("strong")).toHaveText("the river gate");
+  await expect(preview.locator("em")).toHaveText("shine");
+  await expect(preview.getByRole("listitem")).toHaveCount(4);
+
+  await page.getByRole("button", { name: "Publish event" }).click();
+  await expect(page).toHaveURL(new RegExp(`/events/${uid}$`), {
+    timeout: 15_000,
+  });
+
+  const about = page.locator("#about");
+  await expect(about.locator("strong")).toHaveText("the river gate");
+  await expect(about.locator("em")).toHaveText("shine");
+  await expect(about.locator("ul li")).toHaveText(["a water bottle", "a hat"]);
+  await expect(about.locator("ol li")).toHaveText([
+    "Sign in",
+    "Pick up gloves",
+  ]);
+
+  const link = about.getByRole("link", { name: "route map" });
+  await expect(link).toHaveAttribute("href", "https://maps.example.org/route");
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(link).toHaveAttribute("rel", /noopener/);
+
+  // The unsafe parts are just text: no link, no script, nothing executed.
+  await expect(about).toContainText("[bad](javascript:alert(1))");
+  await expect(about).toContainText("<script>window.__pwned = true</script>");
+  await expect(about.locator("script")).toHaveCount(0);
+  await expect(about.getByRole("link", { name: "bad" })).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { __pwned?: boolean }).__pwned,
+    ),
+  ).toBeUndefined();
+});

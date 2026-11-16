@@ -13,6 +13,7 @@ import {
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
 import { eventTypeLabel } from "@features/events/constants/eventTypes";
+import { viewerTimeNote } from "@features/events/utils/eventTimezone";
 import { describeWhere } from "@features/events/utils/eventMode";
 import {
   formatEventDate,
@@ -58,7 +59,12 @@ const EventHero = ({ event }: EventHeroProps) => {
   const accent = ORGANIZATION_ACCENTS[accentFor(event.id)];
 
   const facts = [
-    { icon: FiCalendar, label: formatEventDate(event.startsAt) },
+    {
+      icon: FiCalendar,
+      label: formatEventDate(event.startsAt, event.timezone),
+      // The viewer's own clock, only when it differs from the event's (PG-11).
+      note: viewerTimeNote(event.startsAt, event.timezone),
+    },
     {
       icon: FiClock,
       label: formatDuration(event.startsAt, event.endsAt),
@@ -189,7 +195,7 @@ const EventHero = ({ event }: EventHeroProps) => {
           )}
 
           <ul className="mt-6 flex list-none flex-col gap-3 p-0 sm:flex-row sm:flex-wrap sm:gap-x-6">
-            {facts.map(({ icon: Icon, label }) => (
+            {facts.map(({ icon: Icon, label, note }) => (
               <li
                 key={label}
                 className="inline-flex items-center gap-2.5 font-poppins text-body text-ink/75"
@@ -199,6 +205,9 @@ const EventHero = ({ event }: EventHeroProps) => {
                   className="size-4 shrink-0 text-brand"
                 />
                 {label}
+                {note && (
+                  <span className="text-ink/50"> ({note} your time)</span>
+                )}
               </li>
             ))}
           </ul>

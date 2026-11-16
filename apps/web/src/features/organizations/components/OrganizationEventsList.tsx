@@ -1,6 +1,9 @@
 import { FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { formatEventBadge, formatEventTime } from "@features/events/utils/formatEventFacts";
+import {
+  formatEventBadge,
+  formatEventTime,
+} from "@features/events/utils/formatEventFacts";
 import type { EventRecord } from "@features/events/types";
 
 /**
@@ -19,6 +22,8 @@ interface HostedEvent extends EventRecord {
   state?: string;
   country?: string;
   startTime: string;
+  /** The event's own timezone, if it has one (PG-11). */
+  timezone?: string;
 }
 
 /**
@@ -33,22 +38,32 @@ const OrganizationEventsList = ({ events }: { events: HostedEvent[] }) => {
   const now = Date.now();
   const upcoming = events
     .filter((event) => new Date(event.startTime).getTime() >= now)
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
   const past = events
     .filter((event) => new Date(event.startTime).getTime() < now)
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+    );
 
   return (
     <div className="flex flex-col gap-8">
-      {upcoming.length > 0 && (
-        <EventGroup title="Upcoming" events={upcoming} />
-      )}
+      {upcoming.length > 0 && <EventGroup title="Upcoming" events={upcoming} />}
       {past.length > 0 && <EventGroup title="Past events" events={past} />}
     </div>
   );
 };
 
-const EventGroup = ({ title, events }: { title: string; events: HostedEvent[] }) => (
+const EventGroup = ({
+  title,
+  events,
+}: {
+  title: string;
+  events: HostedEvent[];
+}) => (
   <div>
     <h3 className="mb-3 font-outfit text-caption font-semibold tracking-[0.12em] text-ink/45 uppercase">
       {title}
@@ -78,8 +93,12 @@ const EventGroup = ({ title, events }: { title: string; events: HostedEvent[] })
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-poppins text-caption text-ink/55">
                 <span className="inline-flex items-center gap-1.5">
-                  <FiCalendar aria-hidden="true" className="size-3.5 shrink-0" />
-                  {formatEventBadge(event.startTime)} · {formatEventTime(event.startTime)}
+                  <FiCalendar
+                    aria-hidden="true"
+                    className="size-3.5 shrink-0"
+                  />
+                  {formatEventBadge(event.startTime, event.timezone)} ·{" "}
+                  {formatEventTime(event.startTime, event.timezone)}
                 </span>
                 {event.mode === "Online" ? (
                   <span className="inline-flex items-center gap-1.5">
@@ -89,7 +108,10 @@ const EventGroup = ({ title, events }: { title: string; events: HostedEvent[] })
                 ) : (
                   event.city && (
                     <span className="inline-flex items-center gap-1.5 truncate">
-                      <FiMapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                      <FiMapPin
+                        aria-hidden="true"
+                        className="size-3.5 shrink-0"
+                      />
                       {event.city}
                     </span>
                   )

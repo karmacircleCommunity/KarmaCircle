@@ -1,17 +1,24 @@
-import dayjs from "dayjs";
+import {
+  browserTimeZone,
+  eventZone,
+  partsInZone,
+} from "@features/events/utils/eventTimezone";
 import { formatTags } from "@features/events/utils/eventTags";
 import { detailFieldsFromEvent } from "@features/events/utils/eventDetailFields";
 import type { ApiEvent, EventFormState } from "@features/events/types";
 
 /**
  * A stored event as the create/edit form's state, for editing it. The date and
- * time fields come from `startTime` and `endTime` (the real instants), read in
- * the browser's own timezone, which is how the form lets an organizer pick
- * them. Fields a mode does not use fall back to the form's own defaults.
+ * time fields come from `startTime` and `endTime` (the real instants), read as
+ * the wall clock in the event's own timezone (PG-11), so an organizer in London
+ * editing a Kolkata event sees the Kolkata times they typed. An older event with
+ * no timezone is read in the browser's, as it always was. Fields a mode does not
+ * use fall back to the form's own defaults.
  */
 export function eventToFormState(event: ApiEvent): EventFormState {
-  const start = dayjs(event.startTime);
-  const end = dayjs(event.endTime);
+  const timezone = eventZone(event.timezone) ?? browserTimeZone();
+  const start = partsInZone(event.startTime, timezone);
+  const end = partsInZone(event.endTime, timezone);
 
   return {
     name: event.name,
@@ -19,10 +26,11 @@ export function eventToFormState(event: ApiEvent): EventFormState {
     description: event.description,
     coverImage: event.coverImage ?? "",
     mode: event.mode,
-    startDate: start.startOf("day"),
-    endDate: end.startOf("day"),
-    startTime: start,
-    endTime: end,
+    timezone,
+    startDate: start.date,
+    endDate: end.date,
+    startTime: start.time,
+    endTime: end.time,
     address: event.address ?? "",
     city: event.city ?? "",
     state: event.state ?? "",

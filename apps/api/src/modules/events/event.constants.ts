@@ -50,13 +50,16 @@ export const EVENT_TYPES = [
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
+/** Longest IANA timezone name accepted (the longest real one is under 40). */
+export const EVENT_TIMEZONE_MAX_LENGTH = 64;
+
 /** Free-text tags on an event (PG-9). */
 export const EVENT_TAGS_MAX_ITEMS = 8;
 export const EVENT_TAG_MAX_LENGTH = 30;
 
 /** Limits for the optional detail fields an organizer can fill in (PG-7). */
 export const EVENT_ABOUT_MAX_PARAGRAPHS = 20;
-export const EVENT_ABOUT_PARAGRAPH_MAX_LENGTH = 2000;
+export const EVENT_ABOUT_PARAGRAPH_MAX_LENGTH = 4000;
 export const EVENT_BRING_ALONG_MAX_ITEMS = 20;
 export const EVENT_BRING_ALONG_ITEM_MAX_LENGTH = 100;
 export const EVENT_LANGUAGES_MAX_ITEMS = 10;

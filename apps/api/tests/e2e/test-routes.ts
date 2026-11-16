@@ -58,5 +58,35 @@ export function createE2eTestRouter() {
     res.status(204).end();
   });
 
+  /**
+   * Gives an event a fundraiser (the money it is raising alongside the
+   * volunteering). The create and edit routes deliberately cannot set one yet
+   * (PG-26 is undecided), so a browser test of the event page's "Contribute"
+   * button has no other way to build an event that shows the panel. 404 when
+   * the event does not exist.
+   */
+  router.post("/__test__/events/:uid/fundraiser", async (req, res) => {
+    const result = await Event.updateOne(
+      { uid: req.params.uid },
+      {
+        $set: {
+          fundraiser: {
+            purpose: "Tools, gloves and bags for the clean-up crew.",
+            goal: 50000,
+            raised: 12000,
+            currency: "INR",
+            supporters: 18,
+          },
+        },
+      },
+    );
+
+    if (result.matchedCount === 0) {
+      res.status(404).json({ message: "Event not found" });
+      return;
+    }
+    res.status(204).end();
+  });
+
   return router;
 }

@@ -42,13 +42,14 @@ describe("eventToFormState", () => {
     });
   });
 
-  it("reads the start and end instants into the date and time fields", () => {
+  it("reads the start and end into the date and time fields, as wall-clock digits", () => {
     const form = eventToFormState(stored);
 
-    expect(form.startTime?.toISOString()).toBe(stored.startTime);
-    expect(form.endTime?.toISOString()).toBe(stored.endTime);
-    expect(form.startDate?.isSame(form.startTime, "day")).toBe(true);
-    expect(form.endDate?.isSame(form.endTime, "day")).toBe(true);
+    // `stored` has no timezone, so the pickers read it in the browser's (UTC here).
+    expect(form.startDate?.format("YYYY-MM-DD")).toBe("2030-05-01");
+    expect(form.startTime?.format("HH:mm")).toBe("09:30");
+    expect(form.endDate?.format("YYYY-MM-DD")).toBe("2030-05-01");
+    expect(form.endTime?.format("HH:mm")).toBe("12:00");
   });
 
   it("falls back to the form defaults for fields the mode does not use", () => {
@@ -80,5 +81,40 @@ describe("eventToFormState capacity", () => {
   it("is empty for no limit and the typed number otherwise", () => {
     expect(eventToFormState(stored).capacity).toBe("");
     expect(eventToFormState({ ...stored, capacity: 40 }).capacity).toBe("40");
+  });
+});
+
+describe("eventToFormState timezone", () => {
+  it("reads the times as the wall clock in the event's own zone", () => {
+    // 04:30 UTC is 10:00 in Kolkata.
+    const form = eventToFormState({
+      ...stored,
+      timezone: "Asia/Kolkata",
+      startTime: "2030-05-01T04:30:00.000Z",
+      endTime: "2030-05-01T07:00:00.000Z",
+    });
+
+    expect(form.timezone).toBe("Asia/Kolkata");
+    expect(form.startDate?.format("YYYY-MM-DD")).toBe("2030-05-01");
+    expect(form.startTime?.format("HH:mm")).toBe("10:00");
+    expect(form.endTime?.format("HH:mm")).toBe("12:30");
+  });
+
+  it("can land on a different calendar day than UTC", () => {
+    const form = eventToFormState({
+      ...stored,
+      timezone: "Asia/Tokyo",
+      startTime: "2030-04-30T20:00:00.000Z",
+      endTime: "2030-04-30T22:00:00.000Z",
+    });
+    expect(form.startDate?.format("YYYY-MM-DD")).toBe("2030-05-01");
+    expect(form.startTime?.format("HH:mm")).toBe("05:00");
+  });
+
+  it("falls back to the browser's zone for an older event, or a bogus stored one", () => {
+    expect(eventToFormState(stored).timezone).toBe("UTC");
+    expect(
+      eventToFormState({ ...stored, timezone: "Mars/Base" }).timezone,
+    ).toBe("UTC");
   });
 });

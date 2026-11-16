@@ -175,7 +175,7 @@ describe("Rich event details (PG-7)", () => {
       ["bringAlong", [""]],
       ["bringAlong", Array.from({ length: 21 }, (_, i) => `item ${i}`)],
       ["about", Array.from({ length: 21 }, (_, i) => `paragraph ${i}`)],
-      ["about", ["x".repeat(2001)]],
+      ["about", ["x".repeat(4001)]],
       ["languages", Array.from({ length: 11 }, (_, i) => `lang${i}`)],
       ["agenda", [{ time: "", title: "No time" }]],
       ["agenda", [{ time: "9 am", title: "" }]],
@@ -190,6 +190,26 @@ describe("Rich event details (PG-7)", () => {
       const res = await create(host, "rich-invalid", { [field]: value });
       expect(res.status).toBe(400);
       expect(res.body.errors[0].path.split(".")[0]).toBe(field);
+    });
+
+    it("accepts a write-up paragraph of 4000 characters and refuses 4001", async () => {
+      const host = await signupHost();
+      await create(host, "rich-long", { about: ["x".repeat(4000)] }).expect(
+        201,
+      );
+      const res = await create(host, "rich-too-long", {
+        about: ["x".repeat(4001)],
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.errors[0].path.split(".")[0]).toBe("about");
+    });
+
+    it("stores formatting marks as plain text, never as markup", async () => {
+      const host = await signupHost();
+      const text =
+        "Bring **water**\n- a hat\n[map](https://example.org) <b>x</b>";
+      await create(host, "rich-marks", { about: [text] }).expect(201);
+      expect((await stored("rich-marks")).about).toEqual([text]);
     });
 
     it("trims text and upper-cases the currency", async () => {

@@ -8,6 +8,7 @@ import {
   FiUserPlus,
   FiXCircle,
 } from "react-icons/fi";
+import { viewerTimeNote } from "@features/events/utils/eventTimezone";
 import {
   formatEventDate,
   isEventPast,
@@ -72,6 +73,7 @@ const EventJoinPanel = ({
   onToggleJoin,
   onRequestLeave,
 }: EventJoinPanelFullProps) => {
+  const viewerNote = viewerTimeNote(event.startsAt, event.timezone);
   const cancelled = event.cancelled;
   const past = !cancelled && isEventPast(event.startsAt);
   const hasCapacity =
@@ -273,7 +275,8 @@ const EventJoinPanel = ({
 
       <p className="m-0 mt-5 border-t border-border-subtle pt-4 font-poppins text-caption leading-5 text-ink/50">
         {cancelled ? "Was due" : past ? "Took place" : "Starts"}{" "}
-        {formatEventDate(event.startsAt)}
+        {formatEventDate(event.startsAt, event.timezone)}
+        {viewerNote && <> ({viewerNote} your time)</>}
       </p>
     </div>
   );

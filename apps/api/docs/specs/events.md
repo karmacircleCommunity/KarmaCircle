@@ -27,6 +27,7 @@ list with check-in. Owns the `Event` and `EventRegistration` models.
 | `registrationCount`                                | `number`, default `0`                                              | **November 2026 (PG-5).** How many people are registered, kept in step with `EventRegistration` by `joinEvent` and `leaveEvent` with atomic `$inc`s so the last spot cannot be taken twice. **Only trustworthy for an event with a `capacity`**: `updateEvent` recounts it from the registrations whenever it sets a capacity, which also covers events saved before the field existed, and the web only shows going and spots left when a capacity exists |
 | `status`                                           | `"draft" \| "published" \| "cancelled"`, default `"published"`   | **November 2026 (PG-2, PG-15).** Where the event is in its life. A **draft** is saved but visible only to its own organization; **published** is public; **cancelled** stays public with a badge. Postponed is still to do. A document with no stored status reads as `published`. Create may send `draft` or `published`; after that only the publish, unpublish and cancel routes change it (an edit body with `status` is a `400`) |
 | `cancelledAt`                                      | `Date?`                                                            | Set when `status` becomes `cancelled`, never cleared (there is no reinstate)                                                                                                                                                                                                                                                                  |
+| `timezone`                                         | `string?` (an IANA name such as `Asia/Kolkata`, or `UTC`)           | **November 2026 (PG-11).** Which clock the organizer meant. `startTime` and `endTime` are exact instants either way; this does not move them. Validated against the runtime's own timezone database (`isValidTimeZone`) and only the full `Area/Location` form is accepted (legacy abbreviations such as `IST` are refused because they are ambiguous). Optional, so older events and clients keep working; the web form always sends one. Editable, never removable (`null` is a `400`) |
 | `eventType`                                        | `"volunteering" \| "fundraiser" \| "workshop" \| "awareness" \| "meetup" \| "cultural" \| "other"`? | **November 2026 (PG-9).** What kind of event it is. Optional in the API for compatibility with older events and clients; the web form requires it. No `hackathon` value: whether hackathons are an event type is still decided in PG-27 |
 | `tags`                                             | `string[]` (lower-case, trimmed, de-duplicated, at most 8, each at most 30 characters) | **November 2026 (PG-9).** Free-text tags. The directory search matches them; `[]` clears them on edit. Counting is on what was submitted, so a ninth tag is refused even if it repeats an earlier one |
 | `about`                                            | `string[]?`                                                        | Long-form paragraphs for the detail page's "About this event" section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -299,7 +300,7 @@ object field and `[]` clears a list:
 
 | Field | Rule |
 | --- | --- |
-| `about` | up to 20 paragraphs, each trimmed, non-empty, at most 2000 characters |
+| `about` | up to 20 paragraphs, each trimmed, non-empty, at most **4000** characters (raised from 2000 in November 2026, PG-12). The text is stored exactly as typed; the web renders a small formatting set from it (bold, italic, http(s) links, lists) as React elements, never HTML, so the API does not sanitize and has no markup to strip |
 | `contactEmail` | a valid email, at most 254 characters |
 | `cost` | `{ amount, currency, note? }`: `amount` above zero and at most 10,000,000 (**zero is rejected**: absent means free), `currency` a 3-letter code (upper-cased), `note` at most 200; unknown keys rejected |
 | `bringAlong` | up to 20 items, each at most 100 characters |
@@ -384,6 +385,21 @@ identities.
   spreadsheet cannot run attendee-controlled text as a formula.
 
 `EventRegistration` gained `checkedInAt` (a date, absent until checked in).
+
+## Timezone (November 2026, PG-11)
+
+`timezone` is optional on create and edit (`z.string().trim()`, at most 64 characters,
+refined by `isValidTimeZone`: `UTC` or an `Area/Location` name that
+`Intl.DateTimeFormat` accepts). A bad name is a `400` on path `timezone`. It never
+changes `startTime` or `endTime`; the web form reads its date and time pickers in the
+chosen zone and sends the resulting instants. `GET /events` returns it with every
+event that has one. The join confirmation email (`sendEventJoinConfirmation`) writes
+the start in the event's own zone with the zone named ("10:00 AM GMT+5:30") when
+there is one, and in UTC with the old " UTC" suffix when there is not or the stored
+value is unusable. `tests/events-timezone.test.ts` (17 tests) covers the validator,
+saving, the instants staying exactly as sent, optional, invalid values, trimming,
+editing, an older event gaining a zone, an untouched zone, and `null` refused;
+`tests/mailer.test.ts` covers the email.
 
 ## `POST /events/:uid/publish`, `POST /events/:uid/unpublish`, `DELETE /events/:uid` (drafts)
 

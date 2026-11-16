@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -30,6 +30,13 @@ import EventDetailsSection from "@features/events/components/EventDetailsSection
 import { emptyDetailFields } from "@features/events/utils/eventDetailFields";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { useEvent } from "@features/events/hooks/useEvent";
+import {
+  browserTimeZone,
+  combineInZone,
+  listTimeZones,
+  zoneAbbreviation,
+  zoneOptionLabel,
+} from "@features/events/utils/eventTimezone";
 import { EVENT_TYPE_OPTIONS } from "@features/events/constants/eventTypes";
 import {
   MODE_LABELS,
@@ -62,6 +69,7 @@ const createInitialEvent = (): EventFormState => ({
   platformLink: "",
   inviteOnly: false,
   capacity: "",
+  timezone: browserTimeZone(),
   eventType: "",
   tags: "",
   ...emptyDetailFields(),
@@ -88,6 +96,12 @@ export const EventForm = ({
   original?: ApiEvent;
 }) => {
   const isEdit = Boolean(original);
+  // Every timezone the browser knows, plus the event's own if it is somehow
+  // missing from that list.
+  const timeZones = useMemo(
+    () => listTimeZones([initial.timezone]),
+    [initial.timezone],
+  );
   const isDraftEdit = original?.status === "draft";
   const navigate = useNavigate();
   const { organization } = useMyOrganization();
@@ -98,6 +112,11 @@ export const EventForm = ({
   const [coverError, setCoverError] = useState("");
   const [isUidEdited, setIsUidEdited] = useState(isEdit);
   const { validateEvent, submitCallback } = useEvent(event, original);
+  // The moment the preview's start means, to name its zone (daylight time and all).
+  const previewInstant =
+    event.startDate && event.startTime
+      ? combineInZone(event.startDate, event.startTime, event.timezone)
+      : new Date();
 
   const handleTextChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -511,6 +530,29 @@ export const EventForm = ({
                   </Field>
                 </div>
 
+                <div className="mt-4">
+                  <Field
+                    id="timezone"
+                    label="Timezone"
+                    error={errors.timezone}
+                    hint="The dates and times above are in this timezone. People elsewhere see the event in theirs, with your time beside it."
+                  >
+                    <select
+                      id="timezone"
+                      name="timezone"
+                      value={event.timezone}
+                      onChange={handleTextChange}
+                      className={inputClasses}
+                    >
+                      {timeZones.map((zone) => (
+                        <option key={zone} value={zone}>
+                          {zoneOptionLabel(zone)}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
                 {hasVenue(event.mode) && (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <Field
@@ -755,7 +797,9 @@ export const EventForm = ({
                       </span>
                       <span className="inline-flex items-center gap-2">
                         <FiClock aria-hidden="true" className="text-brand" />
-                        {event.startTime?.format("h:mm A") || "Choose a time"}
+                        {event.startTime
+                          ? `${event.startTime.format("h:mm A")} ${zoneAbbreviation(previewInstant, event.timezone)}`.trim()
+                          : "Choose a time"}
                       </span>
                       <span className="inline-flex items-center gap-2">
                         {event.mode === "Online" ? (

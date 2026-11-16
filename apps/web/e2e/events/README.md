@@ -144,6 +144,34 @@ publishes through the form now picks the required "Kind of event" first
   draft" first) removes a draft, a published event offers no delete, the API answers
   `409`, and the address is free again.
 
+## Contribute, formatted write-up and timezone
+
+Added November 2026; all 45 tests of the folder pass on Chromium.
+
+- `event-contribute.spec.ts` (3 tests, PG-8): an event with a fundraiser shows
+  "Raising for this event" and the helper line naming the organization;
+  **Contribute** goes to `/organization/<handle>?support=1` and opens the "Support
+  <org>" dialog when the organization has direct support on; with it off the profile
+  loads and no dialog opens; a plain profile visit never opens the dialog. Fundraiser
+  fields cannot be set through the API (PG-26), so the test uses the E2E-only
+  `POST /__test__/events/:uid/fundraiser` route
+  ([`apps/api/tests/e2e/test-routes.ts`](../../../api/tests/e2e/test-routes.ts)).
+- `event-details.spec.ts` gained a formatted write-up test (PG-12): the form's live
+  **Preview** and the published page show bold, italic, a link that opens in a new tab
+  with `noopener`, a bullet list and a numbered list, while a `javascript:` link and a
+  `<script>` tag stay literal text, no script element exists and `window.__pwned` is
+  never set.
+- `event-timezone.spec.ts` (4 tests, PG-11), each in an explicit browser timezone
+  (`timezoneId`): an organizer in London sets 10:00 in **Asia/Tokyo** and the API
+  stores 01:00 UTC; the event page shows "10:00 AM GMT+9" with the viewer's clock
+  beside it, a reader in Los Angeles sees the same event hour with their own time
+  beside it, and the directory card shows the event's zone; an event in the reader's
+  own zone shows no "your time" note; editing a Kolkata event from New York opens on
+  the Kolkata clock and changing only the zone to Tokyo moves the real start by 3.5
+  hours; an older event with no timezone shows no zone, opening and saving it
+  unchanged says "Nothing has changed yet." and a real change pins the browser's
+  zone without moving the event.
+
 ## Directory search after November 2026
 
 The directory loads 12 cards at a time and searches on the API. The directory

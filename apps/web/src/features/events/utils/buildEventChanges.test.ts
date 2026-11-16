@@ -14,6 +14,7 @@ const offline: ApiEvent = {
   organizerHandle: "seaside",
   coverImage: "data:image/png;base64,AAAA",
   mode: "Offline",
+  timezone: "UTC",
   address: "Juhu Beach, gate 2",
   city: "Mumbai",
   state: "Maharashtra",
@@ -257,5 +258,71 @@ describe("buildEventChanges kind and tags", () => {
     expect(
       buildEventChanges(edit(typed, { tags: " First-Aid ,Families" }), typed),
     ).toEqual({});
+  });
+});
+
+describe("buildEventChanges timezone", () => {
+  const zoned: ApiEvent = {
+    ...offline,
+    timezone: "Asia/Kolkata",
+    startTime: "2030-05-01T04:30:00.000Z",
+    endTime: "2030-05-01T07:00:00.000Z",
+  };
+
+  it("sends nothing while a zoned event is untouched", () => {
+    expect(buildEventChanges(eventToFormState(zoned), zoned)).toEqual({});
+  });
+
+  it("moves the real start and end when only the timezone changes (same wall clock, other clock)", () => {
+    const changes = buildEventChanges(
+      edit(zoned, { timezone: "Asia/Tokyo" }),
+      zoned,
+    );
+
+    expect(changes.timezone).toBe("Asia/Tokyo");
+    // 10:00 in Tokyo is 01:00 UTC, not 04:30.
+    expect((changes.startTime as Date).toISOString()).toBe(
+      "2030-05-01T01:00:00.000Z",
+    );
+    expect((changes.endTime as Date).toISOString()).toBe(
+      "2030-05-01T03:30:00.000Z",
+    );
+  });
+
+  it("keeps the real moment when the wall clock is changed along with the zone", () => {
+    // 10:00 Kolkata == 13:30 Tokyo, so picking Tokyo and 13:30 changes nothing real.
+    const form = edit(zoned, {
+      timezone: "Asia/Tokyo",
+      startTime: dayjs("2000-01-01T13:30"),
+      endTime: dayjs("2000-01-01T16:00"),
+    });
+    const changes = buildEventChanges(form, zoned);
+
+    expect(changes).toEqual({ timezone: "Asia/Tokyo" });
+  });
+
+  it("sends a moved start as the instant in the event's zone", () => {
+    const changes = buildEventChanges(
+      edit(zoned, { startTime: dayjs("2000-01-01T11:00") }),
+      zoned,
+    );
+    expect((changes.startTime as Date).toISOString()).toBe(
+      "2030-05-01T05:30:00.000Z",
+    );
+    expect(changes).not.toHaveProperty("timezone");
+  });
+
+  it("does not pin a timezone onto an older event unless something else is saved", () => {
+    const legacy: ApiEvent = { ...offline, timezone: undefined };
+    expect(buildEventChanges(eventToFormState(legacy), legacy)).toEqual({});
+
+    const renamed = buildEventChanges(
+      edit(legacy, { name: "Renamed clean-up drive" }),
+      legacy,
+    );
+    expect(renamed).toEqual({
+      name: "Renamed clean-up drive",
+      timezone: "UTC",
+    });
   });
 });

@@ -140,7 +140,10 @@ that is cancelled or has ended; the UI shows the API's message. `LeaveEvent(uid)
 (`DELETE /events/:uid/registration`), `SetAttendeeCheckIn(uid, id, checkedIn)` and
 `FetchAttendeesCsv(uid)` follow the same non-throwing pattern (the CSV call returns
 `{ ok: true, csv }` or `{ ok: false, message }`). The attendee list is read with
-`useSWRInfinite` and the shared `fetcher`. Since November 2026 the event calls also carry: `mode` may be `Hybrid`
+`useSWRInfinite` and the shared `fetcher`. Since November 2026 the event calls also carry: `timezone` (an IANA name, PG-11; the
+create and edit bodies send it with the start and end as exact instants built in
+that zone, and an edit sends it when it changed or is being pinned onto an older
+event); the write-up (`about`) may be up to 4000 characters a paragraph (PG-12); `mode` may be `Hybrid`
 (PG-10); `eventType` (one of seven slugs) and `tags` (PG-9; `directory({ type })`
 filters by kind and the API's search matches tags); and `status` may be `draft`
 (PG-15), with `PublishEvent(uid)` (`POST /events/:uid/publish`),

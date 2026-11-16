@@ -110,6 +110,8 @@ export interface SeedEventOptions {
   eventType?: string;
   /** `draft` saves it hidden from everyone but its organization (PG-15). */
   status?: "draft" | "published";
+  /** The IANA timezone the event is held in (PG-11); leave out for an older-style event with none. */
+  timezone?: string;
 }
 
 /** Publishes an event as the organization signed in on `page`. The API only
@@ -123,6 +125,7 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
     capacity,
     eventType = "volunteering",
     status,
+    timezone,
   } = options;
   const mode = options.mode ?? "Offline";
   const start = new Date(Date.now() + startsInDays * DAY_MS);
@@ -142,6 +145,7 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
       inviteOnly,
       eventType,
       ...(status ? { status } : {}),
+      ...(timezone ? { timezone } : {}),
       ...(capacity === undefined ? {} : { capacity }),
       ...(mode === "Online"
         ? {}

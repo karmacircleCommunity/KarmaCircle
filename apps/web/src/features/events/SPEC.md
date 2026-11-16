@@ -78,6 +78,9 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `utils/eventDetailFields.ts` | Form text to API shape and back for the optional details: `normalizeDetails`, `detailPayloadForCreate`, `detailChanges`, `validateDetails`, limits (mirror the API) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
 | `utils/eventMode.ts` | `hasVenue`, `hasOnlineAccess`, `MODE_LABELS` and `describeWhere` for the three formats (In person, Online, Hybrid; November 2026, PG-10) | ✅ used by the form, hero, card, lists and location panel |
 | `utils/eventTags.ts` | `parseTags`, `formatTags`, `validateTags` (comma separated, lower-cased, de-duplicated, up to 8; PG-9) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
+| `utils/eventTimezone.ts` | `combineInZone`, `partsInZone`, `startOfDayInZone`, `listTimeZones`, `zoneOptionLabel`, `zoneAbbreviation`, `viewerTimeNote`, `eventZone`, `browserTimeZone` (PG-11); loads dayjs's `utc` and `timezone` plugins | ✅ used by the form, `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` and `formatEventFacts.ts` |
+| `utils/richText.ts` | Parses the write-up's small format (bold, italic, http(s) links, bullet and numbered lists, line breaks) into data; never produces HTML (PG-12) | ✅ used by `components/RichText.tsx` |
+| `components/RichText.tsx` | Renders the parsed write-up as React elements for the event page and the form's preview | ✅ used by `DetailedEvent.tsx` and `EventDetailsSection.tsx` |
 | `constants/eventTypes.ts` | The seven event kinds (slug and label), `eventTypeLabel`, tag limits; mirrors the API (PG-9) | ✅ used by the form, card, hero and directory filter |
 | `hooks/useEvent.ts`                 | Validator, date/time payload conversion, submit and list refresh                                                                                                                                                                          | ✅ used by `CreateEvents` page                                                                                                                                                                                         |
 | `components/EventCard.tsx`          | Card rendered in the `/events` grid                                                                                                                                                                                                       | ✅ rendered, typed against `EventCardEvent`                                                                                                                                                                            |
@@ -594,6 +597,13 @@ changing together.
 
 ## If you're asked to...
 
+- **"Timezone" / "formatted write-up" / "Contribute button"** → all exist (November
+  2026): an event's `timezone` (the form reads its pickers in that zone, the pages
+  show its own clock with the viewer's beside it; `eventTimezone.ts`), the write-up's
+  small safe format (`richText.ts` and `RichText.tsx`, no HTML), and Contribute as a
+  link to the organization's Support flow (`?support=1`, which
+  `OrganizationProfile.tsx` reads). See
+  [docs/specs/events.md](../../../../../docs/specs/events.md).
 - **"Hybrid" / "event kind" / "tags" / "draft" / "publish" / "unpublish"** → all
   exist (November 2026): `eventMode.ts` and the three-way format in the form,
   `eventTypes.ts` and `eventTags.ts`, and `PublishEvent`, `UnpublishEvent`,

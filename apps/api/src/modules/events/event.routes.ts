@@ -337,6 +337,7 @@ router.delete(
  *               startDate: { type: string, format: date-time }
  *               endDate: { type: string, format: date-time }
  *               inviteOnly: { type: boolean, description: "Label only for now: joining an invite-only event is refused with 403" }
+ *               timezone: { type: string, example: Asia/Kolkata, description: "The IANA timezone the event is held in. Does not move startTime or endTime; it says which clock the organizer meant" }
  *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
  *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
  *               capacity: { type: integer, minimum: 1, maximum: 100000, description: "Most people who can join. Omit for no limit" }
@@ -406,6 +407,7 @@ router.post(
  *               startDate: { type: string, format: date-time }
  *               endDate: { type: string, format: date-time }
  *               inviteOnly: { type: boolean }
+ *               timezone: { type: string, example: Asia/Kolkata, description: "The IANA timezone the event is held in. Does not move startTime or endTime; it says which clock the organizer meant" }
  *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
  *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
  *               capacity: { type: integer, minimum: 1, maximum: 100000, nullable: true, description: "A number sets the limit (not below the people already registered, else 409); null removes it" }

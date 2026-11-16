@@ -39,6 +39,7 @@ export function toDisplayEventDetail(event: ApiEvent): DetailedEventRecord {
       cancelled: event.status === "cancelled",
       draft: event.status === "draft",
       eventType: event.eventType,
+      timezone: event.timezone,
       tags: event.tags ?? [],
     },
     detail: {

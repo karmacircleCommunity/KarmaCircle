@@ -1,12 +1,13 @@
 import dayjs from "dayjs";
-import type { Dayjs } from "dayjs";
+import {
+  combineInZone,
+  eventZone,
+  startOfDayInZone,
+} from "@features/events/utils/eventTimezone";
 import { parseTags } from "@features/events/utils/eventTags";
 import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import { detailChanges } from "@features/events/utils/eventDetailFields";
 import type { ApiEvent, EventFormState } from "@features/events/types";
-
-const combineDateAndTime = (date: Dayjs, time: Dayjs) =>
-  date.hour(time.hour()).minute(time.minute()).second(0).millisecond(0);
 
 /** The shape `PATCH /events/:uid` accepts: any subset of the editable fields. */
 export type EventChanges = Record<string, unknown>;
@@ -79,22 +80,42 @@ export function buildEventChanges(
     for (const field of locationFields) changes[field] = form[field];
   }
 
+  // The pickers hold wall-clock digits; the event's timezone says whose clock.
+  // Changing only the timezone therefore moves the real start and end, so those
+  // are compared (and sent) as instants.
   if (form.startDate && form.startTime) {
-    const startAt = combineDateAndTime(form.startDate, form.startTime);
+    const startAt = dayjs(
+      combineInZone(form.startDate, form.startTime, form.timezone),
+    );
     if (!startAt.isSame(dayjs(original.startTime), "minute")) {
       changes.startTime = startAt.toDate();
-      changes.startDate = form.startDate.startOf("day").toDate();
+      changes.startDate = startOfDayInZone(form.startDate, form.timezone);
     }
   }
   if (form.endDate && form.endTime) {
-    const endAt = combineDateAndTime(form.endDate, form.endTime);
+    const endAt = dayjs(
+      combineInZone(form.endDate, form.endTime, form.timezone),
+    );
     if (!endAt.isSame(dayjs(original.endTime), "minute")) {
       changes.endTime = endAt.toDate();
-      changes.endDate = form.endDate.startOf("day").toDate();
+      changes.endDate = startOfDayInZone(form.endDate, form.timezone);
     }
   }
 
   Object.assign(changes, detailChanges(form, original));
+
+  // A timezone is sent when it differs from the stored one. An older event has
+  // none, so the browser's zone shown in the form is only pinned onto it once
+  // something else is being saved anyway; opening and closing the form changes
+  // nothing.
+  const storedZone = eventZone(original.timezone);
+  if (
+    storedZone
+      ? form.timezone !== storedZone
+      : Object.keys(changes).length > 0
+  ) {
+    changes.timezone = form.timezone;
+  }
 
   return changes;
 }

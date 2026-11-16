@@ -139,7 +139,7 @@ const MyEvents = () => {
                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 font-poppins text-sm text-ink/65">
                       <span className="inline-flex items-center gap-1.5">
                         <FiCalendar aria-hidden className="size-4 text-brand" />
-                        {formatEventDate(event.startTime)}
+                        {formatEventDate(event.startTime, event.timezone)}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         {event.mode === "Online" ? (

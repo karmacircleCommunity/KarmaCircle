@@ -5,10 +5,12 @@ import {
   FormSection,
   inputClasses,
 } from "@features/events/components/EventFormParts";
+import RichText from "@features/events/components/RichText";
 import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import {
   COST_CURRENCIES,
   DETAIL_LIMITS,
+  paragraphs,
 } from "@features/events/utils/eventDetailFields";
 import type { EventFormErrors, EventFormState } from "@features/events/types";
 
@@ -83,7 +85,7 @@ const EventDetailsSection = ({
           id="about"
           label="Full write-up"
           error={errors.about}
-          hint="Separate paragraphs with a blank line. This appears under “About this event”."
+          hint="Separate paragraphs with a blank line. Use **bold**, *italic*, [a link](https://…), lines starting with - for bullets and 1. for a numbered list. This appears under “About this event”."
         >
           <textarea
             id="about"
@@ -95,6 +97,21 @@ const EventDetailsSection = ({
             aria-invalid={Boolean(errors.about)}
           />
         </Field>
+        {paragraphs(event.about).length > 0 && (
+          <div
+            aria-label="Preview of the write-up"
+            role="group"
+            className="rounded-xl border border-brand-secondary/12 bg-white p-4"
+          >
+            <p className="mt-0 mb-3 font-outfit text-caption font-semibold tracking-wide text-ink/50 uppercase">
+              Preview
+            </p>
+            <RichText
+              paragraphs={paragraphs(event.about)}
+              className="font-poppins text-body leading-7 text-ink/75"
+            />
+          </div>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field

@@ -299,7 +299,9 @@ the 26 after attendees and details pass on each browser run alone, and one run o
 all three at once passed 76 of 78 (a WebKit failure in the full-event test and a
 Firefox failure in the default-platform test, both timeouts under heavy load that
 pass alone, see T-10 in the events to-do list); and all 37 tests of the whole folder,
-including Hybrid, kind and drafts, passed on Chromium. Every publishing test now
+including Hybrid, kind and drafts, passed on Chromium; with
+`e2e/events/event-contribute.spec.ts`, `e2e/events/event-timezone.spec.ts` and the
+formatted write-up test in `event-details.spec.ts` added, all 45 passed on Chromium. Every publishing test now
 picks the form's required "Kind of event" first (`chooseKind` in
 `event-helpers.ts`). Pure
 helpers have Vitest unit tests (see [testing.md](./testing.md)).
@@ -398,6 +400,46 @@ HTTP or HTTPS. It is routed at `/organization/events/new` for signed-in
 organization accounts with a live profile. Validation and submission go through
 [useEvent](../../apps/web/src/features/events/hooks/useEvent.ts), which calls
 the real `POST /events/create` API function (or, in edit mode, `PATCH /events/:uid`).
+
+### Timezone and the formatted write-up (November 2026, PG-11 and PG-12)
+
+**Timezone.** "When and where" has a **Timezone** select (every zone the browser
+knows, labelled like "Asia/Kolkata (GMT+5:30)", defaulting to the browser's own).
+The date and time pickers are read as the wall clock in that zone, not the browser's
+(`combineInZone` in `utils/eventTimezone.ts`, built on dayjs's `utc` and `timezone`
+plugins), so an organizer in London can set 10:00 in Tokyo and the stored start is
+01:00 UTC. The preview names the zone. Editing reads the stored instants back as that
+zone's wall clock (`partsInZone`), so whoever opens the form sees the times that were
+typed, and changing only the zone moves the real moment (same digits, other clock).
+An older event has no timezone and opens in the browser's zone; the zone is pinned
+onto it only when something else is saved (opening the form and saving it unchanged
+still says "Nothing has changed yet.").
+
+On the pages, an event with a timezone shows its own clock with the zone named ("Wed
+· May 1, 10:00 AM GMT+5:30") on the card (date badge and time), the hero, the join
+panel's "Starts" line, My Events, Your events and the organization's events list
+(`formatEventDate`, `formatEventBadge` and `formatEventTime` take an optional
+timezone), and when the viewer's own clock is different at that moment the hero and
+the panel add "(Tue · 9:30 PM your time)" (`viewerTimeNote`; nothing is added when
+the offsets agree, so a reader in the event's own zone sees no note). Times that are
+not an event's start, such as when someone registered, stay on the viewer's clock.
+Agenda labels are free text the organizer writes in the event's own time. The join
+confirmation email also uses the event's zone.
+
+**Formatted write-up.** The "Full write-up" box supports a small, safe format
+(`utils/richText.ts`, rendered by `components/RichText.tsx`): `**bold**`,
+`*italic*` or `_italic_`, `[text](https://link)` (http and https only), lines
+starting `- ` for bullets and `1. ` for a numbered list, and single line breaks;
+paragraphs are separated by a blank line. It parses to plain data and renders React
+elements, never HTML, so organizer text cannot inject markup: `<script>` and `<img>`
+stay literal text, a `javascript:` link stays literal text, links open in a new tab
+with `rel="noopener noreferrer nofollow ugc"`, and a stray `*` or `snake_case_name`
+is not mistaken for emphasis (emphasis must hug its text). Headings, images, tables,
+code and nesting are deliberately not supported and show as typed. A live
+**Preview** under the box shows how it will look. The limit is 4000 characters per
+paragraph (up to 20 paragraphs), up from 2000. The short **description** (20 to 200
+characters, the card summary) stays plain text: the full write-up is where the longer,
+formatted text lives, which resolves PG-12.
 
 ### Format, kind, tags and drafts (November 2026, PG-9, PG-10 and PG-15)
 
@@ -688,7 +730,16 @@ state comes from saved registrations, not local component state:
   untracked. The organization dashboard separately reports aggregate and
   per-event registration totals; those values do not represent attendance or
   remaining capacity.
-- Contribute toasts "contributions open here soon".
+- **Contribute (November 2026, PG-8)** is a link to
+  `/organization/:handle?support=1` in the "Raising for this event" panel. The
+  organization profile reads `?support=1` once and opens its existing Razorpay
+  "Support" dialog straight away when that organization has direct support turned
+  on; otherwise it just shows the profile. The helper line says contributions go to
+  the organization through its Support page, not to this event alone, because no
+  payment is tied to an event and the panel's `raised` figure is still written by
+  seed data only (the create and edit routes cannot set a `fundraiser`, PG-26). An
+  event from an individual host (no organization link) shows no button. There is no
+  longer a "coming soon" toast.
 - Share uses `navigator.share` where it exists and the clipboard otherwise; a
   dismissed share sheet (`AbortError`) is not treated as an error.
 - The venue's map is a plain Google Maps _search link_, not an embed — an iframe
@@ -715,7 +766,10 @@ Past.
 
 Pure helpers have colocated Vitest tests, run with `pnpm test:unit` from
 `apps/web` (see [testing.md](./testing.md)): `formatEventFacts.test.ts`,
-`getFormattedDate.test.ts`, `eventMode.test.ts`, `eventTags.test.ts`, `constants/eventTypes.test.ts`,
+`getFormattedDate.test.ts`, `eventMode.test.ts`, `eventTags.test.ts`, `eventTimezone.test.ts` (combining and
+reading wall-clock times in a zone, daylight saving, the viewer note),
+`richText.test.ts` and `RichText.test.ts` (the parser and the rendered markup),
+`constants/eventTypes.test.ts`,
 `toDisplayEvent.test.ts` (which also covers
 `toDisplayEventDetail`, the cancelled mapping, the capacity counts and the kind
 and tags),

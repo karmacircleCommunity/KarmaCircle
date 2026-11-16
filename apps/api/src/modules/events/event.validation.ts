@@ -32,6 +32,7 @@ import {
   EVENT_PLATFORM_MAX_LENGTH,
   EVENT_SEARCH_MAX_LENGTH,
   EVENT_TAG_MAX_LENGTH,
+  EVENT_TIMEZONE_MAX_LENGTH,
   EVENT_TAGS_MAX_ITEMS,
   EVENT_TYPES,
   EVENT_STATE_MAX_LENGTH,
@@ -45,6 +46,25 @@ const OFFLINE_REQUIRED_FIELDS = [
   "address",
 ] as const;
 const ONLINE_REQUIRED_FIELDS = ["platform", "platformLink"] as const;
+
+/**
+ * Whether `value` names a real IANA timezone in its full `Area/Location` form
+ * (or `UTC`), by asking the runtime's own database (the same one that formats
+ * the dates), so the list is never out of date and a made-up zone can never be
+ * stored. The runtime also accepts legacy short aliases such as `IST` and `EST`;
+ * those are refused because an abbreviation can mean more than one place.
+ */
+export const isValidTimeZone = (value: string) => {
+  if (value !== "UTC" && !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)+$/.test(value)) {
+    return false;
+  }
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const isHttpUrl = (value: string) => {
   try {
@@ -266,6 +286,19 @@ const editableEventShape = {
     .max(EVENT_PLATFORM_LINK_MAX_LENGTH)
     .optional(),
   ...detailShape,
+  /**
+   * The IANA timezone the event is held in (PG-11), for example `Asia/Kolkata`.
+   * Optional for compatibility; the web form always sends one. It does not move
+   * `startTime` or `endTime` (those are exact instants); it records which clock
+   * the organizer was reading.
+   */
+  timezone: z
+    .string()
+    .trim()
+    .min(1)
+    .max(EVENT_TIMEZONE_MAX_LENGTH)
+    .refine(isValidTimeZone, { message: "Choose a valid timezone" })
+    .optional(),
   /** What kind of event this is (PG-9). Optional for compatibility; the web form requires it. */
   eventType: z.enum(EVENT_TYPES).optional(),
   /** Free-text tags, lower-cased and de-duplicated; `[]` clears them on edit. */
