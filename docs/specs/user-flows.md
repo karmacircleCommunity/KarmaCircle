@@ -393,7 +393,7 @@ flowchart TD
 ## Events - directory, detail, and creating one
 
 See [events.md](./events.md) and [known-issues.md](./known-issues.md).
-The map below covers the current attendee and organizer paths, including event creation from both organization entry points, editing or cancelling a hosted event, leaving an event, and the organizer's attendee list (November 2026).
+The map below covers the current attendee and organizer paths, including event creation from both organization entry points (as a draft or published, in person, online or hybrid), editing, publishing, unpublishing or cancelling a hosted event, leaving an event, and the organizer's attendee list (November 2026).
 The organizer attendee roster and attendance counts are explicitly marked as proposed; no organizer endpoint or UI exposes registration totals today.
 Upcoming is the default directory filter and compares each event start time to the current time when the page opens.
 My Events is a signed-in individual page with Upcoming and Past periods, backed by the caller-scoped registration lookup.
@@ -434,7 +434,10 @@ flowchart TD
     e_cancelled_state["Cancelled state shown instead of Join; API join returns 409"]:::general
     e_timing{{"Event timing?"}}:::decision
     e_completed["Completed wrap-up shown instead of Join"]:::general
-    e_manage["Attendees, and Edit or Cancel on each hosted event not ended or cancelled"]:::general
+    e_manage["Attendees, and Edit, Publish or Delete draft, Unpublish or Cancel on each hosted event"]:::general
+    e_draft["Save as draft - hidden from everyone but the organization"]:::general
+    e_publish["POST /events/:uid/publish - draft becomes public"]:::general
+    e_unpublish["POST /events/:uid/unpublish - only while nobody has registered"]:::general
     e_attendees["Attendee page - /organization/events/:uid/attendees: totals, search, check-in, CSV"]:::general
     e_full{{"Capacity set and full?"}}:::decision
     e_full_state["Event is full - Join disabled; API join returns 409"]:::general
@@ -502,6 +505,10 @@ flowchart TD
     e_cancelled -->|"Yes"| e_cancelled_state
     e_cancelled -->|"No"| e_timing
     e_hosted --> e_manage
+    e_form --> e_draft
+    e_draft --> e_manage
+    e_manage -->|"Publish"| e_publish
+    e_manage -->|"Unpublish"| e_unpublish
     e_manage -->|"Attendees"| e_attendees
     e_joinactive --> e_full
     e_full -->|"Yes"| e_full_state

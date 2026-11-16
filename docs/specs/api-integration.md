@@ -58,7 +58,7 @@ by both layers above.
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
 organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, follow(handle), profileView(handle), byHandle(handle), directory({...})
-eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, inviteOnly, page, limit })
+eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, type, inviteOnly, page, limit })
 paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)
 authEndpoints:  signin, signup, checkEmail, forgotPassword, resetPassword, googleLogin, googleLoginSuccess, logout
 ```
@@ -140,7 +140,16 @@ that is cancelled or has ended; the UI shows the API's message. `LeaveEvent(uid)
 (`DELETE /events/:uid/registration`), `SetAttendeeCheckIn(uid, id, checkedIn)` and
 `FetchAttendeesCsv(uid)` follow the same non-throwing pattern (the CSV call returns
 `{ ok: true, csv }` or `{ ok: false, message }`). The attendee list is read with
-`useSWRInfinite` and the shared `fetcher`. `ApiEvent` also carries `capacity` and
+`useSWRInfinite` and the shared `fetcher`. Since November 2026 the event calls also carry: `mode` may be `Hybrid`
+(PG-10); `eventType` (one of seven slugs) and `tags` (PG-9; `directory({ type })`
+filters by kind and the API's search matches tags); and `status` may be `draft`
+(PG-15), with `PublishEvent(uid)` (`POST /events/:uid/publish`),
+`UnpublishEvent(uid)` (`POST /events/:uid/unpublish`) and `DeleteDraft(uid)`
+(`DELETE /events/:uid`, the same URL as `UpdateEvent`) following the same
+non-throwing `{ ok, status, message, errors }` pattern. The create call sends
+`status: "draft"` for Save as draft. `GET /events` reads the cookie
+(`optionalAuth`), so `YourEvents.tsx`'s `byHost` call returns the host's own drafts
+while the same URL on the public profile returns none. `ApiEvent` also carries `capacity` and
 `registrationCount` (only meaningful with a capacity) and the optional detail fields
 (`about`, `contactEmail`, `cost`, `bringAlong`, `languages`, `minimumAge`, `agenda`,
 `gettingThere`, `linkDelivery`, `joinRequirements`) that the create and edit calls

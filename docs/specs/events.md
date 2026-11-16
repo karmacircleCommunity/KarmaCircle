@@ -37,7 +37,20 @@ A full event shows "Event is full" to everyone who does not already hold a place
 Someone who is going can **leave** (PG-3): a "Leave event" link under the status
 line opens a confirmation, calls `DELETE /events/:uid/registration`, gives the
 spot back, and the page refreshes the event and the registration state. Leaving
-is only offered until the event starts (the API refuses it after). Share uses the browser share
+is only offered until the event starts (the API refuses it after).
+
+Three more fields shape what people see (November 2026). An event's **format**
+is In person, Online or **Hybrid** (PG-10): a Hybrid event has a venue and a live
+stream, shows "Hybrid · City, Country" on cards and lists, and answers both "where"
+and "how to join" on its page, venue first. Every event can have a **kind**
+(Volunteering drive, Fundraiser, Workshop or training, Awareness campaign, Meetup or
+networking, Cultural or community event, Other) and up to eight **tags** (PG-9):
+the kind is a label on the card and a badge on the page, the tags are `#chips` on
+the page and are matched by the directory search. An event can also be a **draft**
+(PG-15): saved, but only its own organization can see it. A draft is not in the
+directory, the organization's public profile or its dashboard, cannot be opened by
+address by anyone else (it answers as not found), and cannot be joined; the owner
+sees it in Your events marked "Draft" and can open it with a banner saying so. Share uses the browser share
 sheet or clipboard, and Ask opens a mail link only when the event has a contact
 email. Organizations can find their hosted events at `/organization/events` and
 on their public organization profile, both backed by
@@ -224,6 +237,14 @@ already tells a visitor which day an event falls on. Sort direction still flips
 with the time filter: soonest-first for Upcoming, most-recent-first for Past,
 now decided by the API (start time, with the event id as tiebreaker).
 
+**Kind filter (November 2026, PG-9).** The toolbar has a third dropdown,
+"Filter by kind" ("All kinds" plus the seven kinds), next to the Upcoming/Past and
+the access/format ones (`DirectoryToolbar` gained an optional `tertiaryFilter`
+beside `secondaryFilter`). It is its own dropdown because kind and format or access
+can be asked together. The format/access dropdown now also has a **Hybrid** option.
+Choosing a kind sends `type=<slug>` (`eventEndpoints.directory({ type })`); an
+event with no kind never matches it.
+
 **Search, filters and paging are server-side (November 2026).** `GET /events`
 (`listEventsQuerySchema`, apps/api) takes `search`, `period`, `mode` and
 `inviteOnly` as well as `uid`/`slug`/`host`/pagination. The search box is
@@ -268,11 +289,19 @@ plus an organization publishing an in-person event from the full-page form.
 Events, invite-only, past event), `e2e/events/online-event-publishing.spec.ts`
 (online platform and meeting link) and `e2e/events/event-management.spec.ts`
 (edit and cancel, below), `e2e/events/event-attendees.spec.ts` (leave,
-capacity, attendee list) and `e2e/events/event-details.spec.ts` (optional details)
-were added in November 2026. The first 15 events specs passed on Chromium, Firefox
-and WebKit on 2026-11-16 (45 of 45). The full 26 pass on each browser run alone; one run of all three at once passed 76 of 78, with a WebKit failure in the full-event test and a Firefox failure in the default-platform test, both timeouts under heavy load that pass alone (see T-10 in the events to-do list), after
-`events-responsive.spec.ts` was changed to create future events that end after
-they start and to move its past event with the E2E-only backdate route. Pure
+capacity, attendee list) and `e2e/events/event-details.spec.ts` (optional details),
+`e2e/events/event-hybrid.spec.ts`, `e2e/events/event-kind.spec.ts` and
+`e2e/events/event-drafts.spec.ts` were added in November 2026, and
+`events-responsive.spec.ts` was changed to create future events that end after they
+start and to move its past event with the E2E-only backdate route. Results on
+2026-11-16: the first 15 specs passed on Chromium, Firefox and WebKit (45 of 45);
+the 26 after attendees and details pass on each browser run alone, and one run of
+all three at once passed 76 of 78 (a WebKit failure in the full-event test and a
+Firefox failure in the default-platform test, both timeouts under heavy load that
+pass alone, see T-10 in the events to-do list); and all 37 tests of the whole folder,
+including Hybrid, kind and drafts, passed on Chromium. Every publishing test now
+picks the form's required "Kind of event" first (`chooseKind` in
+`event-helpers.ts`). Pure
 helpers have Vitest unit tests (see [testing.md](./testing.md)).
 
 `event-management.spec.ts` (4 tests): an organization edits an event from Your
@@ -326,6 +355,16 @@ message in an error toast. A cancelled event stays in the list with a red
 The row's main area is still one link to the public event page, with the
 actions in a separate strip so they are never nested inside it.
 
+**Drafts (November 2026, PG-15).** A draft row has a "Draft" label and **Edit**,
+**Publish** and **Delete draft** actions, and no Attendees link. Publish calls
+`POST /events/:uid/publish` (a draft whose start has since passed shows the API's
+message in a toast) and the row loses its label. Delete draft opens a confirmation
+("This can't be undone") and calls `DELETE /events/:uid`; a published event never
+offers it. A published event that has not ended also gets **Unpublish** (a
+confirmation, then `POST /events/:uid/unpublish`), which the API refuses with a
+message saying to cancel instead once anyone has registered. One `pending` action
+(cancel, unpublish or delete) drives whichever confirmation is open.
+
 ## `MyEvents.tsx` — an attendee's joined events
 
 [apps/web/src/features/events/pages/MyEvents.tsx](../../apps/web/src/features/events/pages/MyEvents.tsx),
@@ -359,6 +398,39 @@ HTTP or HTTPS. It is routed at `/organization/events/new` for signed-in
 organization accounts with a live profile. Validation and submission go through
 [useEvent](../../apps/web/src/features/events/hooks/useEvent.ts), which calls
 the real `POST /events/create` API function (or, in edit mode, `PATCH /events/:uid`).
+
+### Format, kind, tags and drafts (November 2026, PG-9, PG-10 and PG-15)
+
+**Format.** "Event format" has three buttons: In person, Online and **Hybrid** ("A
+place and a live stream"). `utils/eventMode.ts` holds the two questions every
+mode-dependent piece asks instead of "in person or online?": `hasVenue(mode)` (not
+Online) and `hasOnlineAccess(mode)` (not In person). Hybrid shows both the venue
+fields and the video platform and meeting link, requires all of them, keeps both
+sets of notes (directions, link delivery, what to have ready), and an edit that
+switches the format sends the new format's whole field group so the API can drop the
+side that no longer applies. `describeWhere()` makes the one-line "where" for a card
+or row (Online: "Online · Zoom Meeting", In person: "Guwahati, India", Hybrid:
+"Hybrid · Guwahati, India"). `EventLocationPanel` renders a venue card and a
+joining card, either or both, and the detail section is titled "Where it is and how
+to join" for Hybrid.
+
+**Kind and tags.** Section 01 has a required **Kind of event** select and an
+optional **Tags** box (comma separated, up to eight, lower-cased and de-duplicated
+the same way the API does; `utils/eventTags.ts`). The kinds live in
+`constants/eventTypes.ts` as slugs with labels (no Hackathon: that is PG-27). A
+legacy event with no kind must be given one in the edit form before it can be
+saved.
+
+**Drafts.** A new event has two buttons: **Save as draft** (sends `status: "draft"`,
+shows "Draft saved. Only you can see it until you publish it." and goes back to Your
+events, since the page is not public) and **Publish event**. A draft opens at the
+same edit route with the heading "Edit your draft", **Save draft** (stays a draft,
+back to the list) and **Publish event** (saves the changes first, then
+`POST /events/:uid/publish`; if the publish step is refused the changes stay saved
+and the message is shown). The form is held to the full rules either way. On the
+event page a draft has a banner ("This is a draft. Only you can see this page."), a
+"Draft" badge, a "Only you can see this event" panel instead of Join, and no mobile
+action bar. `submitCallback` takes a `SubmitIntent` (`publish` or `draft`).
 
 ### Capacity and the details section (November 2026, PG-5 and PG-7)
 
@@ -643,8 +715,10 @@ Past.
 
 Pure helpers have colocated Vitest tests, run with `pnpm test:unit` from
 `apps/web` (see [testing.md](./testing.md)): `formatEventFacts.test.ts`,
-`getFormattedDate.test.ts`, `toDisplayEvent.test.ts` (which also covers
-`toDisplayEventDetail`, the cancelled mapping and the capacity counts),
+`getFormattedDate.test.ts`, `eventMode.test.ts`, `eventTags.test.ts`, `constants/eventTypes.test.ts`,
+`toDisplayEvent.test.ts` (which also covers
+`toDisplayEventDetail`, the cancelled mapping, the capacity counts and the kind
+and tags),
 `eventToFormState.test.ts`, `buildEventChanges.test.ts` (only changed fields,
 cover left out unless replaced, a start time left alone not re-sent, location
 groups, mode change, capacity), `eventDetailFields.test.ts` (normalizing,

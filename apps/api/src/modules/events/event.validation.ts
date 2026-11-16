@@ -31,6 +31,9 @@ import {
   EVENT_PLATFORM_LINK_MAX_LENGTH,
   EVENT_PLATFORM_MAX_LENGTH,
   EVENT_SEARCH_MAX_LENGTH,
+  EVENT_TAG_MAX_LENGTH,
+  EVENT_TAGS_MAX_ITEMS,
+  EVENT_TYPES,
   EVENT_STATE_MAX_LENGTH,
   RESERVED_EVENT_UIDS,
 } from "./event.constants";
@@ -246,7 +249,7 @@ const editableEventShape = {
       message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
     }),
   coverImage: coverImageSchema,
-  mode: z.enum(["Online", "Offline"]),
+  mode: z.enum(["Online", "Offline", "Hybrid"]),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   startDate: z.coerce.date(),
@@ -263,6 +266,14 @@ const editableEventShape = {
     .max(EVENT_PLATFORM_LINK_MAX_LENGTH)
     .optional(),
   ...detailShape,
+  /** What kind of event this is (PG-9). Optional for compatibility; the web form requires it. */
+  eventType: z.enum(EVENT_TYPES).optional(),
+  /** Free-text tags, lower-cased and de-duplicated; `[]` clears them on edit. */
+  tags: z
+    .array(z.string().trim().toLowerCase().min(1).max(EVENT_TAG_MAX_LENGTH))
+    .max(EVENT_TAGS_MAX_ITEMS)
+    .transform((tags) => [...new Set(tags)])
+    .optional(),
   /**
    * Most people who can join (PG-5). Leave it out for no limit. `null` is only
    * meaningful when editing, where it removes an existing limit.
@@ -284,7 +295,7 @@ const editableEventShape = {
 };
 
 type EventRuleFields = {
-  mode: "Online" | "Offline";
+  mode: "Online" | "Offline" | "Hybrid";
   startTime: Date;
   endTime: Date;
   city?: string;
@@ -322,8 +333,13 @@ const addEventRuleIssues = (
     });
   }
 
-  const requiredFields =
-    data.mode === "Offline" ? OFFLINE_REQUIRED_FIELDS : ONLINE_REQUIRED_FIELDS;
+  // Hybrid needs both a venue and a way to join online.
+  const requiredFields: readonly (keyof EventRuleFields)[] =
+    data.mode === "Offline"
+      ? OFFLINE_REQUIRED_FIELDS
+      : data.mode === "Online"
+        ? ONLINE_REQUIRED_FIELDS
+        : [...OFFLINE_REQUIRED_FIELDS, ...ONLINE_REQUIRED_FIELDS];
 
   for (const field of requiredFields) {
     if (!data[field]) {
@@ -336,7 +352,7 @@ const addEventRuleIssues = (
   }
 
   if (
-    data.mode === "Online" &&
+    data.mode !== "Offline" &&
     data.platformLink &&
     !isHttpUrl(data.platformLink)
   ) {
@@ -360,6 +376,12 @@ export const createEventSchema = z
         message: "That event page address is reserved. Choose another one",
       }),
     ...editableEventShape,
+    /**
+     * `draft` saves the event hidden from everyone but its organization (PG-15);
+     * `published` (the default) makes it public. Only create sets this: after
+     * that the publish, unpublish and cancel routes move it.
+     */
+    status: z.enum(["draft", "published"]).optional(),
   })
   .superRefine((data, ctx) =>
     addEventRuleIssues(data, ctx, { requireFutureStart: true }),
@@ -423,7 +445,9 @@ export const listEventsQuerySchema = z
      */
     period: z.enum(["upcoming", "past"]).optional(),
     /** Narrow by where the event happens. */
-    mode: z.enum(["Online", "Offline"]).optional(),
+    mode: z.enum(["Online", "Offline", "Hybrid"]).optional(),
+    /** Narrow by what kind of event it is (PG-9). */
+    type: z.enum(EVENT_TYPES).optional(),
     /** `true` is invite-only events, `false` is events open to everyone. */
     inviteOnly: z
       .enum(["true", "false"])

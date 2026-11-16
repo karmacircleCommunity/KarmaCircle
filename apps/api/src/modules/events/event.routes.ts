@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { AuthenticatedRequest, requireAuth } from "../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  optionalAuth,
+  requireAuth,
+} from "../../middleware/auth";
 import { validate } from "../../middleware/validate";
 import { asyncHandler } from "../../utils/async-handler";
 import * as eventController from "./event.controller";
@@ -67,7 +71,7 @@ router.get(
  *         schema: { type: string }
  *       - in: query
  *         name: search
- *         description: Case-insensitive text match on the event name, city and host name
+ *         description: Case-insensitive text match on the event name, city, host name and tags
  *         schema: { type: string, maxLength: 100 }
  *       - in: query
  *         name: period
@@ -75,7 +79,11 @@ router.get(
  *         schema: { type: string, enum: [upcoming, past] }
  *       - in: query
  *         name: mode
- *         schema: { type: string, enum: [Online, Offline] }
+ *         schema: { type: string, enum: [Online, Offline, Hybrid] }
+ *       - in: query
+ *         name: type
+ *         description: What kind of event it is
+ *         schema: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other] }
  *       - in: query
  *         name: inviteOnly
  *         description: "true for invite-only events, false for events open to everyone"
@@ -93,6 +101,7 @@ router.get(
  */
 router.get(
   "/",
+  optionalAuth,
   validate(listEventsQuerySchema, "query"),
   asyncHandler(eventController.listEvents),
 );
@@ -293,7 +302,7 @@ router.delete(
  *       The start time must be in the future and the end time must be after
  *       the start time. An Offline event needs city, state, country and
  *       address. An Online event needs platform and platformLink, and the
- *       link must start with http:// or https://. A uid that is already taken
+ *       link must start with http:// or https://. A Hybrid event needs both sets. A uid that is already taken
  *       (including by a request that races this one) answers 409.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
@@ -312,6 +321,7 @@ router.delete(
  *                   joined by single hyphens. These words are reserved and
  *                   rejected: mine, new, create, edit, admin, api.
  *                 pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+ *               status: { type: string, enum: [draft, published], description: "draft saves the event hidden from everyone but its organization; published (the default) makes it public. Publish, unpublish and cancel move it afterwards" }
  *               name: { type: string, minLength: 10, maxLength: 80 }
  *               description: { type: string, minLength: 20, maxLength: 200 }
  *               coverImage:
@@ -321,12 +331,14 @@ router.delete(
  *                   data URL of a PNG, JPEG, WebP or GIF image
  *                   (data:image/png;base64,...) that decodes to 5 MB or less.
  *                   http links, SVG and other data types are rejected.
- *               mode: { type: string, enum: [Online, Offline] }
+ *               mode: { type: string, enum: [Online, Offline, Hybrid], description: "Hybrid needs both the in-person fields and the online ones" }
  *               startTime: { type: string, format: date-time, description: Must be in the future }
  *               endTime: { type: string, format: date-time, description: Must be after startTime }
  *               startDate: { type: string, format: date-time }
  *               endDate: { type: string, format: date-time }
  *               inviteOnly: { type: boolean, description: "Label only for now: joining an invite-only event is refused with 403" }
+ *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
+ *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
  *               capacity: { type: integer, minimum: 1, maximum: 100000, description: "Most people who can join. Omit for no limit" }
  *               about: { type: array, maxItems: 20, items: { type: string, maxLength: 2000 }, description: "Long-form paragraphs for About this event" }
  *               contactEmail: { type: string, format: email, maxLength: 254 }
@@ -388,12 +400,14 @@ router.post(
  *               name: { type: string, minLength: 10, maxLength: 80 }
  *               description: { type: string, minLength: 20, maxLength: 200 }
  *               coverImage: { type: string, description: Same rules as create. Omit to keep the current cover }
- *               mode: { type: string, enum: [Online, Offline] }
+ *               mode: { type: string, enum: [Online, Offline, Hybrid], description: "Hybrid needs both the in-person fields and the online ones" }
  *               startTime: { type: string, format: date-time }
  *               endTime: { type: string, format: date-time }
  *               startDate: { type: string, format: date-time }
  *               endDate: { type: string, format: date-time }
  *               inviteOnly: { type: boolean }
+ *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
+ *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
  *               capacity: { type: integer, minimum: 1, maximum: 100000, nullable: true, description: "A number sets the limit (not below the people already registered, else 409); null removes it" }
  *               details: { description: "The detail fields below are also accepted. On edit, null removes cost, minimumAge, contactEmail, gettingThere, linkDelivery and joinRequirements, and [] clears a list" }
  *               about: { type: array, maxItems: 20, items: { type: string, maxLength: 2000 }, description: "Long-form paragraphs for About this event" }
@@ -427,6 +441,95 @@ router.patch(
   validate(eventUidParamsSchema, "params"),
   validate(updateEventSchema),
   asyncHandler<AuthenticatedRequest>(eventController.updateEvent),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/publish:
+ *   post:
+ *     summary: Publish a draft event
+ *     description: >
+ *       Makes a draft public. The event must still pass the create rules (the
+ *       start in the future, the mode's fields present). Host only.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ message: Event Published, event }" }
+ *       400: { description: The draft no longer passes the create rules }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event not found }
+ *       409: { description: Already published, cancelled or ended }
+ */
+router.post(
+  "/:uid/publish",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.publishEvent),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/unpublish:
+ *   post:
+ *     summary: Take a published event back to a draft
+ *     description: >
+ *       Hides the event from everyone but its organization. Refused with 409 once
+ *       anyone has registered (cancel the event instead), and for a cancelled or
+ *       ended event. Host only.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ message: Event Unpublished, event }" }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event not found }
+ *       409: { description: Already a draft, cancelled, ended or has registrations }
+ */
+router.post(
+  "/:uid/unpublish",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.unpublishEvent),
+);
+
+/**
+ * @openapi
+ * /events/{uid}:
+ *   delete:
+ *     summary: Delete a draft event
+ *     description: >
+ *       Only a draft can be deleted (it was never public and has no registrations).
+ *       A published or cancelled event answers 409. Host only.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ message: Draft Deleted }" }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event not found }
+ *       409: { description: The event is not a draft }
+ */
+router.delete(
+  "/:uid",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.deleteDraft),
 );
 
 /**

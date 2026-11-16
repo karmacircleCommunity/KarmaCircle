@@ -1,3 +1,4 @@
+import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import type {
   ApiEvent,
   EventAgendaItem,
@@ -166,9 +167,11 @@ export function normalizeDetails(
           ? { detail: trimmed(row.detail ?? "") }
           : {}),
       })),
-    gettingThere: mode === "Offline" ? orNull(form.gettingThere) : null,
-    linkDelivery: mode === "Online" ? orNull(form.linkDelivery) : null,
-    joinRequirements: mode === "Online" ? orNull(form.joinRequirements) : null,
+    gettingThere: hasVenue(mode) ? orNull(form.gettingThere) : null,
+    linkDelivery: hasOnlineAccess(mode) ? orNull(form.linkDelivery) : null,
+    joinRequirements: hasOnlineAccess(mode)
+      ? orNull(form.joinRequirements)
+      : null,
   };
 }
 
@@ -293,12 +296,12 @@ export function validateDetails(
   }
 
   if (
-    mode === "Offline" &&
+    hasVenue(mode) &&
     trimmed(form.gettingThere).length > L.gettingThereLength
   ) {
     errors.gettingThere = `Keep this under ${L.gettingThereLength} characters`;
   }
-  if (mode === "Online") {
+  if (hasOnlineAccess(mode)) {
     if (trimmed(form.linkDelivery).length > L.joinNoteLength) {
       errors.linkDelivery = `Keep this under ${L.joinNoteLength} characters`;
     }

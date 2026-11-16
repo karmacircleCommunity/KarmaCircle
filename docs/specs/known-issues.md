@@ -89,6 +89,8 @@ See the relevant feature specs ([organizations.md](./organizations.md), [events.
 
 Capacity is now optional and real: an organizer sets a maximum when publishing or editing, the API reserves a spot atomically on join (`409 "This event is full."`), and the UI shows going and spots-left **only for an event with a capacity** (`capacityCounts` in `toDisplayEvent.ts`, then the existing `hasCapacity` checks). An event with no capacity says "No limit" and shows no numbers, because `registrationCount` is only trustworthy for a capped event (it is recounted when a capacity is set). Leaving (PG-3), the host attendee list with check-in and CSV (PG-6) and the organizer's join notice exist. Still missing: invitations and approval (PG-4), a waitlist (PG-14), and emailing attendees about changes (PG-18). Do not display a headcount for an event with no capacity.
 
+Also built in November 2026: an event has a **format** of In person, Online or **Hybrid** (PG-10), an optional **kind** and up to eight **tags** (PG-9), and can be a **draft** (PG-15) with publish, unpublish and delete-draft actions. Known limits: the directory's mobile toolbar now stacks three dropdowns plus the button, which is tall (the design system note says to revisit the multi-facet panel before a fourth dimension); a draft is held to the full create rules, so there is no half-finished draft; and the event kind is optional in the API but required by the form, so a legacy event with no kind must be given one before the edit form will save it.
+
 ## Events - open issues (November 2026)
 
 - **`formatDuration` returns "NaN days"** (`features/events/utils/formatEventFacts.ts`) when either date cannot be read. Recorded as an `it.todo` in `formatEventFacts.test.ts`.

@@ -282,7 +282,11 @@ The component owns presentation only.
 
 ### Props
 
-`query`, `onQueryChange`, `searchPlaceholder`, `searchLabel`, `options` (the primary taxonomy including the `"All"` pseudo-option), `active`, `onSelect`, `filterLabel` (rendered visually now, not just as an `aria-label` — see below), `summary` (a `ReactNode`, e.g. `12 events in Relief`), `action` (the page's single primary button), `suggestions?` (September 2026 - see below), `secondaryFilter?` (September 2026 - see below).
+`query`, `onQueryChange`, `searchPlaceholder`, `searchLabel`, `options` (the primary taxonomy including the `"All"` pseudo-option), `active`, `onSelect`, `filterLabel` (rendered visually now, not just as an `aria-label` — see below), `summary` (a `ReactNode`, e.g. `12 events in Relief`), `action` (the page's single primary button), `suggestions?` (September 2026 - see below), `secondaryFilter?` (September 2026 - see below), `tertiaryFilter?` (November 2026 - see below).
+
+### `tertiaryFilter`, a third independent `FilterDropdown` (November 2026)
+
+`/events` added "Filter by kind" (PG-9) as a third dropdown through an optional `tertiaryFilter` prop with the same shape as `secondaryFilter` (`options`, `active`, `onSelect`, `filterLabel`; a third generic type parameter keeps the option unions apart). It is drawn after the secondary one and before `action`. Below `sm` the dropdowns wrap one per row like the others, so three of them make the controls block taller on a phone (375px: search, then Upcoming, All and All kinds on separate rows, then the button); this is the point the note below says to revisit the multi-facet panel (pattern 1) if a fourth dimension appears.
 
 ### `secondaryFilter`, a second independent `FilterDropdown`
 

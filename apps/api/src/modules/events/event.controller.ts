@@ -19,12 +19,25 @@ import {
 import { logger } from "../../config/logger";
 
 export async function listEvents(req: Request, res: Response) {
-  const { uid, slug, host, search, period, mode, inviteOnly, page, limit } =
-    req.query as unknown as ListEventsQuery;
+  const {
+    uid,
+    slug,
+    host,
+    search,
+    period,
+    mode,
+    type,
+    inviteOnly,
+    page,
+    limit,
+  } = req.query as unknown as ListEventsQuery;
   const eventUid = uid ?? slug;
+  // Set by `optionalAuth`: a signed-in organization sees its own drafts.
+  const viewerEmail = (req as Request & { auth?: { email: string } }).auth
+    ?.email;
 
   if (eventUid) {
-    const event = await eventService.findByUid(eventUid);
+    const event = await eventService.findViewableByUid(eventUid, viewerEmail);
 
     if (!event) {
       throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.NOT_FOUND);
@@ -34,8 +47,9 @@ export async function listEvents(req: Request, res: Response) {
   }
 
   const { data, total } = await eventService.findAll(
-    { host, search, period, mode, inviteOnly },
+    { host, search, period, mode, type, inviteOnly },
     toSkipLimit({ page, limit }),
+    { includeDrafts: await eventService.viewerOwnsHandle(viewerEmail, host) },
   );
   return res
     .status(STATUS_CODE.OK)
@@ -75,6 +89,27 @@ export async function updateEvent(req: AuthenticatedRequest, res: Response) {
   );
 
   res.status(STATUS_CODE.OK).json({ message: "Event Updated", event });
+}
+
+export async function publishEvent(req: AuthenticatedRequest, res: Response) {
+  const event = await eventService.publishEvent(req.auth.email, req.params.uid);
+
+  res.status(STATUS_CODE.OK).json({ message: "Event Published", event });
+}
+
+export async function unpublishEvent(req: AuthenticatedRequest, res: Response) {
+  const event = await eventService.unpublishEvent(
+    req.auth.email,
+    req.params.uid,
+  );
+
+  res.status(STATUS_CODE.OK).json({ message: "Event Unpublished", event });
+}
+
+export async function deleteDraft(req: AuthenticatedRequest, res: Response) {
+  await eventService.deleteDraft(req.auth.email, req.params.uid);
+
+  res.status(STATUS_CODE.OK).json({ message: "Draft Deleted" });
 }
 
 export async function cancelEvent(req: AuthenticatedRequest, res: Response) {

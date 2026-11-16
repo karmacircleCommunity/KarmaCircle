@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
+import { parseTags } from "@features/events/utils/eventTags";
+import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import { detailChanges } from "@features/events/utils/eventDetailFields";
 import type { ApiEvent, EventFormState } from "@features/events/types";
 
@@ -51,11 +53,24 @@ export function buildEventChanges(
     changes.capacity = typedCapacity === "" ? null : Number(typedCapacity);
   }
 
+  // The type can be changed but not emptied (the form requires one).
+  if (form.eventType !== "" && form.eventType !== original.eventType) {
+    changes.eventType = form.eventType;
+  }
+  const nextTags = parseTags(form.tags);
+  if (JSON.stringify(nextTags) !== JSON.stringify(original.tags ?? [])) {
+    changes.tags = nextTags;
+  }
+
   const modeChanged = form.mode !== original.mode;
-  const locationFields =
-    form.mode === "Offline"
+  const locationFields = [
+    ...(hasVenue(form.mode)
       ? (["city", "state", "country", "address"] as const)
-      : (["platform", "platformLink"] as const);
+      : []),
+    ...(hasOnlineAccess(form.mode)
+      ? (["platform", "platformLink"] as const)
+      : []),
+  ];
   const locationChanged = locationFields.some(
     (field) => form[field] !== (original[field] ?? ""),
   );

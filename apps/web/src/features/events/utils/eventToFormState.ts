@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { formatTags } from "@features/events/utils/eventTags";
 import { detailFieldsFromEvent } from "@features/events/utils/eventDetailFields";
 import type { ApiEvent, EventFormState } from "@features/events/types";
 
@@ -30,6 +31,8 @@ export function eventToFormState(event: ApiEvent): EventFormState {
     platformLink: event.platformLink ?? "",
     inviteOnly: event.inviteOnly,
     capacity: event.capacity === undefined ? "" : String(event.capacity),
+    eventType: event.eventType ?? "",
+    tags: formatTags(event.tags),
     ...detailFieldsFromEvent(event),
   };
 }

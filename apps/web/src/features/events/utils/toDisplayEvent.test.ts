@@ -226,3 +226,25 @@ describe("capacity counts", () => {
     });
   });
 });
+
+describe("event type and tags", () => {
+  it("passes the type to the card and the type and tags to the detail page", () => {
+    const typed = {
+      ...baseEvent,
+      eventType: "volunteering" as const,
+      tags: ["beach", "families"],
+    };
+
+    expect(toDisplayEvent(typed).eventType).toBe("volunteering");
+    expect(toDisplayEventDetail(typed).event).toMatchObject({
+      eventType: "volunteering",
+      tags: ["beach", "families"],
+    });
+  });
+
+  it("leaves the type empty and the tags an empty list for an older event", () => {
+    expect(toDisplayEvent(baseEvent).eventType).toBeUndefined();
+    expect(toDisplayEventDetail(baseEvent).event.eventType).toBeUndefined();
+    expect(toDisplayEventDetail(baseEvent).event.tags).toEqual([]);
+  });
+});

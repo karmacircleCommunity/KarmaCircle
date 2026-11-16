@@ -37,6 +37,9 @@ export function toDisplayEventDetail(event: ApiEvent): DetailedEventRecord {
       isGovernmentSponsored: event.isGovernmentSponsored,
       inviteOnly: event.inviteOnly,
       cancelled: event.status === "cancelled",
+      draft: event.status === "draft",
+      eventType: event.eventType,
+      tags: event.tags ?? [],
     },
     detail: {
       about: event.about ?? [],

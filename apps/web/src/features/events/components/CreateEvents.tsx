@@ -8,6 +8,7 @@ import {
   FiClock,
   FiImage,
   FiMapPin,
+  FiRadio,
   FiVideo,
 } from "react-icons/fi";
 import { Footer, Navbar } from "@components";
@@ -29,10 +30,17 @@ import EventDetailsSection from "@features/events/components/EventDetailsSection
 import { emptyDetailFields } from "@features/events/utils/eventDetailFields";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { useEvent } from "@features/events/hooks/useEvent";
+import { EVENT_TYPE_OPTIONS } from "@features/events/constants/eventTypes";
+import {
+  MODE_LABELS,
+  hasOnlineAccess,
+  hasVenue,
+} from "@features/events/utils/eventMode";
 import type {
   ApiEvent,
   EventFormErrors,
   EventFormState,
+  SubmitIntent,
 } from "@features/events/types";
 
 /** A blank form, with dates computed when the form opens (not at page load). */
@@ -54,6 +62,8 @@ const createInitialEvent = (): EventFormState => ({
   platformLink: "",
   inviteOnly: false,
   capacity: "",
+  eventType: "",
+  tags: "",
   ...emptyDetailFields(),
 });
 
@@ -78,6 +88,7 @@ export const EventForm = ({
   original?: ApiEvent;
 }) => {
   const isEdit = Boolean(original);
+  const isDraftEdit = original?.status === "draft";
   const navigate = useNavigate();
   const { organization } = useMyOrganization();
   const eventPageUrlPrefix = `${window.location.origin}/events/`;
@@ -142,8 +153,18 @@ export const EventForm = ({
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    void submit("publish");
+  };
+
+  /**
+   * Runs the checks, then saves. `intent` is which button was pressed: publish
+   * (the form's own submit) or save as a draft (PG-15). A saved draft is not
+   * public, so the organizer goes back to their list rather than to a page
+   * nobody else can open.
+   */
+  const submit = async (intent: SubmitIntent) => {
     const validationErrors = validateEvent();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
@@ -155,8 +176,14 @@ export const EventForm = ({
     try {
       await submitCallback(
         event,
-        () => navigate(`/events/${event.uid}`),
+        () =>
+          navigate(
+            intent === "draft"
+              ? "/organization/events"
+              : `/events/${event.uid}`,
+          ),
         validationErrors,
+        intent,
       );
     } finally {
       setIsSubmitting(false);
@@ -201,12 +228,18 @@ export const EventForm = ({
               Organizer workspace
             </p>
             <h1 className="mt-2 font-outfit text-3xl leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">
-              {isEdit ? "Edit your event" : "Bring people together"}
+              {isDraftEdit
+                ? "Edit your draft"
+                : isEdit
+                  ? "Edit your event"
+                  : "Bring people together"}
             </h1>
             <p className="mt-3 font-poppins text-body leading-6 text-ink/65 sm:text-body-lg sm:leading-7">
-              {isEdit
-                ? "Change anything below. People see the update on the event page as soon as you save."
-                : "Share the essentials first. Your event will appear in discovery as soon as it’s published."}
+              {isDraftEdit
+                ? "This event is a draft: only you can see it until you publish it. Save as often as you like."
+                : isEdit
+                  ? "Change anything below. People see the update on the event page as soon as you save."
+                  : "Share the essentials first. Your event will appear in discovery as soon as it’s published, or save a draft and finish later."}
             </p>
           </header>
 
@@ -280,6 +313,48 @@ export const EventForm = ({
                       aria-invalid={Boolean(errors.description)}
                     />
                   </Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field
+                      id="eventType"
+                      label="Kind of event"
+                      error={errors.eventType}
+                    >
+                      <select
+                        id="eventType"
+                        name="eventType"
+                        value={event.eventType}
+                        onChange={handleTextChange}
+                        className={inputClasses}
+                        aria-invalid={Boolean(errors.eventType)}
+                      >
+                        <option value="" disabled>
+                          Choose a kind
+                        </option>
+                        {EVENT_TYPE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field
+                      id="tags"
+                      label="Tags (optional)"
+                      error={errors.tags}
+                      hint="Up to 8, separated by commas. People can find the event by them."
+                    >
+                      <input
+                        id="tags"
+                        name="tags"
+                        value={event.tags}
+                        onChange={handleTextChange}
+                        className={inputClasses}
+                        placeholder="beach, clean-up, families"
+                        autoCapitalize="none"
+                        aria-invalid={Boolean(errors.tags)}
+                      />
+                    </Field>
+                  </div>
                   <div>
                     <p className="mb-1.5 font-outfit text-body font-medium text-ink/75">
                       Cover image
@@ -348,10 +423,15 @@ export const EventForm = ({
                   <legend className="mb-3 font-outfit text-body font-semibold text-brand-secondary">
                     Event format
                   </legend>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {(["Offline", "Online"] as const).map((mode) => {
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {(["Offline", "Online", "Hybrid"] as const).map((mode) => {
                       const selected = event.mode === mode;
-                      const Icon = mode === "Offline" ? FiMapPin : FiVideo;
+                      const Icon =
+                        mode === "Offline"
+                          ? FiMapPin
+                          : mode === "Online"
+                            ? FiVideo
+                            : FiRadio;
                       return (
                         <button
                           key={mode}
@@ -368,12 +448,14 @@ export const EventForm = ({
                           />
                           <span>
                             <span className="block font-outfit font-semibold text-brand-secondary">
-                              {mode === "Offline" ? "In person" : "Online"}
+                              {MODE_LABELS[mode]}
                             </span>
                             <span className="mt-0.5 block font-poppins text-caption text-ink/55">
                               {mode === "Offline"
                                 ? "People meet at a place"
-                                : "People join by video"}
+                                : mode === "Online"
+                                  ? "People join by video"
+                                  : "A place and a live stream"}
                             </span>
                           </span>
                         </button>
@@ -429,7 +511,7 @@ export const EventForm = ({
                   </Field>
                 </div>
 
-                {event.mode === "Offline" ? (
+                {hasVenue(event.mode) && (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <Field
                       id="address"
@@ -482,7 +564,9 @@ export const EventForm = ({
                       </select>
                     </Field>
                   </div>
-                ) : (
+                )}
+
+                {hasOnlineAccess(event.mode) && (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <Field id="platform" label="Video platform">
                       <select
@@ -593,19 +677,31 @@ export const EventForm = ({
                 >
                   {isEdit ? "Discard changes" : "Cancel"}
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
-                >
-                  {isSubmitting
-                    ? isEdit
-                      ? "Saving…"
-                      : "Publishing…"
-                    : isEdit
-                      ? "Save changes"
-                      : "Publish event"}
-                </button>
+                <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                  {(!isEdit || isDraftEdit) && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => void submit("draft")}
+                      className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-brand-secondary/20 bg-white px-6 font-outfit text-body font-semibold text-brand-secondary transition hover:border-brand/45 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {isDraftEdit ? "Save draft" : "Save as draft"}
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {isSubmitting
+                      ? isEdit && !isDraftEdit
+                        ? "Saving…"
+                        : "Publishing…"
+                      : isEdit && !isDraftEdit
+                        ? "Save changes"
+                        : "Publish event"}
+                  </button>
+                </div>
               </div>
             </form>
 
@@ -662,16 +758,18 @@ export const EventForm = ({
                         {event.startTime?.format("h:mm A") || "Choose a time"}
                       </span>
                       <span className="inline-flex items-center gap-2">
-                        {event.mode === "Offline" ? (
-                          <FiMapPin aria-hidden="true" className="text-brand" />
-                        ) : (
+                        {event.mode === "Online" ? (
                           <FiVideo aria-hidden="true" className="text-brand" />
+                        ) : (
+                          <FiMapPin aria-hidden="true" className="text-brand" />
                         )}
-                        {event.mode === "Offline"
-                          ? [event.city, event.country]
-                              .filter(Boolean)
-                              .join(", ") || "Add a location"
-                          : event.platform || "Online"}
+                        {event.mode === "Online"
+                          ? event.platform || "Online"
+                          : `${event.mode === "Hybrid" ? "Hybrid · " : ""}${
+                              [event.city, event.country]
+                                .filter(Boolean)
+                                .join(", ") || "Add a location"
+                            }`}
                       </span>
                     </div>
                     <div className="mt-4 flex items-center gap-2 border-t border-brand-secondary/8 pt-4">
@@ -688,9 +786,11 @@ export const EventForm = ({
                   </div>
                 </article>
                 <p className="mt-4 font-poppins text-caption leading-5 text-ink/50">
-                  {event.inviteOnly
-                    ? "This event will appear in discovery with an invite-only label."
-                    : "This event will appear in discovery for everyone."}{" "}
+                  {isDraftEdit
+                    ? "This draft is visible only to you until you publish it."
+                    : event.inviteOnly
+                      ? "This event will appear in discovery with an invite-only label."
+                      : "This event will appear in discovery for everyone."}{" "}
                   {isEdit
                     ? "Changes appear on the event page as soon as you save."
                     : "You can edit event details after publishing from your event workspace."}

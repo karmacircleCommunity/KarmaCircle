@@ -5,6 +5,7 @@ import {
   FormSection,
   inputClasses,
 } from "@features/events/components/EventFormParts";
+import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import {
   COST_CURRENCIES,
   DETAIL_LIMITS,
@@ -242,7 +243,7 @@ const EventDetailsSection = ({
           </Field>
         </div>
 
-        {event.mode === "Offline" ? (
+        {hasVenue(event.mode) && (
           <Field
             id="gettingThere"
             label="Getting there"
@@ -263,7 +264,9 @@ const EventDetailsSection = ({
               aria-invalid={Boolean(errors.gettingThere)}
             />
           </Field>
-        ) : (
+        )}
+
+        {hasOnlineAccess(event.mode) && (
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               id="linkDelivery"

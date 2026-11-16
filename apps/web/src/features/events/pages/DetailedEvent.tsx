@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import useSWR, { useSWRConfig } from "swr";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
@@ -241,6 +241,21 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
       <ComponentHelmet type="Events" />
       <Navbar />
 
+      {event.draft && (
+        <p
+          role="status"
+          className="m-0 border-b border-brand/20 bg-brand/8 px-9 py-3 text-center font-poppins text-body text-brand-secondary sm:px-10"
+        >
+          This is a draft. Only you can see this page.{" "}
+          <Link
+            to="/organization/events"
+            className="font-medium text-brand underline underline-offset-4"
+          >
+            Back to your events
+          </Link>
+        </p>
+      )}
+
       <div ref={pageRef}>
         <EventHero event={event} detail={detail} />
 
@@ -290,7 +305,13 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
               )}
 
               <EventSection
-                title={event.mode === "Online" ? "How to join" : "Where it is"}
+                title={
+                  event.mode === "Online"
+                    ? "How to join"
+                    : event.mode === "Hybrid"
+                      ? "Where it is and how to join"
+                      : "Where it is"
+                }
                 id="location"
               >
                 <EventLocationPanel event={event} detail={detail} />

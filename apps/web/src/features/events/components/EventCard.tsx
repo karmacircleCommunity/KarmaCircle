@@ -1,7 +1,23 @@
-import { FiCalendar, FiCheckCircle, FiClock, FiMapPin, FiShield, FiUserCheck, FiVideo, FiXCircle } from "react-icons/fi";
+import {
+  FiCalendar,
+  FiCheckCircle,
+  FiClock,
+  FiMapPin,
+  FiShield,
+  FiUserCheck,
+  FiVideo,
+  FiXCircle,
+} from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { eventTypeLabel } from "@features/events/constants/eventTypes";
+import { describeWhere } from "@features/events/utils/eventMode";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import { formatEventBadge, formatEventTime, formatSpotsLeft, isEventPast } from "@features/events/utils/formatEventFacts";
+import {
+  formatEventBadge,
+  formatEventTime,
+  formatSpotsLeft,
+  isEventPast,
+} from "@features/events/utils/formatEventFacts";
 import type { EventCardProps } from "@features/events/types";
 
 /**
@@ -55,9 +71,12 @@ import type { EventCardProps } from "@features/events/types";
 const EventCard = ({ event }: EventCardProps) => {
   const online = event.mode === "Online";
   const full = event.spotsLeft === 0;
-  const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
-  const accent = ORGANIZATION_ACCENTS[(event.accent ?? 0) % ORGANIZATION_ACCENTS.length];
+  const hasCapacity =
+    event.going !== undefined && event.spotsLeft !== undefined;
+  const accent =
+    ORGANIZATION_ACCENTS[(event.accent ?? 0) % ORGANIZATION_ACCENTS.length];
   const cancelled = Boolean(event.cancelled);
+  const typeLabel = eventTypeLabel(event.eventType);
   const past = !cancelled && isEventPast(event.startsAt);
 
   return (
@@ -124,6 +143,20 @@ const EventCard = ({ event }: EventCardProps) => {
             />
             <span className="absolute bottom-2.5 left-4 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
               {event.cause}
+            </span>
+          </>
+        )}
+        {/* What kind of event it is (PG-9), in the same bottom-left slot. A
+            cancelled or completed card shows that status instead, which is the
+            more useful thing to know at a glance. */}
+        {typeLabel && !cancelled && !past && (
+          <>
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent"
+            />
+            <span className="absolute bottom-2.5 left-4 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
+              {typeLabel}
             </span>
           </>
         )}
@@ -209,16 +242,11 @@ const EventCard = ({ event }: EventCardProps) => {
           </span>
           <span className="inline-flex items-center gap-1.5 truncate">
             {online ? (
-              <>
-                <FiVideo aria-hidden="true" className="size-3.5 shrink-0" />
-                Online{event.platform ? ` · ${event.platform}` : ""}
-              </>
+              <FiVideo aria-hidden="true" className="size-3.5 shrink-0" />
             ) : (
-              <>
-                <FiMapPin aria-hidden="true" className="size-3.5 shrink-0" />
-                {[event.city, event.country].filter(Boolean).join(", ") || "Location TBA"}
-              </>
+              <FiMapPin aria-hidden="true" className="size-3.5 shrink-0" />
             )}
+            {describeWhere(event)}
           </span>
         </div>
 

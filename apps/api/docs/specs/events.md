@@ -17,7 +17,7 @@ list with check-in. Owns the `Event` and `EventRegistration` models.
 | `hostUsername`, `hostName`                         | `string` (required)                                                | **Set by the server** from the authenticated caller's own `User` record — never accepted from the request body (see below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `organizerHandle`                                  | `string?`, indexed                                                 | **September 2026, tightened later the same month.** The real link to the `organizations` collection, set by the server (never from the request body) from the host's own `Organization` record. `createEvent()` now rejects a non-organization host outright (`403 NOT_AN_ORGANIZATION` - see `event.service.ts` below), so this is never unset for a newly created event; still `?`/optional on the schema only for defensive typing against a pre-existing/malformed document. `hostUsername`/`hostName` above are unchanged and stay as the free-text snapshot; this is the field an organization's public profile actually queries by (see below) |
 | `coverImage`                                       | `string?` (trimmed)                                                |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `mode`                                             | `"Online" \| "Offline"` (required, `enum`)                         | The only field with a real Mongoose `enum:` constraint in this module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `mode`                                             | `"Online" \| "Offline" \| "Hybrid"` (required, `enum`) | Where it happens. **`Hybrid` (November 2026, PG-10)** has a venue and a live stream, so it needs the in-person fields and the online ones and keeps both sets of notes. `enum:` is the only hard constraint on a field in this module otherwise |
 | `address`, `city`, `state`, `country`, `mapIframe` | `string?` (trimmed)                                                | Offline events require address, city, state, and country; the legacy `mapIframe` field remains optional and is not rendered by event detail                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `platform`, `platformLink`                         | `string?` (trimmed)                                                | Online events require a platform and an absolute HTTP or HTTPS meeting URL; offline events do not require these fields                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `startTime`, `endTime`, `startDate`, `endDate`     | `Date` (all required)                                              | Four separate date/time fields rather than two combined datetimes — see the frontend's own event-creation spec for how its date/time pickers populate these                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -25,8 +25,10 @@ list with check-in. Owns the `Event` and `EventRegistration` models.
 | `inviteOnly`                                       | `boolean`, default `false`                                         | **September 2026.** Unlike `isGovernmentSponsored`, this one _is_ in `createEventSchema` and organizer-settable at creation — it's a statement about their own event, not a claim about a third party, so there's no equivalent abuse concern                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `capacity`                                         | `number?` (integer, 1 to 100000)                                   | **November 2026 (PG-5).** Most people who can join; absent means no limit. Settable on create and edit (`null` removes it on edit)                                                                                                                                                                                                              |
 | `registrationCount`                                | `number`, default `0`                                              | **November 2026 (PG-5).** How many people are registered, kept in step with `EventRegistration` by `joinEvent` and `leaveEvent` with atomic `$inc`s so the last spot cannot be taken twice. **Only trustworthy for an event with a `capacity`**: `updateEvent` recounts it from the registrations whenever it sets a capacity, which also covers events saved before the field existed, and the web only shows going and spots left when a capacity exists |
-| `status`                                           | `"published" \| "cancelled"`, default `"published"`                | **November 2026 (PG-2).** Where the event is in its life. Only these two values exist; drafts and postponed events are PG-15. A document with no stored status (saved before the field existed) reads as `published` through the Mongoose default. Never accepted from a create or edit body: only `POST /events/:uid/cancel` changes it |
+| `status`                                           | `"draft" \| "published" \| "cancelled"`, default `"published"`   | **November 2026 (PG-2, PG-15).** Where the event is in its life. A **draft** is saved but visible only to its own organization; **published** is public; **cancelled** stays public with a badge. Postponed is still to do. A document with no stored status reads as `published`. Create may send `draft` or `published`; after that only the publish, unpublish and cancel routes change it (an edit body with `status` is a `400`) |
 | `cancelledAt`                                      | `Date?`                                                            | Set when `status` becomes `cancelled`, never cleared (there is no reinstate)                                                                                                                                                                                                                                                                  |
+| `eventType`                                        | `"volunteering" \| "fundraiser" \| "workshop" \| "awareness" \| "meetup" \| "cultural" \| "other"`? | **November 2026 (PG-9).** What kind of event it is. Optional in the API for compatibility with older events and clients; the web form requires it. No `hackathon` value: whether hackathons are an event type is still decided in PG-27 |
+| `tags`                                             | `string[]` (lower-case, trimmed, de-duplicated, at most 8, each at most 30 characters) | **November 2026 (PG-9).** Free-text tags. The directory search matches them; `[]` clears them on edit. Counting is on what was submitted, so a ninth tag is refused even if it repeats an earlier one |
 | `about`                                            | `string[]?`                                                        | Long-form paragraphs for the detail page's "About this event" section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `agenda`                                           | `{ time, title, detail? }[]?`, own sub-schema                      | The timeline/run-sheet. `time` is a pre-formatted wall-clock label ("9:00 am"), not a `Date` — a schedule is written in the event's own timezone, and converting it to a reader's own would be actively wrong for anyone reading from elsewhere                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `bringAlong`                                       | `string[]?`                                                        | What an attendee should turn up with, or be ready for                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -213,7 +215,15 @@ and with each other:
   `city` or `hostName`. It is an unindexed scan.
 - **`period`** - `upcoming` (`startTime >= now`, server clock) or `past`
   (`startTime < now`). Left out, every event is returned.
-- **`mode`** - `Online` or `Offline`.
+- **`mode`** - `Online`, `Offline` or `Hybrid`.
+- **`type`** (November 2026, PG-9) - one of the seven event kinds above; an event
+  with no kind never matches it. The kind filter combines with every other filter.
+- **`search`** also matches an event's **tags** (since PG-9).
+- **Drafts** (November 2026, PG-15) are never in a list unless the signed-in
+  caller is the organization named by `host`: `optionalAuth` (it never rejects)
+  reads the `Token` cookie, and only then does that host's own list include its
+  drafts. `GET /events?uid=` returns a draft only to its own organization and `404`
+  to everyone else, including another organization.
 - **`inviteOnly`** - the strings `true` or `false`. `false` also matches events
   with no stored flag (events saved before the field existed read as open).
 - **Order** - `startTime` then `_id` (the tiebreaker, so a page boundary never
@@ -270,14 +280,16 @@ values).
   and oversized values are rejected (a `data:` string longer than about 6.99
   million characters is rejected before it is parsed).
 - Maximum lengths: `city`, `state`, `country` 100; `address` 200; `platform` 60;
-  `platformLink` 2048. `mapIframe` is still unbounded. Required **only if `mode === "Offline"`** (`createEventSchema`'s
+  `platformLink` 2048. `mapIframe` is still unbounded. Required **only if `mode` is `Offline` or `Hybrid`** (`createEventSchema`'s
 `superRefine`): `city`, `state`, `country`, and `address` — each missing one
 adds its own Zod issue at that field's path, so a partially-filled offline event
 gets one `400` response listing every missing field at once, not just the first.
 The old `mapIframe` field remains optional for legacy records and is not part of
 the create form; event detail builds a map search link from the address. Online
-events require `platform` and `platformLink` at the validation layer, matching
-the organizer form. `inviteOnly` is optional, defaults `false`. `capacity` is
+and Hybrid events require `platform` and `platformLink` at the validation layer,
+matching the organizer form, so a **Hybrid** event needs all six fields and a
+`400` lists every missing one at once; the link must be http or https for both.
+`eventType` and `tags` are optional (see the model table). `inviteOnly` is optional, defaults `false`. `capacity` is
 optional (an integer from 1 to 100000; `null` is ignored on create).
 
 **Optional detail fields (November 2026, PG-7).** The detail-page fields are now
@@ -373,6 +385,32 @@ identities.
 
 `EventRegistration` gained `checkedInAt` (a date, absent until checked in).
 
+## `POST /events/:uid/publish`, `POST /events/:uid/unpublish`, `DELETE /events/:uid` (drafts)
+
+**November 2026 (PG-15).** All three are host only (same checks as edit). The model
+is: a draft is a saved event only its organization can see; publishing it makes it
+public; a published event can go back to a draft while nobody has registered; a
+draft can be deleted. A published event is never deleted, only cancelled.
+
+- **`POST /events/:uid/publish`** - draft to published. The event must still pass
+  the create rules (`assertEventRules` with a required future start, plus the
+  mode's fields), so a draft whose start has since passed is a `400` on
+  `startTime`. `409` if it is already published, cancelled or ended. `200 {
+  message: "Event Published", event }`.
+- **`POST /events/:uid/unpublish`** - published to draft. `409` if it is already a
+  draft, cancelled or ended, and **`409 "N people have already registered, so this
+  event cannot go back to a draft. Cancel it instead."`** once anyone has
+  registered. `200 { message: "Event Unpublished", event }`.
+- **`DELETE /events/:uid`** - deletes a **draft** for good (`200 { message: "Draft
+  Deleted" }`); a published or cancelled event is `409 "Only a draft can be
+  deleted. Cancel a published event instead."`. The page address is free again.
+- **Cancelling a draft** is `409` (there is nothing public to cancel; delete it).
+- **A draft cannot be joined, left or checked** by anyone: the join, leave and
+  registration-check routes answer `404` for it (`findPublicByUid`), as if it did
+  not exist. It is not counted or listed on the organization dashboard.
+- **Creating** takes an optional `status` of `draft` or `published` (default
+  published); a draft is held to the same rules as a published event.
+
 ## `GET /events/:uid/registration`
 
 Requires `requireAuth`; looks up only the caller's registration and returns
@@ -409,7 +447,20 @@ attendee's registrations never showing for another. Order of checks in
 (`200`), full (`409`), so an invite-only event that has also started returns
 `403`, a cancelled one always answers `409 "This event was cancelled."`, and a
 full event still reports "already joined" to its own attendees. `tests/events-directory.test.ts` covers the list filters (see
-`GET /events`). `tests/events-capacity.test.ts` (27 tests) covers leaving (removes
+`GET /events`). `tests/events-hybrid.test.ts` (14 tests, PG-10) covers a Hybrid
+event needing both field sets (each missing field named), the link rule, both sets
+of notes kept, editing Online or Offline into Hybrid (and the missing fields it
+asks for), Hybrid into Online or Offline dropping the other side, an untouched
+Hybrid edit, the three-way mode filter and an unknown mode.
+`tests/events-types.test.ts` (23 tests, PG-9) covers saving a kind and tags
+(lower-cased, trimmed, de-duplicated), every invalid kind and tag, all seven kinds,
+the eight-tag limit, editing and clearing, the kind filter (alone, with the mode,
+leaving untyped events out, unknown kind) and the tag search.
+`tests/events-drafts.test.ts` (27 tests, PG-15) covers saving a draft and the
+status values refused, who can see one (visitor, another organization, the owner,
+the host list, an invalid cookie), drafts being unjoinable, off the dashboard and
+editable, publish (including a stale start and the `409`s), unpublish (including
+the registration rule) and deleting a draft. `tests/events-capacity.test.ts` (27 tests) covers leaving (removes
 the registration and My Events entry, can rejoin, only the caller's own, `404`
 twice, `401`, `409` after the start, still allowed on a cancelled event) and
 capacity (optional, validation, counting, refusing when full, a repeat join not

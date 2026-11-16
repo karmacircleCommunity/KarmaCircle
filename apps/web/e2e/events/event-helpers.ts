@@ -90,6 +90,11 @@ export async function signUpIndividual(page: Page, stamp: number) {
   return { email };
 }
 
+/** Picks the form's required "Kind of event". Every publishing test needs one. */
+export async function chooseKind(page: Page, kind = "volunteering") {
+  await page.getByLabel("Kind of event").selectOption(kind);
+}
+
 export interface SeedEventOptions {
   /** The event page address: `/events/<uid>`. Lowercase letters, digits, hyphens. */
   uid: string;
@@ -98,15 +103,27 @@ export interface SeedEventOptions {
    *  an event that starts in the past (use `backdateEvent` afterwards). */
   startsInDays?: number;
   inviteOnly?: boolean;
-  mode?: "Online" | "Offline";
+  mode?: "Online" | "Offline" | "Hybrid";
   /** Most people who can join; leave out for no limit. */
   capacity?: number;
+  /** What kind of event it is; the edit form requires one, so seeded events have one. */
+  eventType?: string;
+  /** `draft` saves it hidden from everyone but its organization (PG-15). */
+  status?: "draft" | "published";
 }
 
 /** Publishes an event as the organization signed in on `page`. The API only
  *  accepts a start time in the future and an end after the start. */
 export async function createEvent(page: Page, options: SeedEventOptions) {
-  const { uid, name, startsInDays = 3, inviteOnly = false, capacity } = options;
+  const {
+    uid,
+    name,
+    startsInDays = 3,
+    inviteOnly = false,
+    capacity,
+    eventType = "volunteering",
+    status,
+  } = options;
   const mode = options.mode ?? "Offline";
   const start = new Date(Date.now() + startsInDays * DAY_MS);
   const end = new Date(start.getTime() + 2 * HOUR_MS);
@@ -123,14 +140,19 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       inviteOnly,
+      eventType,
+      ...(status ? { status } : {}),
       ...(capacity === undefined ? {} : { capacity }),
-      ...(mode === "Offline"
-        ? {
+      ...(mode === "Online"
+        ? {}
+        : {
             city: "Guwahati",
             state: "Assam",
             country: "India",
             address: "Fancy Bazaar",
-          }
+          }),
+      ...(mode === "Offline"
+        ? {}
         : {
             platform: "Zoom Meeting",
             platformLink: "https://zoom.example.com/j/1",

@@ -83,6 +83,11 @@ const eventEndpoints = {
   byUid: (uid: string) => `${API}/events?uid=${encodeURIComponent(uid)}`,
   /** `PATCH` to edit one of the organization's own events. */
   update: (uid: string) => `${API}/events/${encodeURIComponent(uid)}`,
+  /** `POST` to make one of the organization's own drafts public. */
+  publish: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/publish`,
+  /** `POST` to take a published event back to a draft. */
+  unpublish: (uid: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/unpublish`,
   /** `POST` to cancel one of the organization's own events. */
   cancel: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/cancel`,
   join: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/join`,
@@ -121,7 +126,9 @@ const eventEndpoints = {
   directory: (params: {
     period: "upcoming" | "past";
     search?: string;
-    mode?: "Online" | "Offline";
+    mode?: "Online" | "Offline" | "Hybrid";
+    /** What kind of event it is (PG-9), as the API's slug. */
+    type?: string;
     inviteOnly?: boolean;
     page?: number;
     limit?: number;
@@ -130,6 +137,7 @@ const eventEndpoints = {
     query.set("period", params.period);
     if (params.search) query.set("search", params.search);
     if (params.mode) query.set("mode", params.mode);
+    if (params.type) query.set("type", params.type);
     if (params.inviteOnly !== undefined) {
       query.set("inviteOnly", String(params.inviteOnly));
     }

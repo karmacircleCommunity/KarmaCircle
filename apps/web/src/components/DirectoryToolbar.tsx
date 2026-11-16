@@ -30,7 +30,11 @@ interface SecondaryFilterConfig<U extends string> {
   filterLabel: string;
 }
 
-interface DirectoryToolbarProps<T extends string, U extends string = string> {
+interface DirectoryToolbarProps<
+  T extends string,
+  U extends string = string,
+  V extends string = string,
+> {
   query: string;
   onQueryChange: (value: string) => void;
   searchPlaceholder: string;
@@ -44,6 +48,9 @@ interface DirectoryToolbarProps<T extends string, U extends string = string> {
    *  (one dimension: cause). `/events` passes one for its invite/mode
    *  taxonomy, alongside the primary Upcoming/Past filter. */
   secondaryFilter?: SecondaryFilterConfig<U>;
+  /** A third, independent filter dropdown (`/events` adds one for the kind
+   *  of event, PG-9), drawn after the secondary one. */
+  tertiaryFilter?: SecondaryFilterConfig<V>;
   /**
    * Live result count, e.g. `12 events in Relief`. Optional — omitted by
    * `/organizations` (September 2026, direct feedback that a bare count
@@ -88,7 +95,11 @@ interface DirectoryToolbarProps<T extends string, U extends string = string> {
  * [08-components-shared.md](../../../docs/specs/design-system/08-components-shared.md#directorytoolbar)
  * for the full rationale and exact classes.
  */
-const DirectoryToolbar = <T extends string, U extends string = string>({
+const DirectoryToolbar = <
+  T extends string,
+  U extends string = string,
+  V extends string = string,
+>({
   query,
   onQueryChange,
   searchPlaceholder,
@@ -101,7 +112,8 @@ const DirectoryToolbar = <T extends string, U extends string = string>({
   action,
   suggestions,
   secondaryFilter,
-}: DirectoryToolbarProps<T, U>) => (
+  tertiaryFilter,
+}: DirectoryToolbarProps<T, U, V>) => (
   <div className="mt-8 lg:mt-10">
     {/* Search + filter dropdown + primary action. One row from `sm` up; on
         a phone each drops onto its own line rather than squeezing down. */}
@@ -188,6 +200,15 @@ const DirectoryToolbar = <T extends string, U extends string = string>({
           options={secondaryFilter.options}
           active={secondaryFilter.active}
           onSelect={secondaryFilter.onSelect}
+        />
+      )}
+
+      {tertiaryFilter && (
+        <FilterDropdown
+          label={tertiaryFilter.filterLabel}
+          options={tertiaryFilter.options}
+          active={tertiaryFilter.active}
+          onSelect={tertiaryFilter.onSelect}
         />
       )}
 

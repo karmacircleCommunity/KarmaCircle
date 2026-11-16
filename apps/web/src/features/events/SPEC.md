@@ -76,6 +76,9 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `components/EventDetailsSection.tsx` | Section 04 of the event form (November 2026, PG-7): write-up, contact email, minimum age, fee, what to bring, languages, agenda editor and the mode's own notes | ✅ used by `CreateEvents.tsx` |
 | `components/EventFormParts.tsx` | `Field`, `FormSection` and the shared input classes of the event form | ✅ used by `CreateEvents.tsx` and `EventDetailsSection.tsx` |
 | `utils/eventDetailFields.ts` | Form text to API shape and back for the optional details: `normalizeDetails`, `detailPayloadForCreate`, `detailChanges`, `validateDetails`, limits (mirror the API) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
+| `utils/eventMode.ts` | `hasVenue`, `hasOnlineAccess`, `MODE_LABELS` and `describeWhere` for the three formats (In person, Online, Hybrid; November 2026, PG-10) | ✅ used by the form, hero, card, lists and location panel |
+| `utils/eventTags.ts` | `parseTags`, `formatTags`, `validateTags` (comma separated, lower-cased, de-duplicated, up to 8; PG-9) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
+| `constants/eventTypes.ts` | The seven event kinds (slug and label), `eventTypeLabel`, tag limits; mirrors the API (PG-9) | ✅ used by the form, card, hero and directory filter |
 | `hooks/useEvent.ts`                 | Validator, date/time payload conversion, submit and list refresh                                                                                                                                                                          | ✅ used by `CreateEvents` page                                                                                                                                                                                         |
 | `components/EventCard.tsx`          | Card rendered in the `/events` grid                                                                                                                                                                                                       | ✅ rendered, typed against `EventCardEvent`                                                                                                                                                                            |
 | `utils/toDisplayEvent.ts`           | Maps a live `ApiEvent` onto `EventCardEvent`                                                                                                                                                                                              | ✅ used by `Events.tsx`                                                                                                                                                                                                |
@@ -591,6 +594,12 @@ changing together.
 
 ## If you're asked to...
 
+- **"Hybrid" / "event kind" / "tags" / "draft" / "publish" / "unpublish"** → all
+  exist (November 2026): `eventMode.ts` and the three-way format in the form,
+  `eventTypes.ts` and `eventTags.ts`, and `PublishEvent`, `UnpublishEvent`,
+  `DeleteDraft` with the draft rows in `YourEvents.tsx`. Hybrid needs both the venue
+  and the stream; the kind is required by the form; a draft is visible only to its
+  organization. See [docs/specs/events.md](../../../../../docs/specs/events.md).
 - **"Leave an event" / "capacity" / "attendee list" / "check-in" / "more event
   details"** → all exist (November 2026): `LeaveEvent` and `ConfirmDialog` in
   `DetailedEvent.tsx`, `capacity` in the form and `capacityCounts` in

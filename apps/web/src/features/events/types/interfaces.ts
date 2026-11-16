@@ -1,6 +1,12 @@
 import type { Dayjs } from "dayjs";
 import type { Cause } from "@features/organizations/types";
-import type { EventMode, EventFormErrors, EventStatus } from "./types";
+import type {
+  EventMode,
+  EventFormErrors,
+  EventStatus,
+  EventType,
+  SubmitIntent,
+} from "./types";
 
 /** One row of the agenda editor. */
 export interface EventAgendaFormRow {
@@ -54,6 +60,10 @@ export interface EventFormState extends EventDetailFormFields {
   inviteOnly: boolean;
   /** Most people who can join, as typed. Empty means no limit. */
   capacity: string;
+  /** The chosen `EventType`, or empty until one is picked. */
+  eventType: EventType | "";
+  /** Tags as typed, separated by commas. */
+  tags: string;
 }
 
 export interface UseEventResult {
@@ -62,6 +72,7 @@ export interface UseEventResult {
     event: EventFormState,
     onSuccess: () => void,
     errors: EventFormErrors,
+    intent?: SubmitIntent,
   ) => Promise<void>;
 }
 
@@ -121,6 +132,8 @@ export interface EventCardEvent {
   /** The organizer cancelled this event. The card stays in the list with a
    *  "Cancelled" label, and nothing about joining is offered. */
   cancelled?: boolean;
+  /** What kind of event it is; the card shows its label when there is one. */
+  eventType?: EventType;
   /** Which `ORGANIZATION_ACCENTS` gradient to fall back to when `cover` is
    *  unset — same "stable per record, not stored" derivation as
    *  `organizations/utils/toDisplayOrganization.ts#accentFor`. */
@@ -209,6 +222,10 @@ export interface DisplayEvent {
   inviteOnly: boolean;
   /** The organizer cancelled this event; see `EventCardEvent.cancelled`. */
   cancelled: boolean;
+  /** A draft: saved but visible only to its own organization (PG-15). */
+  draft: boolean;
+  eventType?: EventType;
+  tags: string[];
 }
 
 /**
@@ -293,7 +310,7 @@ export interface ApiEvent {
    *  for an individual host (event.model.ts). */
   organizerHandle?: string;
   coverImage?: string;
-  mode: "Online" | "Offline";
+  mode: EventMode;
   address?: string;
   city?: string;
   state?: string;
@@ -311,6 +328,9 @@ export interface ApiEvent {
    *  `published`. */
   status?: EventStatus;
   cancelledAt?: string;
+  /** What kind of event it is; absent on events saved before it existed. */
+  eventType?: EventType;
+  tags?: string[];
   /** Most people who can join; absent means no limit. */
   capacity?: number;
   /** People registered so far. Only meaningful when `capacity` is set. */

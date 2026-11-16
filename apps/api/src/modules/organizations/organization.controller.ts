@@ -165,7 +165,9 @@ export async function dashboard(req: AuthenticatedRequest, res: Response) {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  // Drafts (PG-15) are not counted or listed: they are managed on Your events.
   const hostedEventFilter = {
+    status: { $ne: "draft" },
     $or: [
       { organizerHandle: organization.handle },
       { organizerHandle: { $exists: false }, hostUsername: organization.handle },

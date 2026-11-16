@@ -8,6 +8,7 @@ import fetcher from "@utils/Fetcher";
 import { FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import type { ApiEventList } from "@features/events/types";
+import { describeWhere } from "@features/events/utils/eventMode";
 import { formatEventDate } from "@features/events/utils/formatEventFacts";
 
 type EventTab = "Upcoming" | "Past";
@@ -146,11 +147,7 @@ const MyEvents = () => {
                         ) : (
                           <FiMapPin aria-hidden className="size-4 text-brand" />
                         )}
-                        {event.mode === "Online"
-                          ? event.platform || "Online"
-                          : [event.city, event.country]
-                              .filter(Boolean)
-                              .join(", ") || "Location details on event page"}
+                        {describeWhere(event)}
                       </span>
                     </div>
                   </div>

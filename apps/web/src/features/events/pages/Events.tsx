@@ -8,6 +8,7 @@ import ComponentHelmet from "@components/ComponentHelmet";
 import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
+import { EVENT_TYPE_OPTIONS } from "@features/events/constants/eventTypes";
 import EventCard from "@features/events/components/EventCard";
 import { toDisplayEvent } from "@features/events/utils/toDisplayEvent";
 import type { ApiEventList } from "@features/events/types";
@@ -27,14 +28,33 @@ const TIME_FILTERS: TimeFilter[] = ["Upcoming", "Past"];
  * "invite only" can't be combined here; that tradeoff was a deliberate
  * choice over building a multi-select variant for a four-option list.
  */
-type TypeFilter = "All" | "Invite only" | "Open to all" | "Online" | "Offline";
+type TypeFilter =
+  "All" | "Invite only" | "Open to all" | "Online" | "Offline" | "Hybrid";
 const TYPE_FILTERS: TypeFilter[] = [
   "All",
   "Invite only",
   "Open to all",
   "Online",
   "Offline",
+  "Hybrid",
 ];
+
+/**
+ * The third filter (PG-9): what kind of event it is. Its own dropdown rather
+ * than more options in `TypeFilter`, because kind and access/mode are
+ * independent questions that can be asked together.
+ */
+const ALL_KINDS = "All kinds";
+const KIND_FILTERS = [
+  ALL_KINDS,
+  ...EVENT_TYPE_OPTIONS.map((option) => option.label),
+];
+
+/** The API `type` param a chosen kind label stands for. */
+const kindToParams = (kind: string) => {
+  const option = EVENT_TYPE_OPTIONS.find((o) => o.label === kind);
+  return option ? { type: option.value } : {};
+};
 
 /** Cards per page: divides evenly into the 1, 2 and 3 column grids. */
 const PAGE_SIZE = 12;
@@ -52,6 +72,8 @@ const typeToParams = (type: TypeFilter) => {
       return { mode: "Online" as const };
     case "Offline":
       return { mode: "Offline" as const };
+    case "Hybrid":
+      return { mode: "Hybrid" as const };
     default:
       return {};
   }
@@ -102,6 +124,7 @@ const Events = () => {
   const [query, setQuery] = useState("");
   const [when, setWhen] = useState<TimeFilter>("Upcoming");
   const [type, setType] = useState<TypeFilter>("All");
+  const [kind, setKind] = useState<string>(ALL_KINDS);
 
   // The box updates on every keystroke; the API only hears about it once
   // typing pauses.
@@ -122,6 +145,7 @@ const Events = () => {
       period: when === "Upcoming" ? "upcoming" : "past",
       search,
       ...typeToParams(type),
+      ...kindToParams(kind),
       page: pageIndex + 1,
       limit: PAGE_SIZE,
     });
@@ -153,14 +177,14 @@ const Events = () => {
   const hasMore = results.length < total;
   const isLoadingMore =
     size > 1 && data !== undefined && typeof data[size - 1] === "undefined";
-  const hasFilters = Boolean(query || type !== "All");
+  const hasFilters = Boolean(query || type !== "All" || kind !== ALL_KINDS);
 
   // Scoped to the grid so the reveal never reaches the page chrome above
   // it, and re-run on filter changes so cards revealed by a new filter
   // don't stay at the hook's starting opacity.
   const gridRef = useRef<HTMLDivElement>(null);
 
-  useSectionReveal(gridRef, [results.length, when, type, search]);
+  useSectionReveal(gridRef, [results.length, when, type, kind, search]);
 
   return (
     <>
@@ -191,6 +215,12 @@ const Events = () => {
             onSelect: setType,
             filterLabel: "Filter by type",
           }}
+          tertiaryFilter={{
+            options: KIND_FILTERS,
+            active: kind,
+            onSelect: setKind,
+            filterLabel: "Filter by kind",
+          }}
           summary={
             <>
               {isLoading && !data
@@ -198,6 +228,7 @@ const Events = () => {
                 : `${total} ${total === 1 ? "event" : "events"}`}
               {when === "Past" && total > 0 && " · past"}
               {type !== "All" && total > 0 && ` · ${type.toLowerCase()}`}
+              {kind !== ALL_KINDS && total > 0 && ` · ${kind.toLowerCase()}`}
             </>
           }
           action={
@@ -261,6 +292,7 @@ const Events = () => {
                   setQuery("");
                   setSearch("");
                   setType("All");
+                  setKind(ALL_KINDS);
                 }}
                 className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
               >

@@ -59,3 +59,34 @@ export async function requireAuth(
     unauthorized();
   }
 }
+
+/**
+ * Like `requireAuth`, but never rejects: a valid `Token` cookie sets
+ * `req.auth`, anything else leaves it unset and the request carries on as a
+ * visitor. For public routes that show a little more to the signed-in owner
+ * (an organization sees its own drafts, PG-15). Same revocation check as
+ * `requireAuth`, so a logged-out session does not count.
+ */
+export async function optionalAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const token = req.cookies?.Token;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, env.JWT_SECRET) as TokenPayload;
+      const user = await User.findOne({ email: decoded.User.id }).select(
+        "tokenVersion",
+      );
+      if (user && user.tokenVersion === decoded.tokenVersion) {
+        (req as Request & { auth?: { email: string } }).auth = {
+          email: decoded.User.id,
+        };
+      }
+    } catch {
+      // An invalid or expired token is just a visitor here.
+    }
+  }
+  next();
+}

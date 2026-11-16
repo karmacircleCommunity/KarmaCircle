@@ -1,6 +1,7 @@
 import {
   FiCheck,
   FiCheckCircle,
+  FiEdit3,
   FiMail,
   FiShare2,
   FiUserCheck,
@@ -106,7 +107,21 @@ const EventJoinPanel = ({
       data-reveal
       className="rounded-2xl border border-brand-secondary/8 bg-white p-6 shadow-[0_2px_20px_-16px_var(--color-brand-secondary)] sm:p-7"
     >
-      {cancelled ? (
+      {event.draft ? (
+        <>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand uppercase">
+            <FiEdit3 aria-hidden="true" className="size-3.5" />
+            Draft
+          </div>
+          <p className="mt-4 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
+            Only you can see this event
+          </p>
+          <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
+            Nobody can find it or join it until you publish it from your events
+            list.
+          </p>
+        </>
+      ) : cancelled ? (
         <>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-error/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-error uppercase">
             <FiXCircle aria-hidden="true" className="size-3.5" />

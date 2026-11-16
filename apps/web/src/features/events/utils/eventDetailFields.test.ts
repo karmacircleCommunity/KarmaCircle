@@ -342,3 +342,31 @@ describe("validateDetails", () => {
     ).toBeTruthy();
   });
 });
+
+describe("hybrid events keep both modes' notes", () => {
+  const all = fields({
+    gettingThere: "Use the north gate",
+    linkDelivery: "Emailed the day before",
+    joinRequirements: "A camera",
+  });
+
+  it("normalizes directions and link notes together", () => {
+    expect(normalizeDetails(all, "Hybrid")).toMatchObject({
+      gettingThere: "Use the north gate",
+      linkDelivery: "Emailed the day before",
+      joinRequirements: "A camera",
+    });
+  });
+
+  it("checks both sets of notes for length", () => {
+    const errors = validateDetails(
+      fields({
+        gettingThere: "x".repeat(501),
+        linkDelivery: "x".repeat(301),
+      }),
+      "Hybrid",
+    );
+    expect(errors.gettingThere).toBeTruthy();
+    expect(errors.linkDelivery).toBeTruthy();
+  });
+});

@@ -310,6 +310,42 @@ export const UpdateEvent = async (
   }
 };
 
+// publish a draft: it must still pass the create rules
+export const PublishEvent = async (uid: string): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.post(eventEndpoints.publish(uid), undefined, {
+      withCredentials: true,
+    });
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// take a published event with no registrations back to a draft
+export const UnpublishEvent = async (uid: string): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.post(eventEndpoints.unpublish(uid), undefined, {
+      withCredentials: true,
+    });
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// delete a draft for good (a published event can only be cancelled)
+export const DeleteDraft = async (uid: string): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.delete(eventEndpoints.update(uid), {
+      withCredentials: true,
+    });
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
 // cancel event API: the event stays public with a cancelled badge
 export const CancelEvent = async (uid: string): Promise<EventWriteResult> => {
   try {

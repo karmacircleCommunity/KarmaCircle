@@ -4,8 +4,14 @@ import type { Dayjs } from "dayjs";
 import { RESERVED_EVENT_ADDRESSES } from "@features/events/constants/reservedEventAddresses";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import { eventEndpoints } from "@services/ApiEndpoints";
-import { CreateEvent, UpdateEvent } from "@services/KarmaCircleApi";
+import {
+  CreateEvent,
+  PublishEvent,
+  UpdateEvent,
+} from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
+import { parseTags, validateTags } from "@features/events/utils/eventTags";
+import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
 import { buildEventChanges } from "@features/events/utils/buildEventChanges";
 import {
   detailPayloadForCreate,
@@ -16,6 +22,7 @@ import type {
   ApiEvent,
   EventFormErrors,
   EventFormState,
+  SubmitIntent,
   UseEventResult,
 } from "@features/events/types";
 
@@ -84,12 +91,13 @@ export function useEvent(
       }
     }
 
-    if (data.mode === "Offline") {
+    if (hasVenue(data.mode)) {
       if (!data.city) errors.city = "City is required";
       if (!data.state) errors.state = "State is required";
       if (!data.country) errors.country = "Country is required";
       if (!data.address) errors.address = "Address is required";
-    } else {
+    }
+    if (hasOnlineAccess(data.mode)) {
       if (!data.platform) errors.platform = "Choose an online platform";
       if (!data.platformLink) {
         errors.platformLink = "Please provide a meeting link";
@@ -130,6 +138,12 @@ export function useEvent(
 
     Object.assign(errors, validateDetails(data, data.mode));
 
+    if (!data.eventType) {
+      errors.eventType = "Choose what kind of event this is";
+    }
+    const tagsError = validateTags(data.tags);
+    if (tagsError) errors.tags = tagsError;
+
     // An edit that leaves the start alone may keep a start already in the
     // past (the event is running); only a moved start must be in the future.
     const startMoved =
@@ -147,35 +161,71 @@ export function useEvent(
     event: EventFormState,
     onSuccess: () => void,
     errors: EventFormErrors,
+    intent: SubmitIntent = "publish",
   ): Promise<void> => {
     if (Object.keys(errors).length === 0 && original) {
       const changes = buildEventChanges(event, original);
-      if (Object.keys(changes).length === 0) {
+      const hasChanges = Object.keys(changes).length > 0;
+      const isDraft = original.status === "draft";
+      // Publishing a draft saves any changes first, then makes it public.
+      const publishing = isDraft && intent === "publish";
+
+      if (!hasChanges && !publishing) {
         showErrorToast("Nothing has changed yet.");
         return;
       }
 
-      const result = await UpdateEvent(original.uid, changes);
-      if (result.ok) {
-        showSuccessToast("Event updated");
-        onSuccess();
+      const refresh = () => {
         void mutate(eventEndpoints.byUid(original.uid));
         if (organization?.handle) {
           void mutate(eventEndpoints.byHost(organization.handle));
         }
-      } else {
+      };
+      const failure = (result: {
+        message?: string;
+        errors?: { message: string }[];
+      }) =>
         showErrorToast(
           result.errors?.[0]?.message ??
             result.message ??
             "Could not update the event. Try again.",
         );
+
+      if (hasChanges) {
+        const result = await UpdateEvent(original.uid, changes);
+        if (!result.ok) {
+          failure(result);
+          return;
+        }
       }
+
+      if (publishing) {
+        const published = await PublishEvent(original.uid);
+        refresh();
+        if (!published.ok) {
+          // The changes are saved; only the publish step was refused.
+          failure(published);
+          return;
+        }
+      }
+
+      showSuccessToast(
+        publishing
+          ? "Event published"
+          : isDraft
+            ? "Draft saved"
+            : "Event updated",
+      );
+      onSuccess();
+      refresh();
     } else if (Object.keys(errors).length === 0) {
       // CreateEvent() returns the caught Axios error as-is on failure.
       const requestEvent = {
         ...omitDetailFields(event),
         ...detailPayloadForCreate(event),
         capacity: event.capacity.trim() ? Number(event.capacity) : undefined,
+        tags: parseTags(event.tags),
+        ...(intent === "draft" ? { status: "draft" } : {}),
         startDate: event.startDate?.startOf("day").toDate(),
         endDate: event.endDate?.startOf("day").toDate(),
         startTime:
@@ -194,7 +244,11 @@ export function useEvent(
       };
 
       if (response.status === 201) {
-        showSuccessToast(response.data?.message);
+        showSuccessToast(
+          intent === "draft"
+            ? "Draft saved. Only you can see it until you publish it."
+            : response.data?.message,
+        );
         onSuccess();
 
         // The public directory (`useSWRInfinite` in `Events.tsx`) is not

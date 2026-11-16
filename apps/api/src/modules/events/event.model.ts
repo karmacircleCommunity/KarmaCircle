@@ -1,13 +1,19 @@
 import mongoose, { Document, Schema } from "mongoose";
-
-export type EventMode = "Online" | "Offline";
+import { EVENT_TYPES, type EventType } from "./event.constants";
 
 /**
- * Where an event is in its life. Only `published` and `cancelled` exist today
- * (PG-2); drafts and postponed events are PG-15. A document with no stored
- * status was saved before this field existed and reads as `published`.
+ * Where an event happens. `Hybrid` (PG-10) has both a venue and a live stream,
+ * so it needs the in-person fields and the online ones.
  */
-export const EVENT_STATUSES = ["published", "cancelled"] as const;
+export type EventMode = "Online" | "Offline" | "Hybrid";
+
+/**
+ * Where an event is in its life. A `draft` (PG-15) is saved but visible only
+ * to its own organization; `published` is public; `cancelled` (PG-2) stays
+ * public with a badge. Postponed events are still to do. A document with no
+ * stored status was saved before this field existed and reads as `published`.
+ */
+export const EVENT_STATUSES = ["draft", "published", "cancelled"] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
 /** One line of the run sheet on the event detail page — pre-formatted, not a
@@ -89,6 +95,10 @@ export interface IEvent extends Document {
    * rather than a button that looks live and silently does nothing.
    */
   inviteOnly: boolean;
+  /** What kind of event this is (PG-9). Absent on events saved before it existed. */
+  eventType?: EventType;
+  /** Free-text tags, lower-case, at most 8 (PG-9). */
+  tags: string[];
   /** Most people who can join. Absent means no limit (PG-5). */
   capacity?: number;
   /**
@@ -207,7 +217,7 @@ const eventSchema = new Schema<IEvent>(
     mode: {
       type: String,
       required: true,
-      enum: ["Online", "Offline"],
+      enum: ["Online", "Offline", "Hybrid"],
     },
     address: {
       type: String,
@@ -261,6 +271,11 @@ const eventSchema = new Schema<IEvent>(
       type: Boolean,
       default: false,
     },
+    eventType: {
+      type: String,
+      enum: EVENT_TYPES,
+    },
+    tags: [{ type: String, trim: true, lowercase: true }],
     capacity: {
       type: Number,
       min: 1,

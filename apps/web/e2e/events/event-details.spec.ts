@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
 import {
+  chooseKind,
   createEvent,
   publishOrganizationProfile,
   signUpOrganization,
@@ -38,6 +39,7 @@ async function fillInPersonBasics(page: Page, name: string) {
   await page
     .getByLabel("About this event")
     .fill("A morning of practical help for the neighbourhood, open to all.");
+  await chooseKind(page);
   await page.locator("#coverImage").setInputFiles({
     name: "event.png",
     mimeType: "image/png",
@@ -256,6 +258,7 @@ test("an online event shows the link notes instead of directions", async ({
   await page
     .getByLabel("About this event")
     .fill("A live conversation for neighbours, held entirely over video.");
+  await chooseKind(page);
   await page.locator("#coverImage").setInputFiles({
     name: "event.png",
     mimeType: "image/png",

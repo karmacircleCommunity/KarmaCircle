@@ -168,3 +168,94 @@ describe("buildEventChanges capacity", () => {
     ).toEqual({ capacity: null });
   });
 });
+
+describe("buildEventChanges hybrid", () => {
+  const hybrid: ApiEvent = {
+    ...offline,
+    mode: "Hybrid",
+    platform: "Zoom Meeting",
+    platformLink: "https://zoom.example.com/j/1",
+  };
+
+  it("sends nothing while a hybrid event is untouched", () => {
+    expect(buildEventChanges(eventToFormState(hybrid), hybrid)).toEqual({});
+  });
+
+  it("sends both location groups when one field of a hybrid event changes", () => {
+    expect(buildEventChanges(edit(hybrid, { city: "Pune" }), hybrid)).toEqual({
+      city: "Pune",
+      state: "Maharashtra",
+      country: "India",
+      address: "Juhu Beach, gate 2",
+      platform: "Zoom Meeting",
+      platformLink: "https://zoom.example.com/j/1",
+    });
+  });
+
+  it("sends the mode and both groups when an in-person event becomes hybrid", () => {
+    expect(
+      buildEventChanges(
+        edit(offline, {
+          mode: "Hybrid",
+          platform: "Google Meet",
+          platformLink: "https://meet.example.com/abc",
+        }),
+        offline,
+      ),
+    ).toEqual({
+      mode: "Hybrid",
+      city: "Mumbai",
+      state: "Maharashtra",
+      country: "India",
+      address: "Juhu Beach, gate 2",
+      platform: "Google Meet",
+      platformLink: "https://meet.example.com/abc",
+    });
+  });
+});
+
+describe("buildEventChanges kind and tags", () => {
+  const typed: ApiEvent = {
+    ...offline,
+    eventType: "workshop",
+    tags: ["first-aid", "families"],
+  };
+
+  it("sends nothing while they are untouched", () => {
+    expect(buildEventChanges(eventToFormState(typed), typed)).toEqual({});
+    expect(buildEventChanges(eventToFormState(offline), offline)).toEqual({});
+  });
+
+  it("sends a changed kind", () => {
+    expect(
+      buildEventChanges(edit(typed, { eventType: "fundraiser" }), typed),
+    ).toEqual({ eventType: "fundraiser" });
+  });
+
+  it("sends a kind for an event that had none", () => {
+    expect(
+      buildEventChanges(edit(offline, { eventType: "meetup" }), offline),
+    ).toEqual({ eventType: "meetup" });
+  });
+
+  it("never sends an empty kind (the form requires one)", () => {
+    expect(buildEventChanges(edit(typed, { eventType: "" }), typed)).toEqual(
+      {},
+    );
+  });
+
+  it("sends the tags as a normalized list, [] to clear them", () => {
+    expect(
+      buildEventChanges(edit(typed, { tags: "Gala, dinner, GALA" }), typed),
+    ).toEqual({ tags: ["gala", "dinner"] });
+    expect(buildEventChanges(edit(typed, { tags: "" }), typed)).toEqual({
+      tags: [],
+    });
+  });
+
+  it("does not call a tag list changed just for its spacing or case", () => {
+    expect(
+      buildEventChanges(edit(typed, { tags: " First-Aid ,Families" }), typed),
+    ).toEqual({});
+  });
+});

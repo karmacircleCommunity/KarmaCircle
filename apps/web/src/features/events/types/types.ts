@@ -1,10 +1,26 @@
 import type { DetailedEventRecord, EventFormState } from "./interfaces";
 
 /** The real event-creation shape — `CreateEvents.jsx` + `useEvent.js`. */
-export type EventMode = "Online" | "Offline";
+export type EventMode = "Online" | "Offline" | "Hybrid";
+
+/** What kind of event it is; mirrors `EVENT_TYPES` in the API's `event.constants.ts`. */
+export type EventType =
+  | "volunteering"
+  | "fundraiser"
+  | "workshop"
+  | "awareness"
+  | "meetup"
+  | "cultural"
+  | "other";
+
+/**
+ * What pressing a form button asks for: make the event public, or keep it as a
+ * draft only its organization can see (PG-15).
+ */
+export type SubmitIntent = "publish" | "draft";
 
 /** Mirrors `EventStatus` in `apps/api/src/modules/events/event.model.ts`. */
-export type EventStatus = "published" | "cancelled";
+export type EventStatus = "draft" | "published" | "cancelled";
 
 export type EventFormErrors = Partial<Record<keyof EventFormState, string>>;
 

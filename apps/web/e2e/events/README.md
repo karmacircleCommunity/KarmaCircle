@@ -113,6 +113,37 @@ cleared from the edit form (sections disappear, the record loses them). The form
 rejects a bad email, a zero fee, a zero age and a half-filled agenda row before
 anything is sent. An online event shows its link notes and stores no directions.
 
+## Hybrid, kind and tags, and drafts
+
+Added November 2026; all 37 tests of the folder pass on Chromium. Every test that
+publishes through the form now picks the required "Kind of event" first
+(`chooseKind` in `event-helpers.ts`), and `createEvent` seeds `eventType:
+"volunteering"` (so the edit form, which requires a kind, opens valid) and accepts
+`status: "draft"` and `mode: "Hybrid"`.
+
+- `event-hybrid.spec.ts` (3 tests): choosing Hybrid shows the venue fields and the
+  stream fields together and both sets of notes; a venue alone is refused until the
+  meeting link is there; the published page shows "Hybrid · Guwahati, India", the
+  "Where it is and how to join" section with the venue, the directions, "Open in
+  maps", "On Zoom Meeting", the link note and the join link; the edit form moves an
+  event In person to Hybrid (asking for the link) to Online (the venue is dropped);
+  the directory's Hybrid filter separates it from an Online and an In person event.
+- `event-kind.spec.ts` (3 tests): publishing needs a kind ("Choose what kind of
+  event this is") and refuses more than eight tags; the page shows the kind badge and
+  the `#beach #clean-up` chips and the API stores them lower-cased and de-duplicated;
+  the edit form opens with the stored kind, changes it, and clearing the tags
+  removes them; the directory's "Filter by kind" narrows to one kind and "All kinds"
+  brings the rest back.
+- `event-drafts.spec.ts` (5 tests): Save as draft keeps the event out of the
+  directory and its address for a visitor (a separate context with no cookies) while
+  the owner sees a "Draft" row and a banner; Publish from the list makes it public;
+  a draft edits (heading "Edit your draft"), saves as a draft and publishes from the
+  edit form; Unpublish with a confirmation takes a published event with no
+  registrations offline and Publish brings it back; an event with a registration
+  cannot be unpublished and the message says to cancel; Delete draft (with "Keep
+  draft" first) removes a draft, a published event offers no delete, the API answers
+  `409`, and the address is free again.
+
 ## Directory search after November 2026
 
 The directory loads 12 cards at a time and searches on the API. The directory

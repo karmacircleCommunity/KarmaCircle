@@ -61,6 +61,7 @@ export function toDisplayEvent(event: ApiEvent): EventCardEvent {
     isGovernmentSponsored: event.isGovernmentSponsored || undefined,
     inviteOnly: event.inviteOnly || undefined,
     cancelled: event.status === "cancelled" || undefined,
+    eventType: event.eventType,
     ...capacityCounts(event),
     accent: accentFor(event.uid),
   };

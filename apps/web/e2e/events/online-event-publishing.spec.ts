@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
 import {
+  chooseKind,
   publishOrganizationProfile,
   signUpOrganization,
   TINY_PNG_BASE64,
@@ -42,6 +43,7 @@ async function fillOnlineEventBasics(page: Page, name: string) {
     .fill(
       "A live conversation for neighbours, volunteers and donors, held entirely over video.",
     );
+  await chooseKind(page);
   await page.locator("#coverImage").setInputFiles({
     name: "online-event.png",
     mimeType: "image/png",

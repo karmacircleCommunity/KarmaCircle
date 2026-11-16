@@ -41,6 +41,7 @@ import bcrypt from "bcryptjs";
 import { Individual, Organization as OrganizationLogin } from "../src/modules/users/user.model";
 import { Organization as OrganizationRecord } from "../src/modules/organizations/organization.model";
 import { Event } from "../src/modules/events/event.model";
+import type { EventType } from "../src/modules/events/event.constants";
 import { Product } from "../src/modules/products/product.model";
 import { ReportProblem } from "../src/modules/reports/report.model";
 
@@ -953,6 +954,29 @@ async function seed() {
     },
   ];
 
+  // What kind of event each one is (PG-9), so the directory's kind filter and
+  // the type label on the cards have something to show locally.
+  const demoEventTypes: Record<string, EventType> = {
+    "evt-beach-cleanup-001": "volunteering",
+    "evt-tutoring-bootcamp-002": "workshop",
+    "evt-fundraiser-webinar-003": "fundraiser",
+    "evt-riverbank-rebuild-004": "volunteering",
+    "evt-tree-plantation-005": "volunteering",
+    "evt-health-camp-006": "volunteering",
+    "evt-founders-circle-007": "meetup",
+    "evt-disaster-prep-008": "workshop",
+    "evt-river-cleanup-009": "volunteering",
+    "evt-vaccination-drive-010": "awareness",
+    "evt-grant-writing-011": "workshop",
+    "evt-career-mentorship-012": "meetup",
+    "evt-supply-packing-013": "volunteering",
+    "evt-companionship-walk-014": "volunteering",
+    "evt-blanket-distribution-015": "volunteering",
+    "evt-flood-prep-training-016": "workshop",
+    "evt-elder-festival-visit-017": "cultural",
+    "evt-leadership-roundtable-018": "meetup",
+  };
+
   for (const event of demoEvents) {
     await Event.findOneAndUpdate(
       { uid: event.uid },
@@ -977,6 +1001,7 @@ async function seed() {
         endDate: atHour(event.endsIn, event.endHour, event.endMinute),
         isGovernmentSponsored: event.isGovernmentSponsored ?? false,
         inviteOnly: event.inviteOnly ?? false,
+        eventType: demoEventTypes[event.uid] ?? "other",
         about: event.about,
         agenda: event.agenda,
         bringAlong: event.bringAlong,

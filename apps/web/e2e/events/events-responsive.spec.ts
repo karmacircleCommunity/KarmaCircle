@@ -326,6 +326,7 @@ test("an organization publishes an in-person event from the full-page form", asy
       "base64",
     ),
   });
+  await page.getByLabel("Kind of event").selectOption("volunteering");
   await page.getByRole("button", { name: /Online/ }).click();
   await page.getByLabel("Meeting link").fill("zoom.example.com/j/123");
   await page.getByRole("button", { name: "Publish event" }).click();

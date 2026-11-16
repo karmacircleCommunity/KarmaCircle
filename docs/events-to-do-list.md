@@ -126,17 +126,25 @@ PG-1 to PG-8 above already cover edit, cancel, leave, invite-only, capacity, att
 The items below are new.
 
 ### PG-9 No event type, category or tags
-Status: open. Priority: P2.
+Status: done (2026-11-16). Priority: P2.
 A hackathon, a workshop, a clean-up drive and a fundraiser all look the same.
 Discovery cannot filter by kind of event, and the detail page cannot change its layout by kind.
 Fix: add a required event type and optional tags to the model, the create form, the card and the directory filter.
+Result: seven kinds (Volunteering drive, Fundraiser, Workshop or training, Awareness campaign, Meetup or networking, Cultural or community event, Other) and up to eight tags per event.
+The create and edit forms require a kind and take tags; the card shows the kind, the event page shows a kind badge and `#tag` chips, the directory has a third "Filter by kind" dropdown, and the directory search finds an event by its tags.
+The kind is required by the form but optional in the API, so older events and API clients keep working; a legacy event must be given a kind before the edit form saves.
+There is no Hackathon kind, because whether hackathons are an event type is still decision 8 (PG-27).
+The local demo events now carry kinds in the seed script.
 
 ### PG-10 No Hybrid mode
-Status: open. Priority: P2.
+Status: done (2026-11-16). Priority: P2.
 An event is Online or Offline only.
 An event that has a venue and a live stream cannot be described.
 Fix: add a third mode that requires both the place and the meeting link.
 Luma offers In-Person, Online and Hybrid.
+Result: a third "Hybrid" format ("A place and a live stream") that requires the full venue and the platform and meeting link, keeps both sets of notes, and shows "Hybrid · City, Country" on cards and lists.
+The event page shows both a venue card and a joining card under "Where it is and how to join", and the directory format filter has a Hybrid option.
+Switching a Hybrid event to In person or Online drops the side that no longer applies.
 
 ### PG-11 No timezone on events
 Status: open. Priority: P2.
@@ -165,12 +173,16 @@ Capacity (PG-5) now exists, so a full event refuses the next person with no wait
 Fix: design one registration state machine (pending, approved, waitlisted, declined) and use it for capacity, approval and invite-only together.
 
 ### PG-15 No draft, unpublish or event status
-Status: open, partly done. Priority: P1.
+Status: done (2026-11-16), except postponed. Priority: P1.
 The event model has no status field.
 An event goes live the moment it is submitted, and cannot be hidden, cancelled or postponed.
 PG-1 and PG-2 both need this.
 Partly done 2026-11-16: the model now has `status` with `published` and `cancelled` (PG-2).
-Drafts, unpublishing and postponed are still missing, and public lists do not filter by status yet.
+Result (2026-11-16): `status` also has `draft`.
+"Save as draft" on the create form keeps an event visible only to its own organization: it is not in the directory, the public profile or the dashboard, answers as not found by address to everyone else (including other organizations), and cannot be joined.
+A draft is edited at the same edit page ("Edit your draft"), and Publish (from Your events or the edit form) makes it public if it still passes the create rules (a stale start is refused).
+A published event can be taken back to a draft with "Unpublish" only while nobody has registered, otherwise the message says to cancel instead; a draft can be deleted for good, and a published event never can.
+Not built: postponed events, and a draft that skips the required fields (a draft is held to the full rules).
 Fix: add a status (draft, published, cancelled, postponed), let organizers save a draft, and make public lists show only published events.
 
 ### PG-16 No clone event
@@ -204,13 +216,14 @@ Status: open. Priority: P2.
 A search of the web code found no structured event data.
 Google reads event name, dates, location, status and attendance mode from that markup to show events in search.
 Fix: add event markup to the detail page, and make sure what it states is visible on the page.
-This needs the status from PG-15 and the mode from PG-10.
+This needs the status from PG-15 and the mode from PG-10, both of which now exist; only published and cancelled events should get markup, never a draft.
 
 ### PG-21 Discovery filters are limited
 Status: open. Priority: P3.
 The directory has search, Upcoming or Past, and one combined type filter.
 It cannot filter by event type (PG-9), cause, city or date range, and filters cannot be combined.
 Fix: add those filters and make them combinable, after PG-9.
+Update 2026-11-16: PG-9 is done and the directory now has a separate "Filter by kind" dropdown that combines with the others and with search; cause, city and date range are still missing.
 
 ### PG-22 No recurring or multi-session events
 Status: open. Priority: P3.
@@ -705,4 +718,10 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-16: API tests for these: `events-capacity.test.ts` (27), `events-attendees.test.ts` (24), `events-details.test.ts` (31); the API suite passed 14 suites and 301 tests.
 - 2026-11-16: web unit tests for the new helpers; the web unit suite passed 121 tests and 2 todo.
 - 2026-11-16: Playwright `event-attendees.spec.ts` (6) and `event-details.spec.ts` (5); the events folder is 26 tests; run alone on one browser all 26 pass on each of the three, and a full three-browser run passed 76 of 78 (two timeouts under heavy load, see T-10).
+- 2026-11-16: PG-10, Hybrid format (both field sets required, both cards on the page, a Hybrid filter).
+- 2026-11-16: PG-9, event kind and tags (a required kind in the form, tags, a kind label and badge, a "Filter by kind" dropdown, tag search).
+- 2026-11-16: PG-15, drafts (save as draft, publish, unpublish while nobody has registered, delete a draft, hidden from everyone but the owner).
+- 2026-11-16: API tests `events-hybrid.test.ts` (14), `events-types.test.ts` (23) and `events-drafts.test.ts` (27); the API suite passed 17 suites and 365 tests.
+- 2026-11-16: web unit tests for `eventMode`, `eventTags`, the kinds and the new change builder cases; the web unit suite passed 150 tests and 2 todo.
+- 2026-11-16: Playwright `event-hybrid.spec.ts` (3), `event-kind.spec.ts` (3) and `event-drafts.spec.ts` (5); all 37 tests of the events folder passed on Chromium.
 - 2026-11-16: the API tests' flaky `404`, `501` and timeouts fixed at the root: `buildTestApp()` now listens on 127.0.0.1 (see `apps/api/docs/specs/testing.md`).

@@ -34,6 +34,26 @@ export const COVER_IMAGE_MIME_TYPES = ["png", "jpeg", "webp", "gif"] as const;
 export const COVER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const COVER_IMAGE_URL_MAX_LENGTH = 2048;
 
+/**
+ * What kind of event it is (PG-9). Slugs are stored and sent over the API; the
+ * web maps them to labels. `hackathon` is deliberately absent: whether
+ * hackathons are an event type here is still an open decision (PG-27).
+ */
+export const EVENT_TYPES = [
+  "volunteering",
+  "fundraiser",
+  "workshop",
+  "awareness",
+  "meetup",
+  "cultural",
+  "other",
+] as const;
+export type EventType = (typeof EVENT_TYPES)[number];
+
+/** Free-text tags on an event (PG-9). */
+export const EVENT_TAGS_MAX_ITEMS = 8;
+export const EVENT_TAG_MAX_LENGTH = 30;
+
 /** Limits for the optional detail fields an organizer can fill in (PG-7). */
 export const EVENT_ABOUT_MAX_PARAGRAPHS = 20;
 export const EVENT_ABOUT_PARAGRAPH_MAX_LENGTH = 2000;

@@ -87,6 +87,9 @@ const EventMobileActionBar = ({
   onToggleJoin,
   hidden,
 }: EventJoinPanelProps & { hidden: boolean }) => {
+  // A draft has nothing to join yet; its own panel on the page says so.
+  if (event.draft) return null;
+
   const cancelled = event.cancelled;
   const past = !cancelled && isEventPast(event.startsAt);
   const over = cancelled || past;

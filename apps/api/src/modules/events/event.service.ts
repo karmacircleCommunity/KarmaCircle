@@ -13,17 +13,65 @@ import {
   assertEventRules,
 } from "./event.validation";
 import { Event, EventRegistration, IEvent } from "./event.model";
+import type { EventType } from "./event.constants";
 
 export async function findByUid(uid: string) {
   return Event.findOne({ uid });
+}
+
+/**
+ * The event for a public action (join, leave, registration check). A draft
+ * (PG-15) does not exist to anyone but its organization, so it answers as not
+ * found here rather than admitting it is there.
+ */
+export async function findPublicByUid(uid: string) {
+  return Event.findOne({ uid, status: { $ne: "draft" } });
+}
+
+/** Whether `email` is the organization that hosts `event`. Never throws. */
+async function isHostOf(email: string, event: IEvent) {
+  const host = await findByEmail(email);
+  if (!host || host.userType !== "organization") return false;
+
+  const organization = await findByOwnerEmail(email);
+  return (
+    (organization !== null && event.organizerHandle === organization.handle) ||
+    event.hostUsername === host.userName
+  );
+}
+
+/**
+ * The event as `viewerEmail` may see it (PG-15): a published or cancelled event
+ * to anyone, a draft only to the organization that hosts it. `null` when the
+ * event does not exist or is a draft the viewer does not own.
+ */
+export async function findViewableByUid(uid: string, viewerEmail?: string) {
+  const event = await findByUid(uid);
+  if (!event) return null;
+  if (event.status !== "draft") return event;
+  return viewerEmail && (await isHostOf(viewerEmail, event)) ? event : null;
+}
+
+/**
+ * Whether `viewerEmail` is the organization `handle`. Lets the host list
+ * include its own drafts while the same URL stays public for everyone else.
+ */
+export async function viewerOwnsHandle(
+  viewerEmail: string | undefined,
+  handle: string | undefined,
+) {
+  if (!viewerEmail || !handle) return false;
+  const organization = await findByOwnerEmail(viewerEmail);
+  return organization !== null && organization.handle === handle;
 }
 
 export interface EventListFilters {
   host?: string;
   search?: string;
   period?: "upcoming" | "past";
-  mode?: "Online" | "Offline";
+  mode?: "Online" | "Offline" | "Hybrid";
   inviteOnly?: boolean;
+  type?: EventType;
 }
 
 const escapeRegExp = (value: string) =>
@@ -32,8 +80,12 @@ const escapeRegExp = (value: string) =>
 export async function findAll(
   filters: EventListFilters,
   pagination: { skip: number; limit: number },
+  options: { includeDrafts?: boolean } = {},
 ) {
   const conditions: FilterQuery<IEvent>[] = [];
+
+  // Drafts (PG-15) are listed only for the organization that owns them.
+  if (!options.includeDrafts) conditions.push({ status: { $ne: "draft" } });
 
   if (filters.host) {
     // `organizerHandle` is the real link (see event.model.ts); matching
@@ -50,7 +102,12 @@ export async function findAll(
     // Escaped, so the text is matched literally and never read as a pattern.
     const pattern = new RegExp(escapeRegExp(filters.search), "i");
     conditions.push({
-      $or: [{ name: pattern }, { city: pattern }, { hostName: pattern }],
+      $or: [
+        { name: pattern },
+        { city: pattern },
+        { hostName: pattern },
+        { tags: pattern },
+      ],
     });
   }
 
@@ -62,6 +119,7 @@ export async function findAll(
   }
 
   if (filters.mode) conditions.push({ mode: filters.mode });
+  if (filters.type) conditions.push({ eventType: filters.type });
 
   if (filters.inviteOnly !== undefined) {
     // Events saved before `inviteOnly` existed have no value, and read as
@@ -184,11 +242,7 @@ export async function createEvent(
     organizerHandle: organization.handle,
   });
   // Only the chosen mode's fields are kept, as on edit.
-  for (const field of event.mode === "Online"
-    ? OFFLINE_ONLY_FIELDS
-    : ONLINE_ONLY_FIELDS) {
-    event.set(field, undefined);
-  }
+  for (const field of staleFieldsFor(event.mode)) event.set(field, undefined);
 
   try {
     return await event.save();
@@ -275,6 +329,17 @@ const ONLINE_ONLY_FIELDS = [
   "joinRequirements",
 ] as const;
 
+/**
+ * The fields that do not belong to a mode and are therefore dropped: an Online
+ * event has no venue, an Offline one no join link, and a Hybrid one (PG-10)
+ * keeps both.
+ */
+function staleFieldsFor(mode: IEvent["mode"]): readonly string[] {
+  if (mode === "Online") return OFFLINE_ONLY_FIELDS;
+  if (mode === "Offline") return ONLINE_ONLY_FIELDS;
+  return [];
+}
+
 /** A create body with its `null`s (meaningful only when editing) dropped. */
 function withoutNulls<T extends Record<string, unknown>>(fields: T) {
   return Object.fromEntries(
@@ -345,9 +410,7 @@ export async function updateEvent(
     event.set(key, value === null ? undefined : value);
   }
   if (capacity !== undefined) await applyCapacity(event, capacity);
-  const staleFields =
-    merged.mode === "Online" ? OFFLINE_ONLY_FIELDS : ONLINE_ONLY_FIELDS;
-  for (const field of staleFields) event.set(field, undefined);
+  for (const field of staleFieldsFor(merged.mode)) event.set(field, undefined);
 
   return event.save();
 }
@@ -359,6 +422,12 @@ export async function updateEvent(
  */
 export async function cancelEvent(email: string, uid: string): Promise<IEvent> {
   const event = await findManagedEvent(email, uid);
+  if (event.status === "draft") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "A draft has not been published, so there is nothing to cancel. Delete it instead.",
+    );
+  }
   assertEventStillOpen(event, "cancelled");
 
   event.status = "cancelled";
@@ -366,9 +435,87 @@ export async function cancelEvent(email: string, uid: string): Promise<IEvent> {
   return event.save();
 }
 
+/**
+ * Makes a draft public (PG-15). The event has to be as valid as a new one: the
+ * start must still be in the future, and the mode's fields must be present
+ * (a draft saved last month may have drifted). `409` for an event that is not a
+ * draft, or has ended.
+ */
+export async function publishEvent(email: string, uid: string): Promise<IEvent> {
+  const event = await findManagedEvent(email, uid);
+  if (event.status === "published") {
+    throw new AppError(STATUS_CODE.CONFLICT, "This event is already published.");
+  }
+  if (event.status === "cancelled") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "A cancelled event cannot be published.",
+    );
+  }
+
+  assertEventRules(
+    {
+      mode: event.mode,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      city: event.city,
+      state: event.state,
+      country: event.country,
+      address: event.address,
+      platform: event.platform,
+      platformLink: event.platformLink,
+    },
+    { requireFutureStart: true },
+  );
+
+  event.status = "published";
+  return event.save();
+}
+
+/**
+ * Takes a published event back to a draft, hidden from everyone but its
+ * organization (PG-15). Refused with `409` once anyone has registered (the
+ * event is cancelled instead, which keeps them informed of what happened), for
+ * a cancelled or ended event, and for one that is already a draft.
+ */
+export async function unpublishEvent(email: string, uid: string): Promise<IEvent> {
+  const event = await findManagedEvent(email, uid);
+  if (event.status === "draft") {
+    throw new AppError(STATUS_CODE.CONFLICT, "This event is already a draft.");
+  }
+  assertEventStillOpen(event, "cancelled");
+
+  const registered = await EventRegistration.countDocuments({ eventUid: uid });
+  if (registered > 0) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      `${registered} ${registered === 1 ? "person has" : "people have"} already registered, so this event cannot go back to a draft. Cancel it instead.`,
+    );
+  }
+
+  event.status = "draft";
+  return event.save();
+}
+
+/**
+ * Deletes a draft for good (PG-15). Only a draft can go: it was never public
+ * and has no registrations, so nothing depends on it. A published or cancelled
+ * event answers `409` (cancel instead; published events are never deleted).
+ */
+export async function deleteDraft(email: string, uid: string): Promise<void> {
+  const event = await findManagedEvent(email, uid);
+  if (event.status !== "draft") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "Only a draft can be deleted. Cancel a published event instead.",
+    );
+  }
+  await Event.deleteOne({ _id: event._id });
+}
+
 export async function joinEvent(email: string, uid: string) {
   const [event, attendee] = await Promise.all([
-    findByUid(uid),
+    findPublicByUid(uid),
     findByEmail(email),
   ]);
 
@@ -446,7 +593,7 @@ async function releaseSpot(uid: string) {
  */
 export async function leaveEvent(email: string, uid: string) {
   const [event, attendee] = await Promise.all([
-    findByUid(uid),
+    findPublicByUid(uid),
     findByEmail(email),
   ]);
 
@@ -623,7 +770,7 @@ export async function setCheckIn(
 }
 
 export async function getRegistrationStatus(email: string, uid: string) {
-  const event = await findByUid(uid);
+  const event = await findPublicByUid(uid);
   if (!event) {
     throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
   }
