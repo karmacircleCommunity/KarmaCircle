@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
 import ComponentHelmet from "@components/ComponentHelmet";
@@ -10,8 +10,13 @@ import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import { selectUser } from "@app/store/slices/userSlice";
 import fetcher from "@utils/Fetcher";
-import { JoinEvent } from "@services/KarmaCircleApi";
-import { showErrorToast, showSuccessToast, showWarningToast } from "@utils/Toasts";
+import { JoinEvent, LeaveEvent } from "@services/KarmaCircleApi";
+import {
+  showErrorToast,
+  showSuccessToast,
+  showWarningToast,
+} from "@utils/Toasts";
+import ConfirmDialog from "@features/events/components/ConfirmDialog";
 import EventAgenda from "@features/events/components/detail/EventAgenda";
 import EventFacts from "@features/events/components/detail/EventFacts";
 import EventFundraiserPanel from "@features/events/components/detail/EventFundraiserPanel";
@@ -97,9 +102,12 @@ const EventNotFound = ({ eventId }: { eventId?: string }) => (
 const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
   const user = useSelector(selectUser);
   const [joining, setJoining] = useState(false);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const { mutate: mutateGlobal } = useSWRConfig();
   const registrationKey =
     user.isLoggedIn && user.email
-      ? [eventEndpoints.registration(event.id), user.email] as const
+      ? ([eventEndpoints.registration(event.id), user.email] as const)
       : null;
   const {
     data: registration,
@@ -142,22 +150,45 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
 
     if (response.ok) {
       void mutateRegistration({ joined: true }, false);
+      // Going / spots left come from the event record.
+      void mutateGlobal(eventEndpoints.byUid(event.id));
       if (response.data?.emailSent) {
         showSuccessToast("You joined this event. Confirmation email sent.");
       } else {
-        showWarningToast("You joined this event, but confirmation email could not be sent.");
+        showWarningToast(
+          "You joined this event, but confirmation email could not be sent.",
+        );
       }
       return;
     }
     showErrorToast(response.message || "Could not join this event.");
+    // A refused join (the event just filled up) means the counts shown are stale.
+    void mutateGlobal(eventEndpoints.byUid(event.id));
+  };
+
+  const leaveEvent = async () => {
+    if (leaving) return;
+    setLeaving(true);
+    const result = await LeaveEvent(event.id);
+    setLeaving(false);
+    setConfirmingLeave(false);
+
+    if (result.ok) {
+      void mutateRegistration({ joined: false }, false);
+      void mutateGlobal(eventEndpoints.byUid(event.id));
+      showSuccessToast("You left this event");
+      return;
+    }
+    showErrorToast(result.message || "Could not leave this event.");
+    void mutateRegistration();
   };
 
   useEffect(() => {
     const panel = joinPanelRef.current;
     if (!panel) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => setJoinPanelVisible(entry.isIntersecting),
+    const observer = new IntersectionObserver(([entry]) =>
+      setJoinPanelVisible(entry.isIntersecting),
     );
     observer.observe(panel);
     return () => observer.disconnect();
@@ -298,6 +329,7 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                   checkingRegistration={checkingRegistration}
                   registrationCheckFailed={registrationCheckFailed}
                   onToggleJoin={joinEvent}
+                  onRequestLeave={() => setConfirmingLeave(true)}
                 />
               </div>
 
@@ -325,6 +357,27 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
         onToggleJoin={joinEvent}
         hidden={joinPanelVisible || nearFooter}
       />
+
+      {confirmingLeave && (
+        <ConfirmDialog
+          title="Leave this event?"
+          cancelLabel="Stay registered"
+          confirmLabel="Leave event"
+          busyLabel="Leaving…"
+          busy={leaving}
+          destructive
+          onConfirm={leaveEvent}
+          onClose={() => !leaving && setConfirmingLeave(false)}
+        >
+          <p className="mt-3 mb-0 font-poppins text-body leading-6 text-ink/70">
+            <span className="font-medium text-brand-secondary">
+              {event.title}
+            </span>{" "}
+            will no longer show in My Events, and your place is given to someone
+            else. You can join again later if there is still room.
+          </p>
+        </ConfirmDialog>
+      )}
 
       <Footer />
     </>

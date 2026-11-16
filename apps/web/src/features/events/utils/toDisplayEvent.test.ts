@@ -171,3 +171,58 @@ describe("toDisplayEventDetail", () => {
     expect(event.coverAlt).toBeUndefined();
   });
 });
+
+describe("cancelled events", () => {
+  it("marks a cancelled event on both the card and the detail page", () => {
+    const cancelled = { ...baseEvent, status: "cancelled" as const };
+
+    expect(toDisplayEvent(cancelled).cancelled).toBe(true);
+    expect(toDisplayEventDetail(cancelled).event.cancelled).toBe(true);
+  });
+
+  it("treats a published event, or one with no stored status, as not cancelled", () => {
+    const published = { ...baseEvent, status: "published" as const };
+
+    expect(toDisplayEvent(published).cancelled).toBeUndefined();
+    expect(toDisplayEvent(baseEvent).cancelled).toBeUndefined();
+    expect(toDisplayEventDetail(published).event.cancelled).toBe(false);
+    expect(toDisplayEventDetail(baseEvent).event.cancelled).toBe(false);
+  });
+});
+
+describe("capacity counts", () => {
+  it("shows going and spots left only for an event with a capacity", () => {
+    const capped = { ...baseEvent, capacity: 10, registrationCount: 4 };
+
+    expect(toDisplayEvent(capped)).toMatchObject({ going: 4, spotsLeft: 6 });
+    expect(toDisplayEventDetail(capped).event).toMatchObject({
+      going: 4,
+      spotsLeft: 6,
+    });
+  });
+
+  it("invents nothing for an event with no capacity, whatever the stored count", () => {
+    const open = { ...baseEvent, registrationCount: 7 };
+
+    expect(toDisplayEvent(open).going).toBeUndefined();
+    expect(toDisplayEvent(open).spotsLeft).toBeUndefined();
+    expect(toDisplayEventDetail(open).event.going).toBeUndefined();
+    expect(toDisplayEventDetail(open).event.spotsLeft).toBeUndefined();
+  });
+
+  it("reports a full event as zero spots left, and never goes negative or over", () => {
+    expect(
+      toDisplayEvent({ ...baseEvent, capacity: 5, registrationCount: 5 }),
+    ).toMatchObject({ going: 5, spotsLeft: 0 });
+    expect(
+      toDisplayEvent({ ...baseEvent, capacity: 5, registrationCount: 9 }),
+    ).toMatchObject({ going: 5, spotsLeft: 0 });
+  });
+
+  it("treats a capped event with no stored count as nobody going", () => {
+    expect(toDisplayEvent({ ...baseEvent, capacity: 3 })).toMatchObject({
+      going: 0,
+      spotsLeft: 3,
+    });
+  });
+});

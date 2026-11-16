@@ -7,6 +7,7 @@ import { User } from "../src/modules/users/user.model";
 jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   sendEventJoinConfirmation: jest.fn().mockResolvedValue(true),
+  sendEventJoinOrganizerNotice: jest.fn().mockResolvedValue(true),
 }));
 
 const app = buildTestApp();

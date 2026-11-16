@@ -13,13 +13,14 @@ verifies the description prompt and character count, rejects a meeting address
 without HTTP or HTTPS, then checks the published detail page and hosted-events
 list.
 
-## Attendee journey and online publishing (written, not yet run)
+## Attendee journey and online publishing
 
 `attendee-journey.spec.ts` (5 tests) and `online-event-publishing.spec.ts` (2
-tests) were added in November 2026. Playwright was not authorized, so none of the
-7 tests has ever run (`npx playwright test --list` lists all 7). Expect selector
-or timing fixes on the first real run. Do not call this coverage done until a
-real run passes.
+tests) were added in November 2026 and first run on 2026-11-16, together with
+the rest of this folder: all 15 specs pass on Chromium, Firefox and WebKit (45 of
+45). Two of them needed a fix on that first run: the hosted-events list now has an
+"Edit <name>" link per row, so a link lookup by event name is anchored (`^<name>`)
+to match only the row's main link.
 
 - `attendee-journey.spec.ts`: finds an event in the directory by search, opens
   the detail page, joins, sees "You are going" (and again after a reload), opens
@@ -49,14 +50,68 @@ because the API refuses to create a past event or to join one that has started.
 The online-publishing tests keep the form's default start (one hour from now), as
 the in-person test does, so they can fail within an hour of local midnight.
 
-## Known breakage: `events-responsive.spec.ts` seeding
+## `events-responsive.spec.ts` seeding (fixed)
 
-Its `createEvent` helper posts `endTime` equal to `startTime`, and one test
-creates an event 30 days in the past, both through `POST /events/create`. The API
-now rejects an end time that is not after the start and a start in the past, so
-three of its four tests (all but the UI publishing test) will fail on a real run. It needs future
-events with an end after the start, and the backdate route for the past one.
-Not run.
+Its `createEvent` helper used to post `endTime` equal to `startTime`, and one test
+created an event 30 days in the past, both through `POST /events/create`, which
+the API now rejects. It now creates every event in the future with an end two
+hours after the start, and moves the past one with the E2E-only
+`POST /__test__/events/:uid/backdate` route, as the attendee specs do.
+
+## Editing and cancelling an event
+
+`event-management.spec.ts` (4 tests, November 2026). Each test signs its own
+organization up through the UI, publishes the profile and an event through the API
+(`event-helpers.ts`), and uses unique names.
+
+- An organization opens Edit from "Your events": the page address is read-only,
+  the form starts as stored (name, invite-only), the change is saved, "Event
+  updated" shows, the event page has the new name and no "Invite only" label, and
+  the API record matches.
+- Saving an unchanged form shows "Nothing has changed yet." and stays on the page.
+- Cancelling: "Keep event" closes the dialog and the event stays published;
+  confirming shows "Event cancelled", a "Cancelled" pill and no Edit or Cancel
+  actions; the public page says "This event was cancelled" with no Join button; an
+  attendee's `POST /events/:uid/join` returns `409`; the edit page shows "This
+  event was cancelled" instead of a form.
+- A second organization sees "You can only edit your own events" on the edit page,
+  and the API returns `403` for its edit and cancel calls; the event is unchanged.
+
+## Leave, capacity and the attendee list
+
+`event-attendees.spec.ts` (6 tests, November 2026). Attendees sign up through the
+UI in their own browser contexts (`openAttendee`, a different stamp each); the
+organization publishes through the API, and `createEvent` in `event-helpers.ts` now
+takes an optional `capacity`.
+
+- An attendee joins, is asked to confirm leaving ("Stay registered" changes
+  nothing), leaves ("You left this event", Join is back, the API says not joined,
+  My Events no longer lists it) and joins again.
+- A capacity-of-one event: one spot is shown, the person who joined sees "You are
+  going" and "Full", the next person sees a disabled "Event is full", the API
+  refuses their join with `409`, and once the first person leaves the spot can be
+  taken.
+- The edit form's capacity field: `0` is rejected by the form, `2` saves and shows
+  "1 spot left", and emptying it returns to "No limit".
+- The API refuses a capacity below the number already registered (`409`, shown in
+  the form).
+- The organizer opens "Attendees for <event>" from Your events, sees the totals
+  ("2 of 5"), both people, narrows by email, checks someone in, undoes it, checks
+  in again, finds nobody for a bad search, and downloads the CSV (file name, both
+  emails, the check-in, three lines).
+- Another organization sees "You can only see your own events' attendees" and gets
+  `403` from the list and CSV routes.
+
+## Optional event details
+
+`event-details.spec.ts` (5 tests, November 2026). A full event is published
+through the form with every optional detail (write-up, contact email, minimum age,
+fee and note, what to bring, languages, directions, two agenda rows) and the event
+page shows each section, the "Ask" mail link and the stored values match. A basic
+event shows none of those sections and reads "Free". Details are added and then
+cleared from the edit form (sections disappear, the record loses them). The form
+rejects a bad email, a zero fee, a zero age and a half-filled agenda row before
+anything is sent. An online event shows its link notes and stores no directions.
 
 ## Directory search after November 2026
 
@@ -64,7 +119,8 @@ The directory loads 12 cards at a time and searches on the API. The directory
 tests therefore narrow to their own events through a `searchDirectory` helper,
 using the unique stamp in each event name, and the city test uses a per-stamp
 city name so it checks the API-side city match. These edits to
-`events-responsive.spec.ts` have not been run either.
+`events-responsive.spec.ts` were run with the rest of this folder on 2026-11-16.
 
-Run this feature with `npx playwright test e2e/events/` from `apps/web` when UI
-testing is authorized.
+Run this feature with `npx playwright test e2e/events/` from `apps/web` (add
+`--project=chromium` for one browser). The run starts its own web and API servers
+on ports 3001 and 5051, so it does not touch a running `pnpm dev` session.

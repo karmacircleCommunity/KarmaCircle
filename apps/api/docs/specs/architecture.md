@@ -80,7 +80,7 @@ Note: `validate()` ([src/middleware/validate.ts](../../src/middleware/validate.t
 | `/display` | `directory` routes | `GET /display/users`, `GET /display/organizations` |
 | `/payment` | `payments` routes | `POST /payment/razorpay` |
 | `/product` | `products` routes | `POST /product/addproduct`, `GET /product/allproducts`, `POST /product/cart/add`, `GET /product/:productSlug` |
-| `/events` | `events` routes | `GET /events`, `POST /events/create` |
+| `/events` | `events` routes | `GET /events`, `POST /events/create`, `PATCH /events/:uid`, `POST /events/:uid/cancel` (plus join, leave, registration, `/events/:uid/attendees`, check-in, CSV export and `/events/mine`) |
 
 See [api-contract.md](./api-contract.md) for the full method+path+body+response reference and how each of these lines up against what the frontend actually calls.
 

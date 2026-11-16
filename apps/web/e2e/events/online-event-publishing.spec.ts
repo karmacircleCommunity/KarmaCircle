@@ -64,9 +64,7 @@ async function openPublishingForm(page: Page, stamp: number) {
 
 async function expectNothingPublished(page: Page, slug: string) {
   await expect(page).toHaveURL(/\/organization\/events\/new$/);
-  const response = await page.request.get(
-    `${E2E_API_URL}/events?uid=${slug}`,
-  );
+  const response = await page.request.get(`${E2E_API_URL}/events?uid=${slug}`);
   expect(response.status()).toBe(404);
 }
 
@@ -115,9 +113,7 @@ test("an organization publishes an online event with a platform and a meeting li
   await expect(page).toHaveURL(new RegExp(`/events/${slug}$`), {
     timeout: 15_000,
   });
-  await expect(
-    page.getByRole("heading", { level: 1, name }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 
   // The detail page explains how to join instead of giving a venue.
   await expect(
@@ -145,8 +141,9 @@ test("an organization publishes an online event with a platform and a meeting li
 
   // And the organization finds it in its hosted-events list.
   await page.goto("/organization/events");
+  // Anchored: the row's "Edit <name>" link also contains the event name.
   await expect(
-    page.getByRole("link", { name: new RegExp(name) }),
+    page.getByRole("link", { name: new RegExp(`^${name}`) }),
   ).toBeVisible();
 });
 
@@ -179,14 +176,10 @@ test("an online event published with the default platform is saved as a Zoom mee
   await page
     .getByRole("searchbox", { name: "Search events" })
     .fill(String(stamp));
-  await expect(
-    page.getByRole("heading", { level: 2, name }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
   await page.getByRole("button", { name: "Filter by type" }).click();
   await page.getByRole("option", { name: "Online" }).click();
-  await expect(
-    page.getByRole("heading", { level: 2, name }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
   await page.getByRole("button", { name: "Filter by type" }).click();
   await page.getByRole("option", { name: "Offline" }).click();
   await expect(page.getByRole("heading", { level: 2, name })).toHaveCount(0);

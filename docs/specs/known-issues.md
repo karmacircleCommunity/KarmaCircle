@@ -85,9 +85,9 @@ The organization dashboard now reads live profile, event-registration, payment, 
 Dashboard analytics currently count raw public profile loads; event impressions, unique reach, and click-through attribution remain untracked.
 See the relevant feature specs ([organizations.md](./organizations.md), [events.md](./events.md), [dashboard.md](./dashboard.md), [landing-home.md](./landing-home.md)) for current behavior and gaps.
 
-## Events — attendee capacity (not tracked)
+## Events — attendee capacity (built November 2026, PG-5)
 
-`POST /events/:uid/join` now saves authenticated registrations and emails confirmation. Capacity is still absent, and the UI only shows going/spots-left values when real counts exist (`hasCapacity` checks). Do not infer or display totals from registrations until capacity/count behavior is deliberately designed. There is no leave, invitation, approval, or organizer-notification flow.
+Capacity is now optional and real: an organizer sets a maximum when publishing or editing, the API reserves a spot atomically on join (`409 "This event is full."`), and the UI shows going and spots-left **only for an event with a capacity** (`capacityCounts` in `toDisplayEvent.ts`, then the existing `hasCapacity` checks). An event with no capacity says "No limit" and shows no numbers, because `registrationCount` is only trustworthy for a capped event (it is recounted when a capacity is set). Leaving (PG-3), the host attendee list with check-in and CSV (PG-6) and the organizer's join notice exist. Still missing: invitations and approval (PG-4), a waitlist (PG-14), and emailing attendees about changes (PG-18). Do not display a headcount for an event with no capacity.
 
 ## Events - open issues (November 2026)
 
@@ -96,9 +96,8 @@ See the relevant feature specs ([organizations.md](./organizations.md), [events.
 - **`fundedPercent` (`src/utils/formatMoney.ts`) has no lower clamp.** A negative raised amount gives a negative percent, and a NaN goal or raised value returns NaN. Not asserted in tests.
 - **`isEventPast` treats an unreadable date as not past** (a NaN comparison is false). Asserted as current behavior in `formatEventFacts.test.ts`.
 - **`formatEventDate`'s JSDoc example does not match its output.** It says "Sat 12 Sep · 9:00 pm", but only the first ", " is replaced, so en-US yields "Sat · Sep 12, 9:00 PM". The format is locale-dependent by design.
-- **The create form shows only "Validation failed" for server-side rule failures.** Field-level messages (`response.data.errors`) from the API are not surfaced; the browser mirrors the API rules, so this mostly matters if the two drift.
-- **`e2e/events/events-responsive.spec.ts` seeds events the API now rejects.** Its `createEvent` helper posts an end time equal to the start time, and one test creates an event in the past. Three of its four tests will fail on a real run until it creates future events with an end after the start and uses the E2E-only backdate route. Not run. See [testing.md](./testing.md).
-- **The new Playwright specs `attendee-journey.spec.ts` and `online-event-publishing.spec.ts` are written but have never been run.**
+- **The create form shows only "Validation failed" for server-side rule failures.** Field-level messages (`response.data.errors`) from the API are not surfaced; the browser mirrors the API rules, so this mostly matters if the two drift. The edit form (November 2026) does surface the API's first field error in its toast.
+- **Events Playwright specs: fixed and run (2026-11-16).** `events-responsive.spec.ts` now creates future events that end after they start and moves the past one with the E2E-only backdate route, and `attendee-journey.spec.ts`, `online-event-publishing.spec.ts` and the new `event-management.spec.ts` (edit and cancel) were run for the first time. All 15 events specs pass on Chromium, Firefox and WebKit (45 of 45). Two specs needed their hosted-list link anchored (`^<name>`) because each row's "Edit <name>" link also contains the event name.
 - **Lint warnings (19, 0 errors) as of 2026-11-04:** 11 `tailwindcss/classnames-order` in `src/components/Navbar.tsx` (line 455), 6 Playwright conditional-in-test warnings in `e2e/events/events-responsive.spec.ts`, and 2 in `e2e/organizations/organizations-responsive.spec.ts`.
 
 ## Validation that doesn't actually block submission

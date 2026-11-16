@@ -1,4 +1,5 @@
 import type { ApiEvent, DetailedEventRecord } from "@features/events/types";
+import { capacityCounts } from "@features/events/utils/toDisplayEvent";
 
 /**
  * Maps one live `GET /events?uid=` record onto what `DetailedEvent.tsx`
@@ -6,8 +7,8 @@ import type { ApiEvent, DetailedEventRecord } from "@features/events/types";
  * same pattern `organizations/utils/toDisplayOrganization.ts` already
  * follows for `OrganizationProfile.tsx`.
  *
- * **Nothing is invented.** `going`/`spotsLeft` stay `undefined` (this app
- * doesn't track attendance yet — see `EventCardEvent`'s own comment);
+ * **Nothing is invented.** `going`/`spotsLeft` are only set for an event with
+ * a capacity (`capacityCounts`), and stay `undefined` otherwise;
  * `about`/`agenda`/`bringAlong`/`languages` fall back to `[]` rather than
  * placeholder copy, so `EventSection`s with nothing behind them simply
  * don't render (the same rule `OrganizationProfileView` already follows
@@ -32,10 +33,10 @@ export function toDisplayEventDetail(event: ApiEvent): DetailedEventRecord {
       platformLink: event.platformLink,
       startsAt: event.startTime,
       endsAt: event.endTime,
-      going: undefined,
-      spotsLeft: undefined,
+      ...capacityCounts(event),
       isGovernmentSponsored: event.isGovernmentSponsored,
       inviteOnly: event.inviteOnly,
+      cancelled: event.status === "cancelled",
     },
     detail: {
       about: event.about ?? [],

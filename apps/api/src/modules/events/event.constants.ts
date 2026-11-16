@@ -34,5 +34,26 @@ export const COVER_IMAGE_MIME_TYPES = ["png", "jpeg", "webp", "gif"] as const;
 export const COVER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const COVER_IMAGE_URL_MAX_LENGTH = 2048;
 
+/** Limits for the optional detail fields an organizer can fill in (PG-7). */
+export const EVENT_ABOUT_MAX_PARAGRAPHS = 20;
+export const EVENT_ABOUT_PARAGRAPH_MAX_LENGTH = 2000;
+export const EVENT_BRING_ALONG_MAX_ITEMS = 20;
+export const EVENT_BRING_ALONG_ITEM_MAX_LENGTH = 100;
+export const EVENT_LANGUAGES_MAX_ITEMS = 10;
+export const EVENT_LANGUAGE_MAX_LENGTH = 40;
+export const EVENT_AGENDA_MAX_ITEMS = 30;
+export const EVENT_AGENDA_TIME_MAX_LENGTH = 30;
+export const EVENT_AGENDA_TITLE_MAX_LENGTH = 100;
+export const EVENT_AGENDA_DETAIL_MAX_LENGTH = 200;
+export const EVENT_GETTING_THERE_MAX_LENGTH = 500;
+export const EVENT_JOIN_NOTE_MAX_LENGTH = 300;
+export const EVENT_CONTACT_EMAIL_MAX_LENGTH = 254;
+export const EVENT_COST_MAX_AMOUNT = 10_000_000;
+export const EVENT_COST_NOTE_MAX_LENGTH = 200;
+export const EVENT_MINIMUM_AGE_MAX = 120;
+
+/** Largest `capacity` an organizer can set (PG-5). */
+export const EVENT_CAPACITY_MAX = 100_000;
+
 /** Longest `search` text the directory list accepts. */
 export const EVENT_SEARCH_MAX_LENGTH = 100;

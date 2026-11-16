@@ -1,4 +1,5 @@
 import { FiGlobe, FiTag, FiUserCheck, FiUsers } from "react-icons/fi";
+import { formatSpotsLeft } from "@features/events/utils/formatEventFacts";
 import { formatMoney } from "@utils/formatMoney";
 import type { EventFactsProps } from "@features/events/types";
 
@@ -12,18 +13,17 @@ import type { EventFactsProps } from "@features/events/types";
  * showing a zero, and a priced one shows the amount with the organizer's
  * own note beneath it.
  *
- * **Attendance** has nothing to show for a live event - `event.model.ts`
- * has no capacity/RSVP tracking yet (a deliberate non-goal, not an
- * oversight - see "Events — RSVP and attendee capacity" in
- * `docs/specs/known-issues.md`), so rather than
- * inventing a "going" number this cell says so honestly.
+ * **Attendance** shows spots left and how many are going for an event with a
+ * capacity (PG-5), and "No limit" for one without: only a capped event has a
+ * trustworthy count, so no "going" number is shown for the rest.
  *
  * **Who can come** doubles as the invite-only signal: an invite-only event
  * says so here instead of (or alongside) any age restriction, since it's
  * the bigger gate on whether a reader can actually show up.
  */
 const EventFacts = ({ event, detail }: EventFactsProps) => {
-  const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
+  const hasCapacity =
+    event.going !== undefined && event.spotsLeft !== undefined;
   const full = event.spotsLeft === 0;
 
   const facts = [
@@ -41,11 +41,11 @@ const EventFacts = ({ event, detail }: EventFactsProps) => {
       value: hasCapacity
         ? full
           ? "Full"
-          : `${event.spotsLeft} spots left`
-        : "Not tracked yet",
+          : formatSpotsLeft(event.spotsLeft!)
+        : "No limit",
       note: hasCapacity
-        ? `${event.going} people going`
-        : "Turn up - there's no headcount to run out of",
+        ? `${event.going} ${event.going === 1 ? "person" : "people"} going`
+        : "The organizer has not capped the number of places",
     },
     {
       icon: FiGlobe,

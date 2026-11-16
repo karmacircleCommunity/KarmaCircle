@@ -22,13 +22,13 @@ stored account type and returns `403` for individual hosts.
 `e2e/events/events-responsive.spec.ts` covers live directory cards,
 Upcoming/Past filtering, city search, mobile/desktop overflow, and publishing an
 in-person event through the full-page form. `attendee-journey.spec.ts` (detail
-page, join, My Events, invite-only, past event) and
-`online-event-publishing.spec.ts` (online platform and meeting link) were added
-in November 2026 and are written but have not been run. The older
-`events-responsive.spec.ts` seeds events through `POST /events/create` with an
-end time equal to the start time and one event in the past, which the API now
-rejects, so it needs the same future-event-plus-backdate pattern before its next
-run. See [e2e/events/README.md](../../../e2e/events/README.md).
+page, join, My Events, invite-only, past event),
+`online-event-publishing.spec.ts` (online platform and meeting link) and
+`event-management.spec.ts` (edit and cancel) were added in November 2026. All 15
+specs passed on Chromium, Firefox and WebKit on 2026-11-16 (45 of 45), after
+`events-responsive.spec.ts` was changed to seed future events that end after they
+start and to backdate its past event. See
+[e2e/events/README.md](../../../e2e/events/README.md).
 
 ## What this feature is responsible for
 
@@ -37,9 +37,12 @@ registration and My Events, hosted-event listings, event display, and event
 creation. The directory, detail, registration status, My Events, and
 hosted-event pages read real API data. Both organization event-creation entry
 points navigate to `/organization/events/new`, which submits through
-`POST /events/create`. Capacity remains unsupported. The organization dashboard
-shows aggregate and per-event registration totals; attendee names and check-in
-remain unsupported.
+`POST /events/create`. Organizations can edit an event (`PATCH /events/:uid`) and
+cancel it (`POST /events/:uid/cancel`) from `/organization/events`, set a capacity
+and the optional details in the form, and see who is coming, check people in and
+download the list at `/organization/events/:eventId/attendees` (November 2026).
+Attendees can leave an event they joined. The organization dashboard still shows
+only aggregate and per-event registration totals.
 
 ## Why it's shaped this way
 
@@ -48,7 +51,7 @@ remain unsupported.
 reconnected by mistake. The purpose-built `CreateEvents.tsx` page is the sole
 event-creation flow. The directory and hosted-event workspace link to
 `/organization/events/new`. The feature has no `services/` folder: every event
-write goes through `src/services/KarmaCircleApi.ts` (`CreateEvent`, `JoinEvent`)
+write goes through `src/services/KarmaCircleApi.ts` (`CreateEvent`, `UpdateEvent`, `CancelEvent`, `JoinEvent`, `LeaveEvent`, `SetAttendeeCheckIn`, `FetchAttendeesCsv`)
 and every read goes through `useSWR` with `eventEndpoints` from
 `src/services/ApiEndpoints.ts`.
 
@@ -64,6 +67,15 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `utils/toDisplayEventDetail.ts`     | Maps a live `ApiEvent` onto the `{ event, detail }` shape `DetailedEvent.tsx` renders                                                                                                                                                     | ✅ used by `DetailedEvent.tsx`                                                                                                                                                                                         |
 | `utils/formatEventFacts.ts`         | `formatEventDate`/`formatEventBadge`/`formatEventTime` plus duration, maps-URL and `isEventPast` helpers — one home for "format an event" (the first three moved here from the now-deleted `constants/eventDirectory.ts` fixture). Money helpers (`formatMoney`, `fundedPercent`) live in the shared `@utils/formatMoney`, not here | ✅ used across `EventCard` and the detail components                                                                                                                                                                   |
 | `components/CreateEvents.tsx`       | Responsive full-page event creation flow with preview                                                                                                                                                                                     | ✅ routed at `/organization/events/new`                                                                                                                                                                                |
+| `pages/EditEvent.tsx` | The `/organization/events/:eventId/edit` page (November 2026, PG-1): loads the stored event, checks the signed-in organization hosts it, shows an explanation for a missing, foreign, cancelled or ended event, otherwise renders `EventForm` filled in | ✅ routed behind `RequireSignIn` |
+| `components/CancelEventDialog.tsx` | Confirmation before cancelling an event (November 2026, PG-2): a native `<dialog>` opened with `showModal()`, "Keep event" focused first | ✅ used by `YourEvents.tsx` |
+| `utils/eventToFormState.ts` | Turns a stored `ApiEvent` into the form's starting values for editing | ✅ used by `EditEvent.tsx` |
+| `utils/buildEventChanges.ts` | Diffs the form against the stored event into the `PATCH /events/:uid` body (only changed fields; cover only if replaced; a start left alone is not re-sent; location fields travel as a group) | ✅ used by `useEvent.ts` |
+| `pages/EventAttendees.tsx` | The `/organization/events/:eventId/attendees` page (November 2026, PG-6): totals, search, per-person check-in toggle, CSV download, load more (50 per page); host only | ✅ routed behind `RequireSignIn` |
+| `components/ConfirmDialog.tsx` | Shared native `<dialog>` confirmation (safe answer focused first, Escape held while busy) | ✅ used by `CancelEventDialog.tsx` and the leave confirmation in `DetailedEvent.tsx` |
+| `components/EventDetailsSection.tsx` | Section 04 of the event form (November 2026, PG-7): write-up, contact email, minimum age, fee, what to bring, languages, agenda editor and the mode's own notes | ✅ used by `CreateEvents.tsx` |
+| `components/EventFormParts.tsx` | `Field`, `FormSection` and the shared input classes of the event form | ✅ used by `CreateEvents.tsx` and `EventDetailsSection.tsx` |
+| `utils/eventDetailFields.ts` | Form text to API shape and back for the optional details: `normalizeDetails`, `detailPayloadForCreate`, `detailChanges`, `validateDetails`, limits (mirror the API) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
 | `hooks/useEvent.ts`                 | Validator, date/time payload conversion, submit and list refresh                                                                                                                                                                          | ✅ used by `CreateEvents` page                                                                                                                                                                                         |
 | `components/EventCard.tsx`          | Card rendered in the `/events` grid                                                                                                                                                                                                       | ✅ rendered, typed against `EventCardEvent`                                                                                                                                                                            |
 | `utils/toDisplayEvent.ts`           | Maps a live `ApiEvent` onto `EventCardEvent`                                                                                                                                                                                              | ✅ used by `Events.tsx`                                                                                                                                                                                                |
@@ -286,7 +298,14 @@ event creation belongs in `CreateEvents.tsx` and `useEvent.ts`.
 ### `CreateEvents.tsx` — the shared live implementation
 
 Routed at `/organization/events/new` for signed-in organization accounts with a
-live public profile.
+live public profile. Since November 2026 the file exports `EventForm` (the form
+itself) next to the default `CreateEvents` (which renders `EventForm` with blank
+values); `pages/EditEvent.tsx` renders the same `EventForm` with a stored event
+for `/organization/events/:eventId/edit`. In edit mode (`original` prop) the page
+address is read-only, the heading is "Edit your event", the buttons read "Save
+changes" and "Discard changes", and `useEvent` sends only the changed fields to
+`PATCH /events/:uid`. The blank values are built by `createInitialEvent()` when
+the form opens, no longer once at module load.
 
 This is a page, not a modal. It uses a responsive form with three sections,
 native date/time controls, mode-specific location or meeting details,
@@ -373,6 +392,15 @@ a later render cannot replace it with an empty or stale error object.
   `Events.tsx` refetches every loaded page itself (`revalidateAll`).
 - On failure, it shows the API error message when available, otherwise a generic
   retry message.
+- **Edit mode** (`useEvent(event, original)`, November 2026): if `original` is
+  passed it takes the edit branch instead. It builds the body with
+  `buildEventChanges(event, original)`; an empty body shows "Nothing has changed
+  yet." and sends nothing; otherwise it calls `UpdateEvent(original.uid, changes)`
+  (`PATCH /events/:uid`, returns `{ ok, status, message, errors }` instead of
+  throwing), shows "Event updated" on success, runs the success callback and
+  revalidates `eventEndpoints.byUid(uid)` and the host list, and on failure shows
+  the API's first field error or message. `validateEvent()` skips the page address
+  checks when editing and applies "start in the future" only to a moved start.
 - If `errors` is non-empty: a single generic toast, "Please fill all the
   required fields" — no per-field detail in the toast (per-field detail is shown
   inline via `errors.name`/`errors.uid`/etc. in the form itself).
@@ -472,6 +500,39 @@ CreateEvent(event)   [KarmaCircleApi.ts, POST /events/create]
 201 ──► toast, open event detail, revalidate directory and current host list
 ```
 
+```
+EditEvent.tsx - /organization/events/:eventId/edit
+   ▼
+GET /events?uid (SWR, no revalidate on focus) → owner, not cancelled, not ended?
+   ▼
+EventForm (original = stored event) → validateEvent() → submitCallback()
+   ▼
+buildEventChanges() → UpdateEvent(uid, changes)   [PATCH /events/:uid]
+   ▼
+200 ──► toast, open event detail, revalidate that event and the host list
+```
+
+```
+EventAttendees.tsx - /organization/events/:eventId/attendees
+   ▼
+GET /events/:uid/attendees (useSWRInfinite, 50 a page, search debounced) - host only
+   ▼
+Check in toggle → SetAttendeeCheckIn()   [PATCH /events/:uid/attendees/:id]
+Download CSV    → FetchAttendeesCsv()    [GET  /events/:uid/attendees/export]
+```
+
+```
+DetailedEvent.tsx: "Leave event" → ConfirmDialog → LeaveEvent(uid)
+   ▼                                              [DELETE /events/:uid/registration]
+200 ──► toast, registration state and the event (going, spots left) revalidated
+```
+
+```
+YourEvents.tsx → "Cancel event" → CancelEventDialog → CancelEvent(uid)
+   ▼                                                  [POST /events/:uid/cancel]
+200 ──► toast, revalidate the host list (row gets a Cancelled pill, no actions)
+```
+
 ## Types
 
 `types/index.ts` re-exports the feature interfaces and types. `ApiEvent` models
@@ -530,6 +591,17 @@ changing together.
 
 ## If you're asked to...
 
+- **"Leave an event" / "capacity" / "attendee list" / "check-in" / "more event
+  details"** → all exist (November 2026): `LeaveEvent` and `ConfirmDialog` in
+  `DetailedEvent.tsx`, `capacity` in the form and `capacityCounts` in
+  `toDisplayEvent.ts`, `EventAttendees.tsx`, and `EventDetailsSection.tsx` with
+  `eventDetailFields.ts`. Going and spots left are shown only for an event with a
+  capacity. See [apps/api/docs/specs/events.md](../../../../apps/api/docs/specs/events.md).
+- **"Edit an event" / "cancel an event"** → both exist (November 2026): edit is
+  `EditEvent.tsx` + `EventForm` + `buildEventChanges`, cancel is
+  `CancelEventDialog` in `YourEvents.tsx`. The page address cannot change, a
+  cancelled event cannot be edited, and nobody is emailed (PG-18); see
+  [apps/api/docs/specs/events.md](../../../../apps/api/docs/specs/events.md).
 - **"Add event creation" / "fix the create event button"** → both `/events` and
   `/organization/events` now mount `CreateEvents.tsx` + `useEvent.ts`, which
   submit to `POST /events/create`. The old `CreateEvent.tsx` profile-editor copy

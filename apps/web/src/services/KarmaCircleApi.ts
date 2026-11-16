@@ -272,6 +272,104 @@ export const CreateEvent = async (event: unknown) => {
   }
 };
 
+export interface EventWriteResult {
+  ok: boolean;
+  status?: number;
+  message?: string;
+  /** Field-level problems from a `400`, keyed by the API's `path`. */
+  errors?: { path: string; message: string }[];
+}
+
+const toEventWriteFailure = (error: unknown): EventWriteResult => {
+  const apiError = (
+    error as AxiosError<{
+      message?: string;
+      errors?: { path: string; message: string }[];
+    }>
+  ).response;
+  return {
+    ok: false,
+    status: apiError?.status,
+    message: apiError?.data?.message,
+    errors: apiError?.data?.errors,
+  };
+};
+
+// edit event API: only the fields that changed need to be sent
+export const UpdateEvent = async (
+  uid: string,
+  changes: unknown,
+): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.patch(eventEndpoints.update(uid), changes, {
+      withCredentials: true,
+    });
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// cancel event API: the event stays public with a cancelled badge
+export const CancelEvent = async (uid: string): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.post(eventEndpoints.cancel(uid), undefined, {
+      withCredentials: true,
+    });
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// leave event API: gives the registered spot back
+export const LeaveEvent = async (uid: string): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.delete(eventEndpoints.leave(uid), {
+      withCredentials: true,
+    });
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// check one attendee in (or undo it); host only
+export const SetAttendeeCheckIn = async (
+  uid: string,
+  registrationId: string,
+  checkedIn: boolean,
+): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.patch(
+      eventEndpoints.attendee(uid, registrationId),
+      { checkedIn },
+      { withCredentials: true },
+    );
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// the attendee list as a CSV text, for the host to save
+export const FetchAttendeesCsv = async (
+  uid: string,
+): Promise<{ ok: true; csv: string } | { ok: false; message?: string }> => {
+  try {
+    const response = await Axios.get<string>(
+      eventEndpoints.attendeesExport(uid),
+      {
+        withCredentials: true,
+        responseType: "text",
+      },
+    );
+    return { ok: true, csv: response.data };
+  } catch (error) {
+    return { ok: false, message: toEventWriteFailure(error).message };
+  }
+};
+
 export const JoinEvent = async (uid: string) => {
   try {
     const response = await Axios.post(eventEndpoints.join(uid), undefined, {

@@ -1,8 +1,19 @@
-import { FiCheck, FiCheckCircle, FiMail, FiShare2, FiUserCheck, FiUserPlus } from "react-icons/fi";
-import { formatEventDate, isEventPast } from "@features/events/utils/formatEventFacts";
+import {
+  FiCheck,
+  FiCheckCircle,
+  FiMail,
+  FiShare2,
+  FiUserCheck,
+  FiUserPlus,
+  FiXCircle,
+} from "react-icons/fi";
+import {
+  formatEventDate,
+  isEventPast,
+} from "@features/events/utils/formatEventFacts";
 import { formatMoney } from "@utils/formatMoney";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
-import type { EventJoinPanelProps } from "@features/events/types";
+import type { EventJoinPanelFullProps } from "@features/events/types";
 
 /**
  * The decision panel: cost, remaining spots, and the join control.
@@ -17,11 +28,15 @@ import type { EventJoinPanelProps } from "@features/events/types";
  * worse failure - it is what an older profile-page Subscribe/Sponsor pair did,
  * and what this page is written not to copy.
  *
- * The counts move with the toggle (`going + 1`, one spot fewer) because a
- * join that changes nothing on screen reads as a failed click - but only
- * when the event actually has capacity data to move; a live event today
- * never does, and the Going/Spots-left row simply doesn't render rather
- * than showing invented numbers.
+ * **Capacity (PG-5).** The Going/Spots-left row only renders for an event the
+ * organizer gave a capacity; the numbers come from the API and are refreshed
+ * after every join and leave, so they never need to be nudged locally. A full
+ * event shows "Event is full" instead of Join, but still shows "You are going"
+ * to the people who already hold a spot.
+ *
+ * **Leaving (PG-3).** An attendee who is going gets a "Leave event" link under
+ * the status line, which asks `DetailedEvent.tsx` to open the confirmation. It
+ * is gone once the event has started, because the API refuses it from then on.
  *
  * **Invite-only events get no Join control at all.** Toggling "going" on
  * an event you weren't actually invited to would be a control that looks
@@ -38,6 +53,13 @@ import type { EventJoinPanelProps } from "@features/events/types";
  * a second, near-duplicate link to the same place). Share and Ask both
  * stay - sharing a recap, or asking the organizer a question, are both
  * still real things to do after the fact.
+ *
+ * **A cancelled event (PG-2) gets no Join control either, and the panel says
+ * so before anything else** - ahead of "Completed", because a cancelled
+ * event that has since passed never took place. Registrations already saved
+ * are kept by the API, so an attendee who joined sees a line saying the
+ * organizer cancelled it and to check with them. Telling attendees by email
+ * is not built yet (PG-18). Share and Ask stay.
  */
 const EventJoinPanel = ({
   event,
@@ -47,13 +69,16 @@ const EventJoinPanel = ({
   checkingRegistration,
   registrationCheckFailed,
   onToggleJoin,
-}: EventJoinPanelProps) => {
-  const past = isEventPast(event.startsAt);
-  const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
-  const going = hasCapacity ? event.going! + (joined ? 1 : 0) : undefined;
-  const spotsLeft = hasCapacity
-    ? Math.max(0, event.spotsLeft! - (joined ? 1 : 0))
-    : undefined;
+  onRequestLeave,
+}: EventJoinPanelFullProps) => {
+  const cancelled = event.cancelled;
+  const past = !cancelled && isEventPast(event.startsAt);
+  const hasCapacity =
+    event.going !== undefined && event.spotsLeft !== undefined;
+  // The counts come from the API and are refreshed after a join or a leave
+  // (`DetailedEvent.tsx`), so they already include this attendee.
+  const going = hasCapacity ? event.going : undefined;
+  const spotsLeft = hasCapacity ? event.spotsLeft : undefined;
   const full = spotsLeft === 0 && !joined;
 
   const share = async () => {
@@ -81,7 +106,22 @@ const EventJoinPanel = ({
       data-reveal
       className="rounded-2xl border border-brand-secondary/8 bg-white p-6 shadow-[0_2px_20px_-16px_var(--color-brand-secondary)] sm:p-7"
     >
-      {past ? (
+      {cancelled ? (
+        <>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-error/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-error uppercase">
+            <FiXCircle aria-hidden="true" className="size-3.5" />
+            Cancelled
+          </div>
+          <p className="mt-4 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
+            This event was cancelled
+          </p>
+          <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
+            {joined
+              ? "You had joined this event. The organizer cancelled it, so please check with them for what happens next."
+              : "The organizer cancelled this event, so nobody can join it any more. Their own page has what's next."}
+          </p>
+        </>
+      ) : past ? (
         <>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-ink/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-ink/60 uppercase">
             <FiCheckCircle aria-hidden="true" className="size-3.5" />
@@ -137,8 +177,8 @@ const EventJoinPanel = ({
                 aria-hidden="true"
                 className="mt-0.5 size-4 shrink-0 text-brand"
               />
-              This event is invite-only. Ask the organizer if you&apos;d like
-              to come.
+              This event is invite-only. Ask the organizer if you&apos;d like to
+              come.
             </div>
           ) : (
             <button
@@ -188,6 +228,16 @@ const EventJoinPanel = ({
         </>
       )}
 
+      {joined && !past && (
+        <button
+          type="button"
+          onClick={onRequestLeave}
+          className="mt-4 cursor-pointer border-none bg-transparent p-0 font-poppins text-body font-medium text-ink/60 underline underline-offset-4 transition-colors hover:text-error"
+        >
+          {cancelled ? "Remove my registration" : "Leave event"}
+        </button>
+      )}
+
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
@@ -207,7 +257,8 @@ const EventJoinPanel = ({
       </div>
 
       <p className="m-0 mt-5 border-t border-border-subtle pt-4 font-poppins text-caption leading-5 text-ink/50">
-        {past ? "Took place" : "Starts"} {formatEventDate(event.startsAt)}
+        {cancelled ? "Was due" : past ? "Took place" : "Starts"}{" "}
+        {formatEventDate(event.startsAt)}
       </p>
     </div>
   );

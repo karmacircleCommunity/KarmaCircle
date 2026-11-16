@@ -1,6 +1,8 @@
+const mockSend = jest.fn().mockResolvedValue({ error: null });
+
 jest.mock("resend", () => ({
   Resend: jest.fn().mockImplementation(() => ({
-    emails: { send: jest.fn().mockResolvedValue({ error: null }) },
+    emails: { send: mockSend },
   })),
 }));
 
@@ -10,6 +12,7 @@ import {
   clearResetOutbox,
   getLastResetUrl,
   sendEventJoinConfirmation,
+  sendEventJoinOrganizerNotice,
   sendPasswordResetEmail,
 } from "../src/config/mailer";
 import type { IEvent } from "../src/modules/events/event.model";
@@ -43,6 +46,17 @@ describe("mailer environment guard", () => {
     expect(mockResend).not.toHaveBeenCalled();
   });
 
+  it("suppresses the organizer join notice in development", async () => {
+    const sent = await sendEventJoinOrganizerNotice(
+      "host@example.test",
+      { uid: "local-event", name: "Local Event" } as IEvent,
+      "Local Tester",
+    );
+
+    expect(sent).toBe(false);
+    expect(mockResend).not.toHaveBeenCalled();
+  });
+
   it("constructs Resend and sends mail in production", async () => {
     env.NODE_ENV = "production";
 
@@ -52,5 +66,35 @@ describe("mailer environment guard", () => {
     );
 
     expect(mockResend).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends the organizer join notice through Resend in production", async () => {
+    env.NODE_ENV = "production";
+    mockSend.mockClear();
+
+    const sent = await sendEventJoinOrganizerNotice(
+      "host@example.com",
+      {
+        uid: "big-drive",
+        name: "Big <Drive>",
+        capacity: 10,
+        registrationCount: 4,
+      } as IEvent,
+      "Ann <b>Attendee</b>",
+    );
+
+    expect(sent).toBe(true);
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const message = mockSend.mock.calls[0][0] as {
+      to: string;
+      subject: string;
+      html: string;
+    };
+    expect(message.to).toBe("host@example.com");
+    expect(message.html).toContain("Ann &lt;b&gt;Attendee&lt;/b&gt;");
+    expect(message.html).toContain("Big &lt;Drive&gt;");
+    expect(message.html).toContain("4 of 10 places taken");
+    expect(message.html).toContain("/organization/events/big-drive/attendees");
+    expect(message.html).not.toContain("@example.com</");
   });
 });

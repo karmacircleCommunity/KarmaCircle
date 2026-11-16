@@ -99,12 +99,14 @@ export interface SeedEventOptions {
   startsInDays?: number;
   inviteOnly?: boolean;
   mode?: "Online" | "Offline";
+  /** Most people who can join; leave out for no limit. */
+  capacity?: number;
 }
 
 /** Publishes an event as the organization signed in on `page`. The API only
  *  accepts a start time in the future and an end after the start. */
 export async function createEvent(page: Page, options: SeedEventOptions) {
-  const { uid, name, startsInDays = 3, inviteOnly = false } = options;
+  const { uid, name, startsInDays = 3, inviteOnly = false, capacity } = options;
   const mode = options.mode ?? "Offline";
   const start = new Date(Date.now() + startsInDays * DAY_MS);
   const end = new Date(start.getTime() + 2 * HOUR_MS);
@@ -121,6 +123,7 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       inviteOnly,
+      ...(capacity === undefined ? {} : { capacity }),
       ...(mode === "Offline"
         ? {
             city: "Guwahati",
@@ -139,11 +142,7 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
 
 /** Moves an existing event into the past through the E2E server's test-only
  *  route (`apps/api/tests/e2e/test-routes.ts`). Registrations are kept. */
-export async function backdateEvent(
-  page: Page,
-  uid: string,
-  daysAgo: number,
-) {
+export async function backdateEvent(page: Page, uid: string, daysAgo: number) {
   const response = await page.request.post(
     `${E2E_API_URL}/__test__/events/${uid}/backdate`,
     { data: { daysAgo } },
@@ -154,7 +153,10 @@ export async function backdateEvent(
 /** Opens the signed-in attendee's account menu and follows "My Events".
  *  Desktop width only: the menu is a different control on a phone. */
 export async function openMyEventsFromMenu(page: Page) {
-  await page.getByRole("navigation").getByText("Profile", { exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByText("Profile", { exact: true })
+    .click();
   await page.getByRole("link", { name: "My Events", exact: true }).click();
   await expect(page).toHaveURL(/\/events\/mine$/);
 }

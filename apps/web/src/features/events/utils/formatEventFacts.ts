@@ -101,3 +101,7 @@ export const mapsUrl = (query: string) =>
  */
 export const isEventPast = (startsAt: string) =>
   new Date(startsAt).getTime() < Date.now();
+
+/** "1 spot left" or "12 spots left" - the singular matters at the last place. */
+export const formatSpotsLeft = (spotsLeft: number) =>
+  `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left`;

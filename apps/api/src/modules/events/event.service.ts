@@ -1,9 +1,17 @@
 import { FilterQuery } from "mongoose";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
-import { findOrCreateForOwner } from "../organizations/organization.service";
-import { findByEmail } from "../users/user.service";
-import { CreateEventInput } from "./event.validation";
+import {
+  findByOwnerEmail,
+  findOrCreateForOwner,
+} from "../organizations/organization.service";
+import { Organization } from "../organizations/organization.model";
+import { findByEmail, findByUsername } from "../users/user.service";
+import {
+  CreateEventInput,
+  UpdateEventInput,
+  assertEventRules,
+} from "./event.validation";
 import { Event, EventRegistration, IEvent } from "./event.model";
 
 export async function findByUid(uid: string) {
@@ -165,12 +173,22 @@ export async function createEvent(
     name: host.name,
   });
 
+  // `capacity: null` only means "remove the limit" when editing; on create it
+  // just means no limit, so it is dropped rather than stored as null.
+  const { capacity, ...fields } = data;
   const event = new Event({
-    ...data,
+    ...withoutNulls(fields),
+    ...(capacity ? { capacity } : {}),
     hostName: host.name,
     hostUsername: host.userName,
     organizerHandle: organization.handle,
   });
+  // Only the chosen mode's fields are kept, as on edit.
+  for (const field of event.mode === "Online"
+    ? OFFLINE_ONLY_FIELDS
+    : ONLINE_ONLY_FIELDS) {
+    event.set(field, undefined);
+  }
 
   try {
     return await event.save();
@@ -187,6 +205,167 @@ export async function createEvent(
   }
 }
 
+/**
+ * Loads an event for an organizer action (edit or cancel) and checks that the
+ * caller owns it. `404` unknown event, `401` the token's account is gone,
+ * `403 NOT_AN_ORGANIZATION` for a personal account, `403` for another
+ * organization's event. Ownership matches the real `organizerHandle` link, or
+ * the legacy free-text `hostUsername` for events saved before that field
+ * existed (the same two-way match `findAll`'s `host` filter uses).
+ */
+async function findManagedEvent(email: string, uid: string) {
+  const event = await findByUid(uid);
+  if (!event) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
+  }
+
+  const host = await findByEmail(email);
+  if (!host) {
+    throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+  if (host.userType !== "organization") {
+    throw new AppError(
+      STATUS_CODE.FORBIDDEN,
+      STATUS_MESSAGE.NOT_AN_ORGANIZATION,
+    );
+  }
+
+  const organization = await findByOwnerEmail(email);
+  const ownsEvent =
+    (organization !== null &&
+      event.organizerHandle === organization.handle) ||
+    event.hostUsername === host.userName;
+  if (!ownsEvent) {
+    throw new AppError(STATUS_CODE.FORBIDDEN, STATUS_MESSAGE.FORBIDDEN);
+  }
+
+  return event;
+}
+
+/** Edits and cancellations stop once an event is over, or already cancelled. */
+function assertEventStillOpen(event: IEvent, action: "edited" | "cancelled") {
+  if (event.status === "cancelled") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      action === "edited"
+        ? "A cancelled event cannot be edited."
+        : "This event is already cancelled.",
+    );
+  }
+  if (event.endTime.getTime() < Date.now()) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      `An event that has already ended cannot be ${action}.`,
+    );
+  }
+}
+
+const OFFLINE_ONLY_FIELDS = [
+  "address",
+  "city",
+  "state",
+  "country",
+  "mapIframe",
+  "gettingThere",
+] as const;
+const ONLINE_ONLY_FIELDS = [
+  "platform",
+  "platformLink",
+  "linkDelivery",
+  "joinRequirements",
+] as const;
+
+/** A create body with its `null`s (meaningful only when editing) dropped. */
+function withoutNulls<T extends Record<string, unknown>>(fields: T) {
+  return Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== null),
+  ) as { [K in keyof T]: Exclude<T[K], null> };
+}
+
+/**
+ * Sets or removes an event's capacity (PG-5). Setting one recounts
+ * `registrationCount` from the real registrations, because the counter is not
+ * trusted for an event that never had a capacity (it may predate the field),
+ * and refuses a limit below the number of people already registered.
+ */
+async function applyCapacity(event: IEvent, capacity: number | null) {
+  if (capacity === null) {
+    event.set("capacity", undefined);
+    return;
+  }
+
+  const registered = await EventRegistration.countDocuments({
+    eventUid: event.uid,
+  });
+  if (capacity < registered) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      `Capacity cannot be lower than the ${registered} ${registered === 1 ? "person" : "people"} already registered.`,
+    );
+  }
+  event.capacity = capacity;
+  event.registrationCount = registered;
+}
+
+/**
+ * Edits an event. The page address (`uid`) never changes. The merged event
+ * must still satisfy the create rules, except that a start time left alone may
+ * already be in the past (an event in progress can still fix a typo), and only
+ * the fields of the chosen mode are kept, so switching an event from Offline
+ * to Online drops its address instead of leaving it stored but hidden.
+ */
+export async function updateEvent(
+  email: string,
+  uid: string,
+  data: UpdateEventInput,
+): Promise<IEvent> {
+  const event = await findManagedEvent(email, uid);
+  assertEventStillOpen(event, "edited");
+
+  const startChanged =
+    data.startTime !== undefined &&
+    data.startTime.getTime() !== event.startTime.getTime();
+  const merged = {
+    mode: data.mode ?? event.mode,
+    startTime: data.startTime ?? event.startTime,
+    endTime: data.endTime ?? event.endTime,
+    city: "city" in data ? data.city : event.city,
+    state: "state" in data ? data.state : event.state,
+    country: "country" in data ? data.country : event.country,
+    address: "address" in data ? data.address : event.address,
+    platform: "platform" in data ? data.platform : event.platform,
+    platformLink:
+      "platformLink" in data ? data.platformLink : event.platformLink,
+  };
+  assertEventRules(merged, { requireFutureStart: startChanged });
+
+  const { capacity, ...fields } = data;
+  // `null` removes an optional field; anything else replaces it.
+  for (const [key, value] of Object.entries(fields)) {
+    event.set(key, value === null ? undefined : value);
+  }
+  if (capacity !== undefined) await applyCapacity(event, capacity);
+  const staleFields =
+    merged.mode === "Online" ? OFFLINE_ONLY_FIELDS : ONLINE_ONLY_FIELDS;
+  for (const field of staleFields) event.set(field, undefined);
+
+  return event.save();
+}
+
+/**
+ * Cancels an event: the status flips to `cancelled`, the event stays public
+ * with a badge, and new joins are refused. Existing registrations are kept.
+ * Telling registered attendees is not built yet (PG-18).
+ */
+export async function cancelEvent(email: string, uid: string): Promise<IEvent> {
+  const event = await findManagedEvent(email, uid);
+  assertEventStillOpen(event, "cancelled");
+
+  event.status = "cancelled";
+  event.cancelledAt = new Date();
+  return event.save();
+}
+
 export async function joinEvent(email: string, uid: string) {
   const [event, attendee] = await Promise.all([
     findByUid(uid),
@@ -198,6 +377,9 @@ export async function joinEvent(email: string, uid: string) {
   }
   if (!attendee) {
     throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+  if (event.status === "cancelled") {
+    throw new AppError(STATUS_CODE.CONFLICT, "This event was cancelled.");
   }
   if (event.inviteOnly) {
     throw new AppError(STATUS_CODE.FORBIDDEN, "This event is invite-only.");
@@ -212,6 +394,25 @@ export async function joinEvent(email: string, uid: string) {
   });
   if (existing) return { event, attendee, alreadyJoined: true };
 
+  // Reserve a spot first, atomically: the update only matches while the event
+  // has no capacity or the counter is still below it, so two people racing for
+  // the last spot cannot both get it. It is given back if the registration
+  // cannot be saved.
+  const reserved = await Event.findOneAndUpdate(
+    {
+      uid,
+      $or: [
+        { capacity: null },
+        { $expr: { $lt: [{ $ifNull: ["$registrationCount", 0] }, "$capacity"] } },
+      ],
+    },
+    { $inc: { registrationCount: 1 } },
+    { new: true },
+  );
+  if (!reserved) {
+    throw new AppError(STATUS_CODE.CONFLICT, "This event is full.");
+  }
+
   try {
     await EventRegistration.create({
       eventUid: uid,
@@ -220,12 +421,205 @@ export async function joinEvent(email: string, uid: string) {
       attendeeName: attendee.name || "",
     });
   } catch (error) {
+    await releaseSpot(uid);
     // The compound unique index closes the concurrent double-click race.
     if ((error as { code?: number }).code !== 11000) throw error;
     return { event, attendee, alreadyJoined: true };
   }
 
-  return { event, attendee, alreadyJoined: false };
+  return { event: reserved, attendee, alreadyJoined: false };
+}
+
+/** Gives one spot back. Never drops the counter below zero. */
+async function releaseSpot(uid: string) {
+  await Event.updateOne(
+    { uid, registrationCount: { $gt: 0 } },
+    { $inc: { registrationCount: -1 } },
+  );
+}
+
+/**
+ * An attendee gives up their registration (PG-3). `404` for an unknown event,
+ * `409` once the event has started (a registration from then on is a record of
+ * who was there), `404` if they were not registered. A cancelled event can
+ * still be left. The freed spot is released for the next person.
+ */
+export async function leaveEvent(email: string, uid: string) {
+  const [event, attendee] = await Promise.all([
+    findByUid(uid),
+    findByEmail(email),
+  ]);
+
+  if (!event) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
+  }
+  if (!attendee) {
+    throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+  if (event.startTime.getTime() < Date.now()) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "This event has already started, so you can no longer leave it.",
+    );
+  }
+
+  const removed = await EventRegistration.findOneAndDelete({
+    eventUid: uid,
+    userId: attendee._id,
+  });
+  if (!removed) {
+    throw new AppError(
+      STATUS_CODE.NOT_FOUND,
+      "You are not registered for this event.",
+    );
+  }
+
+  await releaseSpot(uid);
+  return { event, attendee };
+}
+
+/**
+ * Where to send the organizer a notice about their event (PG-6): the owning
+ * organization's `ownerEmail`, or for an event saved before `organizerHandle`
+ * existed, the host user's own email. `null` if neither can be found.
+ */
+export async function findOrganizerEmail(event: IEvent): Promise<string | null> {
+  if (event.organizerHandle) {
+    const organization = await Organization.findOne({
+      handle: event.organizerHandle,
+    });
+    if (organization) return organization.ownerEmail;
+  }
+  const host = await findByUsername(event.hostUsername);
+  return host?.email ?? null;
+}
+
+function toAttendee(registration: {
+  _id: unknown;
+  attendeeName: string;
+  attendeeEmail: string;
+  createdAt: Date;
+  checkedInAt?: Date | null;
+}) {
+  return {
+    id: String(registration._id),
+    name: registration.attendeeName,
+    email: registration.attendeeEmail,
+    joinedAt: registration.createdAt,
+    checkedIn: Boolean(registration.checkedInAt),
+    checkedInAt: registration.checkedInAt ?? null,
+  };
+}
+
+/**
+ * The organizer's attendee list for one event (PG-6): one page of
+ * registrations oldest first, optionally narrowed by a literal search on name or
+ * email, plus overall totals. Only the hosting organization can read it; the
+ * public never sees attendee identities.
+ */
+export async function listAttendees(
+  email: string,
+  uid: string,
+  query: { search?: string; skip: number; limit: number },
+) {
+  const event = await findManagedEvent(email, uid);
+
+  const filter: FilterQuery<unknown> = { eventUid: uid };
+  if (query.search) {
+    const pattern = new RegExp(escapeRegExp(query.search), "i");
+    filter.$or = [{ attendeeName: pattern }, { attendeeEmail: pattern }];
+  }
+
+  const [rows, matching, registered, checkedIn] = await Promise.all([
+    EventRegistration.find(filter)
+      .sort({ createdAt: 1, _id: 1 })
+      .skip(query.skip)
+      .limit(query.limit)
+      .lean(),
+    EventRegistration.countDocuments(filter),
+    EventRegistration.countDocuments({ eventUid: uid }),
+    EventRegistration.countDocuments({
+      eventUid: uid,
+      checkedInAt: { $exists: true, $ne: null },
+    }),
+  ]);
+
+  return {
+    event,
+    data: rows.map(toAttendee),
+    total: matching,
+    summary: { registered, checkedIn },
+  };
+}
+
+/** One CSV cell: quoted, and neutralized if a spreadsheet would run it. */
+function csvCell(value: string) {
+  // A leading = + - @ tab or CR makes Excel and Sheets treat the cell as a
+  // formula, and a name or email is attacker-controlled text.
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
+/** Every registration for an event as CSV, for the host (PG-6). */
+export async function exportAttendeesCsv(email: string, uid: string) {
+  await findManagedEvent(email, uid);
+
+  const rows = await EventRegistration.find({ eventUid: uid })
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+
+  const header = ["Name", "Email", "Registered at", "Checked in", "Checked in at"];
+  const lines = rows.map((row) => {
+    const attendee = toAttendee(row);
+    return [
+      attendee.name,
+      attendee.email,
+      attendee.joinedAt.toISOString(),
+      attendee.checkedIn ? "Yes" : "No",
+      attendee.checkedInAt ? attendee.checkedInAt.toISOString() : "",
+    ]
+      .map(csvCell)
+      .join(",");
+  });
+  return [header.map(csvCell).join(","), ...lines].join("\r\n") + "\r\n";
+}
+
+/**
+ * Marks one attendee as checked in or not (PG-6). Host only. `409` for a
+ * cancelled event, `404` if the registration is not for this event. Checking in
+ * someone already checked in keeps the original time.
+ */
+export async function setCheckIn(
+  email: string,
+  uid: string,
+  registrationId: string,
+  checkedIn: boolean,
+) {
+  const event = await findManagedEvent(email, uid);
+  if (event.status === "cancelled") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "A cancelled event has no check-in.",
+    );
+  }
+
+  const registration = await EventRegistration.findOne({
+    _id: registrationId,
+    eventUid: uid,
+  });
+  if (!registration) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, "Registration not found.");
+  }
+
+  if (checkedIn && !registration.checkedInAt) {
+    registration.checkedInAt = new Date();
+    await registration.save();
+  } else if (!checkedIn && registration.checkedInAt) {
+    registration.set("checkedInAt", undefined);
+    await registration.save();
+  }
+
+  return toAttendee(registration);
 }
 
 export async function getRegistrationStatus(email: string, uid: string) {

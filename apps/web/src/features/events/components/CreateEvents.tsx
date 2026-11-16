@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ChangeEvent, FormEvent, ReactNode } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import {
@@ -20,13 +20,23 @@ import {
   COVER_IMAGE_MIME_TYPES,
   COVER_IMAGE_TYPE_ERROR,
 } from "@features/events/constants/coverImageTypes";
+import {
+  Field,
+  FormSection,
+  inputClasses,
+} from "@features/events/components/EventFormParts";
+import EventDetailsSection from "@features/events/components/EventDetailsSection";
+import { emptyDetailFields } from "@features/events/utils/eventDetailFields";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { useEvent } from "@features/events/hooks/useEvent";
-import type { EventFormErrors, EventFormState } from "@features/events/types";
+import type {
+  ApiEvent,
+  EventFormErrors,
+  EventFormState,
+} from "@features/events/types";
 
-const inputClasses =
-  "min-h-12 w-full rounded-lg border border-brand-secondary/15 bg-white px-4 py-3 font-outfit text-body text-ink outline-none transition focus:border-brand/55 focus:ring-2 focus:ring-brand/15";
-const initialEvent: EventFormState = {
+/** A blank form, with dates computed when the form opens (not at page load). */
+const createInitialEvent = (): EventFormState => ({
   name: "",
   startDate: dayjs().add(1, "day"),
   endDate: dayjs().add(1, "day"),
@@ -43,19 +53,40 @@ const initialEvent: EventFormState = {
   platform: "Zoom Meeting",
   platformLink: "",
   inviteOnly: false,
-};
+  capacity: "",
+  ...emptyDetailFields(),
+});
 
 /** Full-page organizer publishing flow for `/organization/events/new`. */
 const CreateEvents = () => {
+  const [initial] = useState(createInitialEvent);
+  return <EventForm initial={initial} />;
+};
+
+/**
+ * The one event form, for publishing a new event and for editing a stored one
+ * (`EditEvent.tsx`, `/organization/events/:eventId/edit`). Pass `original` to
+ * edit: the form starts from that event, the page address is read-only (it
+ * never changes, because registrations point at it), and saving sends only
+ * what changed.
+ */
+export const EventForm = ({
+  initial,
+  original,
+}: {
+  initial: EventFormState;
+  original?: ApiEvent;
+}) => {
+  const isEdit = Boolean(original);
   const navigate = useNavigate();
   const { organization } = useMyOrganization();
   const eventPageUrlPrefix = `${window.location.origin}/events/`;
-  const [event, setEvent] = useState<EventFormState>(initialEvent);
+  const [event, setEvent] = useState<EventFormState>(initial);
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverError, setCoverError] = useState("");
-  const [isUidEdited, setIsUidEdited] = useState(false);
-  const { validateEvent, submitCallback } = useEvent(event);
+  const [isUidEdited, setIsUidEdited] = useState(isEdit);
+  const { validateEvent, submitCallback } = useEvent(event, original);
 
   const handleTextChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -65,6 +96,7 @@ const CreateEvents = () => {
   };
 
   const handleUidChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (isEdit) return;
     setIsUidEdited(true);
     const uid = e.target.value
       .toLowerCase()
@@ -146,8 +178,12 @@ const CreateEvents = () => {
 
   return (
     <OrganizationSetupGate
-      title="Publish an event"
-      description="Finish your organization profile before publishing events to the community."
+      title={isEdit ? "Edit an event" : "Publish an event"}
+      description={
+        isEdit
+          ? "Finish your organization profile before editing events."
+          : "Finish your organization profile before publishing events to the community."
+      }
     >
       <Navbar />
       <main className="min-h-[70vh] bg-surface px-5 py-8 sm:px-9 sm:py-12 lg:px-12">
@@ -165,11 +201,12 @@ const CreateEvents = () => {
               Organizer workspace
             </p>
             <h1 className="mt-2 font-outfit text-3xl leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">
-              Bring people together
+              {isEdit ? "Edit your event" : "Bring people together"}
             </h1>
             <p className="mt-3 font-poppins text-body leading-6 text-ink/65 sm:text-body-lg sm:leading-7">
-              Share the essentials first. Your event will appear in discovery as
-              soon as it’s published.
+              {isEdit
+                ? "Change anything below. People see the update on the event page as soon as you save."
+                : "Share the essentials first. Your event will appear in discovery as soon as it’s published."}
             </p>
           </header>
 
@@ -201,7 +238,11 @@ const CreateEvents = () => {
                     id="uid"
                     label="Event page address"
                     error={errors.uid}
-                    hint="This is your event’s page on KarmaCircle, not an external website. The address ending is suggested from the event name."
+                    hint={
+                      isEdit
+                        ? "The page address can’t change after publishing, so links people already have keep working."
+                        : "This is your event’s page on KarmaCircle, not an external website. The address ending is suggested from the event name."
+                    }
                   >
                     <div className="overflow-hidden rounded-lg border border-brand-secondary/15 bg-white focus-within:border-brand/55 focus-within:ring-2 focus-within:ring-brand/15">
                       <span className="block border-b border-brand-secondary/10 bg-surface-warm/60 px-4 py-2 font-poppins text-caption break-all text-ink/55">
@@ -212,7 +253,8 @@ const CreateEvents = () => {
                         name="uid"
                         value={event.uid}
                         onChange={handleUidChange}
-                        className="min-h-12 w-full bg-transparent px-4 py-3 font-outfit text-body text-ink outline-none"
+                        readOnly={isEdit}
+                        className={`min-h-12 w-full bg-transparent px-4 py-3 font-outfit text-body outline-none ${isEdit ? "cursor-not-allowed text-ink/55" : "text-ink"}`}
                         placeholder="your-event-name"
                         autoCapitalize="none"
                         autoCorrect="off"
@@ -508,7 +550,40 @@ const CreateEvents = () => {
                     </span>
                   </span>
                 </label>
+                <div className="mt-5 max-w-xs">
+                  <Field
+                    id="capacity"
+                    label="Maximum attendees (optional)"
+                    error={errors.capacity}
+                    hint={
+                      isEdit
+                        ? "Leave it empty for no limit. It can’t go below the people already registered."
+                        : "Leave it empty for no limit. Once it is full, nobody else can join."
+                    }
+                  >
+                    <input
+                      id="capacity"
+                      name="capacity"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={100000}
+                      step={1}
+                      value={event.capacity}
+                      onChange={handleTextChange}
+                      className={inputClasses}
+                      placeholder="No limit"
+                      aria-invalid={Boolean(errors.capacity)}
+                    />
+                  </Field>
+                </div>
               </FormSection>
+
+              <EventDetailsSection
+                event={event}
+                setEvent={setEvent}
+                errors={errors}
+              />
 
               <div className="flex flex-col-reverse gap-3 border-t border-brand-secondary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <button
@@ -516,14 +591,20 @@ const CreateEvents = () => {
                   onClick={() => navigate("/organization/events")}
                   className="min-h-12 rounded-lg px-4 font-outfit text-body font-medium text-ink/65 transition hover:bg-brand-secondary/5 hover:text-brand-secondary"
                 >
-                  Cancel
+                  {isEdit ? "Discard changes" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
                 >
-                  {isSubmitting ? "Publishing…" : "Publish event"}
+                  {isSubmitting
+                    ? isEdit
+                      ? "Saving…"
+                      : "Publishing…"
+                    : isEdit
+                      ? "Save changes"
+                      : "Publish event"}
                 </button>
               </div>
             </form>
@@ -610,8 +691,9 @@ const CreateEvents = () => {
                   {event.inviteOnly
                     ? "This event will appear in discovery with an invite-only label."
                     : "This event will appear in discovery for everyone."}{" "}
-                  You can edit event details after publishing from your event
-                  workspace.
+                  {isEdit
+                    ? "Changes appear on the event page as soon as you save."
+                    : "You can edit event details after publishing from your event workspace."}
                 </p>
               </div>
             </aside>
@@ -622,72 +704,5 @@ const CreateEvents = () => {
     </OrganizationSetupGate>
   );
 };
-
-type FieldProps = {
-  id: string;
-  label: string;
-  children: ReactNode;
-  error?: string;
-  hint?: string;
-  count?: { value: number; max: number };
-};
-
-const Field = ({ id, label, children, error, hint, count }: FieldProps) => (
-  <div className="min-w-0">
-    <div className="mb-1.5 flex items-center justify-between gap-4">
-      <label
-        htmlFor={id}
-        className="font-outfit text-body font-medium text-ink/75"
-      >
-        {label}
-      </label>
-      {count && (
-        <span className="shrink-0 font-poppins text-caption text-ink/45 tabular-nums">
-          {count.value} / {count.max}
-        </span>
-      )}
-    </div>
-    {children}
-    {error && (
-      <p role="alert" className="mt-1.5 font-poppins text-caption text-error">
-        {error}
-      </p>
-    )}
-    {hint && !error && (
-      <p className="mt-1.5 font-poppins text-caption text-ink/50">{hint}</p>
-    )}
-  </div>
-);
-
-type FormSectionProps = {
-  number: string;
-  title: string;
-  description: string;
-  children: ReactNode;
-};
-
-const FormSection = ({
-  number,
-  title,
-  description,
-  children,
-}: FormSectionProps) => (
-  <section className="rounded-2xl border border-brand-secondary/10 bg-surface-warm/55 p-5 sm:p-6">
-    <div className="mb-5 flex items-start gap-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 font-outfit text-caption font-semibold text-brand">
-        {number}
-      </span>
-      <div>
-        <h2 className="m-0 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
-          {title}
-        </h2>
-        <p className="mt-1 font-poppins text-caption leading-5 text-ink/55">
-          {description}
-        </p>
-      </div>
-    </div>
-    {children}
-  </section>
-);
 
 export default CreateEvents;

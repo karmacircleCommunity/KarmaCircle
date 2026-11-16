@@ -4,9 +4,16 @@ import type { Dayjs } from "dayjs";
 import { RESERVED_EVENT_ADDRESSES } from "@features/events/constants/reservedEventAddresses";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import { eventEndpoints } from "@services/ApiEndpoints";
-import { CreateEvent } from "@services/KarmaCircleApi";
+import { CreateEvent, UpdateEvent } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
+import { buildEventChanges } from "@features/events/utils/buildEventChanges";
+import {
+  detailPayloadForCreate,
+  omitDetailFields,
+  validateDetails,
+} from "@features/events/utils/eventDetailFields";
 import type {
+  ApiEvent,
   EventFormErrors,
   EventFormState,
   UseEventResult,
@@ -23,11 +30,23 @@ const isHttpUrl = (value: string) => {
   }
 };
 
-/** Validates and submits the shared event form, then refreshes public and host lists. */
 const combineDateAndTime = (date: Dayjs, time: Dayjs) =>
   date.hour(time.hour()).minute(time.minute()).second(0).millisecond(0);
 
-export function useEvent(event: EventFormState): UseEventResult {
+/**
+ * Validates and submits the shared event form, then refreshes public and host
+ * lists.
+ *
+ * Pass `original` (the stored event) to edit instead of create. Editing sends
+ * only what changed to `PATCH /events/:uid`; the page address is fixed, so its
+ * checks are skipped; and "the start must be in the future" applies only when
+ * the start was actually moved, matching the API (an event already running
+ * can still fix a typo).
+ */
+export function useEvent(
+  event: EventFormState,
+  original?: ApiEvent,
+): UseEventResult {
   const { uid, ...data } = event;
   const { mutate } = useSWRConfig();
   const { organization } = useMyOrganization();
@@ -57,10 +76,12 @@ export function useEvent(event: EventFormState): UseEventResult {
       if (!data.endTime) errors.endTime = "End time is required";
     }
 
-    if (uid && !EVENT_UID_PATTERN.test(uid)) {
-      errors.uid = "Use lowercase letters, numbers, and single hyphens only";
-    } else if (RESERVED_EVENT_ADDRESSES.includes(uid)) {
-      errors.uid = "That event page address is reserved. Choose another one";
+    if (!original) {
+      if (uid && !EVENT_UID_PATTERN.test(uid)) {
+        errors.uid = "Use lowercase letters, numbers, and single hyphens only";
+      } else if (RESERVED_EVENT_ADDRESSES.includes(uid)) {
+        errors.uid = "That event page address is reserved. Choose another one";
+      }
     }
 
     if (data.mode === "Offline") {
@@ -98,7 +119,24 @@ export function useEvent(event: EventFormState): UseEventResult {
       errors.endTime = "End date and time must follow the start date and time";
     }
 
-    if (startAt && startAt.isBefore(dayjs())) {
+    const typedCapacity = data.capacity.trim();
+    if (typedCapacity !== "") {
+      const capacity = Number(typedCapacity);
+      if (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000) {
+        errors.capacity =
+          "Enter a whole number from 1 to 100000, or leave it empty for no limit";
+      }
+    }
+
+    Object.assign(errors, validateDetails(data, data.mode));
+
+    // An edit that leaves the start alone may keep a start already in the
+    // past (the event is running); only a moved start must be in the future.
+    const startMoved =
+      !original ||
+      !startAt ||
+      !startAt.isSame(dayjs(original.startTime), "minute");
+    if (startAt && startMoved && startAt.isBefore(dayjs())) {
       errors.startTime = "Start date and time must be in the future";
     }
 
@@ -110,10 +148,34 @@ export function useEvent(event: EventFormState): UseEventResult {
     onSuccess: () => void,
     errors: EventFormErrors,
   ): Promise<void> => {
-    if (Object.keys(errors).length === 0) {
+    if (Object.keys(errors).length === 0 && original) {
+      const changes = buildEventChanges(event, original);
+      if (Object.keys(changes).length === 0) {
+        showErrorToast("Nothing has changed yet.");
+        return;
+      }
+
+      const result = await UpdateEvent(original.uid, changes);
+      if (result.ok) {
+        showSuccessToast("Event updated");
+        onSuccess();
+        void mutate(eventEndpoints.byUid(original.uid));
+        if (organization?.handle) {
+          void mutate(eventEndpoints.byHost(organization.handle));
+        }
+      } else {
+        showErrorToast(
+          result.errors?.[0]?.message ??
+            result.message ??
+            "Could not update the event. Try again.",
+        );
+      }
+    } else if (Object.keys(errors).length === 0) {
       // CreateEvent() returns the caught Axios error as-is on failure.
       const requestEvent = {
-        ...event,
+        ...omitDetailFields(event),
+        ...detailPayloadForCreate(event),
+        capacity: event.capacity.trim() ? Number(event.capacity) : undefined,
         startDate: event.startDate?.startOf("day").toDate(),
         endDate: event.endDate?.startOf("day").toDate(),
         startTime:

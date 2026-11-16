@@ -15,8 +15,10 @@ const organizationEndpoints = {
   details: (userName?: string) => `${API}/organizations?userName=${userName}`,
   createEvent: `${API}/organization/createevent`,
   dashboard: `${API}/organizations/dashboard`,
-  follow: (handle: string) => `${API}/organizations/${encodeURIComponent(handle)}/follow`,
-  profileView: (handle: string) => `${API}/organizations/${encodeURIComponent(handle)}/analytics/profile-view`,
+  follow: (handle: string) =>
+    `${API}/organizations/${encodeURIComponent(handle)}/follow`,
+  profileView: (handle: string) =>
+    `${API}/organizations/${encodeURIComponent(handle)}/analytics/profile-view`,
   /** The signed-in organization's own record, private fields included. */
   mine: `${API}/organizations/me`,
   /** The closed tag/domain lists the setup form renders — never hardcode a
@@ -79,9 +81,34 @@ const eventEndpoints = {
    * rather than adding a new one. Mirrors `organizationEndpoints.byHandle`.
    */
   byUid: (uid: string) => `${API}/events?uid=${encodeURIComponent(uid)}`,
+  /** `PATCH` to edit one of the organization's own events. */
+  update: (uid: string) => `${API}/events/${encodeURIComponent(uid)}`,
+  /** `POST` to cancel one of the organization's own events. */
+  cancel: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/cancel`,
   join: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/join`,
   registration: (uid: string) =>
     `${API}/events/${encodeURIComponent(uid)}/registration`,
+  /** `DELETE` to leave an event the signed-in attendee joined (same URL as
+   *  the `GET` registration check). */
+  leave: (uid: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/registration`,
+  /** The host's attendee list: one page, optionally narrowed by `search`. */
+  attendees: (
+    uid: string,
+    params: { page?: number; limit?: number; search?: string } = {},
+  ) => {
+    const query = new URLSearchParams();
+    query.set("page", String(params.page ?? 1));
+    query.set("limit", String(params.limit ?? 50));
+    if (params.search) query.set("search", params.search);
+    return `${API}/events/${encodeURIComponent(uid)}/attendees?${query.toString()}`;
+  },
+  /** `PATCH` to check one attendee in or out. */
+  attendee: (uid: string, registrationId: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/attendees/${encodeURIComponent(registrationId)}`,
+  /** The attendee list as a CSV download. */
+  attendeesExport: (uid: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/attendees/export`,
   /**
    * One page of the public directory, filtered, split and ordered by the
    * API (`GET /events`, see `listEventsQuerySchema` in

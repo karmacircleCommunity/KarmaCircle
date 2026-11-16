@@ -7,6 +7,7 @@ import {
   FiShield,
   FiUserCheck,
   FiVideo,
+  FiXCircle,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
@@ -38,10 +39,14 @@ function accentFor(id: string): number {
  * badge row when the event's `startsAt` has passed - same definition
  * `EventCard`'s own pill and `EventJoinPanel`'s wrap-up copy use, so this
  * page never disagrees with the card that opened it.
+ *
+ * **"Cancelled" (PG-2)** is a badge in the same row and replaces "Completed":
+ * a cancelled event never took place, whatever its date.
  */
 const EventHero = ({ event }: EventHeroProps) => {
   const online = event.mode === "Online";
-  const past = isEventPast(event.startsAt);
+  const cancelled = event.cancelled;
+  const past = !cancelled && isEventPast(event.startsAt);
   const accent = ORGANIZATION_ACCENTS[accentFor(event.id)];
 
   const facts = [
@@ -97,8 +102,17 @@ const EventHero = ({ event }: EventHeroProps) => {
         </div>
 
         <div className="p-6 sm:p-8">
-          {(past || event.isGovernmentSponsored || event.inviteOnly) && (
+          {(cancelled ||
+            past ||
+            event.isGovernmentSponsored ||
+            event.inviteOnly) && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
+              {cancelled && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-error/25 bg-error/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-error uppercase">
+                  <FiXCircle aria-hidden="true" className="size-3.5" />
+                  Cancelled
+                </span>
+              )}
               {past && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-ink/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-ink/65 uppercase">
                   <FiCheckCircle aria-hidden="true" className="size-3.5" />

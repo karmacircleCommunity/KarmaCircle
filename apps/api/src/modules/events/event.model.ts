@@ -2,6 +2,14 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export type EventMode = "Online" | "Offline";
 
+/**
+ * Where an event is in its life. Only `published` and `cancelled` exist today
+ * (PG-2); drafts and postponed events are PG-15. A document with no stored
+ * status was saved before this field existed and reads as `published`.
+ */
+export const EVENT_STATUSES = ["published", "cancelled"] as const;
+export type EventStatus = (typeof EVENT_STATUSES)[number];
+
 /** One line of the run sheet on the event detail page — pre-formatted, not a
  *  timestamp: a schedule is written in the event's own timezone, and
  *  converting "9:00 pm" into a reader's own would be actively wrong for
@@ -81,6 +89,20 @@ export interface IEvent extends Document {
    * rather than a button that looks live and silently does nothing.
    */
   inviteOnly: boolean;
+  /** Most people who can join. Absent means no limit (PG-5). */
+  capacity?: number;
+  /**
+   * How many people are registered, kept in step with `EventRegistration` by
+   * `joinEvent` and `leaveEvent` with atomic `$inc`s, so the last spot cannot
+   * be taken twice. Only meaningful (and only shown) when `capacity` is set;
+   * `updateEvent` recounts it from the registrations whenever it sets a
+   * capacity, which also covers events saved before the field existed.
+   */
+  registrationCount: number;
+  /** `cancelled` events stay visible with a badge and refuse new joins. */
+  status: EventStatus;
+  /** Set when `status` becomes `cancelled`; never cleared (no reinstate yet). */
+  cancelledAt?: Date;
   /** Long-form description, one paragraph per entry, for the detail page's
    *  "About this event" section. */
   about?: string[];
@@ -112,6 +134,8 @@ export interface IEventRegistration extends Document {
   userId: mongoose.Types.ObjectId;
   attendeeEmail: string;
   attendeeName: string;
+  /** Set by the organizer when the attendee turns up (PG-6). */
+  checkedInAt?: Date;
   isDemo: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -237,6 +261,23 @@ const eventSchema = new Schema<IEvent>(
       type: Boolean,
       default: false,
     },
+    capacity: {
+      type: Number,
+      min: 1,
+    },
+    registrationCount: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: EVENT_STATUSES,
+      default: "published",
+    },
+    cancelledAt: {
+      type: Date,
+    },
     about: [{ type: String, trim: true }],
     agenda: { type: [agendaItemSchema], default: undefined },
     bringAlong: [{ type: String, trim: true }],
@@ -261,6 +302,7 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
     userId: { type: Schema.Types.ObjectId, required: true, index: true },
     attendeeEmail: { type: String, required: true },
     attendeeName: { type: String, required: true },
+    checkedInAt: { type: Date },
     isDemo: { type: Boolean, default: false },
   },
   { timestamps: true },

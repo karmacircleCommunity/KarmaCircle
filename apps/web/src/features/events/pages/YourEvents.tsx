@@ -3,11 +3,24 @@ import OrganizationSetupGate from "@features/organizations/components/Organizati
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
-import { FiArrowUpRight, FiCalendar, FiMapPin, FiPlus, FiVideo } from "react-icons/fi";
+import {
+  FiArrowUpRight,
+  FiCalendar,
+  FiEdit2,
+  FiMapPin,
+  FiPlus,
+  FiUsers,
+  FiVideo,
+  FiXCircle,
+} from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import useSWR from "swr";
+import CancelEventDialog from "@features/events/components/CancelEventDialog";
 import { formatEventDate } from "@features/events/utils/formatEventFacts";
-import type { ApiEventList } from "@features/events/types";
+import { CancelEvent } from "@services/KarmaCircleApi";
+import { showErrorToast, showSuccessToast } from "@utils/Toasts";
+import type { ApiEvent, ApiEventList } from "@features/events/types";
 
 /**
  * The organization's own events, routed at `/organization/events` — where
@@ -24,16 +37,41 @@ import type { ApiEventList } from "@features/events/types";
  * cover photo, cause or capacity, which is why these are plain rows rather
  * than `EventCard`s: the card needs three fields a real event does not
  * have yet. See docs/specs/events.md.
+ *
+ * **Edit and cancel (PG-1, PG-2).** Each event that has not ended and is not
+ * already cancelled gets an Edit link (`/organization/events/:uid/edit`) and
+ * a Cancel button that opens a confirmation dialog. A cancelled event stays in
+ * the list with a "Cancelled" label and no actions; an ended one keeps just
+ * its link.
  */
 const YourEvents = () => {
   const { organization } = useMyOrganization();
+  const [cancelTarget, setCancelTarget] = useState<ApiEvent | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  const { data, isLoading } = useSWR<ApiEventList>(
-    organization?.isLive ? eventEndpoints.byHost(organization.handle) : null,
-    fetcher,
-  );
+  const hostKey = organization?.isLive
+    ? eventEndpoints.byHost(organization.handle)
+    : null;
+  const { data, isLoading, mutate } = useSWR<ApiEventList>(hostKey, fetcher);
 
   const events = data?.data ?? [];
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    const result = await CancelEvent(cancelTarget.uid);
+    setCancelling(false);
+
+    if (result.ok) {
+      showSuccessToast("Event cancelled");
+      setCancelTarget(null);
+      void mutate();
+    } else {
+      showErrorToast(
+        result.message ?? "Could not cancel the event. Try again.",
+      );
+    }
+  };
 
   return (
     <OrganizationSetupGate
@@ -49,8 +87,8 @@ const YourEvents = () => {
               Your events
             </h1>
             <p className="mt-3 max-w-xl font-poppins text-body leading-6 text-ink/70 sm:text-body-lg sm:leading-7">
-              Everything {organization?.name ?? "your organization"} is hosting, as
-              it appears to everyone else.
+              Everything {organization?.name ?? "your organization"} is hosting,
+              as it appears to everyone else.
             </p>
           </div>
           <Link
@@ -79,14 +117,23 @@ const YourEvents = () => {
         ) : (
           <ul className="mt-10 flex list-none flex-col gap-3 p-0">
             {events.map((event) => (
-              <li key={event._id}>
+              <li
+                key={event._id}
+                className="rounded-2xl border border-brand-secondary/10 bg-white transition-colors hover:border-brand/35"
+              >
                 <Link
                   to={`/events/${event.uid}`}
-                  className="flex flex-col gap-2 rounded-2xl border border-brand-secondary/10 bg-white p-5 no-underline transition-colors hover:border-brand/35 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+                  className="flex flex-col gap-2 p-5 no-underline sm:flex-row sm:items-center sm:justify-between sm:gap-6"
                 >
                   <div>
-                    <p className="m-0 font-outfit text-body-lg font-medium text-brand-secondary">
+                    <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 font-outfit text-body-lg font-medium text-brand-secondary">
                       {event.name}
+                      {event.status === "cancelled" && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-error/25 bg-error/8 px-2.5 py-0.5 font-outfit text-caption font-medium tracking-wide text-error uppercase">
+                          <FiXCircle aria-hidden className="size-3.5" />
+                          Cancelled
+                        </span>
+                      )}
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-poppins text-body text-ink/60">
                       <span className="inline-flex items-center gap-1.5">
@@ -112,15 +159,60 @@ const YourEvents = () => {
                     className="hidden size-5 shrink-0 text-brand sm:block"
                   />
                 </Link>
+                <div className="flex flex-wrap gap-3 border-t border-brand-secondary/8 px-5 py-3">
+                  <Link
+                    to={`/organization/events/${event.uid}/attendees`}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-brand-secondary/15 px-4 font-outfit text-body font-medium text-brand-secondary no-underline transition hover:border-brand/45 hover:text-brand"
+                  >
+                    <FiUsers aria-hidden className="size-4" />
+                    Attendees
+                    <span className="sr-only"> for {event.name}</span>
+                  </Link>
+                  {canManage(event) && (
+                    <>
+                      <Link
+                        to={`/organization/events/${event.uid}/edit`}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-brand-secondary/15 px-4 font-outfit text-body font-medium text-brand-secondary no-underline transition hover:border-brand/45 hover:text-brand"
+                      >
+                        <FiEdit2 aria-hidden className="size-4" />
+                        Edit
+                        <span className="sr-only"> {event.name}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setCancelTarget(event)}
+                        className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-error/25 bg-transparent px-4 font-outfit text-body font-medium text-error transition hover:bg-error/5"
+                      >
+                        <FiXCircle aria-hidden className="size-4" />
+                        Cancel event
+                        <span className="sr-only"> {event.name}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
 
+      {cancelTarget && (
+        <CancelEventDialog
+          eventName={cancelTarget.name}
+          cancelling={cancelling}
+          onConfirm={confirmCancel}
+          onClose={() => !cancelling && setCancelTarget(null)}
+        />
+      )}
+
       <Footer />
     </OrganizationSetupGate>
   );
 };
+
+/** Edit and cancel apply until an event ends, and never to a cancelled one. */
+const canManage = (event: ApiEvent) =>
+  event.status !== "cancelled" &&
+  new Date(event.endTime).getTime() >= Date.now();
 
 export default YourEvents;

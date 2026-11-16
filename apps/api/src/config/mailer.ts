@@ -146,3 +146,54 @@ export async function sendEventJoinConfirmation(
 
   return true;
 }
+
+/**
+ * Tells an event's organizer that someone joined (PG-6). Best effort and
+ * production only, like the attendee's confirmation. Carries the attendee's
+ * name and the running total, never their email (the organizer sees that on
+ * the attendee list).
+ */
+export async function sendEventJoinOrganizerNotice(
+  to: string,
+  event: IEvent,
+  attendeeName: string,
+): Promise<boolean> {
+  if (env.NODE_ENV !== "production") return false;
+
+  const listUrl = `${env.ORIGIN_URL.replace(/\/$/, "")}/organization/events/${encodeURIComponent(event.uid)}/attendees`;
+  const safeEventName = escapeHtml(event.name);
+  const safeAttendee = escapeHtml(attendeeName || "Someone");
+  const total = event.registrationCount ?? 0;
+  const spots = event.capacity
+    ? ` (${total} of ${event.capacity} places taken)`
+    : ` (${total} registered)`;
+
+  const client = getResendClient();
+
+  const { error } = await client.emails.send({
+    from: env.RESEND_FROM_EMAIL || DEFAULT_FROM,
+    to,
+    subject: `${attendeeName || "Someone"} joined ${event.name}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #282828;">
+        <h2>New registration</h2>
+        <p><strong>${safeAttendee}</strong> joined <strong>${safeEventName}</strong>${escapeHtml(spots)}.</p>
+        <p><a href="${listUrl}" style="display:inline-block;padding:12px 20px;background:#a8623e;color:#fff;border-radius:8px;text-decoration:none;">See who is coming</a></p>
+        <p>KarmaCircle</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger.error(
+      { error, eventUid: event.uid },
+      "Failed to send organizer join notice",
+    );
+    throw new AppError(
+      STATUS_CODE.INTERNAL_SERVER_ERROR,
+      "Failed to send the organizer notice.",
+    );
+  }
+
+  return true;
+}

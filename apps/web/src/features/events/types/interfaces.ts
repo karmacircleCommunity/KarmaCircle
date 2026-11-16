@@ -1,8 +1,41 @@
 import type { Dayjs } from "dayjs";
 import type { Cause } from "@features/organizations/types";
-import type { EventMode, EventFormErrors } from "./types";
+import type { EventMode, EventFormErrors, EventStatus } from "./types";
 
-export interface EventFormState {
+/** One row of the agenda editor. */
+export interface EventAgendaFormRow {
+  time: string;
+  title: string;
+  detail: string;
+}
+
+/**
+ * The optional detail fields (PG-7) as the form holds them: text for the
+ * paragraph, line and list fields, and numbers as typed. See
+ * `utils/eventDetailFields.ts` for the conversions.
+ */
+export interface EventDetailFormFields {
+  /** Paragraphs separated by a blank line. */
+  about: string;
+  contactEmail: string;
+  /** Empty means free. */
+  costAmount: string;
+  costCurrency: string;
+  costNote: string;
+  /** One item per line. */
+  bringAlong: string;
+  /** Comma separated. */
+  languages: string;
+  minimumAge: string;
+  agenda: EventAgendaFormRow[];
+  /** In-person events only. */
+  gettingThere: string;
+  /** Online events only. */
+  linkDelivery: string;
+  joinRequirements: string;
+}
+
+export interface EventFormState extends EventDetailFormFields {
   name: string;
   startDate: Dayjs | null;
   endDate: Dayjs | null;
@@ -19,6 +52,8 @@ export interface EventFormState {
   platform: string;
   platformLink: string;
   inviteOnly: boolean;
+  /** Most people who can join, as typed. Empty means no limit. */
+  capacity: string;
 }
 
 export interface UseEventResult {
@@ -83,6 +118,9 @@ export interface EventCardEvent {
   /** When set, the card shows an "Invite only" pill rather than implying
    *  anyone can just turn up. */
   inviteOnly?: boolean;
+  /** The organizer cancelled this event. The card stays in the list with a
+   *  "Cancelled" label, and nothing about joining is offered. */
+  cancelled?: boolean;
   /** Which `ORGANIZATION_ACCENTS` gradient to fall back to when `cover` is
    *  unset — same "stable per record, not stored" derivation as
    *  `organizations/utils/toDisplayOrganization.ts#accentFor`. */
@@ -169,6 +207,8 @@ export interface DisplayEvent {
   spotsLeft?: number;
   isGovernmentSponsored: boolean;
   inviteOnly: boolean;
+  /** The organizer cancelled this event; see `EventCardEvent.cancelled`. */
+  cancelled: boolean;
 }
 
 /**
@@ -217,6 +257,11 @@ export interface EventFundraiserPanelProps {
   fundraiser: EventFundraiser;
 }
 
+/** `EventJoinPanel` also needs to start leaving; the mobile bar does not. */
+export interface EventJoinPanelFullProps extends EventJoinPanelProps {
+  onRequestLeave: () => void;
+}
+
 export interface EventJoinPanelProps extends DetailedEventRecord {
   joined: boolean;
   joining: boolean;
@@ -262,6 +307,14 @@ export interface ApiEvent {
   endTime: string;
   isGovernmentSponsored: boolean;
   inviteOnly: boolean;
+  /** Absent on events saved before the field existed; that reads as
+   *  `published`. */
+  status?: EventStatus;
+  cancelledAt?: string;
+  /** Most people who can join; absent means no limit. */
+  capacity?: number;
+  /** People registered so far. Only meaningful when `capacity` is set. */
+  registrationCount?: number;
   about?: string[];
   agenda?: EventAgendaItem[];
   bringAlong?: string[];
@@ -284,4 +337,32 @@ export interface ApiEventList {
     total: number;
     totalPages: number;
   };
+}
+
+/** One person on an event's attendee list, as the host sees them. */
+export interface EventAttendee {
+  id: string;
+  name: string;
+  email: string;
+  joinedAt: string;
+  checkedIn: boolean;
+  checkedInAt: string | null;
+}
+
+/** `GET /events/:uid/attendees` - one page plus the overall totals. */
+export interface ApiAttendeeList {
+  event: {
+    uid: string;
+    name: string;
+    status: EventStatus;
+    capacity?: number;
+  };
+  data: EventAttendee[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary: { registered: number; checkedIn: number };
 }

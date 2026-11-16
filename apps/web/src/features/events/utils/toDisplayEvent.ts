@@ -15,6 +15,17 @@ function accentFor(uid: string): number {
 }
 
 /**
+ * Going and spots left, only for an event whose organizer set a capacity: with
+ * no limit there is nothing to run out of, and the API's count is only kept
+ * accurate for a capped event (PG-5). Nothing is invented for the rest.
+ */
+export function capacityCounts(event: ApiEvent) {
+  if (event.capacity === undefined) return {};
+  const going = Math.min(event.registrationCount ?? 0, event.capacity);
+  return { going, spotsLeft: event.capacity - going };
+}
+
+/**
  * Maps the live `GET /events` shape onto what `EventCard` (and `Events.tsx`'s
  * own filtering/grouping) render.
  *
@@ -49,6 +60,8 @@ export function toDisplayEvent(event: ApiEvent): EventCardEvent {
     startsAt: event.startTime,
     isGovernmentSponsored: event.isGovernmentSponsored || undefined,
     inviteOnly: event.inviteOnly || undefined,
+    cancelled: event.status === "cancelled" || undefined,
+    ...capacityCounts(event),
     accent: accentFor(event.uid),
   };
 }

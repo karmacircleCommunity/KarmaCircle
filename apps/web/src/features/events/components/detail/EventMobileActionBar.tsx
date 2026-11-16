@@ -1,6 +1,9 @@
 import { FiArrowRight, FiCheck, FiMail, FiUserPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { isEventPast } from "@features/events/utils/formatEventFacts";
+import {
+  formatSpotsLeft,
+  isEventPast,
+} from "@features/events/utils/formatEventFacts";
 import { formatMoney } from "@utils/formatMoney";
 import type { EventJoinPanelProps } from "@features/events/types";
 
@@ -68,6 +71,11 @@ import type { EventJoinPanelProps } from "@features/events/types";
  * pre-existing record with no organizer link at all). This takes priority
  * over the invite-only branch below it - a past invite-only event is still
  * past, not still asking to be invited to.
+ *
+ * **Cancelled event (PG-2).** Takes priority over everything else, including
+ * "Completed": the left side says "Cancelled" and the right side links to the
+ * organizer's page (or an "Ended" pill with no organizer link), the same two
+ * branches the completed state uses.
  */
 const EventMobileActionBar = ({
   event,
@@ -79,34 +87,42 @@ const EventMobileActionBar = ({
   onToggleJoin,
   hidden,
 }: EventJoinPanelProps & { hidden: boolean }) => {
-  const past = isEventPast(event.startsAt);
-  const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
-  const spotsLeft = hasCapacity
-    ? Math.max(0, event.spotsLeft! - (joined ? 1 : 0))
-    : undefined;
+  const cancelled = event.cancelled;
+  const past = !cancelled && isEventPast(event.startsAt);
+  const over = cancelled || past;
+  const hasCapacity =
+    event.going !== undefined && event.spotsLeft !== undefined;
+  // Counts come from the API and already include this attendee.
+  const spotsLeft = hasCapacity ? event.spotsLeft : undefined;
   const full = spotsLeft === 0 && !joined;
 
   return (
     <div
       aria-hidden={hidden}
       className={`fixed inset-x-9 z-10 flex items-center justify-between gap-4 rounded-3xl border border-white/50 bg-white/55 px-5 py-3.5 shadow-[0_20px_45px_-18px_color-mix(in_srgb,var(--color-brand-secondary)_50%,transparent),inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-2xl backdrop-saturate-150 transition-transform duration-300 ease-out lg:hidden ${
-        hidden ? "pointer-events-none translate-y-[calc(100%+4rem)]" : "translate-y-0"
+        hidden
+          ? "pointer-events-none translate-y-[calc(100%+4rem)]"
+          : "translate-y-0"
       }`}
-      style={{ bottom: "max(1rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))" }}
+      style={{
+        bottom: "max(1rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))",
+      }}
     >
       <div className="min-w-0">
         <p className="m-0 truncate font-outfit text-body-lg font-semibold text-brand-secondary">
-          {past
-            ? "Completed"
-            : detail.cost
-              ? formatMoney(detail.cost.amount, detail.cost.currency)
-              : "Free"}
+          {cancelled
+            ? "Cancelled"
+            : past
+              ? "Completed"
+              : detail.cost
+                ? formatMoney(detail.cost.amount, detail.cost.currency)
+                : "Free"}
         </p>
         {/* Zero spots is said once, by the button below ("Full") - not
             repeated here as "0 spots left", which the rest of this feature
             (EventCard, EventFacts) treats as a data-bug-looking string to
             avoid. */}
-        {past ? (
+        {over ? (
           <p className="m-0 truncate font-poppins text-caption text-ink/55">
             Updates on the organizer&apos;s page
           </p>
@@ -114,13 +130,13 @@ const EventMobileActionBar = ({
           hasCapacity &&
           spotsLeft! > 0 && (
             <p className="m-0 truncate font-poppins text-caption text-ink/55">
-              {spotsLeft} spots left
+              {formatSpotsLeft(spotsLeft!)}
             </p>
           )
         )}
       </div>
 
-      {past ? (
+      {over ? (
         event.organizerUserName ? (
           <Link
             to={`/organization/${event.organizerUserName}`}
@@ -131,7 +147,7 @@ const EventMobileActionBar = ({
           </Link>
         ) : (
           <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/60">
-            Ended
+            {cancelled ? "Closed" : "Ended"}
           </span>
         )
       ) : event.inviteOnly ? (

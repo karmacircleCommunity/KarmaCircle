@@ -21,14 +21,16 @@ This backend has two separate, independent test setups, for two different jobs:
 |---|---|
 | `auth` | [tests/auth.test.ts](../../tests/auth.test.ts) |
 | `directory` | [tests/directory.test.ts](../../tests/directory.test.ts) |
-| `events` | [tests/events.test.ts](../../tests/events.test.ts) (create validation, join rules, registration check, `/events/mine`), [tests/events-directory.test.ts](../../tests/events-directory.test.ts) (`GET /events` filters, order and paging) |
+| `events` | [tests/events.test.ts](../../tests/events.test.ts) (create validation, join rules, registration check, `/events/mine`), [tests/events-directory.test.ts](../../tests/events-directory.test.ts) (`GET /events` filters, order and paging), [tests/events-manage.test.ts](../../tests/events-manage.test.ts) (edit and cancel: ownership, validation, mode switch, locked events, joins refused after cancel), [tests/events-capacity.test.ts](../../tests/events-capacity.test.ts) (leave and capacity, including a race for the last spots), [tests/events-attendees.test.ts](../../tests/events-attendees.test.ts) (attendee list, check-in, CSV, organizer notice), [tests/events-details.test.ts](../../tests/events-details.test.ts) (the optional detail fields) |
 | `organizations` | [tests/organizations.test.ts](../../tests/organizations.test.ts) |
 | `payments` | [tests/payments.test.ts](../../tests/payments.test.ts) |
 | `products` | [tests/products.test.ts](../../tests/products.test.ts) |
 | `reports` | [tests/reports.test.ts](../../tests/reports.test.ts) |
 | `users` | [tests/users.test.ts](../../tests/users.test.ts) |
 
-Last full run, 2026-11-04: `npx --no-install jest` in `apps/api` passed 10 suites of 10 and 183 tests of 183 (about 8 seconds). `tests/events.test.ts` has 78 tests and `tests/events-directory.test.ts` has 26. Re-read these from the Jest output rather than trusting this line.
+Last full run, 2026-11-16: `npx --no-install jest` in `apps/api` passed 14 suites of 14 and 301 tests of 301 (about 10 seconds, three runs in a row after the fix below). `tests/events.test.ts` has 78 tests, `tests/events-directory.test.ts` 26, `tests/events-manage.test.ts` 34, `tests/events-capacity.test.ts` 27, `tests/events-attendees.test.ts` 24 and `tests/events-details.test.ts` 31.
+
+**`buildTestApp()` returns a server bound to 127.0.0.1 (November 2026).** `tests/helpers/test-app.ts` used to return the bare Express app, so Supertest called `listen(0)` itself (the wildcard address) and then connected to `127.0.0.1:<port>`. On macOS another process can hold that same port on 127.0.0.1 only (every `mongodb-memory-server` does, as can a local proxy or dev server), the kernel still allows the wildcard bind, and the request lands on the wrong process: an occasional `404`, `501`, a 30 second timeout or a foreign JSON body (once an Anthropic API error) in a random test of a random file, roughly one run in two with 13 suites in parallel and one in five with 10. The helper now creates an `http.Server` that listens on `127.0.0.1` (port 0) before the tests run and closes it in `afterAll`, so the kernel picks a port nobody holds there. Eight full runs in a row passed afterwards. If a test ever fails with a status that does not belong to this API, suspect this class of problem first. Re-read these from the Jest output rather than trusting this line.
 
 Tests that need a past or already-started event must create it through the `Event` model (and its registrations through the `EventRegistration` model), because `POST /events/create` rejects a past `startTime`. Event fixtures in `events.test.ts` use a start time of tomorrow computed at runtime; the old fixed 2026 dates would now fail the future-start rule.
 

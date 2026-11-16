@@ -46,6 +46,17 @@ async function searchDirectory(page: Page, text: string) {
   await page.getByRole("searchbox", { name: "Search events" }).fill(text);
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Publishes an event through the API. The API rejects a start in the past and
+ * an end that is not after the start, so a future `startDate` is used as given
+ * (ending two hours later), and a past one is created in the future and then
+ * moved into the past with the E2E-only backdate route
+ * (`apps/api/tests/e2e/test-routes.ts`), which is how a real event reaches
+ * that state.
+ */
 async function createEvent(
   page: Page,
   opts: {
@@ -58,6 +69,9 @@ async function createEvent(
     inviteOnly?: boolean;
   },
 ) {
+  const isPast = opts.startDate.getTime() <= Date.now();
+  const start = isPast ? new Date(Date.now() + DAY_MS) : opts.startDate;
+  const end = new Date(start.getTime() + 2 * HOUR_MS);
   const res = await page.request.post(`${E2E_API_URL}/events/create`, {
     data: {
       uid: opts.uid,
@@ -65,10 +79,10 @@ async function createEvent(
       description: opts.description,
       coverImage: `https://picsum.photos/seed/${opts.uid}/800/450`,
       mode: opts.mode,
-      startDate: opts.startDate.toISOString(),
-      endDate: opts.startDate.toISOString(),
-      startTime: opts.startDate.toISOString(),
-      endTime: opts.startDate.toISOString(),
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
       inviteOnly: opts.inviteOnly,
       ...(opts.mode === "Offline"
         ? {
@@ -82,6 +96,18 @@ async function createEvent(
     },
   });
   expect(res.ok(), await res.text()).toBeTruthy();
+
+  if (isPast) {
+    const daysAgo = Math.max(
+      1,
+      Math.round((Date.now() - opts.startDate.getTime()) / DAY_MS),
+    );
+    const backdate = await page.request.post(
+      `${E2E_API_URL}/__test__/events/${opts.uid}/backdate`,
+      { data: { daysAgo } },
+    );
+    expect(backdate.status(), await backdate.text()).toBe(204);
+  }
 }
 
 /** Same guarantee as organizations-responsive.spec.ts's own version — see
@@ -322,7 +348,8 @@ test("an organization publishes an in-person event from the full-page form", asy
   ).toBeVisible();
   await expect(page.getByText("Hosted by", { exact: true })).toBeVisible();
   await page.goto("/organization/events");
+  // Anchored: the row's "Edit <name>" link also contains the event name.
   await expect(
-    page.getByRole("link", { name: new RegExp(eventName) }),
+    page.getByRole("link", { name: new RegExp(`^${eventName}`) }),
   ).toBeVisible();
 });

@@ -1,0 +1,85 @@
+import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
+import { detailChanges } from "@features/events/utils/eventDetailFields";
+import type { ApiEvent, EventFormState } from "@features/events/types";
+
+const combineDateAndTime = (date: Dayjs, time: Dayjs) =>
+  date.hour(time.hour()).minute(time.minute()).second(0).millisecond(0);
+
+/** The shape `PATCH /events/:uid` accepts: any subset of the editable fields. */
+export type EventChanges = Record<string, unknown>;
+
+/**
+ * What changed between the stored event and the edit form, as the body for
+ * `PATCH /events/:uid`. Anything unchanged is left out, so:
+ *
+ * - the cover image (possibly a multi-megabyte data URL) is only sent when a
+ *   new one was chosen;
+ * - a start time left alone is never re-sent, so an event already running does
+ *   not trip the API's "start must be in the future" rule, and a stored time
+ *   with seconds is not rewritten by the form's whole-minute value;
+ * - the date-only fields (`startDate`, `endDate`) travel with their time.
+ *
+ * Location fields go together: if the mode or any field of the chosen mode
+ * changed, all of that mode's fields are sent, because the API drops the other
+ * mode's fields and requires the chosen mode's to be present.
+ */
+export function buildEventChanges(
+  form: EventFormState,
+  original: ApiEvent,
+): EventChanges {
+  const changes: EventChanges = {};
+
+  if (form.name !== original.name) changes.name = form.name;
+  if (form.description !== original.description) {
+    changes.description = form.description;
+  }
+  if (form.inviteOnly !== original.inviteOnly) {
+    changes.inviteOnly = form.inviteOnly;
+  }
+  if (form.coverImage !== (original.coverImage ?? "")) {
+    changes.coverImage = form.coverImage;
+  }
+
+  // A capacity is typed as text; empty means no limit, which on edit has to be
+  // said out loud (`null`) because leaving the key out means "unchanged".
+  const typedCapacity = form.capacity.trim();
+  if (
+    typedCapacity !==
+    (original.capacity === undefined ? "" : String(original.capacity))
+  ) {
+    changes.capacity = typedCapacity === "" ? null : Number(typedCapacity);
+  }
+
+  const modeChanged = form.mode !== original.mode;
+  const locationFields =
+    form.mode === "Offline"
+      ? (["city", "state", "country", "address"] as const)
+      : (["platform", "platformLink"] as const);
+  const locationChanged = locationFields.some(
+    (field) => form[field] !== (original[field] ?? ""),
+  );
+  if (modeChanged) changes.mode = form.mode;
+  if (modeChanged || locationChanged) {
+    for (const field of locationFields) changes[field] = form[field];
+  }
+
+  if (form.startDate && form.startTime) {
+    const startAt = combineDateAndTime(form.startDate, form.startTime);
+    if (!startAt.isSame(dayjs(original.startTime), "minute")) {
+      changes.startTime = startAt.toDate();
+      changes.startDate = form.startDate.startOf("day").toDate();
+    }
+  }
+  if (form.endDate && form.endTime) {
+    const endAt = combineDateAndTime(form.endDate, form.endTime);
+    if (!endAt.isSame(dayjs(original.endTime), "minute")) {
+      changes.endTime = endAt.toDate();
+      changes.endDate = form.endDate.startOf("day").toDate();
+    }
+  }
+
+  Object.assign(changes, detailChanges(form, original));
+
+  return changes;
+}

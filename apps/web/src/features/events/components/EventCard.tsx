@@ -1,7 +1,7 @@
-import { FiCalendar, FiCheckCircle, FiClock, FiMapPin, FiShield, FiUserCheck, FiVideo } from "react-icons/fi";
+import { FiCalendar, FiCheckCircle, FiClock, FiMapPin, FiShield, FiUserCheck, FiVideo, FiXCircle } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
-import { formatEventBadge, formatEventTime, isEventPast } from "@features/events/utils/formatEventFacts";
+import { formatEventBadge, formatEventTime, formatSpotsLeft, isEventPast } from "@features/events/utils/formatEventFacts";
 import type { EventCardProps } from "@features/events/types";
 
 /**
@@ -46,13 +46,19 @@ import type { EventCardProps } from "@features/events/types";
  * would render if it had one, which it never does (see above). This is
  * cosmetic only; whether the card actually shows up here at all is decided
  * by `Events.tsx`'s Upcoming/Past filter, using the same `startsAt` cut.
+ *
+ * **"Cancelled" (PG-2).** A cancelled event stays in the list, with the same
+ * grayscale cover and the same bottom-left label slot, reading "Cancelled".
+ * It wins over "Completed": an event that was cancelled and has since passed
+ * is still a cancelled event, not one that took place.
  */
 const EventCard = ({ event }: EventCardProps) => {
   const online = event.mode === "Online";
   const full = event.spotsLeft === 0;
   const hasCapacity = event.going !== undefined && event.spotsLeft !== undefined;
   const accent = ORGANIZATION_ACCENTS[(event.accent ?? 0) % ORGANIZATION_ACCENTS.length];
-  const past = isEventPast(event.startsAt);
+  const cancelled = Boolean(event.cancelled);
+  const past = !cancelled && isEventPast(event.startsAt);
 
   return (
     <article
@@ -60,7 +66,7 @@ const EventCard = ({ event }: EventCardProps) => {
       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-secondary/8 bg-white shadow-[0_2px_18px_-14px_var(--color-brand-secondary)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:border-brand/35 hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transparent)] motion-safe:hover:-translate-y-1"
     >
       <div
-        className={`relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10 ${past ? "grayscale-[45%]" : ""}`}
+        className={`relative aspect-16/9 shrink-0 overflow-hidden bg-brand-secondary/10 ${past || cancelled ? "grayscale-[45%]" : ""}`}
       >
         {event.cover ? (
           <img
@@ -128,6 +134,18 @@ const EventCard = ({ event }: EventCardProps) => {
             the same "this already happened" treatment Eventbrite/Meetup
             use, so a visitor scanning the Past tab doesn't have to read
             every date to tell which cards are done. */}
+        {cancelled && (
+          <>
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent"
+            />
+            <span className="absolute bottom-2.5 left-4 inline-flex items-center gap-1.5 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
+              <FiXCircle aria-hidden="true" className="size-3" />
+              Cancelled
+            </span>
+          </>
+        )}
         {past && (
           <>
             <div
@@ -220,7 +238,7 @@ const EventCard = ({ event }: EventCardProps) => {
                   : "bg-brand/10 text-brand"
               }`}
             >
-              {full ? "Full" : `${event.spotsLeft} spots left`}
+              {full ? "Full" : formatSpotsLeft(event.spotsLeft!)}
             </p>
           </div>
         )}

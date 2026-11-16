@@ -22,7 +22,7 @@ This suite is deliberately **full-stack**: a real browser (via Playwright) drive
 | [`e2e/landing-home/`](../../apps/web/e2e/landing-home/) | The marketing home page, hero CTA, footer newsletter | [README](../../apps/web/e2e/landing-home/README.md) |
 | [`e2e/onboarding-profile/`](../../apps/web/e2e/onboarding-profile/) | Individual editor navigation/save/exit and retired profile URLs; browser specs updated but not rerun for removal | [README](../../apps/web/e2e/onboarding-profile/README.md) |
 | [`e2e/organizations/`](../../apps/web/e2e/organizations/) | The organization signup→draft→live setup wizard | [README](../../apps/web/e2e/organizations/README.md) |
-| [`e2e/events/`](../../apps/web/e2e/events/) | Public event directory filtering and responsive layout, organizer publishing, and (written, not yet run) the attendee journey and online-event publishing | [README](../../apps/web/e2e/events/README.md) |
+| [`e2e/events/`](../../apps/web/e2e/events/) | Public event directory filtering and responsive layout, organizer publishing, the attendee journey, online-event publishing, and editing and cancelling an event, leaving, capacity, the attendee list and the optional details (26 tests; all 26 pass on each browser run alone, and a full three-browser run passed 76 of 78 on 2026-11-16 with two timeouts under heavy load) | [README](../../apps/web/e2e/events/README.md) |
 
 `e2e/smoke.spec.ts` stays at the top level — it's cross-cutting infrastructure (backend reachability, basic nav) rather than any one feature's own behavior. `e2e/env.ts` and `e2e/global-setup.ts` are shared plumbing, not tests.
 
@@ -67,7 +67,7 @@ Added November 2026 for pure functions (no DOM, no components). Vitest `^5.1.0` 
 
 - `pnpm test:unit` (`vitest run`) - run once. `pnpm test:unit:watch` - watch mode.
 - The `test` script is now `vitest run && playwright test`, so `pnpm test` from `apps/web`, root `pnpm test` (Turborepo) and the CI step all run the unit tests before Playwright.
-- Last run, 2026-11-04: 4 test files passed, 63 tests passed and 2 todo (65 total). The files are `formatEventFacts.test.ts`, `getFormattedDate.test.ts` and `toDisplayEvent.test.ts` under `src/features/events/utils/`, and `src/utils/formatMoney.test.ts`.
+- Last run, 2026-11-16: 7 test files passed, 121 tests passed and 2 todo (123 total). The files are `formatEventFacts.test.ts` (including `formatSpotsLeft`), `getFormattedDate.test.ts`, `toDisplayEvent.test.ts` (which also covers the cancelled mapping and the capacity counts), `eventToFormState.test.ts`, `buildEventChanges.test.ts` and `eventDetailFields.test.ts` under `src/features/events/utils/`, and `src/utils/formatMoney.test.ts`.
 - Not covered: `convertToBase64` (needs a browser `FileReader`; it would need jsdom or happy-dom), components and hooks. The two `it.todo` entries record open helper bugs (`formatDuration` returns "NaN days" and `getFormattedDate` returns "NaNth undefined" for unreadable dates); see [known-issues.md](./known-issues.md).
 
 ## Running it
@@ -103,7 +103,7 @@ Real, current app behavior the suite had to be written against — not aspiratio
 ## What this doesn't cover
 
 - No component or hook-level tests exist for `apps/web`. Vitest covers pure helpers only (see "Unit tests (Vitest)"); components and hooks have no existing pattern to follow, and would need a DOM environment (jsdom or happy-dom) first.
-- **Feature folders with no E2E coverage at all yet:** `dashboard`, `donate-shop-trending` (payments), `products`. The Events directory has responsive/filter coverage; the attendee journey (`attendee-journey.spec.ts`) and online-event publishing (`online-event-publishing.spec.ts`) specs are written but have never been run, and `events-responsive.spec.ts` seeds events the API now rejects (see the Events README). See each feature's own summary spec (`docs/specs/<feature>.md`) before writing tests for one of these - several have the same "less is actually reachable than the docs used to claim" texture the `authentication`/`onboarding-profile` work above surfaced.
+- **Feature folders with no E2E coverage at all yet:** `dashboard`, `donate-shop-trending` (payments), `products`. The Events feature has directory, publishing, attendee-journey, edit and cancel coverage (see the Events README). See each feature's own summary spec (`docs/specs/<feature>.md`) before writing tests for one of these - several have the same "less is actually reachable than the docs used to claim" texture the `authentication`/`onboarding-profile` work above surfaced.
 - **Google OAuth sign-in** isn't covered anywhere — it needs a real (or mocked) Google consent screen, which this suite doesn't attempt.
 - **Animation/motion and responsive breakpoints** are asserted on nowhere in this suite (see `landing-home/README.md`) — this is DOM/behavior testing, not visual regression testing, and this repo has no visual-snapshot tooling set up.
 

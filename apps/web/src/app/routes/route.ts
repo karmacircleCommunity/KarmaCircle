@@ -15,6 +15,8 @@ export { default as Dashboard } from "@features/dashboard/pages/Dashboard";
 export { default as Events } from "@features/events/pages/Events";
 export { default as DetailedEvent } from "@features/events/pages/DetailedEvent";
 export { default as YourEvents } from "@features/events/pages/YourEvents";
+export { default as EditEvent } from "@features/events/pages/EditEvent";
+export { default as EventAttendees } from "@features/events/pages/EventAttendees";
 export { default as MyEvents } from "@features/events/pages/MyEvents";
 export { default as CreateEvents } from "@features/events/components/CreateEvents";
 

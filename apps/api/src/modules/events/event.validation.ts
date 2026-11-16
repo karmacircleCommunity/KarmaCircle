@@ -5,7 +5,24 @@ import {
   COVER_IMAGE_MIME_TYPES,
   COVER_IMAGE_URL_MAX_LENGTH,
   EVENT_ADDRESS_MAX_LENGTH,
+  EVENT_ABOUT_MAX_PARAGRAPHS,
+  EVENT_ABOUT_PARAGRAPH_MAX_LENGTH,
+  EVENT_AGENDA_DETAIL_MAX_LENGTH,
+  EVENT_AGENDA_MAX_ITEMS,
+  EVENT_AGENDA_TIME_MAX_LENGTH,
+  EVENT_AGENDA_TITLE_MAX_LENGTH,
+  EVENT_BRING_ALONG_ITEM_MAX_LENGTH,
+  EVENT_BRING_ALONG_MAX_ITEMS,
+  EVENT_CAPACITY_MAX,
   EVENT_CITY_MAX_LENGTH,
+  EVENT_CONTACT_EMAIL_MAX_LENGTH,
+  EVENT_COST_MAX_AMOUNT,
+  EVENT_COST_NOTE_MAX_LENGTH,
+  EVENT_GETTING_THERE_MAX_LENGTH,
+  EVENT_JOIN_NOTE_MAX_LENGTH,
+  EVENT_LANGUAGE_MAX_LENGTH,
+  EVENT_LANGUAGES_MAX_ITEMS,
+  EVENT_MINIMUM_AGE_MAX,
   EVENT_COUNTRY_MAX_LENGTH,
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_DESCRIPTION_MIN_LENGTH,
@@ -108,6 +125,229 @@ const coverImageSchema = z
     }
   });
 
+/**
+ * A list of short texts with each item trimmed and non-empty. On edit, `[]`
+ * clears the field.
+ */
+const textList = (maxItems: number, maxLength: number) =>
+  z.array(z.string().trim().min(1).max(maxLength)).max(maxItems);
+
+/**
+ * The optional detail-page fields (PG-7). Every one is optional, and `null`
+ * means "remove it" when editing (and is ignored on create). `isGovernmentSponsored`
+ * and `fundraiser` are deliberately not here: the first is a server-only trust
+ * badge, the second waits on the money decision (PG-26).
+ */
+const detailShape = {
+  /** Long-form paragraphs for "About this event". */
+  about: textList(
+    EVENT_ABOUT_MAX_PARAGRAPHS,
+    EVENT_ABOUT_PARAGRAPH_MAX_LENGTH,
+  ).optional(),
+  /** Shown on the join panel. */
+  contactEmail: z
+    .string()
+    .trim()
+    .max(EVENT_CONTACT_EMAIL_MAX_LENGTH)
+    .email("Enter a valid contact email")
+    .nullable()
+    .optional(),
+  /** Absent means free. A price is the exception, so zero is rejected. */
+  cost: z
+    .object({
+      amount: z
+        .number()
+        .positive("A fee must be more than zero. Leave the cost out for a free event")
+        .max(EVENT_COST_MAX_AMOUNT),
+      currency: z
+        .string()
+        .trim()
+        .toUpperCase()
+        .regex(/^[A-Z]{3}$/, "Currency must be a 3-letter code such as INR"),
+      note: z.string().trim().max(EVENT_COST_NOTE_MAX_LENGTH).optional(),
+    })
+    .strict()
+    .nullable()
+    .optional(),
+  bringAlong: textList(
+    EVENT_BRING_ALONG_MAX_ITEMS,
+    EVENT_BRING_ALONG_ITEM_MAX_LENGTH,
+  ).optional(),
+  languages: textList(
+    EVENT_LANGUAGES_MAX_ITEMS,
+    EVENT_LANGUAGE_MAX_LENGTH,
+  ).optional(),
+  minimumAge: z
+    .number()
+    .int("Minimum age must be a whole number")
+    .min(1)
+    .max(EVENT_MINIMUM_AGE_MAX)
+    .nullable()
+    .optional(),
+  agenda: z
+    .array(
+      z
+        .object({
+          time: z.string().trim().min(1).max(EVENT_AGENDA_TIME_MAX_LENGTH),
+          title: z.string().trim().min(1).max(EVENT_AGENDA_TITLE_MAX_LENGTH),
+          detail: z
+            .string()
+            .trim()
+            .max(EVENT_AGENDA_DETAIL_MAX_LENGTH)
+            .optional(),
+        })
+        .strict(),
+    )
+    .max(EVENT_AGENDA_MAX_ITEMS)
+    .optional(),
+  /** Offline events: directions, alongside the address. */
+  gettingThere: z
+    .string()
+    .trim()
+    .max(EVENT_GETTING_THERE_MAX_LENGTH)
+    .nullable()
+    .optional(),
+  /** Online events: how and when the join link reaches an attendee. */
+  linkDelivery: z
+    .string()
+    .trim()
+    .max(EVENT_JOIN_NOTE_MAX_LENGTH)
+    .nullable()
+    .optional(),
+  /** Online events: anything to have ready before joining. */
+  joinRequirements: z
+    .string()
+    .trim()
+    .max(EVENT_JOIN_NOTE_MAX_LENGTH)
+    .nullable()
+    .optional(),
+};
+
+/**
+ * The fields an organizer can set on an event, shared by create and edit. The
+ * page address (`uid`) is deliberately not here: it is chosen once at creation
+ * and never changes, because registrations point at it (see DB-5).
+ */
+const editableEventShape = {
+  name: z
+    .string()
+    .min(EVENT_NAME_MIN_LENGTH, {
+      message: `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`,
+    })
+    .max(EVENT_NAME_MAX_LENGTH, {
+      message: `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`,
+    }),
+  description: z
+    .string()
+    .min(EVENT_DESCRIPTION_MIN_LENGTH, {
+      message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
+    })
+    .max(EVENT_DESCRIPTION_MAX_LENGTH, {
+      message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
+    }),
+  coverImage: coverImageSchema,
+  mode: z.enum(["Online", "Offline"]),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  city: z.string().max(EVENT_CITY_MAX_LENGTH).optional(),
+  state: z.string().max(EVENT_STATE_MAX_LENGTH).optional(),
+  country: z.string().max(EVENT_COUNTRY_MAX_LENGTH).optional(),
+  address: z.string().max(EVENT_ADDRESS_MAX_LENGTH).optional(),
+  mapIframe: z.string().optional(),
+  platform: z.string().max(EVENT_PLATFORM_MAX_LENGTH).optional(),
+  platformLink: z
+    .string()
+    .trim()
+    .max(EVENT_PLATFORM_LINK_MAX_LENGTH)
+    .optional(),
+  ...detailShape,
+  /**
+   * Most people who can join (PG-5). Leave it out for no limit. `null` is only
+   * meaningful when editing, where it removes an existing limit.
+   */
+  capacity: z
+    .number()
+    .int("Capacity must be a whole number")
+    .min(1, "Capacity must be at least 1")
+    .max(EVENT_CAPACITY_MAX, `Capacity can be at most ${EVENT_CAPACITY_MAX}`)
+    .nullable()
+    .optional(),
+  /**
+   * Organizer-settable, unlike `isGovernmentSponsored` (server/seed-only
+   * — see event.model.ts). A statement about their own event, not a
+   * claim about a third party, so there's no abuse concern in letting the
+   * creator set it directly.
+   */
+  inviteOnly: z.boolean().optional(),
+};
+
+type EventRuleFields = {
+  mode: "Online" | "Offline";
+  startTime: Date;
+  endTime: Date;
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
+  platform?: string;
+  platformLink?: string;
+};
+
+/**
+ * The cross-field rules every saved event must satisfy: the end follows the
+ * start, the start is not in the past (only checked when `requireFutureStart`
+ * is set, so an edit that leaves a running event's start alone still passes),
+ * and the fields the chosen mode needs are present.
+ */
+const addEventRuleIssues = (
+  data: EventRuleFields,
+  ctx: z.RefinementCtx,
+  options: { requireFutureStart: boolean },
+) => {
+  if (data.endTime.getTime() <= data.startTime.getTime()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endTime"],
+      message: "End time must be after the start time",
+    });
+  }
+
+  if (options.requireFutureStart && data.startTime.getTime() < Date.now()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["startTime"],
+      message: "Start time must be in the future",
+    });
+  }
+
+  const requiredFields =
+    data.mode === "Offline" ? OFFLINE_REQUIRED_FIELDS : ONLINE_REQUIRED_FIELDS;
+
+  for (const field of requiredFields) {
+    if (!data[field]) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [field],
+        message: "Missing Required Fields",
+      });
+    }
+  }
+
+  if (
+    data.mode === "Online" &&
+    data.platformLink &&
+    !isHttpUrl(data.platformLink)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["platformLink"],
+      message: "Meeting link must start with http:// or https://",
+    });
+  }
+};
+
 export const createEventSchema = z
   .object({
     uid: z
@@ -119,91 +359,38 @@ export const createEventSchema = z
       .refine((uid) => !RESERVED_EVENT_UIDS.includes(uid), {
         message: "That event page address is reserved. Choose another one",
       }),
-    name: z
-      .string()
-      .min(EVENT_NAME_MIN_LENGTH, {
-        message: `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`,
-      })
-      .max(EVENT_NAME_MAX_LENGTH, {
-        message: `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`,
-      }),
-    description: z
-      .string()
-      .min(EVENT_DESCRIPTION_MIN_LENGTH, {
-        message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
-      })
-      .max(EVENT_DESCRIPTION_MAX_LENGTH, {
-        message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
-      }),
-    coverImage: coverImageSchema,
-    mode: z.enum(["Online", "Offline"]),
-    startTime: z.coerce.date(),
-    endTime: z.coerce.date(),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-    city: z.string().max(EVENT_CITY_MAX_LENGTH).optional(),
-    state: z.string().max(EVENT_STATE_MAX_LENGTH).optional(),
-    country: z.string().max(EVENT_COUNTRY_MAX_LENGTH).optional(),
-    address: z.string().max(EVENT_ADDRESS_MAX_LENGTH).optional(),
-    mapIframe: z.string().optional(),
-    platform: z.string().max(EVENT_PLATFORM_MAX_LENGTH).optional(),
-    platformLink: z
-      .string()
-      .trim()
-      .max(EVENT_PLATFORM_LINK_MAX_LENGTH)
-      .optional(),
-    /**
-     * Organizer-settable, unlike `isGovernmentSponsored` (server/seed-only
-     * — see event.model.ts). A statement about their own event, not a
-     * claim about a third party, so there's no abuse concern in letting the
-     * creator set it directly.
-     */
-    inviteOnly: z.boolean().optional(),
+    ...editableEventShape,
   })
-  .superRefine((data, ctx) => {
-    if (data.endTime.getTime() <= data.startTime.getTime()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["endTime"],
-        message: "End time must be after the start time",
-      });
-    }
+  .superRefine((data, ctx) =>
+    addEventRuleIssues(data, ctx, { requireFutureStart: true }),
+  );
 
-    if (data.startTime.getTime() < Date.now()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["startTime"],
-        message: "Start time must be in the future",
-      });
-    }
-
-    const requiredFields =
-      data.mode === "Offline"
-        ? OFFLINE_REQUIRED_FIELDS
-        : ONLINE_REQUIRED_FIELDS;
-
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: "Missing Required Fields",
-        });
-      }
-    }
-
-    if (
-      data.mode === "Online" &&
-      data.platformLink &&
-      !isHttpUrl(data.platformLink)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["platformLink"],
-        message: "Meeting link must start with http:// or https://",
-      });
-    }
+/**
+ * Edit body: any subset of the editable fields (never `uid`, which is
+ * rejected as an unknown key). The cross-field rules run in the service on
+ * the stored event merged with this body, because a lone `endTime` or `mode`
+ * can only be judged against the rest of the event.
+ */
+export const updateEventSchema = z
+  .object(editableEventShape)
+  .partial()
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Send at least one field to change",
   });
+
+/**
+ * Re-checks the cross-field rules on a merged event (service-side, for edit).
+ * Throws a `ZodError`, which the global error handler returns as a `400`.
+ */
+export function assertEventRules(
+  fields: EventRuleFields,
+  options: { requireFutureStart: boolean },
+) {
+  z.custom<EventRuleFields>()
+    .superRefine((data, ctx) => addEventRuleIssues(data, ctx, options))
+    .parse(fields);
+}
 
 export const listEventsQuerySchema = z
   .object({
@@ -249,10 +436,30 @@ export const eventUidParamsSchema = z.object({
   uid: z.string().trim().min(1),
 });
 
+/** `:registrationId` is a Mongo ObjectId, checked before it reaches a query. */
+export const attendeeParamsSchema = eventUidParamsSchema.extend({
+  registrationId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid registration id"),
+});
+
+export const attendeesQuerySchema = paginationQuerySchema.extend({
+  /** Literal, case-insensitive match on the attendee's name or email. */
+  search: z
+    .string()
+    .trim()
+    .max(EVENT_SEARCH_MAX_LENGTH)
+    .transform((value) => value || undefined)
+    .optional(),
+});
+
+export const checkInBodySchema = z.object({ checkedIn: z.boolean() }).strict();
+
 export const myEventsQuerySchema = paginationQuerySchema.extend({
   period: z.enum(["upcoming", "past"]).default("upcoming"),
 });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
+export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
 export type MyEventsQuery = z.infer<typeof myEventsQuerySchema>;
+export type AttendeesQuery = z.infer<typeof attendeesQuerySchema>;
+export type CheckInBody = z.infer<typeof checkInBodySchema>;

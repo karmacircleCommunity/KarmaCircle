@@ -1,8 +1,9 @@
 # Events
 
-Covers the events directory, the shared event-creation form, and the event
-display components. The retired legacy form (`CreateEvent.tsx`) was deleted in
-November 2026.
+Covers the events directory, the shared event form (publish and edit, with its
+optional details), cancelling an event, leaving an event, capacity, the organizer's
+attendee list and check-in, and the event display components. The retired legacy form
+(`CreateEvent.tsx`) was deleted in November 2026.
 
 ## Event lifecycle: agent reference
 
@@ -13,7 +14,12 @@ the type filter applied by the API, then open `/events/:eventId` from an event
 card. Event detail fetches
 `GET /events?uid={uid}` and renders the event, organizer, mode-specific location
 or online information, and any optional detail fields present on the record.
-Past events show a completed state, with no join action. Upcoming events marked
+Past events show a completed state, with no join action. A **cancelled** event
+(November 2026, PG-2) stays in the directory, on the detail page and in My Events
+with a "Cancelled" label instead; its Join action is replaced by a short
+explanation, and the API refuses a join with `409`. Cancelled wins over
+completed: a cancelled event that has since passed is still cancelled. Upcoming
+events marked
 `inviteOnly` remain visible in the public directory and detail page; the detail
 page replaces Join with “ask the organizer.” There is no invitation list, invite
 delivery, access check, or approval flow, so `inviteOnly` is currently a display
@@ -21,9 +27,17 @@ flag rather than private access control. For an upcoming event that is not
 invite-only, Join requires a signed-in account and saves one registration per
 account. Production sends the attendee a confirmation email; local development
 suppresses delivery. Event detail checks the signed-in account's registration on
-load and shows “You are going” in place of Join when already registered. No
-event capacity or available-spots endpoint exists, so event detail and discovery
-must not infer remaining places from registrations. Share uses the browser share
+load and shows “You are going” in place of Join when already registered. An
+event can have a **capacity** (November 2026, PG-5): the API reserves a spot on
+join, refuses a join with `409 "This event is full."`, and returns `capacity` and
+`registrationCount`; the web shows going and spots left (on the card, the facts
+strip, the join panel and the mobile bar) **only for an event with a capacity**,
+and "No limit" otherwise, because only a capped event has a trustworthy count.
+A full event shows "Event is full" to everyone who does not already hold a place.
+Someone who is going can **leave** (PG-3): a "Leave event" link under the status
+line opens a confirmation, calls `DELETE /events/:uid/registration`, gives the
+spot back, and the page refreshes the event and the registration state. Leaving
+is only offered until the event starts (the API refuses it after). Share uses the browser share
 sheet or clipboard, and Ask opens a mail link only when the event has a contact
 email. Organizations can find their hosted events at `/organization/events` and
 on their public organization profile, both backed by
@@ -32,7 +46,17 @@ at `/events/mine`, linked from the signed-in Profile menu and backed by
 authenticated `GET /events/mine?period=upcoming|past`. The host event list at
 `/organization/events` contains event records only. The organization dashboard
 shows total registrations and per-event registration counts, but not attendee
-names or attendance check-in; a roster/check-in workflow remains proposed work.
+names or attendance check-in; those live on the separate attendee page above.
+The organization sees **who is coming** at
+`/organization/events/:eventId/attendees` (November 2026, PG-6): totals (registered
+of capacity, checked in), a search on name or email, a check-in toggle per person,
+a "Download CSV" button and a "Load more attendees" button (50 at a time). Only the
+hosting organization can open it, and a new registration also emails the
+organization owner in production. Organizations manage a hosted event from
+`/organization/events`: **Attendees** opens that list, **Edit** opens
+the shared form at `/organization/events/:eventId/edit`, and **Cancel event**
+opens a confirmation dialog and calls `POST /events/:uid/cancel`. Neither
+notifies the people who joined (PG-18).
 
 ### Publishing path and implementation boundary
 
@@ -50,9 +74,27 @@ authenticated `POST /events/create` through `useEvent.ts`, then opens the
 published event detail page. The current organization's hosted-event list cache
 is revalidated after success, and the public directory refetches when `/events`
 is next opened. The form covers event
-basics, date/time, online or in-person details, invite-only visibility, and a
-live preview. The old `CreateEvent.tsx` component (which called
+basics, date/time, online or in-person details, invite-only visibility, an
+optional maximum number of attendees, a section of optional details (below), and
+a live preview. The old `CreateEvent.tsx` component (which called
 `PATCH /user/update` instead of creating an event) was deleted in November 2026.
+
+**Editing and cancelling (November 2026, PG-1 and PG-2).** Each event in
+`/organization/events` that has not ended and is not cancelled has an Edit link
+and a Cancel button. Edit opens `EditEvent.tsx` at
+`/organization/events/:eventId/edit` (behind `RequireSignIn`), which loads the
+event with `GET /events?uid=`, checks in the browser that the signed-in
+organization hosts it, and renders the same `EventForm` the create page uses,
+filled in. The page address is read-only, because registrations point at it and
+links people already hold must keep working. Saving sends only what changed to
+`PATCH /events/:uid` (`buildEventChanges`), so the cover image is not re-sent
+unless a new one was picked and a start time left alone is never re-sent. A
+cancelled event or one that has ended shows an explanation instead of the form.
+On success the page revalidates that event and the host list, shows "Event
+updated" and opens the event page. Cancel opens `CancelEventDialog` (a native
+`<dialog>`, with "Keep event" focused first because cancelling cannot be undone),
+then calls `POST /events/:uid/cancel` and revalidates the host list. A cancelled
+event stays public with a badge; there is no reinstate and no delete.
 The events feature has no `services/` folder: every event API call is in
 `src/services/KarmaCircleApi.ts` (writes) or goes through `useSWR` with
 `eventEndpoints` (reads). The create endpoint currently accepts the basic event fields and
@@ -70,7 +112,9 @@ flowchart TD
     B --> C[API search and filters: period, invite flag, mode, with Load more]
     C --> D{Choose event card}
     D --> E[GET /events?uid: public event detail]
-    E --> F{Event already past?}
+    E --> CN{Event cancelled?}
+    CN -->|Yes| CV[Cancelled state: no Join action; API join returns 409]
+    CN -->|No| F{Event already past?}
     F -->|Yes| G[Completed state: no Join action]
     F -->|No| X{Signed in?}
     X -->|Yes| Y[GET /events/:uid/registration]
@@ -95,7 +139,11 @@ flowchart TD
     ME --> MP{Upcoming or Past?}
     MP -->|Upcoming| MU[Upcoming registrations, soonest first]
     MP -->|Past| MT[Past registrations, newest first]
-    ME -.->|Proposed only| OR[Organizer attendee roster and check-in per hosted event]
+    AA --> LV[Going: Leave event link and confirmation, until the event starts]
+    LV --> LV2[DELETE /events/:uid/registration: spot given back]
+    M --> FULL{Capacity set and full?}
+    FULL -->|Yes| FULL2[409 This event is full; panel shows Event is full]
+    EDT -->|Attendees| OR[Attendee page: totals, search, check-in toggle, CSV, GET /events/:uid/attendees]
     P[Organization owner opens dashboard or events] --> Q[Dashboard opens /organization/events; directory and hosted workspace can start creation]
     Q --> R[Navigate to /organization/events/new]
     R --> R2[Full-page form: basics, schedule, mode, access and preview]
@@ -104,14 +152,20 @@ flowchart TD
     S -->|Yes| U[POST /events/create with authenticated session]
     U --> V[API validates payload and organization account]
     V --> W[Save event with server-derived organizer identity, or 400 on a rule failure, or 409 on a taken address]
-    W --> X[201 response: open event detail and refresh the host event list]
+    W --> W2[201 response: open event detail and refresh the host event list]
+    P --> EDT[Your events: Edit or Cancel on each event not yet ended or cancelled]
+    EDT -->|Edit| ED2[Same form at /organization/events/:uid/edit, page address locked]
+    ED2 --> ED3[PATCH /events/:uid with only the changed fields, host only]
+    ED3 --> E
+    EDT -->|Cancel| CD[Confirm dialog: stays public, cannot be undone]
+    CD --> CE[POST /events/:uid/cancel, host only]
+    CE --> CV
 ```
 
-The dashed organizer roster/check-in view is a product proposal, not current
-behavior. The organization dashboard has aggregate registration totals and
-per-event registration counts, but no endpoint returns attendee names and no
-attendance check-in flow exists. The hosted-event list at `/organization/events`
-includes event records only. The attendee experience is end to end: successful
+The organizer roster and check-in (PG-6) are now built: the Attendees page in the
+diagram below. The organization dashboard still shows only aggregate registration
+totals and per-event counts, and the hosted-event list at `/organization/events`
+includes event records and the Attendees, Edit and Cancel actions. The attendee experience is end to end: successful
 join persists the registration independently of email delivery, and opening a
 confirmation or My Events link loads registration state so an existing attendee
 sees “You're going” instead of Join.
@@ -211,12 +265,28 @@ stored account type. `e2e/events/events-responsive.spec.ts` covers the public
 directory's Upcoming/Past filtering, search, type filter and responsive layout,
 plus an organization publishing an in-person event from the full-page form.
 `e2e/events/attendee-journey.spec.ts` (detail page, joining, "You are going", My
-Events, invite-only, past event) and `e2e/events/online-event-publishing.spec.ts`
-(online platform and meeting link) were added in November 2026 and are written
-but have not been run. `events-responsive.spec.ts` seeds an event with its end
-equal to its start and one in the past through `POST /events/create`, which the
-API now rejects, so it needs fixing before its next run. Pure helpers have
-Vitest unit tests (see [testing.md](./testing.md)).
+Events, invite-only, past event), `e2e/events/online-event-publishing.spec.ts`
+(online platform and meeting link) and `e2e/events/event-management.spec.ts`
+(edit and cancel, below), `e2e/events/event-attendees.spec.ts` (leave,
+capacity, attendee list) and `e2e/events/event-details.spec.ts` (optional details)
+were added in November 2026. The first 15 events specs passed on Chromium, Firefox
+and WebKit on 2026-11-16 (45 of 45). The full 26 pass on each browser run alone; one run of all three at once passed 76 of 78, with a WebKit failure in the full-event test and a Firefox failure in the default-platform test, both timeouts under heavy load that pass alone (see T-10 in the events to-do list), after
+`events-responsive.spec.ts` was changed to create future events that end after
+they start and to move its past event with the E2E-only backdate route. Pure
+helpers have Vitest unit tests (see [testing.md](./testing.md)).
+
+`event-management.spec.ts` (4 tests): an organization edits an event from Your
+events (the page address is locked, the form starts as stored, the change shows
+on the event page and in the API); saving an unchanged form sends nothing;
+cancelling (the dialog can be dismissed with no change, then confirmed; the row
+shows "Cancelled" with no actions; the public page says the event was cancelled
+and offers no Join; the API refuses a join with `409`; the edit page explains
+instead of showing a form); and another organization is refused both in the page
+and by the API (`403`).
+
+**"Cancelled" (November 2026, PG-2).** `EventCard` shows a grayscale cover and a
+"Cancelled" label in the same bottom-left slot "Completed" uses, and wins over it.
+`toDisplayEvent.ts` maps `status === "cancelled"` onto `EventCardEvent.cancelled`.
 
 **Width fixed to `max-w-6xl` (September 2026).** Both content wrappers here were
 `max-w-7xl`, wider than `Navbar` and every other page's container — the
@@ -244,6 +314,17 @@ Two things make it different from the `/events` directory above it:
 It deliberately renders hosted events as owner-focused rows instead of reusing
 the public directory card. Its "Create event" action opens the full-page
 `CreateEvents.tsx` route at `/organization/events/new`.
+
+**Attendees, edit and cancel (November 2026).** Every row has an **Attendees**
+link (`/organization/events/:uid/attendees`), including ended and cancelled
+events, so the list stays reachable. Below each row that has not ended and is
+not cancelled also sit an **Edit** link (`/organization/events/:uid/edit`) and a
+**Cancel event** button. The button opens `CancelEventDialog`; confirming calls
+`CancelEvent(uid)` and revalidates the list, and a failure shows the API's
+message in an error toast. A cancelled event stays in the list with a red
+"Cancelled" pill and no actions; an event that has ended keeps only its link.
+The row's main area is still one link to the public event page, with the
+actions in a separate strip so they are never nested inside it.
 
 ## `MyEvents.tsx` — an attendee's joined events
 
@@ -277,7 +358,71 @@ mode-specific location or meeting details. The event-page address is an internal
 HTTP or HTTPS. It is routed at `/organization/events/new` for signed-in
 organization accounts with a live profile. Validation and submission go through
 [useEvent](../../apps/web/src/features/events/hooks/useEvent.ts), which calls
-the real `POST /events/create` API function.
+the real `POST /events/create` API function (or, in edit mode, `PATCH /events/:uid`).
+
+### Capacity and the details section (November 2026, PG-5 and PG-7)
+
+Section 03 ("Who can attend?") has an optional **Maximum attendees** number
+(`capacity`, a whole number 1 to 100000; empty means no limit; on edit it cannot go
+below the people already registered, and emptying it sends `null` to remove the
+limit). A new **section 04, "More about the event"**
+([EventDetailsSection.tsx](../../apps/web/src/features/events/components/EventDetailsSection.tsx))
+collects everything the event page can show, all optional: a **full write-up**
+(paragraphs separated by a blank line), **contact email**, **minimum age**, a
+**fee** with a currency (INR, USD, EUR, GBP, AUD, CAD, SGD or AED, plus whatever a
+stored event already has) and a note on what it covers (empty fee means free),
+**what to bring** (one per line), **languages** (comma separated), and a repeatable
+**agenda** (a time, a title and an optional detail per row, "Add a row" and a
+remove button, up to 30 rows). In-person events also get **Getting there**; online
+events get **When the join link arrives** and **Have ready before joining** instead,
+and the other mode's notes are not sent. `fundraiser` and the government badge are
+not in the form. `Field`, `FormSection` and the input classes moved to
+`components/EventFormParts.tsx` so both files share them.
+
+All the conversions live in
+[utils/eventDetailFields.ts](../../apps/web/src/features/events/utils/eventDetailFields.ts):
+`normalizeDetails` turns the form's text into exactly what the API stores,
+`detailPayloadForCreate` keeps only what was filled in, `detailChanges` compares
+against the stored event so an edit sends only what changed (`null` or `[]` to
+clear), and `validateDetails` mirrors the API's limits with the messages shown under
+each field (for example "Enter a fee above zero, or clear it if the event is free").
+
+### `EventForm` and `EditEvent` (November 2026, PG-1)
+
+`CreateEvents.tsx` now exports `EventForm`, the one form for publishing and for
+editing, with the default export `CreateEvents` wrapping it for the create route.
+`EventForm` takes `initial` (the starting field values) and an optional
+`original` (the stored `ApiEvent`); with `original` it is in edit mode: the heading
+reads "Edit your event", the page address field is read-only with an explanation,
+the button says "Save changes" and the cancel button "Discard changes".
+[EditEvent.tsx](../../apps/web/src/features/events/pages/EditEvent.tsx) loads the
+event (`useSWR` with `revalidateOnFocus: false`, so a refresh cannot change what
+unsaved edits are measured against), and `utils/eventToFormState.ts` turns it
+into the form's values. `utils/buildEventChanges.ts` diffs the form against the
+stored event for the `PATCH` body.
+
+### `EventAttendees.tsx` (November 2026, PG-6)
+
+[apps/web/src/features/events/pages/EventAttendees.tsx](../../apps/web/src/features/events/pages/EventAttendees.tsx),
+routed at `/organization/events/:eventId/attendees` behind `RequireSignIn` and
+`OrganizationSetupGate`. It reads `GET /events/:uid/attendees` with
+`useSWRInfinite` (50 per page, a search debounced by 300 ms), shows the totals as
+two cards ("Registered" with "of N" when there is a capacity, and "Checked in"),
+and one row per person with their name, email, when they registered, and a
+**Check in** button (`aria-pressed`, and an accessible name such as "Check in Ann
+Attendee" or "Undo check-in for Ann Attendee"; one request at a time, the list
+revalidates after each). A cancelled event keeps its list but the buttons are
+disabled and a notice says why. **Download CSV** fetches `/attendees/export` as text
+and saves it as `<uid>-attendees.csv`. A `403` shows "You can only see your own
+events' attendees", a `404` "We couldn't find that event", anything else a retry.
+It never shows an attendee list to anyone but the host: the API is the gate.
+
+### `ConfirmDialog.tsx`
+
+A shared native `<dialog>` for confirmations (`showModal()`, so the browser gives
+the focus trap, Escape and the backdrop; the safe answer is focused first; Escape
+is held while a request runs). `CancelEventDialog` (cancel an event) and the
+leave-event confirmation in `DetailedEvent.tsx` are both built on it.
 
 All creation work belongs in the `CreateEvents` page and `useEvent` hook. The
 cover picker accepts PNG, JPEG, WebP and GIF up to 5 MB, the same four types the
@@ -298,6 +443,17 @@ in `startDate` and `endDate`. On success (`response.status === 201`), it shows a
 success toast, opens the new event detail page, and revalidates the current
 organization's `eventEndpoints.byHost()` key. The public directory is not
 revalidated here; `Events.tsx` refetches all loaded pages itself.
+
+**Edit mode (November 2026).** `useEvent(event, original?)`: pass the stored
+`ApiEvent` as `original` to edit. The page address checks are skipped (the
+address is fixed), and "the start must be in the future" applies only when the
+start was moved (compared to the minute), matching the API, so an event already
+running can fix a typo. `submitCallback` then builds the `PATCH` body with
+`buildEventChanges(form, original)`, shows "Nothing has changed yet." and sends
+nothing if the body is empty, and otherwise calls `UpdateEvent(uid, changes)`.
+On success it shows "Event updated", calls the success callback (the form opens
+the event page) and revalidates `eventEndpoints.byUid(uid)` and the host list; on
+failure it shows the API's first field error, or its message, in an error toast.
 
 ## Event display components
 
@@ -429,6 +585,25 @@ Going/Spots-left row are omitted when the event has no capacity data. See
 for what real RSVP/capacity tracking would need — flagged as future scope, not
 scheduled.
 
+**Cancelled event (November 2026, PG-2).** `toDisplayEventDetail.ts` sets
+`DisplayEvent.cancelled` from `status`. `EventHero` shows a red "Cancelled" badge
+(replacing "Completed"). `EventJoinPanel` replaces the cost and Join control with
+a "Cancelled" pill and a short note (one wording for someone who had joined, one
+for everyone else), keeps Share and Ask, and reads "Was due {date}".
+`EventMobileActionBar` says "Cancelled" with a link to the organizer's page, or a
+"Closed" pill when there is no organizer link. All three give cancelled priority
+over completed and over invite-only.
+
+**Capacity and leaving (November 2026, PG-3 and PG-5).** `capacityCounts()`
+(in `toDisplayEvent.ts`) sets `going` and `spotsLeft` only for an event with a
+`capacity`; the old local "+1" adjustments in the join panel and the mobile bar
+are gone because the numbers now come from the API and are refreshed after every
+join, refused join and leave. `EventFacts` says "No limit" without a capacity and
+"1 spot left" (singular, `formatSpotsLeft`) or "N spots left" or "Full" with one.
+`EventJoinPanel` gets `onRequestLeave` and shows a "Leave event" link while the
+attendee is going and the event has not started ("Remove my registration" on a
+cancelled event); `DetailedEvent.tsx` owns the confirmation and the request.
+
 **Joining writes a registration; contribution is not implemented.** The attendee
 state comes from saved registrations, not local component state:
 
@@ -469,7 +644,13 @@ Past.
 Pure helpers have colocated Vitest tests, run with `pnpm test:unit` from
 `apps/web` (see [testing.md](./testing.md)): `formatEventFacts.test.ts`,
 `getFormattedDate.test.ts`, `toDisplayEvent.test.ts` (which also covers
-`toDisplayEventDetail`), and the shared `src/utils/formatMoney.test.ts`.
+`toDisplayEventDetail`, the cancelled mapping and the capacity counts),
+`eventToFormState.test.ts`, `buildEventChanges.test.ts` (only changed fields,
+cover left out unless replaced, a start time left alone not re-sent, location
+groups, mode change, capacity), `eventDetailFields.test.ts` (normalizing,
+payload, changes, round trip and every validation rule), the `formatSpotsLeft`
+cases in `formatEventFacts.test.ts`, and the shared
+`src/utils/formatMoney.test.ts`.
 `formatEventDate`'s real en-US output is "Sat · Sep 12, 9:00 PM"; its JSDoc
 example ("Sat 12 Sep · 9:00 pm") is en-GB style, and only the first ", " is
 replaced. Open helper bugs found by the tests are listed in

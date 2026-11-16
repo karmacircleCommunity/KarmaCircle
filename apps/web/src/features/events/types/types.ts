@@ -3,6 +3,9 @@ import type { DetailedEventRecord, EventFormState } from "./interfaces";
 /** The real event-creation shape — `CreateEvents.jsx` + `useEvent.js`. */
 export type EventMode = "Online" | "Offline";
 
+/** Mirrors `EventStatus` in `apps/api/src/modules/events/event.model.ts`. */
+export type EventStatus = "published" | "cancelled";
+
 export type EventFormErrors = Partial<Record<keyof EventFormState, string>>;
 
 /**

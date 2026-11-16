@@ -393,7 +393,7 @@ flowchart TD
 ## Events - directory, detail, and creating one
 
 See [events.md](./events.md) and [known-issues.md](./known-issues.md).
-The map below covers the current attendee and organizer paths, including event creation from both organization entry points.
+The map below covers the current attendee and organizer paths, including event creation from both organization entry points, editing or cancelling a hosted event, leaving an event, and the organizer's attendee list (November 2026).
 The organizer attendee roster and attendance counts are explicitly marked as proposed; no organizer endpoint or UI exposes registration totals today.
 Upcoming is the default directory filter and compares each event start time to the current time when the page opens.
 My Events is a signed-in individual page with Upcoming and Past periods, backed by the caller-scoped registration lookup.
@@ -430,8 +430,20 @@ flowchart TD
     e_location["Where it is / How to join"]:::general
     e_bring["What to bring"]:::general
     e_join["Join Panel - cost and Join action; capacity is not tracked"]:::general
+    e_cancelled{{"Event cancelled?"}}:::decision
+    e_cancelled_state["Cancelled state shown instead of Join; API join returns 409"]:::general
     e_timing{{"Event timing?"}}:::decision
     e_completed["Completed wrap-up shown instead of Join"]:::general
+    e_manage["Attendees, and Edit or Cancel on each hosted event not ended or cancelled"]:::general
+    e_attendees["Attendee page - /organization/events/:uid/attendees: totals, search, check-in, CSV"]:::general
+    e_full{{"Capacity set and full?"}}:::decision
+    e_full_state["Event is full - Join disabled; API join returns 409"]:::general
+    e_leave["Leave event link and confirmation, until the event starts"]:::general
+    e_leave_req["DELETE /events/:uid/registration - spot given back"]:::general
+    e_edit_page["Edit form - /organization/events/:uid/edit, page address locked"]:::general
+    e_patch["PATCH /events/:uid - only changed fields, host only"]:::general
+    e_cancel_dialog["Confirm dialog - stays public, cannot be undone"]:::general
+    e_cancel_post["POST /events/:uid/cancel - host only"]:::general
     e_invite{{"Invite only?"}}:::decision
     e_nojoin["Ask organizer state; no invite or approval flow"]:::general
     e_auth{{"Signed in?"}}:::decision
@@ -486,7 +498,22 @@ flowchart TD
     e_agenda --> e_location
     e_location --> e_bring
     e_hero --> e_join
-    e_join --> e_timing
+    e_join --> e_cancelled
+    e_cancelled -->|"Yes"| e_cancelled_state
+    e_cancelled -->|"No"| e_timing
+    e_hosted --> e_manage
+    e_manage -->|"Attendees"| e_attendees
+    e_joinactive --> e_full
+    e_full -->|"Yes"| e_full_state
+    e_going --> e_leave
+    e_leave --> e_leave_req
+    e_manage -->|"Edit"| e_edit_page
+    e_edit_page --> e_patch
+    e_patch --> e_lists_refresh
+    e_manage -->|"Cancel"| e_cancel_dialog
+    e_cancel_dialog --> e_cancel_post
+    e_cancel_post --> e_hosted
+    e_cancel_post --> e_cancelled_state
     e_timing -->|"Past"| e_completed
     e_timing -->|"Upcoming"| e_invite
     e_invite -->|"Yes"| e_nojoin

@@ -54,7 +54,11 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 ## Events
 
-No open issues specific to this module are cataloged. The event `uid` create race was fixed in November 2026 (`createEvent` maps a Mongo `11000` on save to `409`), and `platform`/`platformLink` are required for online events by `createEventSchema`. Open work (edit, cancel, capacity, indexes, cover image storage) is tracked in [docs/events-to-do-list.md](../../../../docs/events-to-do-list.md).
+No open issues specific to this module are cataloged. The event `uid` create race was fixed in November 2026 (`createEvent` maps a Mongo `11000` on save to `409`), and `platform`/`platformLink` are required for online events by `createEventSchema`. Editing (`PATCH /events/:uid`, PG-1), cancelling (`POST /events/:uid/cancel`, PG-2), leaving (`DELETE /events/:uid/registration`, PG-3), capacity (PG-5), the host attendee list with check-in and CSV (PG-6) and the optional detail fields (PG-7) shipped in November 2026. Open work (drafts, invite and approval, waitlist, indexes, cover image storage, telling registered attendees about an edit or cancellation) is tracked in [docs/events-to-do-list.md](../../../../docs/events-to-do-list.md).
+
+Two deliberate limits of the new routes, recorded so they are not mistaken for bugs: a cancelled event cannot be reinstated or deleted (there is no `DELETE` anywhere in this API, see the user-deletion entry above), and neither route emails the people who joined, so an organizer has to tell them (PG-18).
+
+Known limits of the November 2026 additions: `registrationCount` is only trustworthy for an event with a `capacity` (it is recounted when a capacity is set, and the web shows going and spots left only then); the organizer notice sends one email per registration with no opt-out or digest, so a very popular event is noisy; the attendee list is paged (100 maximum) and the CSV loads every registration into memory, which is fine at the 100000 capacity ceiling but would want streaming past that; check-in has no time window (an organizer can check anyone in at any time before the event is cancelled); and `fundraiser` and the government-backed badge still cannot be set through the API.
 
 ## Products
 

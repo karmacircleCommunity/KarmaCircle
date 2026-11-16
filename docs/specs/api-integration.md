@@ -107,8 +107,10 @@ Current routed SWR call sites (including `useSWRInfinite`):
 | `OrganizationSetup.tsx` and `useMyOrganization.ts` | `organizationEndpoints.mine` and taxonomy endpoint                                                  | Loads the signed-in organization's editable record and setup taxonomy              |
 | `Dashboard.tsx`                                    | `organizationEndpoints.dashboard`                                                                   | Loads the owner-only organization workspace and its dashboard data                 |
 | `Events.tsx`                                       | `eventEndpoints.directory()` via `useSWRInfinite`                                                   | Loads the public event directory a page at a time; search and filters are applied by the API, not in the browser |
-| `DetailedEvent.tsx`                                | `eventEndpoints.byUid()` and `eventEndpoints.registration()`                                        | Loads public event details and, for a signed-in visitor, saved registration state  |
-| `YourEvents.tsx`                                   | `eventEndpoints.byHost()`                                                                           | Loads the signed-in organization's hosted events                                   |
+| `DetailedEvent.tsx`                                | `eventEndpoints.byUid()` and `eventEndpoints.registration()`; `eventEndpoints.join()` through `JoinEvent()`; `eventEndpoints.leave()` through `LeaveEvent()` | Loads public event details and, for a signed-in visitor, saved registration state; joins and leaves |
+| `YourEvents.tsx`                                   | `eventEndpoints.byHost()`; `eventEndpoints.cancel()` through `CancelEvent()`                         | Loads the signed-in organization's hosted events and cancels one on confirmation   |
+| `EventAttendees.tsx`                               | `eventEndpoints.attendees()` via `useSWRInfinite`; `eventEndpoints.attendee()` through `SetAttendeeCheckIn()`; `eventEndpoints.attendeesExport()` through `FetchAttendeesCsv()` | Loads the host's attendee list a page at a time, checks people in, downloads CSV |
+| `EditEvent.tsx`                                    | `eventEndpoints.byUid()`; `eventEndpoints.update()` through `UpdateEvent()` (via `useEvent.ts`)      | Loads one hosted event into the shared form and saves only the changed fields      |
 | `MyEvents.tsx`                                     | `eventEndpoints.mine()` via `useSWRInfinite`                                                        | Loads the signed-in individual's paginated attendee registrations                  |
 | `ProfileSetup.tsx`                                 | `userEndpoints.profile`                                                                             | Loads the signed-in individual's saved profile answers                             |
 
@@ -125,6 +127,26 @@ requests race for it. The
 event `uid` is the URL-safe ending of that KarmaCircle event page, not an
 external website URL. For online events, the API requires the meeting URL to use
 HTTP or HTTPS.
+
+**Edit and cancel (November 2026).** `UpdateEvent(uid, changes)` (`PATCH
+/events/:uid`) and `CancelEvent(uid)` (`POST /events/:uid/cancel`) in
+`KarmaCircleApi.ts` do not throw: they return `{ ok, status, message, errors }`,
+where `errors` is the API's field list from a `400`. `UpdateEvent` is only called
+from `useEvent.ts` in edit mode, with the body from `buildEventChanges`. The edit
+body never contains `uid` (the API rejects it), and the page revalidates
+`eventEndpoints.byUid(uid)` and the host list after a save. Both calls return
+`403` for an event that is not the signed-in organization's and `409` for an event
+that is cancelled or has ended; the UI shows the API's message. `LeaveEvent(uid)`
+(`DELETE /events/:uid/registration`), `SetAttendeeCheckIn(uid, id, checkedIn)` and
+`FetchAttendeesCsv(uid)` follow the same non-throwing pattern (the CSV call returns
+`{ ok: true, csv }` or `{ ok: false, message }`). The attendee list is read with
+`useSWRInfinite` and the shared `fetcher`. `ApiEvent` also carries `capacity` and
+`registrationCount` (only meaningful with a capacity) and the optional detail fields
+(`about`, `contactEmail`, `cost`, `bringAlong`, `languages`, `minimumAge`, `agenda`,
+`gettingThere`, `linkDelivery`, `joinRequirements`) that the create and edit calls
+now send; an edit sends `null` or `[]` to clear one. Every `ApiEvent`
+now carries `status` (`published` or `cancelled`; absent on events saved before
+the field existed, which reads as published).
 
 The organization dashboard includes sample markers for local demo records.
 Sample contribution amounts are displayed separately and never included in

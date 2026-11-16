@@ -92,6 +92,16 @@ max-[525px]:w-[89vw] max-[525px]:min-w-55 max-[525px]:text-center
 - Close button: `absolute top-1.75 right-3` (7px / 12px), `text-sm`, `aria-label="Close"`, class `btn-close`. **`btn-close` is a Bootstrap class and Bootstrap has been removed, so the button renders with no glyph and no content.** See [14-drift-register.md](./14-drift-register.md#d5).
 - `max-[525px]:text-center` contradicts the mobile left-alignment rule in [05-responsive.md](./05-responsive.md#alignment). Flagged, not yet changed.
 - No focus trap, no Escape handler, no `role="dialog"`, no `aria-modal`.
+- **Not used for confirmations.** Confirmations use
+  [ConfirmDialog.tsx](../../../apps/web/src/features/events/components/ConfirmDialog.tsx)
+  (November 2026), a native `<dialog>` opened with `showModal()`, which gives the
+  focus trap, Escape and the backdrop for free: `w-[calc(100%-4.5rem)] max-w-md
+  rounded-2xl` (the same 36px side margin as the `px-9` page padding), a
+  `backdrop:bg-black/60` scrim, the safe answer focused first, Escape held while a
+  request runs, and a `destructive` option for a `bg-error` confirm button. The
+  cancel-event dialog (`CancelEventDialog.tsx`) and the leave-event confirmation are
+  built on it. It lives in the events feature today; move it to `src/components/`
+  when a feature outside events needs a confirmation.
 
 ---
 

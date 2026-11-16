@@ -5,11 +5,17 @@ import { AppError } from "../../middleware/error-handler";
 import { buildPaginationMeta, toSkipLimit } from "../../utils/pagination";
 import * as eventService from "./event.service";
 import {
+  AttendeesQuery,
+  CheckInBody,
   CreateEventInput,
   ListEventsQuery,
   MyEventsQuery,
+  UpdateEventInput,
 } from "./event.validation";
-import { sendEventJoinConfirmation } from "../../config/mailer";
+import {
+  sendEventJoinConfirmation,
+  sendEventJoinOrganizerNotice,
+} from "../../config/mailer";
 import { logger } from "../../config/logger";
 
 export async function listEvents(req: Request, res: Response) {
@@ -61,6 +67,22 @@ export async function createEvent(req: AuthenticatedRequest, res: Response) {
     .json({ message: "Event Created", savedEvent });
 }
 
+export async function updateEvent(req: AuthenticatedRequest, res: Response) {
+  const event = await eventService.updateEvent(
+    req.auth.email,
+    req.params.uid,
+    req.body as UpdateEventInput,
+  );
+
+  res.status(STATUS_CODE.OK).json({ message: "Event Updated", event });
+}
+
+export async function cancelEvent(req: AuthenticatedRequest, res: Response) {
+  const event = await eventService.cancelEvent(req.auth.email, req.params.uid);
+
+  res.status(STATUS_CODE.OK).json({ message: "Event Cancelled", event });
+}
+
 export async function joinEvent(req: AuthenticatedRequest, res: Response) {
   const result = await eventService.joinEvent(req.auth.email, req.params.uid);
   let emailSent = false;
@@ -84,6 +106,26 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
     }
   }
 
+  if (!result.alreadyJoined) {
+    // Best effort, like the attendee's own confirmation: a failed notice never
+    // undoes the registration.
+    try {
+      const organizerEmail = await eventService.findOrganizerEmail(result.event);
+      if (organizerEmail) {
+        await sendEventJoinOrganizerNotice(
+          organizerEmail,
+          result.event,
+          result.attendee.name || "",
+        );
+      }
+    } catch (error) {
+      logger.error(
+        { error, eventUid: result.event.uid },
+        "Event joined but organizer notice failed",
+      );
+    }
+  }
+
   return res
     .status(result.alreadyJoined ? STATUS_CODE.OK : STATUS_CODE.CREATED)
     .json({
@@ -94,6 +136,61 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
       alreadyJoined: result.alreadyJoined,
       emailSent,
     });
+}
+
+export async function leaveEvent(req: AuthenticatedRequest, res: Response) {
+  await eventService.leaveEvent(req.auth.email, req.params.uid);
+
+  return res.status(STATUS_CODE.OK).json({
+    message: "You left this event.",
+    joined: false,
+  });
+}
+
+export async function listAttendees(req: AuthenticatedRequest, res: Response) {
+  const { page, limit, search } = req.query as unknown as AttendeesQuery;
+  const { event, data, total, summary } = await eventService.listAttendees(
+    req.auth.email,
+    req.params.uid,
+    { search, ...toSkipLimit({ page, limit }) },
+  );
+
+  return res.status(STATUS_CODE.OK).json({
+    event: {
+      uid: event.uid,
+      name: event.name,
+      status: event.status,
+      capacity: event.capacity,
+    },
+    data,
+    pagination: buildPaginationMeta({ page, limit, total }),
+    summary,
+  });
+}
+
+export async function exportAttendees(req: AuthenticatedRequest, res: Response) {
+  const csv = await eventService.exportAttendeesCsv(
+    req.auth.email,
+    req.params.uid,
+  );
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${req.params.uid.replace(/[^a-z0-9-]/gi, "")}-attendees.csv"`,
+  );
+  return res.status(STATUS_CODE.OK).send(csv);
+}
+
+export async function checkInAttendee(req: AuthenticatedRequest, res: Response) {
+  const attendee = await eventService.setCheckIn(
+    req.auth.email,
+    req.params.uid,
+    req.params.registrationId,
+    (req.body as CheckInBody).checkedIn,
+  );
+
+  return res.status(STATUS_CODE.OK).json({ attendee });
 }
 
 export async function getRegistrationStatus(

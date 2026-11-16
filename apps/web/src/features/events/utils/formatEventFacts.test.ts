@@ -4,6 +4,7 @@ import {
   formatEventBadge,
   formatEventDate,
   formatEventTime,
+  formatSpotsLeft,
   isEventPast,
   mapsUrl,
 } from "./formatEventFacts";
@@ -219,5 +220,17 @@ describe("isEventPast", () => {
 
   it("treats an invalid date as not past (current behavior)", () => {
     expect(isEventPast("not-a-date")).toBe(false);
+  });
+});
+
+describe("formatSpotsLeft", () => {
+  it("uses the singular for exactly one spot", () => {
+    expect(formatSpotsLeft(1)).toBe("1 spot left");
+  });
+
+  it("uses the plural for every other number", () => {
+    expect(formatSpotsLeft(2)).toBe("2 spots left");
+    expect(formatSpotsLeft(40)).toBe("40 spots left");
+    expect(formatSpotsLeft(0)).toBe("0 spots left");
   });
 });

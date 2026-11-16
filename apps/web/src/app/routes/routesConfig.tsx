@@ -10,6 +10,8 @@ import {
   Error404,
   Events,
   CreateEvents,
+  EditEvent,
+  EventAttendees,
   ProfileSetup,
   YourEvents,
   MyEvents,
@@ -94,6 +96,22 @@ const routesConfig: RouteConfigEntry[] = [
     element: (
       <RequireSignIn>
         <CreateEvents />
+      </RequireSignIn>
+    ),
+  },
+  {
+    path: "/organization/events/:eventId/edit",
+    element: (
+      <RequireSignIn>
+        <EditEvent />
+      </RequireSignIn>
+    ),
+  },
+  {
+    path: "/organization/events/:eventId/attendees",
+    element: (
+      <RequireSignIn>
+        <EventAttendees />
       </RequireSignIn>
     ),
   },
