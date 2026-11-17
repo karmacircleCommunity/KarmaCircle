@@ -7,13 +7,13 @@
 - **[src/server.ts](../../src/server.ts)** — the traditional path (`npm start` / `npm run dev`). Calls `connectToMongo()`, then `createApp().listen(env.PORT)`, and registers `SIGTERM`/`SIGINT` handlers that close the HTTP server before `process.exit(0)` (graceful shutdown; in-flight requests get to finish, no new connections are accepted).
 - **[api/index.ts](../../api/index.ts)** — the Vercel serverless entry point (`vercel.json` rewrites every request to `/api`). Builds the same `createApp()` app once at module load (cold start), then on each invocation lazily awaits a **module-scoped** `connectionPromise` before calling `app(req, res)` directly as a raw Node request handler (no `.listen()` — Vercel's runtime owns the HTTP server). The `connectionPromise` being created once, outside the handler function, is what lets a warm serverless instance skip reconnecting to Mongo on every invocation; only a cold start pays the connection cost.
 
-Both entry points read configuration through [src/config/env.ts](../../src/config/env.ts) (see below) and log through [src/config/logger.ts](../../src/config/logger.ts) (`pino`, pretty-printed in `development`, silent in `test`, structured JSON otherwise).
+Both entry points read configuration through [src/config/env.ts](../../src/config/env.ts) (see below) and log through [src/config/logger.ts](../../src/config/logger.ts) (`pino`, pretty-printed in `development`, silent in `test`, structured JSON otherwise). The logger redacts the request `cookie`, `authorization` and `proxy-authorization` headers and the response `set-cookie` header, replacing each value with `[Redacted]`, so the `Token` session cookie never reaches a log line. The redaction list is `LOG_REDACT_PATHS` in `logger.ts`; add a path there if a new secret-bearing header or field is ever logged.
 
 ## Middleware stack (`createApp()`, in order)
 
 1. `helmet()` — standard security headers.
 2. `compression()` — gzip response bodies.
-3. `pinoHttp({ logger })` — structured request/response logging.
+3. `pinoHttp({ logger })` — structured request/response logging, with credential headers redacted (see above).
 4. `cors(...)` — see "CORS" below.
 5. `express.json({ limit: "10mb" })`, then `express.urlencoded({ extended: false })`.
 6. `cookieParser()` — required for `req.cookies.Token` (see [auth.md](./auth.md)) to exist anywhere downstream.

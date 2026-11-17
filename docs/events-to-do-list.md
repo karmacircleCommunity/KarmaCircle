@@ -581,10 +581,12 @@ Decide on a small migration tool so the fallback can be removed.
 ## 7. Backend security
 
 ### S-1 Session cookie is written to the logs
-Status: open. Priority: P1.
+Status: done (2026-11-17). Priority: P1.
 The request logger prints all request headers, including the cookie that holds the login token.
 Anyone with log access could copy a valid session.
 Fix: configure the logger to remove the cookie and authorization headers.
+Result: `config/logger.ts` now redacts the request `cookie`, `authorization` and `proxy-authorization` headers and the response `set-cookie` header (shown as `[Redacted]`).
+Sessions already written to old logs are not covered: log retention and rotating `JWT_SECRET` or bumping `tokenVersion` are separate steps if those logs were ever shared.
 
 ### S-2 Rate limits do not work across servers
 Status: open. Priority: P1.
@@ -745,3 +747,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-16: web unit tests for `eventTimezone`, `richText` and `RichText` plus new cases in the mapper, change builder and formatters; the web unit suite passed 196 tests and 2 todo.
 - 2026-11-16: Playwright `event-contribute.spec.ts` (3), `event-timezone.spec.ts` (4) and a formatted write-up test; all 45 tests of the events folder passed on Chromium.
 - 2026-11-16: the API tests' flaky `404`, `501` and timeouts fixed at the root: `buildTestApp()` now listens on 127.0.0.1 (see `apps/api/docs/specs/testing.md`).
+- 2026-11-17: S-1, the request logger redacts the cookie, authorization and set-cookie headers; new `tests/logger.test.ts` (3 tests) fails without the redaction. Run on its own without MongoDB (the Mongo binary download is blocked in this sandbox); the full API suite was not run.
