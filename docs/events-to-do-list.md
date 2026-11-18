@@ -642,12 +642,22 @@ On Vercel, many instances run at once and each starts at zero, so the limit is e
 Fix: use a shared store such as Redis or a database-backed counter, at least for sign-in and password reset.
 
 ### S-3 Known vulnerable packages
-Status: open. Priority: P1.
+Status: partly done (2026-11-18). Priority: P1.
 A production dependency audit on 2026-11-04 found 1 critical, 12 high, 18 moderate and 4 low issues.
 The critical one is in `proxy-addr`, which affects how the client address is read, and the rate limiter and trusted proxy setting depend on it.
 Others include `compression`, `body-parser`, `zod`, `follow-redirects`, `qs` and `fast-uri`.
 GitHub also reports 165 issues across the whole repo, including development tools.
 Fix: update the packages, rerun the audit, and add the audit to CI.
+Result 2026-11-18: updated within the existing version ranges: `express` 4.22.3 (brings patched `proxy-addr`, `body-parser` and `qs`), `compression` 1.8.2, `mongoose` 7.8.14, `vite` 8.3.8, `follow-redirects`, `brace-expansion` and `ip-address`; `fast-uri` is pinned to 3.1.9 or later through an override in `pnpm-workspace.yaml`.
+The production audit went from 1 critical, 15 high, 20 moderate and 3 low to 0 critical, 2 high, 2 moderate and 0 low.
+CI now runs `pnpm audit --prod --audit-level critical`.
+Still open, with the reason:
+- `zod` (high, memory use on oversized constrained arrays): no fixed 3.x release exists, the fix is Zod 4, a breaking change across every validation schema. Needs its own change with the full API suite.
+- `picomatch` (high, ReDoS): the fixed 4.0.8 is not on the npm registry yet. Web build tooling only (`vite-plugin-svgr`), not runtime. Recheck later.
+- `glob` and `minimatch` (moderate): reached through `swagger-jsdoc`, which reads only our own file patterns. The fixes are major versions that `swagger-jsdoc` does not accept yet.
+- Raise the CI gate to `high` once the first two are gone.
+Not verified: the API Jest suite and the Playwright suite need a MongoDB test binary that this sandbox cannot download, so they were not run after the update.
+Ran instead: API and web type-check, lint and build, the 196 web unit tests, the logger test, and a boot of the real app checking `/health`, gzip on `/docs`, per-client rate limiting behind `X-Forwarded-For`, and a `400` from validation.
 
 ### S-4 Large request bodies are accepted on every route
 Status: open. Priority: P2.
@@ -796,3 +806,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-16: the API tests' flaky `404`, `501` and timeouts fixed at the root: `buildTestApp()` now listens on 127.0.0.1 (see `apps/api/docs/specs/testing.md`).
 - 2026-11-17: S-1, the request logger redacts the cookie, authorization and set-cookie headers; new `tests/logger.test.ts` (3 tests) fails without the redaction. Run on its own without MongoDB (the Mongo binary download is blocked in this sandbox); the full API suite was not run.
 - 2026-11-18: added the Showcase plan and parked 34 items (front-end polish tier, registration rules, organizer features, money and hackathons, smaller items). Nothing deleted.
+- 2026-11-18: S-3 partly done, see the item for what remains (`zod` 4, `picomatch`, `glob` and `minimatch`); the production audit has no critical findings and CI audits at critical.

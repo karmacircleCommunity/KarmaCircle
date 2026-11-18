@@ -6,3 +6,8 @@ allowBuilds:
   "@scarf/scarf": false
   esbuild: true
   mongodb-memory-server: true
+
+# Security: ajv (via @commitlint) resolved fast-uri 3.1.6, which has known advisories (S-3).
+# Pin to the patched 3.x line until the lockfile would resolve it on its own.
+overrides:
+  fast-uri: ">=3.1.9 <4"

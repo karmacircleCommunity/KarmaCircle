@@ -82,6 +82,7 @@ Known limits of the November 2026 additions: `registrationCount` is only trustwo
 ## Build / config
 
 - Swagger's `@openapi` JSDoc blocks are hand-maintained next to each route and are not derived from (or checked against) the Zod validation schemas sitting right next to them in the same module — the two can silently drift; don't treat the `/docs` UI as authoritative over actually reading a module's `.validation.ts` file.
+- A request with malformed JSON returns `500` "Internal server error" instead of `400`. `express.json()` throws a `SyntaxError` with `status: 400`, but `errorHandler` has no branch for it and falls through to the generic `500` (and logs an `Unhandled error`). Seen 2026-11-18 on `POST /auth/signup` with body `{bad`.
 
 ## Keep this file honest
 

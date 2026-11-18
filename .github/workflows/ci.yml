@@ -38,6 +38,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Fails the build on a critical advisory in production dependencies.
+      # Raise to `high` once zod 4 and the picomatch fix land (see S-3 in docs/events-to-do-list.md).
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level critical
+
       - name: Lint apps
         run: pnpm lint
 
