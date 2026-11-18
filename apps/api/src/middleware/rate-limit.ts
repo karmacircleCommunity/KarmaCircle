@@ -1,6 +1,9 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { type Store } from "express-rate-limit";
 import { env } from "../config/env";
+import { logger } from "../config/logger";
+import { getRedis } from "../config/redis";
 import { STATUS_CODE } from "../constants/http-status";
+import { FailoverStore, RedisRateLimitStore } from "./rate-limit-store";
 
 /**
  * Real rate limiting only makes sense against real traffic. Skipping it in
@@ -12,21 +15,65 @@ import { STATUS_CODE } from "../constants/http-status";
  */
 const skipInTest = () => env.NODE_ENV === "test";
 
-export const apiLimiter = rateLimit({
+/**
+ * Where a limiter keeps its counts. With `REDIS_URL` set that is Redis, shared
+ * by every server instance (S-2). Without it, the instance's own memory: fine
+ * for one process on a laptop, but on Vercel many instances run at once and
+ * each starts at zero, so the limit is easy to get around.
+ */
+function createStore(name: string): Store | undefined {
+  const redis = getRedis();
+  if (!redis) return undefined;
+  return new FailoverStore(new RedisRateLimitStore(redis, `rl:${name}:`), name);
+}
+
+if (env.NODE_ENV === "production" && !env.REDIS_URL) {
+  logger.warn(
+    "REDIS_URL is not set: rate limits are counted per server instance, so on a platform that runs several instances they are easy to get around",
+  );
+}
+
+export interface LimiterOptions {
+  name: string;
+  windowMs: number;
+  limit: number;
+  message: string;
+  statusCode?: number;
+  skip?: () => boolean;
+  store?: Store;
+}
+
+export const createLimiter = ({
+  name,
+  windowMs,
+  limit,
+  message,
+  statusCode,
+  skip = skipInTest,
+  store = createStore(name),
+}: LimiterOptions) =>
+  rateLimit({
+    windowMs,
+    limit,
+    standardHeaders: true,
+    legacyHeaders: false,
+    statusCode,
+    skip,
+    store,
+    message: { message },
+  });
+
+export const apiLimiter = createLimiter({
+  name: "api",
   windowMs: 15 * 60 * 1000,
   limit: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: skipInTest,
-  message: { message: "Too many requests, please try again later." },
+  message: "Too many requests, please try again later.",
 });
 
-export const authLimiter = rateLimit({
+export const authLimiter = createLimiter({
+  name: "auth",
   windowMs: 15 * 60 * 1000,
   limit: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
   statusCode: STATUS_CODE.TOO_MANY_REQUESTS,
-  skip: skipInTest,
-  message: { message: "Too many auth attempts, please try again later." },
+  message: "Too many auth attempts, please try again later.",
 });

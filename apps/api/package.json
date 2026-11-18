@@ -30,6 +30,7 @@
     "express": "^4.22.3",
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
+    "ioredis": "^6.0.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.8.14",

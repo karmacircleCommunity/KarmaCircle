@@ -18,6 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    # A real Redis for the rate limit store tests (apps/api/tests/rate-limit-store.test.ts).
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,6 +79,8 @@ jobs:
 
       - name: Run API and browser tests
         run: pnpm test
+        env:
+          REDIS_TEST_URL: redis://localhost:6379
 
       - name: Save browser failure artifacts
         if: failure()

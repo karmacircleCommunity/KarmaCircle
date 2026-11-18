@@ -8,6 +8,7 @@ name: karmacircle-local
 #
 # Usage: docker compose -f docker-compose.local.yml up -d
 #        docker compose -f docker-compose.local.yml --profile images up -d
+#        docker compose -f docker-compose.local.yml --profile redis up -d
 # See docs/LocalDevSetup.md for the full walkthrough.
 
 services:
@@ -19,6 +20,17 @@ services:
       - "27017:27017"
     volumes:
       - karmacircle-mongo-data:/data/db
+
+  # Shared rate limit counters for apps/api (S-2). Optional: without REDIS_URL
+  # the API counts requests in its own memory, which is fine for one process.
+  # Set REDIS_URL="redis://localhost:6379" in apps/api/.env to use it.
+  redis:
+    profiles: ["redis"]
+    image: redis:7
+    container_name: karmacircle-local-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
 
   # Image storage for apps/image-service. An S3 compatible bucket on your
   # machine; production uses a real one (S3, Cloudflare R2). The console is on

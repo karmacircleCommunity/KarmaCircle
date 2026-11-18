@@ -42,7 +42,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 
 Tier 2, depth (the showcase):
 - DB-1, S-4 and UI-5: a small image service (Go, built and wired to the form 2026-11-18, not yet hosted) with object storage and thumbnails, so the event stores only a link.
-- S-2: rate limits in a shared store (Redis).
+- S-2: rate limits in a shared store (Redis), built 2026-11-18, needs a hosted Redis and `REDIS_URL`.
 - PG-18 with O-6: a reminder and notice worker (Go proposed) with a queue, retries and no double sends.
 - PG-19: add to calendar.
 - PG-20: share previews and event markup, cheap version only.
@@ -662,10 +662,17 @@ Result: `config/logger.ts` now redacts the request `cookie`, `authorization` and
 Sessions already written to old logs are not covered: log retention and rotating `JWT_SECRET` or bumping `tokenVersion` are separate steps if those logs were ever shared.
 
 ### S-2 Rate limits do not work across servers
-Status: open. Priority: P1.
+Status: done (2026-11-18), needs a Redis and `REDIS_URL` set in production. Priority: P1.
 The limiter keeps its counts in memory on each server instance.
 On Vercel, many instances run at once and each starts at zero, so the limit is easy to bypass.
 Fix: use a shared store such as Redis or a database-backed counter, at least for sign-in and password reset.
+Result 2026-11-18: with `REDIS_URL` set, the global limiter and the sign-in, sign-up and password routes' limiter count in Redis, so all instances share one count per client (`RedisRateLimitStore`, one atomic Lua step, a window that expires with the counter).
+If Redis fails, requests fall back to the instance's own memory for 5 seconds at a time instead of failing or going unlimited (`FailoverStore`); the API never goes down because of Redis.
+Measured with two separate API processes and one client alternating between them on `POST /auth/signin` (limit 20): without Redis 40 requests got through before the first `429`; with a shared Redis exactly 20, and the counter sat in Redis with `hits=44` and a TTL of 899 seconds.
+`tests/rate-limit-store.test.ts` has 15 tests, 11 of them against a real Redis, and passes here; two deliberate breaks (no expiry, no failover) were caught.
+To switch it on in production: create a Redis (Upstash or Redis Cloud both work over `rediss://`), set `REDIS_URL` on the host, and watch for the log line `Shared rate limit store failed` which means it fell back.
+Not verified: a hosted Redis over TLS, and how many connections a busy serverless deployment opens (each warm instance keeps one; check the provider's connection limit). The full API suite did not run (no MongoDB here).
+Without `REDIS_URL` nothing changes, so local development and tests are unaffected, and production logs a warning at startup.
 
 ### S-3 Known vulnerable packages
 Status: partly done (2026-11-18). Priority: P1.
@@ -865,3 +872,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: O-5, `/health` pings MongoDB and answers `503` when it fails; unexpected errors go to Sentry when `SENTRY_DSN` is set (`config/monitoring.ts`); `tests/monitoring.test.ts` (9 tests) run, a real Sentry delivery and the Playwright suite not run.
 - 2026-11-18: DB-1 partly done, `apps/image-service` (Go) and `POST /events/cover-upload` built; Go tests (39, race detector) and a live upload with a Node-minted token ran, the S3 store, Docker build, compose services and the web form wiring did not.
 - 2026-11-18: DB-1, the create and edit form uploads covers through the image service (with a base64 fallback when it is not set up); 20 new web unit tests, the real upload code run against the Go service; no browser review and no Playwright run.
+- 2026-11-18: S-2, rate limits shared through Redis with a memory fallback (`RedisRateLimitStore`, `FailoverStore`, `REDIS_URL`); 15 tests, 11 against a real Redis, and two API processes compared live (40 allowed without Redis, 20 with); a hosted Redis and the full API suite not run.

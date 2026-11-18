@@ -127,6 +127,21 @@ const envSchema = z
       .optional()
       .transform((value) => value?.trim() || undefined),
 
+    // Optional shared store for rate limits (Redis, redis:// or rediss://).
+    // Without it each server instance counts requests on its own, and on a
+    // platform that runs many instances at once (Vercel) the limits are easy to
+    // get around. See middleware/rate-limit.ts.
+    REDIS_URL: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() || undefined)
+      .refine(
+        (value) => value === undefined || /^rediss?:\/\/[^/\s]/.test(value),
+        {
+          message: "must be a redis:// or rediss:// URL",
+        },
+      ),
+
     // Optional error tracking (Sentry). Unset or empty means off: nothing is
     // sent and the SDK is never started. See config/monitoring.ts.
     SENTRY_DSN: z
