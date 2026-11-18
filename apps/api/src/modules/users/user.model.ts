@@ -55,14 +55,16 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>(
   {
     userType: { type: String, index: true },
-    // Not `unique: true` — userName uniqueness is still only enforced at the
-    // application layer (generateUniqueUsername in user.service.ts), which
-    // has a real check-then-write race window. A plain index here only
-    // speeds up lookups; it does not close that race. See known-issues.md.
+    // Unique in the database (DB-6), so two signups that pick the same name
+    // at once cannot both succeed: generateUniqueUsername in user.service.ts
+    // only checks first, which leaves a race window, and the index closes it.
+    // The loser gets a 409 from the error handler. An existing database that
+    // already has a plain index on this field needs `scripts/sync-indexes.ts`
+    // to replace it, because the unique one cannot be created next to it.
     userName: {
       type: String,
       required: true,
-      index: true,
+      unique: true,
     },
     name: { type: String },
     email: {

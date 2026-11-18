@@ -216,7 +216,6 @@ const eventSchema = new Schema<IEvent>(
     },
     organizerHandle: {
       type: String,
-      index: true,
     },
     coverImage: {
       type: String,
@@ -321,11 +320,27 @@ const eventSchema = new Schema<IEvent>(
   { timestamps: true },
 );
 
+// Indexes (DB-2, DB-3). They match the queries in event.service.ts and the
+// organization profile in organization.controller.ts; the explain output can
+// be compared with `npx tsx scripts/explain-events.ts`.
+//
+// Directory list: `startTime` range (upcoming or past) sorted by
+// `{ startTime, _id }`. The index gives that order, so a page needs no
+// in-memory sort and no collection scan.
+eventSchema.index({ startTime: 1, _id: 1 });
+// One host's events, sorted the same way. The host filter reads
+// `hostUsername` OR `organizerHandle`, and an `$or` uses one index per
+// branch, so each field gets its own. The sort keys follow the host so a
+// branch is already in order. The old single-field `organizerHandle` index
+// is covered by the second one and is no longer declared.
+eventSchema.index({ hostUsername: 1, startTime: -1, _id: -1 });
+eventSchema.index({ organizerHandle: 1, startTime: -1, _id: -1 });
+
 export const Event = mongoose.model<IEvent>("Event", eventSchema);
 
 const eventRegistrationSchema = new Schema<IEventRegistration>(
   {
-    eventUid: { type: String, required: true, index: true },
+    eventUid: { type: String, required: true },
     userId: { type: Schema.Types.ObjectId, required: true, index: true },
     attendeeEmail: { type: String, required: true },
     attendeeName: { type: String, required: true },
@@ -335,7 +350,11 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
   { timestamps: true },
 );
 
+// One registration per person per event. Also serves every lookup by
+// `eventUid` alone, so `eventUid` has no index of its own (DB-3).
 eventRegistrationSchema.index({ eventUid: 1, userId: 1 }, { unique: true });
+// The organizer's attendee list: one event's registrations in sign-up order.
+eventRegistrationSchema.index({ eventUid: 1, createdAt: 1, _id: 1 });
 
 export const EventRegistration = mongoose.model<IEventRegistration>(
   "EventRegistration",

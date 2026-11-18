@@ -8,7 +8,7 @@ A catalog of the cross-cutting bugs, gaps, and unresolved inconsistencies found 
 
 ## Indexing
 
-**Resolved.** Every field actually filtered/looked up on is now indexed — see [architecture.md](./architecture.md#indexes) for the full list. `User.userName` got a plain (not unique) index deliberately: it's still only enforced unique at the application layer (`generateUniqueUsername`, a real check-then-write race), and a plain index is always safe to add regardless of whether duplicates already exist in a live deployment, where a `unique: true` index build would fail outright on any existing collision. Closing the race itself — making `userName` genuinely unique at the DB level — is a separate, deliberately-deferred follow-up; do it as its own coordinated change once existing data has been checked for duplicates, not bundled into a routine index pass.
+**Resolved.** Every field actually filtered/looked up on is now indexed — see [architecture.md](./architecture.md#indexes) for the full list, including the events list indexes added in November 2026 (DB-2, DB-3). `User.userName` is now `unique: true` (DB-6, November 2026), which closes the check-then-write race in `generateUniqueUsername`: the loser of two concurrent signups gets the error handler's `409`. A database that still has the old plain `userName` index, or duplicate names, needs `scripts/sync-indexes.ts` first (see architecture.md), because the unique index cannot be built over duplicates and `autoIndex` cannot replace the old one.
 
 ## User discriminator
 
@@ -49,7 +49,6 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 - `config.hasCompletedProfile` defaults to `false`; `PATCH /user/complete` is now the one route that sets it `true` — see contract break #4 above.
 - `sanitize()` strips `_id` along with `password`/`__v` — the user object returned from signup/signin/dashboard has no id field at all; only `GET /user`'s `PUBLIC_FIELDS`-projected responses include `_id`. A frontend or future backend feature that needs a stable per-user id from a sanitized response has to use `email`/`userName` instead — there is currently no id in that shape.
-- `userName` is not declared `unique: true` on the schema, only made unique in practice by `generateUniqueUsername`'s pre-check — a race between two concurrent signups could theoretically still collide.
 - **There is no way to delete a user account, or anything else: the API defines no `DELETE` route at all.** Confirmed by grepping every module's `.routes.ts`: there is not a single `.delete(` handler across auth, users, events, organizations, products, payments, or reports. So a user cannot close their account, and an operator cannot remove one through the API; the only route to deletion today is editing MongoDB directly. Worth treating as a real gap rather than a curiosity: "delete my account" is a baseline expectation for a product handling names, emails and profile data, and it's a standing obligation under GDPR/DPDP-style right-to-erasure rules for a platform with Indian and potentially EU users. Deciding this also means deciding the semantics, hard delete versus anonymise-in-place, since a user's `events`/`cart` references and any organization they own would otherwise be left dangling. Not a quick add; scope it deliberately.
 
 ## Events

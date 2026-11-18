@@ -37,7 +37,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 - S-7 cart add trusts an email from the request (already fixed, see the item).
 - S-5 weak secret check.
 - O-1 failed first database connection is remembered (done 2026-11-18).
-- DB-2 and DB-3 indexes, DB-6 unique user name.
+- DB-2 and DB-3 indexes, DB-6 unique user name (done 2026-11-18, see the items for what is not yet measured).
 - O-5 real health check and error tracking.
 
 Tier 2, depth (the showcase):
@@ -586,20 +586,28 @@ Fix: upload images to object storage, save only a link on the event, and validat
 Short-term: stop returning the cover string in the list and serve it separately.
 
 ### DB-2 The event list has no fixed order
-Status: open. Priority: P1.
+Status: done (2026-11-18). Priority: P1.
 The list query uses skip and limit with no sort.
 Without a sort, MongoDB does not guarantee a stable order, so pages can repeat or skip events.
 Fix: sort by start time with the id as a tiebreaker, and add a matching index.
 Partly done 2026-11-04: `GET /events` now sorts by start time with the id as tiebreaker (see CH-6), so pages no longer repeat or skip events.
 The matching index is still missing, so this item stays open until DB-3 adds it.
+Result 2026-11-18: the index `{ startTime: 1, _id: 1 }` now matches the sort, so a page no longer needs an in-memory sort.
 
 ### DB-3 Missing indexes
-Status: open. Priority: P1.
+Status: done (2026-11-18), existing databases need `scripts/sync-indexes.ts`. Priority: P1.
 The host filter matches on `hostUsername` or `organizerHandle`, but only `organizerHandle` is indexed.
 The `$or` therefore falls back to scanning the collection.
 `startTime` is used for upcoming and past and has no index.
 Fix: index `hostUsername`, index `startTime`, and consider a compound index with the host.
 The separate `eventUid` index on registrations is redundant with the unique pair index and can be dropped.
+Result 2026-11-18: added `{ startTime, _id }`, `{ hostUsername, startTime, _id }` and `{ organizerHandle, startTime, _id }` on events, so each branch of the host `$or` has an index and the directory sort is covered.
+The old single-field `organizerHandle` and `eventUid` indexes are no longer declared, and a new `{ eventUid, createdAt, _id }` index on registrations serves the organizer's attendee list in order.
+`autoIndex` only adds indexes, so an existing database must run `npx tsx scripts/sync-indexes.ts` (dry run first, then `--apply`) to drop the old ones.
+`npx tsx scripts/explain-events.ts` prints the query plans before and after on 40,000 sample events.
+Not run here: that script, `scripts/sync-indexes.ts`, and anything against a real MongoDB, because the MongoDB test binary cannot be downloaded in this sandbox.
+So the plan and timing numbers are not measured yet, and no query plan has been confirmed to pick the new indexes.
+What did run: `tests/indexes.test.ts` (10 tests on the declared indexes; the userName one fails if `unique` is removed).
 
 ### DB-4 Fetching all of a user's registrations at once
 Status: parked (was open, parked 2026-11-18). Priority: P3.
@@ -615,10 +623,14 @@ PG-1 shipped with the address locked (the edit route rejects `uid`), so it holds
 Decide whether the address becomes permanent for good, or registrations point at the event id, before anything lets an address change.
 
 ### DB-6 Username uniqueness is not enforced by the database
-Status: open. Priority: P2.
+Status: done (2026-11-18), existing databases need `scripts/sync-indexes.ts`. Priority: P2.
 The user name has a plain index, not a unique one, so a race can create duplicates.
 Events rely on the organization handle derived from it.
 Fix: make it unique after cleaning existing data.
+Result 2026-11-18: `User.userName` is `unique: true`, so the loser of two concurrent signups gets a `409` from the error handler instead of a duplicate account.
+Before an existing database gets this, `scripts/sync-indexes.ts` reports any shared `userName` values and refuses `--apply` until they are renamed.
+MongoDB also cannot create the unique index next to the old plain one with the same name, so the script drops the old one.
+`tests/user-username-unique.test.ts` (2 tests) needs MongoDB and was written but not run here.
 
 ### DB-7 No data migrations
 Status: parked (was open, parked 2026-11-18). Priority: P3.
@@ -819,3 +831,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: S-3 partly done, see the item for what remains (`zod` 4, `picomatch`, `glob` and `minimatch`); the production audit has no critical findings and CI audits at critical.
 - 2026-11-18: S-7 was already fixed in September 2026 (the item and the AGENTS.md guardrail were stale); re-checked against the running app and corrected both.
 - 2026-11-18: O-1, a failed first database connection is no longer remembered (`ensureMongoConnection`, `503` with `Retry-After`); `tests/mongo-connection.test.ts` (4 tests) fails on the old code.
+- 2026-11-18: DB-2, DB-3 and DB-6: events list, host and attendee indexes, unique `userName`, `scripts/sync-indexes.ts` and `scripts/explain-events.ts`; `tests/indexes.test.ts` (10) run, `tests/user-username-unique.test.ts` (2) and both scripts not run (no MongoDB in this sandbox).

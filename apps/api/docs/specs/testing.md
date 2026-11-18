@@ -27,6 +27,7 @@ This backend has two separate, independent test setups, for two different jobs:
 | `products` | [tests/products.test.ts](../../tests/products.test.ts) |
 | `reports` | [tests/reports.test.ts](../../tests/reports.test.ts) |
 | `users` | [tests/users.test.ts](../../tests/users.test.ts) |
+| indexes (`events`, `EventRegistration`, `User` schemas) | [tests/indexes.test.ts](../../tests/indexes.test.ts) (10 tests, schema definitions only, no database: the events list, host and attendee indexes exist, the redundant single-field ones are gone, `userName` and `email` are unique) and [tests/user-username-unique.test.ts](../../tests/user-username-unique.test.ts) (2 tests against the in-memory MongoDB: a second user with the same `userName` is refused with `11000`) |
 | serverless connection (`api/index.ts`, `config/database.ts`) | [tests/mongo-connection.test.ts](../../tests/mongo-connection.test.ts) (4 tests: a failed first connection answers `503`, the next request retries and recovers, a working connection is reused, concurrent requests share one attempt; `mongoose.connect` is stubbed, so it never touches a database) |
 | logger (`config/logger.ts`) | [tests/logger.test.ts](../../tests/logger.test.ts) (3 tests: a real request through `pino-http` with the real logger config, checking the `Token` cookie, `Authorization` and `Set-Cookie` values are redacted while method, URL and status are still logged) |
 
