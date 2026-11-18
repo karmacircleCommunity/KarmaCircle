@@ -36,7 +36,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 - S-3 vulnerable packages, and add the audit to CI.
 - S-7 cart add trusts an email from the request (already fixed, see the item).
 - S-5 weak secret check.
-- O-1 failed first database connection is remembered.
+- O-1 failed first database connection is remembered (done 2026-11-18).
 - DB-2 and DB-3 indexes, DB-6 unique user name.
 - O-5 real health check and error tracking.
 
@@ -702,10 +702,14 @@ Add a stricter limit or a simple bot check.
 ## 8. Backend scalability and operations
 
 ### O-1 A failed first database connection is remembered
-Status: open. Priority: P1.
+Status: done (2026-11-18). Priority: P1.
 The serverless handler stores the connection attempt once and never clears it.
 If the first attempt fails, every later request on that instance fails until it restarts.
 Fix: clear the stored attempt when it fails so the next request retries.
+Result: `ensureMongoConnection()` in `config/database.ts` clears the stored attempt on failure, and `api/index.ts` answers `503` with `Retry-After: 5` while the database is down instead of throwing.
+`tests/mongo-connection.test.ts` has 4 tests; against the old code the failing-first-connection test got `500` and failed, and with the fix all 4 pass.
+Also run live against a port with no MongoDB: two requests gave two `503` responses and two separate connection attempts in the log.
+Not run: recovery against a real MongoDB coming back (none in this sandbox), and the full API suite.
 
 ### O-2 Unbounded work in some queries
 Status: parked (was open, parked 2026-11-18). Priority: P2.
@@ -814,3 +818,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: added the Showcase plan and parked 34 items (front-end polish tier, registration rules, organizer features, money and hackathons, smaller items). Nothing deleted.
 - 2026-11-18: S-3 partly done, see the item for what remains (`zod` 4, `picomatch`, `glob` and `minimatch`); the production audit has no critical findings and CI audits at critical.
 - 2026-11-18: S-7 was already fixed in September 2026 (the item and the AGENTS.md guardrail were stale); re-checked against the running app and corrected both.
+- 2026-11-18: O-1, a failed first database connection is no longer remembered (`ensureMongoConnection`, `503` with `Retry-After`); `tests/mongo-connection.test.ts` (4 tests) fails on the old code.

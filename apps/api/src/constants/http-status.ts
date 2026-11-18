@@ -37,6 +37,7 @@ export const STATUS_MESSAGE = {
   USER_ALREADY_EXISTS: "User already exists, please Login !",
   INVALID_CREDENTIALS: "Invalid credentials !",
   INTERNAL_SERVER_ERROR: "Internal server error, try again later !",
+  SERVICE_UNAVAILABLE: "Service temporarily unavailable, try again shortly !",
   UNAUTHORIZED: "Unauthorized !",
   FORBIDDEN: "Forbidden !",
   NOT_FOUND: "Not found !",
@@ -48,7 +49,8 @@ export const STATUS_MESSAGE = {
   PRODUCT_FETCH_FAILED: "Failed to fetch products",
   PRODUCT_NOT_FOUND: "Product not found",
   PASSWORD_UPDATE_SUCCESS: "Password Updated Successfully",
-  PASSWORD_RESET_EMAIL_SENT: "If that email has an account, we've sent a password reset link.",
+  PASSWORD_RESET_EMAIL_SENT:
+    "If that email has an account, we've sent a password reset link.",
   INVALID_RESET_TOKEN: "This password reset link is invalid or has expired.",
   PASSWORD_RESET_SUCCESS: "Password reset successfully",
   PROFILE_UPDATE_SUCCESS: "Profile Updated Successfully",

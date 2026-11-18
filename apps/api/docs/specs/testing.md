@@ -27,6 +27,7 @@ This backend has two separate, independent test setups, for two different jobs:
 | `products` | [tests/products.test.ts](../../tests/products.test.ts) |
 | `reports` | [tests/reports.test.ts](../../tests/reports.test.ts) |
 | `users` | [tests/users.test.ts](../../tests/users.test.ts) |
+| serverless connection (`api/index.ts`, `config/database.ts`) | [tests/mongo-connection.test.ts](../../tests/mongo-connection.test.ts) (4 tests: a failed first connection answers `503`, the next request retries and recovers, a working connection is reused, concurrent requests share one attempt; `mongoose.connect` is stubbed, so it never touches a database) |
 | logger (`config/logger.ts`) | [tests/logger.test.ts](../../tests/logger.test.ts) (3 tests: a real request through `pino-http` with the real logger config, checking the `Token` cookie, `Authorization` and `Set-Cookie` values are redacted while method, URL and status are still logged) |
 
 Last full run, 2026-11-16: `npx --no-install jest` in `apps/api` passed 18 suites of 18 and 386 tests of 386 (about 10 seconds). `tests/events.test.ts` has 78 tests, `tests/events-timezone.test.ts` 17, `tests/events-directory.test.ts` 26, `tests/events-manage.test.ts` 34, `tests/events-capacity.test.ts` 27, `tests/events-attendees.test.ts` 24, `tests/events-details.test.ts` 31, `tests/events-hybrid.test.ts` 14, `tests/events-types.test.ts` 23 and `tests/events-drafts.test.ts` 27.

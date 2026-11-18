@@ -1,17 +1,26 @@
 import "dotenv/config";
 import { IncomingMessage, ServerResponse } from "http";
 import { createApp } from "../src/app";
-import { connectToMongo } from "../src/config/database";
+import { ensureMongoConnection } from "../src/config/database";
+import { STATUS_CODE, STATUS_MESSAGE } from "../src/constants/http-status";
 
 const app = createApp();
 
-let connectionPromise: Promise<void> | null = null;
-
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
-  if (!connectionPromise) {
-    connectionPromise = connectToMongo();
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  try {
+    await ensureMongoConnection();
+  } catch {
+    // The failure is already logged by connectToMongo. Answer cleanly and let
+    // the next request retry, instead of throwing out of the handler.
+    res.statusCode = STATUS_CODE.SERVICE_UNAVAILABLE;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Retry-After", "5");
+    res.end(JSON.stringify({ message: STATUS_MESSAGE.SERVICE_UNAVAILABLE }));
+    return;
   }
-  await connectionPromise;
 
   app(req, res);
 }
