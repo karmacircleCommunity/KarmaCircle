@@ -35,7 +35,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 - S-1 session cookie in logs (done 2026-11-17).
 - S-3 vulnerable packages, and add the audit to CI.
 - S-7 cart add trusts an email from the request (already fixed, see the item).
-- S-5 weak secret check.
+- S-5 weak secret check (done 2026-11-18, check the production values before deploying).
 - O-1 failed first database connection is remembered (done 2026-11-18).
 - DB-2 and DB-3 indexes, DB-6 unique user name (done 2026-11-18, see the items for what is not yet measured).
 - O-5 real health check and error tracking.
@@ -678,9 +678,17 @@ Every other route accepts the same, which makes memory exhaustion easier.
 Fix: set a small default and a larger limit only where needed, or remove the need through DB-1.
 
 ### S-5 Weak secret check
-Status: open. Priority: P2.
+Status: done (2026-11-18), check your production values before deploying. Priority: P2.
 The environment check only requires the token secret to be non-empty.
 Require a minimum length and refuse obvious placeholder values in production.
+Result 2026-11-18: in production `JWT_SECRET` and `SECRET_KEY` must be 32 characters or more, must not contain placeholder text such as `change-me`, `local-only`, `placeholder`, `example` or `test-`, and must use at least 8 different characters.
+The Google `CLIENT_ID` and `CLIENT_SECRET` may not be the `.env.example` placeholders either.
+Development and test keep their short example values.
+The API refuses to start with a message that names each bad variable and the reason, and never prints the value.
+`tests/env.test.ts` has 17 tests and passes; against the old code the same weak production values boot without complaint.
+Before deploying: the production values of `JWT_SECRET` and `SECRET_KEY` must pass these rules or the API will not start.
+Changing `JWT_SECRET` signs every user out, so only change it if the current one is weak.
+`SECRET_KEY` is not read anywhere in `apps/api/src` today, so replacing it changes nothing for users.
 
 ### S-6 Payment routes are open to anyone
 Status: needs decision. Priority: P2.
@@ -832,3 +840,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: S-7 was already fixed in September 2026 (the item and the AGENTS.md guardrail were stale); re-checked against the running app and corrected both.
 - 2026-11-18: O-1, a failed first database connection is no longer remembered (`ensureMongoConnection`, `503` with `Retry-After`); `tests/mongo-connection.test.ts` (4 tests) fails on the old code.
 - 2026-11-18: DB-2, DB-3 and DB-6: events list, host and attendee indexes, unique `userName`, `scripts/sync-indexes.ts` and `scripts/explain-events.ts`; `tests/indexes.test.ts` (10) run, `tests/user-username-unique.test.ts` (2) and both scripts not run (no MongoDB in this sandbox).
+- 2026-11-18: S-5, production refuses short or placeholder `JWT_SECRET` and `SECRET_KEY` and the example Google OAuth values (`parseEnv`); `tests/env.test.ts` (17 tests); the same weak production values boot on the old code.
