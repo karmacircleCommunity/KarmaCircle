@@ -8,6 +8,7 @@ import {
   FiUserPlus,
   FiXCircle,
 } from "react-icons/fi";
+import AddToCalendar from "@features/events/components/detail/AddToCalendar";
 import { viewerTimeNote } from "@features/events/utils/eventTimezone";
 import {
   formatEventDate,
@@ -60,8 +61,13 @@ import type { EventJoinPanelFullProps } from "@features/events/types";
  * so before anything else** - ahead of "Completed", because a cancelled
  * event that has since passed never took place. Registrations already saved
  * are kept by the API, so an attendee who joined sees a line saying the
- * organizer cancelled it and to check with them. Telling attendees by email
- * is not built yet (PG-18). Share and Ask stay.
+ * organizer cancelled it and to check with them. Attendees are also emailed
+ * about a cancellation when the notification worker is running (PG-18). Share
+ * and Ask stay.
+ *
+ * **Add to calendar (PG-19)** sits above Share for an upcoming, published event,
+ * joined or not (`AddToCalendar.tsx`). A draft, a cancelled event and a
+ * completed one get none: there is nothing to add.
  */
 const EventJoinPanel = ({
   event,
@@ -254,6 +260,8 @@ const EventJoinPanel = ({
           {cancelled ? "Remove my registration" : "Leave event"}
         </button>
       )}
+
+      {!event.draft && !cancelled && !past && <AddToCalendar event={event} />}
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <button

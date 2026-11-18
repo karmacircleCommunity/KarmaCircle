@@ -637,7 +637,7 @@ column: About (only if `about` is non-empty), a four-cell fact strip
 sheet (`EventAgenda`, only if `agenda` is non-empty), venue-or-joining
 (`EventLocationPanel`, which itself renders nothing if there's genuinely no
 address/platform to show), and what to bring (only if `bringAlong` is
-non-empty); sidebar: the join panel (`EventJoinPanel`) and, only where the event
+non-empty); sidebar: the join panel (`EventJoinPanel`, which also holds the "Add to calendar" links for an upcoming event, PG-19) and, only where the event
 raises money, `EventFundraiserPanel`. On a phone the sidebar renders _first_
 (`order-1`/`order-2`, one control and one piece of state — not a second copy),
 because "can I go, and what does it cost" outranks the reading on a narrow

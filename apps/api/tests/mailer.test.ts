@@ -115,6 +115,58 @@ describe("mailer environment guard", () => {
     expect(html).not.toContain("UTC</p>");
   });
 
+  it("adds a calendar link to the join confirmation when the API's public address is known", async () => {
+    env.NODE_ENV = "production";
+    env.API_PUBLIC_URL = "https://api.example.org";
+    mockSend.mockClear();
+
+    await sendEventJoinConfirmation("ann@example.com", "Ann", {
+      uid: "beach-day",
+      name: "Beach Day",
+      startTime: new Date("2030-05-01T04:30:00.000Z"),
+    } as IEvent);
+
+    const html = (mockSend.mock.calls[0][0] as { html: string }).html;
+    expect(html).toContain(
+      'href="https://api.example.org/events/beach-day/calendar.ics"',
+    );
+    expect(html).toContain("Add to your calendar");
+    env.API_PUBLIC_URL = undefined;
+  });
+
+  it("leaves the calendar link out when the API's public address is not set", async () => {
+    env.NODE_ENV = "production";
+    env.API_PUBLIC_URL = undefined;
+    mockSend.mockClear();
+
+    await sendEventJoinConfirmation("ann@example.com", "Ann", {
+      uid: "beach-day",
+      name: "Beach Day",
+      startTime: new Date("2030-05-01T04:30:00.000Z"),
+    } as IEvent);
+
+    expect((mockSend.mock.calls[0][0] as { html: string }).html).not.toContain(
+      "calendar.ics",
+    );
+  });
+
+  it("escapes an event address in the calendar link", async () => {
+    env.NODE_ENV = "production";
+    env.API_PUBLIC_URL = "https://api.example.org";
+    mockSend.mockClear();
+
+    await sendEventJoinConfirmation("ann@example.com", "Ann", {
+      uid: 'a"b c',
+      name: "Odd",
+      startTime: new Date("2030-05-01T04:30:00.000Z"),
+    } as IEvent);
+
+    const html = (mockSend.mock.calls[0][0] as { html: string }).html;
+    expect(html).toContain("/events/a%22b%20c/calendar.ics");
+    expect(html).not.toContain('a"b');
+    env.API_PUBLIC_URL = undefined;
+  });
+
   it("still writes UTC for an event with no timezone, and survives a bad stored one", async () => {
     env.NODE_ENV = "production";
 

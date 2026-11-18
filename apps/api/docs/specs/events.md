@@ -247,6 +247,20 @@ Every event the API returns carries `status` (`published` or `cancelled`). The
 list filters do not hide cancelled events: the directory and the host list show
 them with a badge.
 
+## `GET /events/:uid/calendar.ics` (PG-19, November 2026)
+
+Public, no sign-in, like the event page: `eventController.getEventCalendar` reads the event with `findPublicByUid` (so a draft is `404`) and answers the calendar file built by `buildEventIcs` in `event.calendar.ts`.
+Headers: `Content-Type: text/calendar; charset=utf-8`, `Content-Disposition: attachment; filename="<uid>.ics"`, `Cache-Control: public, max-age=300`.
+
+What the file says, and why:
+- Times are UTC (`...Z`), so it needs no timezone definitions and every calendar shows the right moment in the viewer's own zone.
+- `UID` is `<event uid>@<web host>`, the same every time, so adding it again, or a changed version, updates the entry instead of duplicating it. `LAST-MODIFIED` and `SEQUENCE` come from when the event last changed (`updatedAt`), so a calendar knows which copy is newer.
+- `SUMMARY` is the name, `LOCATION` the venue or `Online (<platform>)` (`placeOf`, shared with the notification emails), and `DESCRIPTION` the description plus the meeting link for an online event and the event page link, all of which the public page already shows. No organizer, no attendee, no email address.
+- A cancelled event is served with `STATUS:CANCELLED` and no alarm, so a calendar that already has it can mark it cancelled; a live one has `STATUS:CONFIRMED` and an alarm an hour before.
+- Text values are escaped and every line is folded to 75 octets without splitting a multi-byte character, so what a person typed in a name or description cannot add lines or properties to the file.
+
+The join confirmation email gets an "Add to your calendar" link to this route when `API_PUBLIC_URL` is set (it is left out otherwise, because the API does not otherwise know its own public address). The reminder and change emails from the worker do not carry it yet.
+
 ## Emails about an event (PG-18, November 2026)
 
 With `REDIS_URL` set, the event service puts reminder and notice jobs on the notification queue (see [architecture.md](./architecture.md#notifications-pg-18-november-2026)); the Go worker sends them. Nothing is sent, and nothing in these routes changes, without it.

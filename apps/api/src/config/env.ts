@@ -127,6 +127,20 @@ const envSchema = z
       .optional()
       .transform((value) => value?.trim() || undefined),
 
+    // Optional: the public address of this API, for links in emails that point
+    // at it (the "Add to calendar" link in the join confirmation). Without it
+    // those links are left out.
+    API_PUBLIC_URL: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim().replace(/\/+$/, "") || undefined)
+      .refine(
+        (value) => value === undefined || /^https?:\/\/[^/]/.test(value),
+        {
+          message: "must be an http or https URL",
+        },
+      ),
+
     // Optional shared store for rate limits (Redis, redis:// or rediss://).
     // Without it each server instance counts requests on its own, and on a
     // platform that runs many instances at once (Vercel) the limits are easy to

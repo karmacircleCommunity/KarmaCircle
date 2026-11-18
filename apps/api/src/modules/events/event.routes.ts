@@ -367,6 +367,35 @@ router.delete(
  */
 /**
  * @openapi
+ * /events/{uid}/calendar.ics:
+ *   get:
+ *     summary: The event as a calendar file (.ics)
+ *     description: >
+ *       Opens in Apple Calendar, Outlook, Google Calendar and others. Times
+ *       are in UTC. The same file is returned for the same event, with a
+ *       stable UID, so adding it again updates the entry. A cancelled event is
+ *       returned with STATUS:CANCELLED. Public; a draft is a 404.
+ *     tags: [Events]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: text/calendar
+ *         content:
+ *           text/calendar:
+ *             schema: { type: string }
+ *       404: { description: Event not found }
+ */
+router.get(
+  "/:uid/calendar.ics",
+  asyncHandler(eventController.getEventCalendar),
+);
+
+/**
+ * @openapi
  * /events/cover-upload:
  *   post:
  *     summary: Get a short-lived token to upload an event cover to the image service

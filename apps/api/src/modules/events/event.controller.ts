@@ -3,7 +3,9 @@ import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AuthenticatedRequest } from "../../middleware/auth";
 import { AppError } from "../../middleware/error-handler";
 import { buildPaginationMeta, toSkipLimit } from "../../utils/pagination";
+import { env } from "../../config/env";
 import { issueCoverUploadGrant } from "./cover-upload.service";
+import { buildEventIcs, icsFileName } from "./event.calendar";
 import * as eventService from "./event.service";
 import {
   AttendeesQuery,
@@ -80,6 +82,28 @@ export async function createEvent(req: AuthenticatedRequest, res: Response) {
   res
     .status(STATUS_CODE.CREATED)
     .json({ message: "Event Created", savedEvent });
+}
+
+/**
+ * The event as a calendar file. Public, like the event page itself: it holds
+ * only what that page shows. A draft is not public, so it is `404` here too.
+ */
+export async function getEventCalendar(req: Request, res: Response) {
+  const event = await eventService.findPublicByUid(req.params.uid);
+  if (!event) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
+  }
+
+  res
+    .status(STATUS_CODE.OK)
+    .set({
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${icsFileName(event.uid)}"`,
+      // Short, so a changed event reaches calendars soon, long enough that a
+      // page full of "add" clicks does not reach the database every time.
+      "Cache-Control": "public, max-age=300",
+    })
+    .send(buildEventIcs(event, { siteUrl: env.ORIGIN_URL }));
 }
 
 export async function createCoverUpload(

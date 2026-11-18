@@ -1,4 +1,7 @@
 import type { IEvent } from "../events/event.model";
+import { placeOf } from "../events/event.place";
+
+export { placeOf };
 
 /**
  * The jobs the API puts on the queue for apps/notification-worker. This shape
@@ -80,25 +83,6 @@ export const factsOf = (event: IEvent): EventFacts => ({
   platform: event.platform,
   platformLink: event.platformLink,
 });
-
-const venueOf = (facts: EventFacts) =>
-  [facts.address, facts.city, facts.state, facts.country]
-    .map((part) => part?.trim())
-    .filter(Boolean)
-    .join(", ");
-
-/** Where it is held, in words an email can use. */
-export function placeOf(facts: EventFacts): string {
-  const online = facts.platform?.trim()
-    ? `Online (${facts.platform.trim()})`
-    : "Online";
-  if (facts.mode === "Online") return online;
-  if (facts.mode === "Hybrid") {
-    const venue = venueOf(facts);
-    return venue ? `${venue}, and ${online}` : online;
-  }
-  return venueOf(facts);
-}
 
 const eventOf = (facts: EventFacts): NotificationEvent => ({
   uid: facts.uid,

@@ -61,6 +61,12 @@ const HOST_EVENTS_LIMIT = 100;
 
 const eventEndpoints = {
   create: `${API}/events/create`,
+  /**
+   * The event as a calendar file (`.ics`), public. Opened as a link, not
+   * fetched: the browser or the phone hands it to the calendar app.
+   */
+  calendar: (uid: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/calendar.ics`,
   /** `POST` for a short-lived token to upload an event cover to the image service. */
   coverUpload: `${API}/events/cover-upload`,
   mine: () => `${API}/events/mine`,

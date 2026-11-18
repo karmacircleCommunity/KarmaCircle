@@ -44,7 +44,7 @@ Tier 2, depth (the showcase):
 - DB-1, S-4 and UI-5: a small image service (Go, built and wired to the form 2026-11-18, not yet hosted) with object storage and thumbnails, so the event stores only a link.
 - S-2: rate limits in a shared store (Redis), built 2026-11-18, needs a hosted Redis and `REDIS_URL`.
 - PG-18 with O-6: a reminder and notice worker (Go), built 2026-11-18 with a queue, retries and no double sends; organizer announcements and real delivery are still to do.
-- PG-19: add to calendar.
+- PG-19: add to calendar (built 2026-11-18: three links on the event page, an `.ics` route, a link in the join confirmation).
 - PG-20: share previews and event markup, cheap version only.
 - One-command local stack for web, API, MongoDB, Redis and the services, with CI building all of them, and a request id that follows a request across services.
 
@@ -277,10 +277,15 @@ Still to do:
 - An unsubscribe link, and a Redis with persistence switched on, because unsent reminders live only in Redis.
 
 ### PG-19 No add to calendar
-Status: open. Priority: P2.
+Status: done (2026-11-18), visual review of the new row pending. Priority: P2.
 A search of the web code found no calendar export.
 Luma, Eventbrite and Meetup all offer one.
 Fix: add an `.ics` download and an "Add to Google Calendar" link on the detail page and in the confirmation email.
+Result 2026-11-18: three links on the event page (upcoming, published events, joined or not): Google, Outlook on the web, and an `.ics` download from a new public route `GET /events/:uid/calendar.ics` (`event.calendar.ts`).
+The file uses UTC times, a stable UID and a growing SEQUENCE so adding it again updates the entry, `STATUS:CANCELLED` for a cancelled event, an alarm an hour before, escaped text and lines folded by octets; nothing private is in it.
+The join confirmation email gets an "Add to your calendar" link when the new optional `API_PUBLIC_URL` is set.
+Tests: API 27 for the file and the route (no database) and 3 for the email; web 18 for the links (234 web unit tests in all). A generated file was also parsed by Python's `icalendar` as a check outside this code: it read the escaped commas and semicolons, the folded Devanagari, emoji and Japanese text, the cancelled status and the alarm correctly.
+Not verified: opening the file in a real calendar app (Apple Calendar, Outlook, Google), the Google and Outlook links opening their real pages with the right fields, and how the row looks (visual review pending, not authorized). The reminder and change emails from the worker do not carry a calendar link yet.
 
 ### PG-20 No search-engine event markup
 Status: open. Priority: P2.
@@ -886,3 +891,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: DB-1, the create and edit form uploads covers through the image service (with a base64 fallback when it is not set up); 20 new web unit tests, the real upload code run against the Go service; no browser review and no Playwright run.
 - 2026-11-18: S-2, rate limits shared through Redis with a memory fallback (`RedisRateLimitStore`, `FailoverStore`, `REDIS_URL`); 15 tests, 11 against a real Redis, and two API processes compared live (40 allowed without Redis, 20 with); a hosted Redis and the full API suite not run.
 - 2026-11-18: PG-18 partly done, `apps/notification-worker` (Go) and `src/modules/notifications`: reminders, change notices and cancellation notices through a Redis queue with retries, leases and idempotency keys; 60 Go tests and 53 API tests, plus live runs of delivery, provider failure and a killed worker; organizer announcements, real delivery and the Mongo-backed hook paths not done or not run.
+- 2026-11-18: PG-19, add to calendar: `GET /events/:uid/calendar.ics` (UTC, stable UID, SEQUENCE, cancelled status, escaped and folded), Google, Outlook and `.ics` links on the event page, a calendar link in the join confirmation email when `API_PUBLIC_URL` is set; 27 + 3 API and 18 web tests, the file read by an independent parser; no browser check of the row and no real calendar app tried.

@@ -128,6 +128,11 @@ export async function sendEventJoinConfirmation(
   }).format(new Date(event.startTime));
   const safeName = escapeHtml(attendeeName || "there");
   const safeEventName = escapeHtml(event.name);
+  // The calendar file is served by the API, so the link needs its public
+  // address. Left out when it is not set (PG-19).
+  const calendarLink = env.API_PUBLIC_URL
+    ? `<p style="margin: 0 0 16px;"><a href="${escapeHtml(`${env.API_PUBLIC_URL}/events/${encodeURIComponent(event.uid)}/calendar.ics`)}">Add to your calendar</a></p>`
+    : "";
 
   const client = getResendClient();
 
@@ -142,6 +147,7 @@ export async function sendEventJoinConfirmation(
         <p>Your place at <strong>${safeEventName}</strong> is confirmed.</p>
         <p>${escapeHtml(zone ? date : `${date} UTC`)}</p>
         <p><a href="${eventUrl}" style="display:inline-block;padding:12px 20px;background:#a8623e;color:#fff;border-radius:8px;text-decoration:none;">View event details</a></p>
+        ${calendarLink}
         <p>See you there,<br />KarmaCircle</p>
       </div>
     `,
