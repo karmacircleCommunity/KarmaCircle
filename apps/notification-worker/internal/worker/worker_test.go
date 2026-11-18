@@ -424,3 +424,44 @@ func TestMaskEmailHidesTheName(t *testing.T) {
 		t.Error("an address without @ should be fully hidden")
 	}
 }
+
+func TestLogLinesCarryTheRequestIDOfTheAPIRequestThatQueuedTheJob(t *testing.T) {
+	h := newHarness(t, nil)
+	var logs syncBuffer
+	h.w.Log = slog.New(slog.NewJSONHandler(&logs, nil))
+	traced := reminder("reminder:traced")
+	traced.RequestID = "req-from-api-42"
+	hostile := reminder("reminder:hostile")
+	hostile.RequestID = "bad id\nwith newline"
+	h.enqueue(t, traced)
+	h.enqueue(t, hostile)
+	h.start(t)
+
+	waitFor(t, "both emails", func() bool { return h.sender.count() == 2 && h.idle() })
+
+	text := logs.String()
+	if !strings.Contains(text, `"request_id":"req-from-api-42"`) {
+		t.Fatalf("the request id is not in the log:\n%s", text)
+	}
+	if strings.Contains(text, "newline") && strings.Contains(text, `"request_id":"bad`) {
+		t.Fatalf("an unsafe request id reached the log:\n%s", text)
+	}
+}
+
+// syncBuffer is a log destination that several workers can write to at once.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf strings.Builder
+}
+
+func (s *syncBuffer) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.buf.Write(p)
+}
+
+func (s *syncBuffer) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.buf.String()
+}

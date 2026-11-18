@@ -10,6 +10,10 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "test": "turbo run test",
+    "stack:up": "docker compose up --build -d --wait",
+    "stack:down": "docker compose down",
+    "stack:reset": "docker compose down -v",
+    "stack:logs": "docker compose logs -f --tail=100",
     "readiness:score": "node scripts/update-agentic-readiness-score.mjs"
   },
   "devDependencies": {

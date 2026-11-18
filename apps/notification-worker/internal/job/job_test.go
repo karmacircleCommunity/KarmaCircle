@@ -70,3 +70,36 @@ func TestExpiredOnlyAppliesToThingsThatStopMattering(t *testing.T) {
 		t.Error("a cancellation still matters after the start time")
 	}
 }
+
+func TestReadsTheRequestIDTheAPIStamps(t *testing.T) {
+	raw := `{"id":"x","kind":"event_cancelled","to":"a@b.co","requestId":"req-abc.1",
+	"event":{"uid":"u","name":"n","startTime":"2026-11-22T01:30:00Z"}}`
+
+	j, err := Parse([]byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if j.RequestID != "req-abc.1" || j.SafeRequestID() != "req-abc.1" {
+		t.Fatalf("request id %q", j.RequestID)
+	}
+}
+
+func TestADifferentRequestIDDoesNotMakeAJobInvalidButIsNeverLogged(t *testing.T) {
+	for _, bad := range []string{"has spaces", "new\nline", `a"b`, "<script>", strings.Repeat("x", 65)} {
+		j := valid()
+		j.RequestID = bad
+		if err := j.Validate(); err != nil {
+			t.Errorf("%q made the job invalid: %v", bad, err)
+		}
+		if got := j.SafeRequestID(); got != "" {
+			t.Errorf("%q was trusted as %q", bad, got)
+		}
+	}
+}
+
+func TestAJobWithoutARequestIDIsFine(t *testing.T) {
+	j := valid()
+	if j.SafeRequestID() != "" || j.Validate() != nil {
+		t.Fatal("a job from a script or an older API has no request id and must still work")
+	}
+}

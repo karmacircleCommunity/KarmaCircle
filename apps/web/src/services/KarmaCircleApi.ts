@@ -358,6 +358,16 @@ export const DeleteDraft = async (uid: string): Promise<EventWriteResult> => {
   }
 };
 
+/** The API's id for a request, from the response headers, if it sent a plain one. */
+const requestIdOf = (headers: unknown): string | undefined => {
+  const value = (headers as Record<string, unknown> | undefined)?.[
+    "x-request-id"
+  ];
+  return typeof value === "string" && /^[A-Za-z0-9._-]{1,64}$/.test(value)
+    ? value
+    : undefined;
+};
+
 // cover upload step 1: ask the API for a short-lived token for the image service
 export const RequestCoverUpload = async (): Promise<CoverGrantResult> => {
   try {
@@ -366,10 +376,18 @@ export const RequestCoverUpload = async (): Promise<CoverGrantResult> => {
       undefined,
       { withCredentials: true },
     );
-    return { status: response.status, grant: response.data };
+    return {
+      status: response.status,
+      grant: response.data,
+      requestId: requestIdOf(response.headers),
+    };
   } catch (error) {
     const apiError = (error as AxiosError<{ message?: string }>).response;
-    return { status: apiError?.status, message: apiError?.data?.message };
+    return {
+      status: apiError?.status,
+      message: apiError?.data?.message,
+      requestId: requestIdOf(apiError?.headers),
+    };
   }
 };
 
@@ -379,13 +397,17 @@ export const RequestCoverUpload = async (): Promise<CoverGrantResult> => {
 export const SendCoverImage = async (
   grant: CoverUploadGrant,
   file: File,
-  { signal, onProgress }: CoverSendOptions,
+  { signal, onProgress, requestId }: CoverSendOptions,
 ): Promise<CoverSendResult> => {
   const form = new FormData();
   form.append("file", file);
   try {
     const response = await Axios.post(grant.uploadUrl, form, {
-      headers: { Authorization: `Bearer ${grant.token}` },
+      headers: {
+        Authorization: `Bearer ${grant.token}`,
+        // The same id the API gave this upload, so one search finds both logs.
+        ...(requestId ? { "X-Request-Id": requestId } : {}),
+      },
       withCredentials: false,
       signal,
       // Every answer, including 413 and 415, carries a message to show.

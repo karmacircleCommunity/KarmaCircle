@@ -68,6 +68,8 @@ With Docker: `docker compose -f docker-compose.local.yml --profile notifications
 `GET /healthz` answers `200` with `{ status, redis, sender, queue: { due, inflight, dead, oldestDueSeconds }, sinceStart: { sent, retried, dead, expired } }`, or `503` when Redis does not answer.
 Alert on `queue.dead` going above zero, and on `queue.oldestDueSeconds` that keeps growing (the worker is not keeping up or is down).
 The worker also logs the queue once a minute.
+`notification-worker healthcheck` asks the running process for `/healthz` and exits 0 or 1: it is the container's health check, because the runtime image has no shell or curl.
+A job carries the `requestId` of the API request that queued it (optional, plain characters only), and every log line for the job has it as `request_id`, so one search finds the API's log and the worker's.
 On `SIGTERM` it stops taking jobs, finishes the emails it holds, and exits.
 
 ## Tests

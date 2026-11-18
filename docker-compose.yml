@@ -1,0 +1,195 @@
+name: karmacircle
+
+# The whole platform on one command:
+#
+#     docker compose up --build --wait        (or: pnpm stack:up)
+#
+# Then open http://localhost:3000. Stop it with `docker compose down`, and also
+# delete its data (the database, the images) with `docker compose down -v`.
+#
+# What runs, and where to reach it from your machine:
+#
+#   web                  3000  the app (nginx serving the production build)
+#   api                  5050  the API (Express, MongoDB, Redis)
+#   image-service        8080  event cover uploads (Go)
+#   notification-worker  8081  reminder and change emails (Go), health only
+#   mongo               27017  database
+#   redis                6379  rate limit counts and the email queue
+#   minio          9000, 9001  S3 compatible storage for covers (9001: console)
+#
+# Everything here is for local use. The passwords and secrets below are
+# examples that anyone who reads this file knows: never use them anywhere else.
+# To change one, set it in your shell or in a `.env` file next to this one.
+#
+# Without a Resend key the worker only writes emails to its log
+# (`docker compose logs -f notification-worker`), so nothing real is sent.
+# For hot reload while you change code, run the infrastructure from
+# docker-compose.local.yml and the apps with `pnpm dev` instead.
+
+x-health: &health
+  interval: 5s
+  timeout: 5s
+  retries: 20
+  start_period: 10s
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      <<: *health
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+
+  # Persistence is on: the queue of reminders waits in here, and a restart must
+  # not lose the ones that have not gone out.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      <<: *health
+      test: ["CMD", "redis-cli", "ping"]
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-karmacircle}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-karmacircle-minio-secret}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      <<: *health
+      test: ["CMD", "mc", "ready", "local"]
+
+  # Makes the bucket the image service writes to, then exits.
+  minio-setup:
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-karmacircle}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-karmacircle-minio-secret}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+        mc mb --ignore-existing local/karmacircle-images
+
+  image-service:
+    build: ./apps/image-service
+    restart: unless-stopped
+    depends_on:
+      minio-setup:
+        condition: service_completed_successfully
+    environment:
+      IMAGE_SERVICE_SECRET: ${IMAGE_SERVICE_SECRET:-stack-image-service-secret-0f3a9c7e51d2}
+      # Where the browser reaches this service: it is in the links it returns.
+      PUBLIC_BASE_URL: http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:3000
+      STORAGE: s3
+      S3_ENDPOINT: minio:9000
+      S3_BUCKET: karmacircle-images
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-karmacircle}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-karmacircle-minio-secret}
+      S3_USE_SSL: "false"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      <<: *health
+      test: ["CMD", "/image-service", "healthcheck"]
+
+  notification-worker:
+    build: ./apps/notification-worker
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://redis:6379
+      # The web app's address as the browser sees it, for the links in emails.
+      SITE_URL: http://localhost:3000
+      # Set both to send real email instead of only logging it.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+    ports:
+      - "8081:8081"
+    healthcheck:
+      <<: *health
+      test: ["CMD", "/notification-worker", "healthcheck"]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: "5050"
+      MONGO_URI: mongodb://mongo:27017/karmacircle
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-stack-jwt-secret-5b1d8e3f90a247c6}
+      SECRET_KEY: ${SECRET_KEY:-stack-secret-key-c47a02e9d6b31f58}
+      # Google sign-in needs your own credentials; these only let the API start.
+      CLIENT_ID: ${CLIENT_ID:-local-dev-placeholder}
+      CLIENT_SECRET: ${CLIENT_SECRET:-local-dev-placeholder}
+      CALLBACK_URL: http://localhost:5050/auth/google/callback
+      successURL: http://localhost:3000/
+      ORIGIN_URL: http://localhost:3000
+      API_PUBLIC_URL: http://localhost:5050
+      # Cover uploads. The URL is the one the browser uses; the secret is shared
+      # with the image service.
+      IMAGE_SERVICE_URL: http://localhost:8080
+      IMAGE_SERVICE_SECRET: ${IMAGE_SERVICE_SECRET:-stack-image-service-secret-0f3a9c7e51d2}
+    ports:
+      - "5050:5050"
+    healthcheck:
+      <<: *health
+      # 200 only once MongoDB answers, so "healthy" means it can serve requests.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:5050/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.stack
+      args:
+        # Baked into the build: where the BROWSER reaches the API.
+        VITE_API_URL: http://localhost:5050
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    healthcheck:
+      <<: *health
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+
+volumes:
+  mongo-data:
+  redis-data:
+  minio-data:

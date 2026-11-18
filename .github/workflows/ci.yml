@@ -104,3 +104,50 @@ jobs:
             apps/web/playwright-report/
           if-no-files-found: ignore
           retention-days: 7
+
+  # Builds every container and starts the whole platform with the one command a
+  # developer uses (`docker compose up`), then checks it answers. A separate
+  # job from `validate`: it is slow and needs Docker, and a broken Dockerfile
+  # should not hide the lint and test results.
+  containers:
+    name: containers
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the compose files
+        run: |
+          docker compose -f docker-compose.yml config -q
+          docker compose -f docker-compose.local.yml --profile images --profile redis --profile notifications config -q
+
+      - name: Build the images
+        run: docker compose build
+
+      # --wait returns when every service with a health check is healthy, and
+      # fails if one stops or never gets there.
+      - name: Start the stack
+        run: docker compose up -d --wait --wait-timeout 300
+
+      - name: Check that everything answers
+        run: |
+          set -e
+          curl -fsS http://localhost:5050/health
+          curl -fsS http://localhost:8080/healthz
+          curl -fsS http://localhost:8081/healthz
+          curl -fsS http://localhost:3000/ | grep -q '<div id="root">'
+          # A deep link opens the app, and a request id is echoed back.
+          curl -fsS http://localhost:3000/events/anything | grep -q '<div id="root">'
+          test "$(curl -fsSI -H 'X-Request-Id: ci-smoke-1' http://localhost:5050/ | tr -d '\r' | awk -F': ' 'tolower($1)=="x-request-id"{print $2}')" = "ci-smoke-1"
+
+      - name: Show the logs if something failed
+        if: failure()
+        run: docker compose ps -a && docker compose logs --no-color --tail=150
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v

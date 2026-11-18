@@ -32,6 +32,28 @@ This repo holds both apps that make up KarmaCircle:
 
 They're independently deployed (two separate Vercel projects) but share this repo, CI, and contribution workflow. See [CLAUDE.md](./CLAUDE.md) and [AGENTS.md](./AGENTS.md) for the fuller architecture/agentic-workflow notes, and each app's own `docs/specs/README.md` for its feature/module map.
 
+## Run everything with one command
+
+With Docker installed:
+
+```bash
+docker compose up --build --wait      # or: pnpm stack:up
+```
+
+Then open <http://localhost:3000>. The first build takes a few minutes. This starts the web app, the API, MongoDB, Redis, S3-compatible storage (MinIO) and the two Go services (event cover uploads and reminder emails), each waiting for what it needs to be healthy first.
+
+| Service | Address | What it is |
+|---|---|---|
+| web | <http://localhost:3000> | the app (nginx serving the production build) |
+| api | <http://localhost:5050> | Express + MongoDB + Redis; `/health` checks the database |
+| image-service | <http://localhost:8080> | Go: validates and resizes event covers |
+| notification-worker | <http://localhost:8081> | Go: sends reminder and change emails from a Redis queue; `/healthz` shows queue depth |
+| MinIO console | <http://localhost:9001> | where the cover images are stored (`karmacircle` / `karmacircle-minio-secret`) |
+
+Without a Resend key the worker only writes emails to its log: `docker compose logs -f notification-worker`. One request id (`X-Request-Id`) follows a request through the API, the image service and the worker, so `docker compose logs | grep <id>` shows everything one action did.
+
+`pnpm stack:down` stops it, `pnpm stack:reset` also deletes its data. The passwords in `docker-compose.yml` are examples for local use only. For hot reload while you change code, run only the infrastructure (`docker-compose.local.yml`) and the apps with `pnpm dev`; see [docs/DockerSetup.md](./docs/DockerSetup.md).
+
 # Tech Stack 💻
 
 <p>

@@ -150,6 +150,10 @@ func (w *Worker) handle(ctx context.Context, claimed *queue.Claimed) {
 		return
 	}
 	log := w.Log.With("job", j.ID, "kind", j.Kind, "attempt", j.Attempts+1, "to", maskEmail(j.To))
+	if requestID := j.SafeRequestID(); requestID != "" {
+		// The API request that queued this job: one id to search for across services.
+		log = log.With("request_id", requestID)
+	}
 
 	if j.Expired(w.now()) {
 		log.Info("dropped: the event has already started")

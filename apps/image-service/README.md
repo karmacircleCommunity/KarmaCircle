@@ -56,7 +56,9 @@ Claims: issuer `karmacircle-api`, audience `image-service`, `purpose: "event-cov
 The service accepts HS256 only, so `alg: none` and algorithm-swap tricks fail.
 The API's side is `apps/api/src/modules/events/cover-upload.service.ts`.
 
-Every request has an `X-Request-Id`.
+`image-service healthcheck` asks the running process for `/healthz` and exits 0 or 1: it is the container's health check, because the runtime image has no shell or curl.
+
+Every request has an `X-Request-Id`; the web app sends the one the API gave the upload, so the API's log and this service's share an id.
 One that the API sends is kept (if it is plain letters, digits, `.`, `_` or `-`), otherwise one is made, and it is in every log line and the response.
 Logs are JSON on stdout.
 The token and the `Authorization` header are never logged.

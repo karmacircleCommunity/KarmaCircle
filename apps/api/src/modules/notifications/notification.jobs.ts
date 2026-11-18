@@ -37,6 +37,8 @@ export interface NotificationJob {
   event: NotificationEvent;
   changes?: NotificationChange[];
   attempts: number;
+  /** The request that caused the job, so the worker's logs can be matched to the API's. */
+  requestId?: string;
 }
 
 /** One person who is registered for an event. */

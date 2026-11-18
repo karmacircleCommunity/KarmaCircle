@@ -427,6 +427,8 @@ export interface CoverGrantResult {
   status?: number;
   grant?: CoverUploadGrant;
   message?: string;
+  /** The API's id for this request (`X-Request-Id`), passed on to the image service. */
+  requestId?: string;
 }
 
 /** The image service's answer to an upload, or why there was none. */
@@ -439,6 +441,8 @@ export interface CoverSendResult {
 
 export interface CoverSendOptions {
   signal?: AbortSignal;
+  /** Sent as `X-Request-Id`, so the image service logs the same id as the API. */
+  requestId?: string;
   /** Called with 0 to 100 as the picture goes out. */
   onProgress?: (percent: number) => void;
 }

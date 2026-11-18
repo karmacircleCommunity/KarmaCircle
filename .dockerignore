@@ -1,0 +1,19 @@
+# What the image builds do not need, so the build context stays small and
+# nothing from a developer's machine (dependencies, build output, secrets,
+# local data) can end up in an image.
+.git
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+**/.env
+**/.env.*
+!**/.env.example
+graphify-out
+docs
+apps/web/e2e
+apps/web/playwright-report
+apps/web/test-results
+apps/image-service/data
+.husky
+.github

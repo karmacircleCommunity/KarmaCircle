@@ -1,7 +1,31 @@
 # Docker development setup
 
-The repository's root Docker Compose file runs a local MongoDB container only.
-For the full frontend, API, and MongoDB setup, follow the [local development guide](./LocalDevSetup.md).
+The repository has two Docker Compose files at its root, for two different jobs.
+
+| File | Runs | Use it for |
+|---|---|---|
+| `docker-compose.yml` | the whole platform: web, API, MongoDB, Redis, MinIO, the image service and the notification worker | trying everything with one command: `docker compose up --build --wait` (or `pnpm stack:up`), then open `http://localhost:3000` |
+| `docker-compose.local.yml` | only the infrastructure (MongoDB, and with `--profile redis`, `images` or `notifications`, Redis, MinIO and the Go services) | developing: you run the apps yourself with `pnpm dev` and get hot reload |
+
+Both files are for local use. Their passwords and secrets are examples that anyone who reads the file knows, so never reuse them.
+
+For the full frontend, API, and MongoDB setup with hot reload, follow the [local development guide](./LocalDevSetup.md).
+
+## The whole stack
+
+```bash
+docker compose up --build --wait   # start everything, return when every service is healthy
+docker compose ps                  # who is running, and healthy
+docker compose logs -f api         # follow one service
+docker compose down                # stop
+docker compose down -v             # stop and delete the data (database, images, queue)
+```
+
+Each service waits for what it needs: the API for MongoDB and Redis, the web app for the API, the image service for its storage bucket. A service counts as healthy when its own check passes (`/health` on the API, which needs MongoDB to answer; `/healthz` on the Go services, which exit with `healthcheck` as the container's check because their image has no shell; `/` on the web app).
+
+The web app's address for the API (`VITE_API_URL`) is built into the page, so it is an address your browser uses (`http://localhost:5050`), not a service name. Change it with the build argument in `docker-compose.yml` and rebuild.
+
+To follow one action through every service, take the id from the `X-Request-Id` header of any API response and search the logs for it: `docker compose logs | grep <id>`.
 
 ## Run the frontend container
 

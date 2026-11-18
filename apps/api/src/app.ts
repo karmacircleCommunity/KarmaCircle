@@ -15,6 +15,11 @@ import passport from "./config/passport";
 import { swaggerSpec } from "./config/swagger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { apiLimiter } from "./middleware/rate-limit";
+import {
+  bindRequestContext,
+  requestId,
+  type RequestWithId,
+} from "./middleware/request-id";
 import routes from "./routes/index";
 
 export function createApp(): Express {
@@ -26,9 +31,16 @@ export function createApp(): Express {
   // bucket: one attacker exhausts authLimiter's 20 attempts for everyone.
   app.set("trust proxy", 1);
 
+  app.use(requestId);
   app.use(helmet());
   app.use(compression());
-  app.use(pinoHttp({ logger }));
+  app.use(
+    pinoHttp({
+      logger,
+      // The id `requestId` made, so the access log line carries it.
+      genReqId: (req) => (req as RequestWithId).id ?? "unknown",
+    }),
+  );
 
   /**
    * An explicit allowlist, echoing back the caller's own origin only when it
@@ -55,7 +67,9 @@ export function createApp(): Express {
         }
       },
       credentials: true,
-      allowedHeaders: ["Set-Cookie", "Content-Type"],
+      allowedHeaders: ["Set-Cookie", "Content-Type", "X-Request-Id"],
+      // Lets the web app read the id, to pass it on to the image service.
+      exposedHeaders: ["X-Request-Id"],
     }),
   );
 
@@ -65,6 +79,7 @@ export function createApp(): Express {
   app.use(passport.initialize());
 
   app.use(apiLimiter);
+  app.use(bindRequestContext);
 
   app.get("/", (_req, res) => {
     res.send("HELLO FROM API");

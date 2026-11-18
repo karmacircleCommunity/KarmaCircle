@@ -379,7 +379,7 @@ the `card` link it returns as `coverImage`, so the event stores a link of about
 70 characters instead of the picture. While it uploads the form shows the chosen
 file as a local preview with a progress bar (`role="status"`), and Publish,
 Save as draft and Save changes are disabled, because saving then would lose the
-cover. Choosing another file cancels the first, and leaving the page cancels
+cover. The `X-Request-Id` of the API's answer is sent to the image service with the file, so both log the same id. Choosing another file cancels the first, and leaving the page cancels
 it too. When the API answers `503` (image uploads are not set up on that
 server) the picture is read with `convertToBase64(file)` into a data URL and
 sent inside the event as before, so a server without the image service still

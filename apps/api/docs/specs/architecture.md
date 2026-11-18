@@ -11,9 +11,10 @@ Both entry points read configuration through [src/config/env.ts](../../src/confi
 
 ## Middleware stack (`createApp()`, in order)
 
+0. `requestId` (`middleware/request-id.ts`, November 2026) — gives the request an id: the caller's `X-Request-Id` when it is plain (letters, digits, `.`, `_`, `-`, at most 64), otherwise a new UUID. It is sent back on every response (CORS exposes it to the browser), is the `req.id` in the access log line, and, through `bindRequestContext` (mounted after the body parsers, before the routes), is stamped as `requestId` on every notification job the request queues, so the worker's log line for the email carries the id of the request that caused it. The web app passes it on to the image service, which logs the same id.
 1. `helmet()` — standard security headers.
 2. `compression()` — gzip response bodies.
-3. `pinoHttp({ logger })` — structured request/response logging, with credential headers redacted (see above).
+3. `pinoHttp({ logger, genReqId })` — structured request/response logging with the request id, and credential headers redacted (see above).
 4. `cors(...)` — see "CORS" below.
 5. `express.json({ limit: "10mb" })`, then `express.urlencoded({ extended: false })`.
 6. `cookieParser()` — required for `req.cookies.Token` (see [auth.md](./auth.md)) to exist anywhere downstream.

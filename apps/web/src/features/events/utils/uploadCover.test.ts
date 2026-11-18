@@ -73,6 +73,28 @@ describe("uploadCover", () => {
     expect(fake.readAsDataUrl).not.toHaveBeenCalled();
   });
 
+  it("passes the API's request id on to the image service", async () => {
+    const fake = deps({ status: 200, grant, requestId: "api-req-42" });
+
+    await uploadCover(file, fake);
+
+    expect(fake.sendFile).toHaveBeenCalledWith(
+      grant,
+      file,
+      expect.objectContaining({ requestId: "api-req-42" }),
+    );
+  });
+
+  it("sends no request id when the API did not give one", async () => {
+    const fake = deps({ status: 200, grant });
+
+    await uploadCover(file, fake);
+
+    const options = (fake.sendFile as ReturnType<typeof vi.fn>).mock
+      .calls[0][2];
+    expect(options.requestId).toBeUndefined();
+  });
+
   it("passes the progress callback and the abort signal through", async () => {
     const fake = deps({ status: 200, grant });
     const onProgress = vi.fn();

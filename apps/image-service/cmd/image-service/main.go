@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,11 +14,26 @@ import (
 	"time"
 
 	"github.com/karmacirclecommunity/karmacircle/apps/image-service/internal/config"
+	"github.com/karmacirclecommunity/karmacircle/apps/image-service/internal/probe"
 	"github.com/karmacirclecommunity/karmacircle/apps/image-service/internal/server"
 	"github.com/karmacirclecommunity/karmacircle/apps/image-service/internal/storage"
 )
 
 func main() {
+	// `image-service healthcheck`: what the container's health check runs. It
+	// asks the running process for /healthz and exits 0 or 1.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8080"
+		}
+		if err := probe.Check(probe.URL(port), 3*time.Second); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	cfg, err := config.Load(os.LookupEnv)

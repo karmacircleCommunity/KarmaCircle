@@ -1,5 +1,6 @@
 import type Redis from "ioredis";
 import { getRedis } from "../../config/redis";
+import { getRequestId } from "../../middleware/request-id";
 import type { NotificationJob } from "./notification.jobs";
 
 /**
@@ -85,7 +86,11 @@ export async function enqueueJobs(
 ): Promise<number> {
   if (!redis || jobs.length === 0) return 0;
   const pipeline = redis.pipeline();
-  for (const job of jobs) {
+  const requestId = getRequestId();
+  for (const original of jobs) {
+    // Tag the job with the request that made it, unless the builder already did.
+    const job =
+      requestId && !original.requestId ? { ...original, requestId } : original;
     const [due, jobKey, sentKey, eventKey, id, json, runAt, jobTtl, setTtl] =
       enqueueArgs(job);
     pipeline.eval(

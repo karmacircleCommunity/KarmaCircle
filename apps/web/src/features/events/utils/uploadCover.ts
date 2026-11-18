@@ -93,7 +93,10 @@ export async function uploadCover(
     };
   }
 
-  const sent = await deps.sendFile(granted.grant, file, options);
+  const sent = await deps.sendFile(granted.grant, file, {
+    ...options,
+    requestId: granted.requestId,
+  });
   if (sent.cancelled || options.signal?.aborted) return cancelled();
   if (sent.networkError)
     return { kind: "failed", message: COVER_NETWORK_ERROR };

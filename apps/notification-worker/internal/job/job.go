@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -53,6 +54,9 @@ type Job struct {
 	Event    Event     `json:"event"`
 	Changes  []Change  `json:"changes,omitempty"`
 	Attempts int       `json:"attempts"`
+	// RequestID is the id of the API request that caused the job, so the
+	// worker's log lines can be matched with the API's. Optional.
+	RequestID string `json:"requestId,omitempty"`
 	// LastError is the reason of the latest failed attempt, for people.
 	LastError string `json:"lastError,omitempty"`
 }
@@ -89,6 +93,18 @@ func (j Job) Validate() error {
 		return fmt.Errorf("%w: a change notice needs at least one change", ErrInvalid)
 	}
 	return nil
+}
+
+var requestIDPattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)
+
+// SafeRequestID is the request id when it is made of plain characters, and
+// empty otherwise. It ends up in log lines, so a value that came off a queue
+// is not trusted to be harmless.
+func (j Job) SafeRequestID() string {
+	if requestIDPattern.MatchString(j.RequestID) {
+		return j.RequestID
+	}
+	return ""
 }
 
 // Expired reports whether sending now would be pointless. A reminder or a
