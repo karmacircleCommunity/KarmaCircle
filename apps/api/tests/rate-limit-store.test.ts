@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import http from "node:http";
 import express from "express";
 import { MemoryStore, type Options, type Store } from "express-rate-limit";
@@ -15,6 +16,10 @@ import { startTestRedis, type TestRedis } from "./helpers/redis";
  * The Redis tests use a real Redis (see helpers/redis.ts) and say so when one
  * is not available.
  */
+
+// Each run uses its own key names, so a Redis that is not wiped between runs
+// (the shared one in CI, or a developer's) cannot carry counts into the next.
+const RUN = randomUUID().slice(0, 8);
 
 const options = (windowMs: number) => ({ windowMs }) as Options;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -149,7 +154,7 @@ describe("RedisRateLimitStore", () => {
     });
 
   itRedis("counts hits and reports when the window ends", async () => {
-    const store = new RedisRateLimitStore(client(), "rl:t1:");
+    const store = new RedisRateLimitStore(client(), `rl:${RUN}:t1:`);
     store.init(options(60_000));
 
     const first = await store.increment("ip-1");
@@ -162,7 +167,7 @@ describe("RedisRateLimitStore", () => {
   });
 
   itRedis("keeps clients apart", async () => {
-    const store = new RedisRateLimitStore(client(), "rl:t2:");
+    const store = new RedisRateLimitStore(client(), `rl:${RUN}:t2:`);
     store.init(options(60_000));
 
     await store.increment("ip-a");
@@ -172,7 +177,7 @@ describe("RedisRateLimitStore", () => {
   });
 
   itRedis("starts counting again when the window is over", async () => {
-    const store = new RedisRateLimitStore(client(), "rl:t3:");
+    const store = new RedisRateLimitStore(client(), `rl:${RUN}:t3:`);
     store.init(options(300));
     await store.increment("ip");
     await store.increment("ip");
@@ -184,24 +189,24 @@ describe("RedisRateLimitStore", () => {
 
   itRedis("never leaves a counter without an expiry", async () => {
     const c = client();
-    const store = new RedisRateLimitStore(c, "rl:t4:");
+    const store = new RedisRateLimitStore(c, `rl:${RUN}:t4:`);
     store.init(options(60_000));
 
     await store.increment("ip");
-    expect(await c.pttl("rl:t4:ip")).toBeGreaterThan(0);
+    expect(await c.pttl(`rl:${RUN}:t4:ip`)).toBeGreaterThan(0);
 
     // A counter that lost its expiry (for example after a crash between two
     // commands) is repaired by the next hit instead of living for ever.
-    await c.persist("rl:t4:ip");
-    expect(await c.pttl("rl:t4:ip")).toBe(-1);
+    await c.persist(`rl:${RUN}:t4:ip`);
+    expect(await c.pttl(`rl:${RUN}:t4:ip`)).toBe(-1);
     await store.increment("ip");
-    expect(await c.pttl("rl:t4:ip")).toBeGreaterThan(0);
+    expect(await c.pttl(`rl:${RUN}:t4:ip`)).toBeGreaterThan(0);
   });
 
   itRedis(
     "counts every one of many simultaneous hits exactly once",
     async () => {
-      const store = new RedisRateLimitStore(client(), "rl:t5:");
+      const store = new RedisRateLimitStore(client(), `rl:${RUN}:t5:`);
       store.init(options(60_000));
 
       const results = await Promise.all(
@@ -217,11 +222,11 @@ describe("RedisRateLimitStore", () => {
     "takes a hit back, but never goes below zero from nothing",
     async () => {
       const c = client();
-      const store = new RedisRateLimitStore(c, "rl:t6:");
+      const store = new RedisRateLimitStore(c, `rl:${RUN}:t6:`);
       store.init(options(60_000));
 
       await store.decrement("ghost");
-      expect(await c.exists("rl:t6:ghost")).toBe(0);
+      expect(await c.exists(`rl:${RUN}:t6:ghost`)).toBe(0);
 
       await store.increment("ip");
       await store.increment("ip");
@@ -231,7 +236,7 @@ describe("RedisRateLimitStore", () => {
   );
 
   itRedis("resets one client", async () => {
-    const store = new RedisRateLimitStore(client(), "rl:t7:");
+    const store = new RedisRateLimitStore(client(), `rl:${RUN}:t7:`);
     store.init(options(60_000));
     await store.increment("ip");
     await store.increment("ip");
@@ -254,7 +259,7 @@ describe("RedisRateLimitStore", () => {
           message: "slow down",
           skip: () => false,
           store: new FailoverStore(
-            new RedisRateLimitStore(client(), `rl:${name}:`),
+            new RedisRateLimitStore(client(), `rl:${RUN}:${name}:`),
             name,
           ),
         });
@@ -262,8 +267,8 @@ describe("RedisRateLimitStore", () => {
         servers.push(s.httpServer);
         return s;
       };
-      const a = build("shared");
-      const b = build("shared");
+      const a = build(`shared-${RUN}`);
+      const b = build(`shared-${RUN}`);
       await Promise.all([a.ready, b.ready]);
 
       const statuses: number[] = [];
@@ -313,7 +318,7 @@ describe("RedisRateLimitStore", () => {
       statusCode: 429,
       skip: () => false,
       store: new FailoverStore(
-        new RedisRateLimitStore(client(), "rl:headers:"),
+        new RedisRateLimitStore(client(), `rl:${RUN}:headers:`),
         "headers",
       ),
     });
@@ -348,7 +353,7 @@ describe("RedisRateLimitStore", () => {
       message: "slow down",
       skip: () => false,
       store: new FailoverStore(
-        new RedisRateLimitStore(c, "rl:outage:"),
+        new RedisRateLimitStore(c, `rl:${RUN}:outage:`),
         "outage",
         300,
       ),
@@ -374,6 +379,6 @@ describe("RedisRateLimitStore", () => {
     const probe = client();
     await request(s.httpServer).get("/");
     await sleep(100);
-    expect((await probe.keys("rl:outage:*")).length).toBeGreaterThan(0);
+    expect((await probe.keys(`rl:${RUN}:outage:*`)).length).toBeGreaterThan(0);
   });
 });

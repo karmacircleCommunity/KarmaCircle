@@ -86,6 +86,16 @@ Note: `validate()` ([src/middleware/validate.ts](../../src/middleware/validate.t
 
 See [api-contract.md](./api-contract.md) for the full method+path+body+response reference and how each of these lines up against what the frontend actually calls.
 
+## Notifications (PG-18, November 2026)
+
+`src/modules/notifications/` puts emails about events on a Redis queue, and [apps/notification-worker](../../../notification-worker/README.md) (Go) sends them. It is on when `REDIS_URL` is set and does nothing otherwise.
+
+- `notification.jobs.ts` builds the jobs (a reminder 24 hours before the start, a change notice, a cancellation notice) and decides what counts as a change worth an email: start, end, place, format, meeting link. Job ids are fixed by what they are about, so a repeat adds nothing: `reminder:<event>:<registration>:<start in seconds>`, `changed:<event>:<registration>:<edit time in ms>`, `cancelled:<event>:<registration>`. The shape is a contract with the worker (`internal/job/job.go`); the fixtures in `apps/notification-worker/testdata/contract` are checked by tests on both sides.
+- `notification.queue.ts` writes the queue: each change is one Lua script, with the key layout documented in the worker's `internal/queue/queue.go` (`{notif}:due`, `{notif}:job:<id>`, `{notif}:event:<uid>`, `{notif}:sent:<id>`). Adding is idempotent, and a job already sent in the last 14 days is not added again.
+- `notification.service.ts` is what `event.service.ts` calls: `joinEvent` queues the person's reminder (not when the day-before moment has passed), `leaveEvent` removes it, `updateEvent` compares the event before and after and, if something changed, tells everyone registered and rebuilds the queued reminders so none says the old time or place, and `cancelEvent` removes the reminders and queues a cancellation notice for everyone. Every call is best effort: an error is logged and never fails the request, a Redis that hangs delays the response by at most 1.5 seconds, and recipients beyond 5000 per edit are skipped with a warning.
+
+Not covered yet: organizer announcements, retrying the join confirmation email (O-6, it is still sent directly), and rebuilding reminders from the database if Redis is lost.
+
 ## Data layer
 
 One Mongoose connection (`src/config/database.ts`), opened once at boot, reused by every module — there is no per-request connection or pooling logic to reason about beyond Mongoose's own default pool. [`requireAuth`](../../src/middleware/auth.ts) is the one piece of middleware that reads the DB itself (a minimal `.select("tokenVersion")` lookup, for session revocation — see [auth.md](./auth.md#signtoken-and-session-revocation)); every other middleware in the stack above is purely in-process.

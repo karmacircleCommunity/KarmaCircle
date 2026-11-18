@@ -65,6 +65,18 @@ jobs:
           go test -race ./...
           go build ./...
 
+      # The Go notification worker. Its tests use the Redis service above;
+      # packages run one at a time because they share one Redis database.
+      - name: Check notification worker
+        working-directory: apps/notification-worker
+        env:
+          REDIS_TEST_URL: redis://localhost:6379
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race -p 1 ./...
+          go build ./...
+
       - name: Lint apps
         run: pnpm lint
 

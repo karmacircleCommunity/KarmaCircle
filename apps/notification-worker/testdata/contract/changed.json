@@ -1,0 +1,33 @@
+{
+  "id": "changed:beach-day:65f1a2b3c4d5e6f708192a3b:1795003200000",
+  "kind": "event_changed",
+  "runAt": "2026-11-18T12:00:00.000Z",
+  "to": "asha@example.com",
+  "name": "Asha",
+  "event": {
+    "uid": "beach-day",
+    "name": "Beach clean-up",
+    "startTime": "2026-11-22T04:30:00.000Z",
+    "timezone": "Asia/Kolkata",
+    "mode": "Offline",
+    "place": "Versova Beach, Mumbai, Maharashtra, India"
+  },
+  "changes": [
+    {
+      "field": "start",
+      "from": "2026-11-22T01:30:00.000Z",
+      "to": "2026-11-22T04:30:00.000Z"
+    },
+    {
+      "field": "end",
+      "from": "2026-11-22T04:30:00.000Z",
+      "to": "2026-11-22T07:30:00.000Z"
+    },
+    {
+      "field": "place",
+      "from": "Juhu Beach, Mumbai, Maharashtra, India",
+      "to": "Versova Beach, Mumbai, Maharashtra, India"
+    }
+  ],
+  "attempts": 0
+}

@@ -247,6 +247,19 @@ Every event the API returns carries `status` (`published` or `cancelled`). The
 list filters do not hide cancelled events: the directory and the host list show
 them with a badge.
 
+## Emails about an event (PG-18, November 2026)
+
+With `REDIS_URL` set, the event service puts reminder and notice jobs on the notification queue (see [architecture.md](./architecture.md#notifications-pg-18-november-2026)); the Go worker sends them. Nothing is sent, and nothing in these routes changes, without it.
+
+| Route | What it queues |
+|---|---|
+| `POST /events/:uid/join` | the person's reminder, 24 hours before the start (none when that moment has passed) |
+| `DELETE /events/:uid/registration` | removes that person's reminder |
+| `PATCH /events/:uid` | when the start, end, place, format or meeting link changed: a change notice for everyone registered, and the queued reminders rebuilt. A rename or a timezone change only rebuilds the reminders. Drafts, cancelled events and events that already started are ignored |
+| `POST /events/:uid/cancel` | removes the reminders and queues a cancellation notice for everyone registered |
+
+None of it can fail a request. The `join` route still sends the confirmation and the organizer's notice itself, once, as before.
+
 ## `POST /events/cover-upload`
 
 `requireAuth` → `eventController.createCoverUpload` → `issueCoverUploadGrant` in `cover-upload.service.ts`.

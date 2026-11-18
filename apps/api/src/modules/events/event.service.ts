@@ -1,4 +1,11 @@
 import { FilterQuery } from "mongoose";
+import { factsOf } from "../notifications/notification.jobs";
+import {
+  cancelReminder,
+  notifyEventCancelled,
+  notifyEventUpdated,
+  scheduleReminder,
+} from "../notifications/notification.service";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
 import {
@@ -386,6 +393,8 @@ export async function updateEvent(
 ): Promise<IEvent> {
   const event = await findManagedEvent(email, uid);
   assertEventStillOpen(event, "edited");
+  // What the event was before this edit, to tell the people who joined what changed.
+  const before = factsOf(event);
 
   const startChanged =
     data.startTime !== undefined &&
@@ -412,7 +421,9 @@ export async function updateEvent(
   if (capacity !== undefined) await applyCapacity(event, capacity);
   for (const field of staleFieldsFor(merged.mode)) event.set(field, undefined);
 
-  return event.save();
+  const saved = await event.save();
+  await notifyEventUpdated(before, saved);
+  return saved;
 }
 
 /**
@@ -432,7 +443,9 @@ export async function cancelEvent(email: string, uid: string): Promise<IEvent> {
 
   event.status = "cancelled";
   event.cancelledAt = new Date();
-  return event.save();
+  const saved = await event.save();
+  await notifyEventCancelled(saved);
+  return saved;
 }
 
 /**
@@ -560,8 +573,9 @@ export async function joinEvent(email: string, uid: string) {
     throw new AppError(STATUS_CODE.CONFLICT, "This event is full.");
   }
 
+  let registration;
   try {
-    await EventRegistration.create({
+    registration = await EventRegistration.create({
       eventUid: uid,
       userId: attendee._id,
       attendeeEmail: attendee.email,
@@ -574,6 +588,11 @@ export async function joinEvent(email: string, uid: string) {
     return { event, attendee, alreadyJoined: true };
   }
 
+  await scheduleReminder(reserved, {
+    registrationId: String(registration._id),
+    email: attendee.email,
+    name: attendee.name || "",
+  });
   return { event: reserved, attendee, alreadyJoined: false };
 }
 
@@ -610,11 +629,16 @@ export async function leaveEvent(email: string, uid: string) {
     );
   }
 
-  const removed = await EventRegistration.findOneAndDelete({
+  const removed = await EventRegistration.findOne({
     eventUid: uid,
     userId: attendee._id,
-  });
-  if (!removed) {
+  }).select("_id");
+  // `deletedCount` decides who removed it, so two simultaneous leaves cannot
+  // both give the spot back.
+  const deleted = removed
+    ? await EventRegistration.deleteOne({ _id: removed._id })
+    : null;
+  if (!removed || deleted?.deletedCount !== 1) {
     throw new AppError(
       STATUS_CODE.NOT_FOUND,
       "You are not registered for this event.",
@@ -622,6 +646,7 @@ export async function leaveEvent(email: string, uid: string) {
   }
 
   await releaseSpot(uid);
+  await cancelReminder(event, String(removed._id));
   return { event, attendee };
 }
 

@@ -9,6 +9,7 @@ name: karmacircle-local
 # Usage: docker compose -f docker-compose.local.yml up -d
 #        docker compose -f docker-compose.local.yml --profile images up -d
 #        docker compose -f docker-compose.local.yml --profile redis up -d
+#        docker compose -f docker-compose.local.yml --profile notifications up -d
 # See docs/LocalDevSetup.md for the full walkthrough.
 
 services:
@@ -25,12 +26,28 @@ services:
   # the API counts requests in its own memory, which is fine for one process.
   # Set REDIS_URL="redis://localhost:6379" in apps/api/.env to use it.
   redis:
-    profiles: ["redis"]
+    profiles: ["redis", "notifications"]
     image: redis:7
     container_name: karmacircle-local-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
+
+  # Reminders and change notices for apps/api (PG-18). Needs the redis service
+  # above and REDIS_URL="redis://localhost:6379" in apps/api/.env. Without
+  # RESEND_API_KEY it only logs the emails, so no real mail leaves your machine.
+  notification-worker:
+    profiles: ["notifications"]
+    build: ./apps/notification-worker
+    container_name: karmacircle-local-notification-worker
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_URL: redis://redis:6379
+      SITE_URL: http://localhost:3000
 
   # Image storage for apps/image-service. An S3 compatible bucket on your
   # machine; production uses a real one (S3, Cloudflare R2). The console is on

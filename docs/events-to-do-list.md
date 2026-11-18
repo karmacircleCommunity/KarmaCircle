@@ -43,7 +43,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 Tier 2, depth (the showcase):
 - DB-1, S-4 and UI-5: a small image service (Go, built and wired to the form 2026-11-18, not yet hosted) with object storage and thumbnails, so the event stores only a link.
 - S-2: rate limits in a shared store (Redis), built 2026-11-18, needs a hosted Redis and `REDIS_URL`.
-- PG-18 with O-6: a reminder and notice worker (Go proposed) with a queue, retries and no double sends.
+- PG-18 with O-6: a reminder and notice worker (Go), built 2026-11-18 with a queue, retries and no double sends; organizer announcements and real delivery are still to do.
 - PG-19: add to calendar.
 - PG-20: share previews and event markup, cheap version only.
 - One-command local stack for web, API, MongoDB, Redis and the services, with CI building all of them, and a request id that follows a request across services.
@@ -259,12 +259,22 @@ Luma has co-hosts, DoraHacks has multiple admins and Eventbrite has team permiss
 Fix: decide whether organization members (the `members` array already exists) can manage events, and with which roles.
 
 ### PG-18 No announcements, reminders or change notices
-Status: open. Priority: P2.
+Status: partly done (2026-11-18): reminders and change and cancel notices are built, organizer announcements are not. Needs `REDIS_URL` and a running worker. Priority: P2.
 The only email is the join confirmation, and only in production.
 There is no reminder before the event, no email when an event changes or is cancelled, no message from organizer to attendees, and no notice to the organizer when someone joins.
 Fix: add reminders and change or cancel notices first, then organizer announcements.
 This builds on PG-6 and the confirmation email work in O-6.
 The organizer already gets one email per new registration (PG-6, production only); attendees still get nothing about changes.
+Result 2026-11-18: built `apps/notification-worker` (Go) and `src/modules/notifications` in the API.
+An attendee now gets a reminder 24 hours before the event, a notice listing what changed when the organizer changes the start, end, place, format or meeting link, and a notice if it is cancelled; leaving removes their reminder, and an edit rebuilds the queued reminders so none says the old time or place.
+The API writes one job per person to a Redis queue (a few milliseconds, never fails a request); the worker sends them at the right time with retries and backoff, a lease so a dead worker's jobs are taken back, an idempotency key so a retry is not a second email, a dead letter list with the reason, a health endpoint and a graceful stop.
+Tests: Go 60 (with `-race`, real Redis, a fake mail provider), API 53 for the queue and the hooks (real Redis, no database). Contract fixtures in `apps/notification-worker/testdata/contract` are checked from both languages.
+Run live with the real Node producer code, a real Redis, the real Go binary and a fake provider: change notices delivered; a provider answering `500` to the first try of every email was retried after about a second with the same key and then succeeded; the same job queued twice was queued once; a worker killed with `kill -9` in the middle of sending had its jobs taken back after the lease and sent by a second worker with the same key.
+Still to do:
+- Organizer announcements to everyone who joined (the second half of this item).
+- Real delivery: the worker has only run against a fake provider here. Needs a Resend key, a verified sender, and a place to run the worker (a host that keeps a process running), plus the same `REDIS_URL` on the API.
+- The API's join, leave, edit and cancel hooks are wired into `event.service.ts` but those paths were not run here (they need MongoDB), only the notification code they call; their Mongo-backed tests were not written or run. A manual check on your machine: join an event with `REDIS_URL` set and look for the job with `redis-cli zrange "{notif}:due" 0 -1`.
+- An unsubscribe link, and a Redis with persistence switched on, because unsent reminders live only in Redis.
 
 ### PG-19 No add to calendar
 Status: open. Priority: P2.
@@ -779,9 +789,11 @@ Not verified: a real report arriving in Sentry, since there is no DSN or network
 `engines.node` is now `>=20.19.0`, which `@sentry/node` 11 needs; check the Node version set on the host.
 
 ### O-6 Confirmation email is production-only and best-effort
-Status: open. Priority: P3.
+Status: partly done (2026-11-18). Priority: P3.
 A failed email is logged and not retried.
 Decide whether to queue and retry.
+2026-11-18: the queue and retrying worker now exist (PG-18) and are used for reminders and change and cancel notices.
+The join confirmation and the organizer's "someone joined" notice are still sent directly from the join request, once, with no retry. Moving them to the queue is a new job kind and a few lines in the worker's templates.
 
 ## 9. Docs and diagrams
 
@@ -873,3 +885,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: DB-1 partly done, `apps/image-service` (Go) and `POST /events/cover-upload` built; Go tests (39, race detector) and a live upload with a Node-minted token ran, the S3 store, Docker build, compose services and the web form wiring did not.
 - 2026-11-18: DB-1, the create and edit form uploads covers through the image service (with a base64 fallback when it is not set up); 20 new web unit tests, the real upload code run against the Go service; no browser review and no Playwright run.
 - 2026-11-18: S-2, rate limits shared through Redis with a memory fallback (`RedisRateLimitStore`, `FailoverStore`, `REDIS_URL`); 15 tests, 11 against a real Redis, and two API processes compared live (40 allowed without Redis, 20 with); a hosted Redis and the full API suite not run.
+- 2026-11-18: PG-18 partly done, `apps/notification-worker` (Go) and `src/modules/notifications`: reminders, change notices and cancellation notices through a Redis queue with retries, leases and idempotency keys; 60 Go tests and 53 API tests, plus live runs of delivery, provider failure and a killed worker; organizer announcements, real delivery and the Mongo-backed hook paths not done or not run.
