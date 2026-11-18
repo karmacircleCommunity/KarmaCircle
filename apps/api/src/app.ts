@@ -7,8 +7,10 @@ import mongoose from "mongoose";
 import pinoHttp from "pino-http";
 import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
+import { checkHealth } from "./config/health";
 import { logger } from "./config/logger";
 import { clearResetOutbox, getLastResetUrl } from "./config/mailer";
+import { initMonitoring } from "./config/monitoring";
 import passport from "./config/passport";
 import { swaggerSpec } from "./config/swagger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
@@ -16,6 +18,7 @@ import { apiLimiter } from "./middleware/rate-limit";
 import routes from "./routes/index";
 
 export function createApp(): Express {
+  initMonitoring();
   const app = express();
 
   // Vercel (and any reverse proxy) sits in front of this app. Without this,
@@ -67,12 +70,11 @@ export function createApp(): Express {
     res.send("HELLO FROM API");
   });
 
-  app.get("/health", (_req, res) => {
-    res.json({
-      status: "ok",
-      mongo:
-        mongoose.connection.readyState === 1 ? "connected" : "disconnected",
-    });
+  // For an uptime monitor: 200 only when MongoDB answers a ping, 503 when it
+  // does not, so a down database shows up as a down service.
+  app.get("/health", async (_req, res) => {
+    const report = await checkHealth();
+    res.status(report.status === "ok" ? 200 : 503).json(report);
   });
 
   /**

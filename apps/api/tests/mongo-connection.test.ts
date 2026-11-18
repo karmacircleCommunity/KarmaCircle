@@ -31,7 +31,7 @@ describe("serverless handler database connection (O-1)", () => {
     const connect = jest.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     const server = await coldStart(connect);
 
-    const res = await request(server).get("/health");
+    const res = await request(server).get("/");
 
     expect(res.status).toBe(503);
     expect(res.body).toEqual({ message: expect.any(String) });
@@ -44,8 +44,8 @@ describe("serverless handler database connection (O-1)", () => {
       .mockResolvedValue(undefined);
     const server = await coldStart(connect);
 
-    const first = await request(server).get("/health");
-    const second = await request(server).get("/health");
+    const first = await request(server).get("/");
+    const second = await request(server).get("/");
 
     expect(first.status).toBe(503);
     expect(second.status).toBe(200);
@@ -56,9 +56,9 @@ describe("serverless handler database connection (O-1)", () => {
     const connect = jest.fn().mockResolvedValue(undefined);
     const server = await coldStart(connect);
 
-    await request(server).get("/health");
-    await request(server).get("/health");
-    await request(server).get("/health");
+    await request(server).get("/");
+    await request(server).get("/");
+    await request(server).get("/");
 
     expect(connect).toHaveBeenCalledTimes(1);
   });
@@ -71,8 +71,8 @@ describe("serverless handler database connection (O-1)", () => {
     const server = await coldStart(connect);
 
     const inFlight = Promise.all([
-      request(server).get("/health"),
-      request(server).get("/health"),
+      request(server).get("/"),
+      request(server).get("/"),
     ]);
     await new Promise((resolve) => setTimeout(resolve, 150));
     finish();

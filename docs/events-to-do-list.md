@@ -38,7 +38,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 - S-5 weak secret check (done 2026-11-18, check the production values before deploying).
 - O-1 failed first database connection is remembered (done 2026-11-18).
 - DB-2 and DB-3 indexes, DB-6 unique user name (done 2026-11-18, see the items for what is not yet measured).
-- O-5 real health check and error tracking.
+- O-5 real health check and error tracking (done 2026-11-18, needs your Sentry DSN and an uptime monitor).
 
 Tier 2, depth (the showcase):
 - DB-1, S-4 and UI-5: a small image service (Go proposed) with object storage and thumbnails, so the event stores only a link.
@@ -746,9 +746,15 @@ Status: open. Priority: P3.
 Graceful shutdown stops the server but does not close the MongoDB connection.
 
 ### O-5 No monitoring of errors
-Status: open. Priority: P2.
+Status: done (2026-11-18), needs a Sentry project and an uptime monitor set up by you. Priority: P2.
 Errors are logged but there is no alerting or error tracking.
 Add error tracking and a health check that reports real database status to an uptime monitor.
+Result 2026-11-18: `GET /health` now pings MongoDB and answers `503` with `status: "degraded"` when it does not reply (it used to answer `200` whatever the database did).
+Unexpected errors are sent to Sentry with the method and route, only when `SENTRY_DSN` is set, collecting no request data, and the `500` answer waits up to 2 seconds for the report to leave.
+`tests/monitoring.test.ts` has 9 tests and passes (a fake transport records what would be sent); run live, `/health` gave `503` with no database and an unhandled error still answered `500` in 63 ms with an unreachable tracker.
+To switch it on: create a Sentry project, set `SENTRY_DSN` (and optionally `SENTRY_RELEASE`) on the host, and point an uptime monitor at `/health` expecting `200`.
+Not verified: a real report arriving in Sentry, since there is no DSN or network to Sentry here, and the Playwright suite, whose API readiness check uses `/health` and now waits for a real database ping.
+`engines.node` is now `>=20.19.0`, which `@sentry/node` 11 needs; check the Node version set on the host.
 
 ### O-6 Confirmation email is production-only and best-effort
 Status: open. Priority: P3.
@@ -841,3 +847,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: O-1, a failed first database connection is no longer remembered (`ensureMongoConnection`, `503` with `Retry-After`); `tests/mongo-connection.test.ts` (4 tests) fails on the old code.
 - 2026-11-18: DB-2, DB-3 and DB-6: events list, host and attendee indexes, unique `userName`, `scripts/sync-indexes.ts` and `scripts/explain-events.ts`; `tests/indexes.test.ts` (10) run, `tests/user-username-unique.test.ts` (2) and both scripts not run (no MongoDB in this sandbox).
 - 2026-11-18: S-5, production refuses short or placeholder `JWT_SECRET` and `SECRET_KEY` and the example Google OAuth values (`parseEnv`); `tests/env.test.ts` (17 tests); the same weak production values boot on the old code.
+- 2026-11-18: O-5, `/health` pings MongoDB and answers `503` when it fails; unexpected errors go to Sentry when `SENTRY_DSN` is set (`config/monitoring.ts`); `tests/monitoring.test.ts` (9 tests) run, a real Sentry delivery and the Playwright suite not run.

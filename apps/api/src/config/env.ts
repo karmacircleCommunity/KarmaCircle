@@ -106,6 +106,18 @@ const envSchema = z
     // `Domain=localhost` is rejected by Chrome, and a host-only cookie is
     // what local dev actually wants. See auth.cookies.ts.
     ORIGIN_DOMAIN: z.string().optional(),
+
+    // Optional error tracking (Sentry). Unset or empty means off: nothing is
+    // sent and the SDK is never started. See config/monitoring.ts.
+    SENTRY_DSN: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() || undefined)
+      .refine((value) => value === undefined || /^https?:\/\//.test(value), {
+        message: "must be a Sentry DSN URL",
+      }),
+    // Names the deploy in error reports. Falls back to Vercel's commit SHA.
+    SENTRY_RELEASE: z.string().optional(),
   })
   .superRefine((value, ctx) => {
     // Local development and tests use short example secrets on purpose

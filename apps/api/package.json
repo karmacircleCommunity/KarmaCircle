@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/src/server.js",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@commitlint/cli": "^17.6.1",
     "@commitlint/config-conventional": "^17.6.1",
+    "@sentry/node": "^11.13.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.2",
     "cookie-parser": "^1.4.6",
