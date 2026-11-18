@@ -13,6 +13,12 @@ import {
   paymentEndpoints,
   userEndpoints,
 } from "./ApiEndpoints";
+import type {
+  CoverGrantResult,
+  CoverSendOptions,
+  CoverSendResult,
+  CoverUploadGrant,
+} from "@features/events/types/interfaces";
 
 // LOGIN USER
 export const LoginUser = async (credentials: unknown) => {
@@ -323,11 +329,17 @@ export const PublishEvent = async (uid: string): Promise<EventWriteResult> => {
 };
 
 // take a published event with no registrations back to a draft
-export const UnpublishEvent = async (uid: string): Promise<EventWriteResult> => {
+export const UnpublishEvent = async (
+  uid: string,
+): Promise<EventWriteResult> => {
   try {
-    const response = await Axios.post(eventEndpoints.unpublish(uid), undefined, {
-      withCredentials: true,
-    });
+    const response = await Axios.post(
+      eventEndpoints.unpublish(uid),
+      undefined,
+      {
+        withCredentials: true,
+      },
+    );
     return { ok: true, status: response.status };
   } catch (error) {
     return toEventWriteFailure(error);
@@ -343,6 +355,51 @@ export const DeleteDraft = async (uid: string): Promise<EventWriteResult> => {
     return { ok: true, status: response.status };
   } catch (error) {
     return toEventWriteFailure(error);
+  }
+};
+
+// cover upload step 1: ask the API for a short-lived token for the image service
+export const RequestCoverUpload = async (): Promise<CoverGrantResult> => {
+  try {
+    const response = await Axios.post<CoverUploadGrant>(
+      eventEndpoints.coverUpload,
+      undefined,
+      { withCredentials: true },
+    );
+    return { status: response.status, grant: response.data };
+  } catch (error) {
+    const apiError = (error as AxiosError<{ message?: string }>).response;
+    return { status: apiError?.status, message: apiError?.data?.message };
+  }
+};
+
+// cover upload step 2: send the picture straight to the image service, not
+// through the API. No cookies go along: the service checks the token instead,
+// and it does not allow credentialed requests.
+export const SendCoverImage = async (
+  grant: CoverUploadGrant,
+  file: File,
+  { signal, onProgress }: CoverSendOptions,
+): Promise<CoverSendResult> => {
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const response = await Axios.post(grant.uploadUrl, form, {
+      headers: { Authorization: `Bearer ${grant.token}` },
+      withCredentials: false,
+      signal,
+      // Every answer, including 413 and 415, carries a message to show.
+      validateStatus: () => true,
+      onUploadProgress: (progress) => {
+        if (progress.total) {
+          onProgress?.(Math.round((progress.loaded / progress.total) * 100));
+        }
+      },
+    });
+    return { status: response.status, body: response.data };
+  } catch (error) {
+    if (Axios.isCancel(error)) return { cancelled: true };
+    return { networkError: true };
   }
 };
 

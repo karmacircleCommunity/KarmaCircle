@@ -296,6 +296,12 @@ values).
   5 MiB. `http`, `javascript:`, `file:`, SVG, other data types, invalid base64
   and oversized values are rejected (a `data:` string longer than about 6.99
   million characters is rejected before it is parsed).
+  The one `http` exception is a picture link from the configured image service
+  (`IMAGE_SERVICE_URL`): the same origin and its own path
+  `/v1/images/<32 hex characters>/thumb|card|large`, with no query, fragment or
+  credentials, so local development (the service on `http://localhost:8080`)
+  can save the link it returns. In production the service is on https like any
+  other link.
 - Maximum lengths: `city`, `state`, `country` 100; `address` 200; `platform` 60;
   `platformLink` 2048. `mapIframe` is still unbounded. Required **only if `mode` is `Offline` or `Hybrid`** (`createEventSchema`'s
 `superRefine`): `city`, `state`, `country`, and `address` — each missing one

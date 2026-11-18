@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { parseEnv } from "../src/config/env";
+import { coverImageSchema } from "../src/modules/events/event.validation";
 import {
   COVER_MAX_BYTES,
   issueCoverUploadGrant,
@@ -149,5 +150,45 @@ describe("image service environment settings", () => {
         IMAGE_SERVICE_SECRET: long,
       }),
     ).toThrow(/IMAGE_SERVICE_URL/);
+  });
+});
+
+describe("cover image links from the image service", () => {
+  // IMAGE_SERVICE_URL is http://127.0.0.1:8080 in the test environment.
+  const id = "0123456789abcdef0123456789abcdef";
+  const accepts = (value: string) => coverImageSchema.safeParse(value).success;
+
+  it("accepts a card link from the configured service, even over http", () => {
+    expect(accepts(`http://127.0.0.1:8080/v1/images/${id}/card`)).toBe(true);
+    expect(accepts(`http://127.0.0.1:8080/v1/images/${id}/thumb`)).toBe(true);
+  });
+
+  it("still accepts any https link, as before", () => {
+    expect(accepts("https://example.org/cover.jpg")).toBe(true);
+  });
+
+  it("does not open the door to other http links", () => {
+    expect(accepts("http://example.org/cover.jpg")).toBe(false);
+    expect(accepts(`http://127.0.0.1:9999/v1/images/${id}/card`)).toBe(false);
+    expect(accepts(`http://localhost:8080/v1/images/${id}/card`)).toBe(false);
+  });
+
+  it("only accepts the service's own image paths", () => {
+    expect(accepts("http://127.0.0.1:8080/")).toBe(false);
+    expect(accepts("http://127.0.0.1:8080/v1/images/short/card")).toBe(false);
+    expect(accepts(`http://127.0.0.1:8080/v1/images/${id}/original`)).toBe(
+      false,
+    );
+    expect(accepts(`http://127.0.0.1:8080/v1/images/${id}/card?x=1`)).toBe(
+      false,
+    );
+    expect(accepts(`http://user:pw@127.0.0.1:8080/v1/images/${id}/card`)).toBe(
+      false,
+    );
+  });
+
+  it("refuses scripts and other schemes", () => {
+    expect(accepts("javascript:alert(1)")).toBe(false);
+    expect(accepts("ftp://127.0.0.1:8080/v1/images/x")).toBe(false);
   });
 });

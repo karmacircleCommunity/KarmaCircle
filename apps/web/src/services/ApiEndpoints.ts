@@ -61,6 +61,8 @@ const HOST_EVENTS_LIMIT = 100;
 
 const eventEndpoints = {
   create: `${API}/events/create`,
+  /** `POST` for a short-lived token to upload an event cover to the image service. */
+  coverUpload: `${API}/events/cover-upload`,
   mine: () => `${API}/events/mine`,
   /**
    * One host's own events, filtered server-side by `hostUsername` — the

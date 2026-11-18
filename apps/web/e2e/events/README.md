@@ -42,6 +42,8 @@ to match only the row's main link.
   through the API, backdating an event, opening My Events from the menu). It uses
   a data-URL cover image so no third-party host is hit. It is not a test file.
 
+Cover pictures chosen in the form in these specs go through the fallback path: the E2E API server has no `IMAGE_SERVICE_URL`, so `POST /events/cover-upload` answers `503` and the picture is sent inside the event as a data URL, exactly as before the image service. The upload to the image service itself has no browser test yet (it needs the Go service running); its logic is covered by `src/features/events/utils/uploadCover.test.ts`.
+
 The attendee runs in a second browser context from the organization, and specs
 seed future events through the API. Past events come from the E2E-only
 `POST /__test__/events/:uid/backdate` route

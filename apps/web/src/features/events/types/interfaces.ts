@@ -397,3 +397,59 @@ export interface ApiAttendeeList {
   };
   summary: { registered: number; checkedIn: number };
 }
+
+/** What `POST /events/cover-upload` returns: where to send the picture and the token that allows it. */
+export interface CoverUploadGrant {
+  uploadUrl: string;
+  token: string;
+  expiresAt: string;
+  maxBytes: number;
+}
+
+/** One stored size of an uploaded cover, as the image service reports it. */
+export interface CoverVariant {
+  url: string;
+  width: number;
+  height: number;
+  bytes: number;
+}
+
+/** The image service's answer to an upload. The event keeps `variants.card.url`. */
+export interface UploadedCover {
+  id: string;
+  width: number;
+  height: number;
+  variants: Record<"thumb" | "card" | "large", CoverVariant>;
+}
+
+/** The API's answer to a request for an upload token, reduced to what the caller needs. */
+export interface CoverGrantResult {
+  status?: number;
+  grant?: CoverUploadGrant;
+  message?: string;
+}
+
+/** The image service's answer to an upload, or why there was none. */
+export interface CoverSendResult {
+  status?: number;
+  body?: unknown;
+  networkError?: boolean;
+  cancelled?: boolean;
+}
+
+export interface CoverSendOptions {
+  signal?: AbortSignal;
+  /** Called with 0 to 100 as the picture goes out. */
+  onProgress?: (percent: number) => void;
+}
+
+/** The three outside things the upload needs, so the logic can be tested without a network. */
+export interface CoverUploadDeps {
+  requestGrant: () => Promise<CoverGrantResult>;
+  sendFile: (
+    grant: CoverUploadGrant,
+    file: File,
+    options: CoverSendOptions,
+  ) => Promise<CoverSendResult>;
+  readAsDataUrl: (file: File) => Promise<string>;
+}

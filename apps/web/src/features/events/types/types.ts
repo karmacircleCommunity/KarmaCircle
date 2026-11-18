@@ -34,3 +34,15 @@ export type EventHeroProps = DetailedEventRecord;
 export type EventFactsProps = DetailedEventRecord;
 
 export type EventLocationPanelProps = DetailedEventRecord;
+
+/**
+ * How choosing a cover picture ended. `uploaded`: the image service stored it
+ * and the event keeps the link. `inline`: the image service is not set up on
+ * this server, so the picture goes inside the event as before. `failed`:
+ * nothing changed, show the message. `cancelled`: another picture was chosen.
+ */
+export type CoverUploadOutcome =
+  | { kind: "uploaded"; url: string }
+  | { kind: "inline"; dataUrl: string }
+  | { kind: "failed"; message: string }
+  | { kind: "cancelled" };

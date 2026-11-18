@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { env } from "../../config/env";
 import { paginationQuerySchema } from "../../utils/pagination";
 import {
   COVER_IMAGE_MAX_BYTES,
@@ -97,12 +98,40 @@ const base64DecodedBytes = (payload: string) => {
   return (payload.length * 3) / 4 - padding;
 };
 
+const IMAGE_SERVICE_IMAGE_PATH =
+  /^\/v1\/images\/[0-9a-f]{32}\/(?:thumb|card|large)$/;
+
 /**
- * A cover image is either an https link or a base64 data URL of an allowed
- * image type no larger than the browser's own 5 MB file limit. Anything else
- * (http, javascript:, svg, other data types, oversized payloads) is rejected.
+ * A link to one picture on the configured image service (`IMAGE_SERVICE_URL`).
+ * Allowed over plain http as well, so local development, where the service
+ * runs at http://localhost:8080, can save the link it returns. It has to be
+ * that exact origin and the service's own path, so this does not open the
+ * door to other http links.
  */
-const coverImageSchema = z
+const isImageServiceUrl = (value: string) => {
+  if (!env.IMAGE_SERVICE_URL) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.origin === new URL(env.IMAGE_SERVICE_URL).origin &&
+      IMAGE_SERVICE_IMAGE_PATH.test(url.pathname) &&
+      url.search === "" &&
+      url.hash === "" &&
+      url.username === "" &&
+      url.password === ""
+    );
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * A cover image is either an https link (including one from the image
+ * service) or a base64 data URL of an allowed image type no larger than the
+ * browser's own 5 MB file limit. Anything else (http, javascript:, svg, other
+ * data types, oversized payloads) is rejected.
+ */
+export const coverImageSchema = z
   .string()
   .min(1, "Missing Required Fields")
   .superRefine((value, ctx) => {
@@ -139,7 +168,10 @@ const coverImageSchema = z
       return;
     }
 
-    if (value.length > COVER_IMAGE_URL_MAX_LENGTH || !isHttpsUrl(value)) {
+    if (
+      value.length > COVER_IMAGE_URL_MAX_LENGTH ||
+      !(isHttpsUrl(value) || isImageServiceUrl(value))
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
@@ -180,7 +212,9 @@ const detailShape = {
     .object({
       amount: z
         .number()
-        .positive("A fee must be more than zero. Leave the cost out for a free event")
+        .positive(
+          "A fee must be more than zero. Leave the cost out for a free event",
+        )
         .max(EVENT_COST_MAX_AMOUNT),
       currency: z
         .string()

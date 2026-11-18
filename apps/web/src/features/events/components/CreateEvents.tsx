@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -29,6 +29,8 @@ import {
 import EventDetailsSection from "@features/events/components/EventDetailsSection";
 import { emptyDetailFields } from "@features/events/utils/eventDetailFields";
 import convertToBase64 from "@features/events/utils/convertToBase64";
+import { uploadCover } from "@features/events/utils/uploadCover";
+import { RequestCoverUpload, SendCoverImage } from "@services/KarmaCircleApi";
 import { useEvent } from "@features/events/hooks/useEvent";
 import {
   browserTimeZone,
@@ -110,9 +112,18 @@ export const EventForm = ({
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverError, setCoverError] = useState("");
+  // While a cover is on its way to the image service the organizer sees the
+  // file they chose (a local preview) and a progress bar, and cannot save the
+  // event yet: saving now would leave the old cover or none.
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverProgress, setCoverProgress] = useState(0);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const coverUpload = useRef<AbortController | null>(null);
+  const coverPreviewUrl = useRef<string | null>(null);
   const [isUidEdited, setIsUidEdited] = useState(isEdit);
   const { validateEvent, submitCallback } = useEvent(event, original);
   // The moment the preview's start means, to name its zone (daylight time and all).
+  const shownCover = coverPreview ?? event.coverImage;
   const previewInstant =
     event.startDate && event.startTime
       ? combineInZone(event.startDate, event.startTime, event.timezone)
@@ -135,6 +146,21 @@ export const EventForm = ({
     setEvent((current) => ({ ...current, uid }));
   };
 
+  const releaseCoverPreview = () => {
+    if (coverPreviewUrl.current) URL.revokeObjectURL(coverPreviewUrl.current);
+    coverPreviewUrl.current = null;
+    setCoverPreview(null);
+  };
+
+  // Leaving the page cancels an upload in flight and frees the local preview.
+  useEffect(
+    () => () => {
+      coverUpload.current?.abort();
+      if (coverPreviewUrl.current) URL.revokeObjectURL(coverPreviewUrl.current);
+    },
+    [],
+  );
+
   const handleCoverChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -149,11 +175,41 @@ export const EventForm = ({
       return;
     }
 
-    try {
-      const image = await convertToBase64(file);
-      setEvent((current) => ({ ...current, coverImage: image }));
-    } catch {
-      setCoverError("We couldn’t read that image. Choose it again to retry.");
+    // A newer choice replaces one still uploading.
+    coverUpload.current?.abort();
+    const controller = new AbortController();
+    coverUpload.current = controller;
+
+    releaseCoverPreview();
+    coverPreviewUrl.current = URL.createObjectURL(file);
+    setCoverPreview(coverPreviewUrl.current);
+    setCoverUploading(true);
+    setCoverProgress(0);
+
+    const outcome = await uploadCover(
+      file,
+      {
+        requestGrant: RequestCoverUpload,
+        sendFile: SendCoverImage,
+        readAsDataUrl: convertToBase64,
+      },
+      { signal: controller.signal, onProgress: setCoverProgress },
+    );
+
+    // Cancelled, or a newer choice has taken over: it owns the state now.
+    if (outcome.kind === "cancelled" || coverUpload.current !== controller) {
+      return;
+    }
+    coverUpload.current = null;
+    setCoverUploading(false);
+    releaseCoverPreview();
+
+    if (outcome.kind === "uploaded") {
+      setEvent((current) => ({ ...current, coverImage: outcome.url }));
+    } else if (outcome.kind === "inline") {
+      setEvent((current) => ({ ...current, coverImage: outcome.dataUrl }));
+    } else {
+      setCoverError(outcome.message);
     }
   };
 
@@ -184,6 +240,7 @@ export const EventForm = ({
    * nobody else can open.
    */
   const submit = async (intent: SubmitIntent) => {
+    if (coverUploading) return;
     const validationErrors = validateEvent();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
@@ -382,9 +439,9 @@ export const EventForm = ({
                       htmlFor="coverImage"
                       className="group flex min-h-48 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-brand-secondary/20 bg-surface-warm text-center transition hover:border-brand/50"
                     >
-                      {event.coverImage ? (
+                      {shownCover ? (
                         <img
-                          src={event.coverImage}
+                          src={shownCover}
                           alt="Event cover preview"
                           className="h-56 w-full object-cover"
                         />
@@ -425,6 +482,20 @@ export const EventForm = ({
                       >
                         {errors.coverImage}
                       </p>
+                    )}
+                    {coverUploading && (
+                      <div role="status" className="mt-2">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand/10">
+                          <div
+                            className="h-full rounded-full bg-brand transition-[width]"
+                            style={{ width: `${coverProgress}%` }}
+                          />
+                        </div>
+                        <p className="mt-1.5 font-poppins text-caption text-ink/60">
+                          Uploading cover image
+                          {coverProgress > 0 ? ` ${coverProgress}%` : "…"}
+                        </p>
+                      </div>
                     )}
                     <p className="mt-1.5 font-poppins text-caption text-ink/50">
                       Wide images work best. Maximum 5 MB.
@@ -723,7 +794,7 @@ export const EventForm = ({
                   {(!isEdit || isDraftEdit) && (
                     <button
                       type="button"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || coverUploading}
                       onClick={() => void submit("draft")}
                       className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-brand-secondary/20 bg-white px-6 font-outfit text-body font-semibold text-brand-secondary transition hover:border-brand/45 disabled:cursor-wait disabled:opacity-60"
                     >
@@ -732,7 +803,7 @@ export const EventForm = ({
                   )}
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || coverUploading}
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
                   >
                     {isSubmitting
@@ -766,9 +837,9 @@ export const EventForm = ({
                 </div>
                 <article className="mt-4 overflow-hidden rounded-xl border border-brand-secondary/10">
                   <div className="aspect-video overflow-hidden bg-surface-warm">
-                    {event.coverImage ? (
+                    {shownCover ? (
                       <img
-                        src={event.coverImage}
+                        src={shownCover}
                         alt=""
                         className="size-full object-cover"
                       />

@@ -86,7 +86,8 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `components/EventCard.tsx`          | Card rendered in the `/events` grid                                                                                                                                                                                                       | ✅ rendered, typed against `EventCardEvent`                                                                                                                                                                            |
 | `utils/toDisplayEvent.ts`           | Maps a live `ApiEvent` onto `EventCardEvent`                                                                                                                                                                                              | ✅ used by `Events.tsx`                                                                                                                                                                                                |
 | `components/EventsMarqueeCards.tsx` | Data-driven event card (correctly reads an `event` prop)                                                                                                                                                                                  | ❌ not rendered anywhere                                                                                                                                                                                               |
-| `utils/convertToBase64.ts`          | File→base64 helper used by `CreateEvents.tsx`'s cover-image upload                                                                                                                                                                        | ✅ used by `CreateEvents` only                                                                                                                                                                                         |
+| `utils/uploadCover.ts` | Cover upload: token from the API, picture to the image service, the card link back; falls back to base64 on `503`. Pure, with its dependencies passed in (`utils/uploadCover.test.ts`, 20 tests) |
+| `utils/convertToBase64.ts`          | File→base64 helper, now only the fallback for a server without the image service                                                                                                                                                                        | ✅ used by `CreateEvents` only                                                                                                                                                                                         |
 | `utils/getFormattedDate.ts`         | Ordinal-suffix date formatter (`"1st January"`)                                                                                                                                                                                           | ✅ used by `EventsMarqueeCards` only (itself unused)                                                                                                                                                                   |
 | `constants/reservedEventAddresses.ts` | `RESERVED_EVENT_ADDRESSES`: page addresses the create form refuses (`mine`, `new`, `create`, `edit`, `admin`, `api`). The API keeps its own copy | ✅ used by `useEvent.ts` |
 | `constants/coverImageTypes.ts` | `COVER_IMAGE_MIME_TYPES`, `COVER_IMAGE_ACCEPT`, `COVER_IMAGE_TYPE_ERROR`: the four cover image types the API accepts | ✅ used by `CreateEvents.tsx` |
@@ -342,8 +343,20 @@ into a timestamp before sending the API request.
 **Cover image:** image uploads are limited to 5 MB and to PNG, JPEG, WebP or GIF
 (`constants/coverImageTypes.ts`, mirroring `COVER_IMAGE_MIME_TYPES` in the API's
 `event.constants.ts`; the file input's `accept` and the error text come from
-the same constant), and converted to a base64 data URL by
-`convertToBase64(file)`. The API rejects any other type, so the browser blocks
+the same constant). Choosing a file runs `uploadCover` (`utils/uploadCover.ts`):
+it asks the API for a five minute token (`RequestCoverUpload`, `POST
+/events/cover-upload`), sends the picture straight to the image service
+(`SendCoverImage`, multipart, `Authorization: Bearer`, no cookies) and keeps
+the `card` link it returns as `coverImage`, so the event stores a link of about
+70 characters instead of the picture. While it uploads the form shows the chosen
+file as a local preview with a progress bar (`role="status"`), and Publish,
+Save as draft and Save changes are disabled, because saving then would lose the
+cover. Choosing another file cancels the first, and leaving the page cancels
+it too. When the API answers `503` (image uploads are not set up on that
+server) the picture is read with `convertToBase64(file)` into a data URL and
+sent inside the event as before, so a server without the image service still
+works. Failures show the service's own message (too large, not an image,
+damaged) or a plain one (expired, busy, no connection). The API rejects any other type, so the browser blocks
 SVG, AVIF and BMP up front instead of failing on submit. The form starts without
 a placeholder asset and shows an intentional preview placeholder until the
 organizer chooses an image.

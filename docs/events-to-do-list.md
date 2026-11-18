@@ -41,7 +41,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 - O-5 real health check and error tracking (done 2026-11-18, needs your Sentry DSN and an uptime monitor).
 
 Tier 2, depth (the showcase):
-- DB-1, S-4 and UI-5: a small image service (Go, built 2026-11-18, not yet wired to the form) with object storage and thumbnails, so the event stores only a link.
+- DB-1, S-4 and UI-5: a small image service (Go, built and wired to the form 2026-11-18, not yet hosted) with object storage and thumbnails, so the event stores only a link.
 - S-2: rate limits in a shared store (Redis).
 - PG-18 with O-6: a reminder and notice worker (Go proposed) with a queue, retries and no double sends.
 - PG-19: add to calendar.
@@ -511,10 +511,10 @@ Status: parked (was open, parked 2026-11-18). Priority: P2.
 Check keyboard use of the create form, the mode choice, the filter dropdowns, focus order, focus after a failed submit, and color contrast on the badges.
 
 ### UI-5 Cover image handling
-Status: open, waiting for the form to use the image service. Priority: P2.
+Status: built, visual review pending. Priority: P2.
 The form reads the image as a base64 string up to 5 MB.
 Check the preview, the slow-network behavior, and what is shown when the image is very tall or very small.
-2026-11-18: the server side is ready (it turns photos upright, never enlarges, flattens transparency, rejects non-images and giant pictures with a clear message and status), so the form only has to show progress and those messages.
+2026-11-18: the server side is ready (it turns photos upright, never enlarges, flattens transparency, rejects non-images and giant pictures with a clear message and status) and the form now shows a local preview, a progress bar and those messages. Still to check in a browser: very tall, very small and slow-network behavior.
 
 ### UI-6 Design system conformity
 Status: parked (was open, parked 2026-11-18). Priority: P3.
@@ -589,8 +589,11 @@ Result 2026-11-18: built `apps/image-service`, a Go service for this (see its RE
 The API issues a five minute upload token (`POST /events/cover-upload`), the browser sends the picture to the service, the service checks it, makes `thumb`, `card` and `large` JPEGs, stores them in an S3 compatible bucket (or a folder in development) and returns links, and the event keeps the `card` link.
 Run live with a folder as storage and a token minted by the real API code: upload, three sizes (5.8, 17 and 35 KB for a 122 KB PNG), caching headers, `304` on a repeat visit, CORS, and bad tokens all behaved; a 122 KB PNG that would be about 164,000 characters inside the event becomes a link of 70.
 Go: 39 tests, `go test -race` clean. API: 12 tests without a database pass.
+2026-11-18, later: the create and edit form now uses it (`utils/uploadCover.ts`): token from the API, picture straight to the service, the `card` link kept as `coverImage`, a progress bar, saving disabled while it uploads, and a fallback to the old base64 cover when the API answers `503` (not set up), so nothing breaks before the service is hosted.
+The API also accepts the service's own `http` links for the configured `IMAGE_SERVICE_URL`, because local development runs it on `http://localhost:8080` and the cover rule only took `https`.
+Web unit tests: 20 for the upload logic, 216 in all, passing; type-check, lint (no new warnings) and build pass; the real axios upload code was run against the running Go service (upload, bad file, bad token, service down, cancel).
 Still to do before this item is closed:
-- Wire the create and edit form (`CreateEvents.tsx`) to call `POST /events/cover-upload`, upload, and send the returned `card` URL as `coverImage`. This is front-end work and needs your go-ahead for the visual review.
+- Visual review of the form: the progress bar, the local preview, the disabled buttons and the error text were not looked at in a browser (not authorized), so visual review is still pending. The Playwright events specs were not run for the same reason; they use the base64 fallback because the E2E API has no `IMAGE_SERVICE_URL`.
 - Run it against a real bucket (MinIO through `docker-compose.local.yml --profile images`, then R2 or S3). The S3 store is compiled and vet-clean but was not exercised, and the Dockerfile and compose services were not built or started here (no Docker in this sandbox).
 - Choose where the service runs in production. The API is on Vercel serverless, so this needs a host that keeps a process running, such as Fly.io, Render or Railway, and `IMAGE_SERVICE_URL`, `IMAGE_SERVICE_SECRET` and `ALLOWED_ORIGINS` set to match.
 - Existing events that hold a base64 cover are not moved (no migration tool, see DB-7).
@@ -683,12 +686,11 @@ Not verified: the API Jest suite and the Playwright suite need a MongoDB test bi
 Ran instead: API and web type-check, lint and build, the 196 web unit tests, the logger test, and a boot of the real app checking `/health`, gzip on `/docs`, per-client rate limiting behind `X-Forwarded-For`, and a `400` from validation.
 
 ### S-4 Large request bodies are accepted on every route
-Status: open, unblocked by DB-1 once the form uses the image service. Priority: P2.
+Status: open, can be lowered once the image service is hosted. Priority: P2.
 The JSON body limit is 10 MB for the whole API, because event covers need it.
 Every other route accepts the same, which makes memory exhaustion easier.
 Fix: set a small default and a larger limit only where needed, or remove the need through DB-1.
-2026-11-18: the pictures no longer need to pass through the API, so once the web form uses the image service the 10 MB limit can be lowered to a small default.
-Do not lower it before then, or covers sent as base64 will be refused.
+2026-11-18: the web form now sends covers to the image service when it is set up, so the pictures no longer pass through the API. The 10 MB limit must stay until the service is hosted and `IMAGE_SERVICE_URL` is set everywhere, because the base64 fallback still sends covers through the API; then it can be lowered.
 
 ### S-5 Weak secret check
 Status: done (2026-11-18), check your production values before deploying. Priority: P2.
@@ -862,3 +864,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: S-5, production refuses short or placeholder `JWT_SECRET` and `SECRET_KEY` and the example Google OAuth values (`parseEnv`); `tests/env.test.ts` (17 tests); the same weak production values boot on the old code.
 - 2026-11-18: O-5, `/health` pings MongoDB and answers `503` when it fails; unexpected errors go to Sentry when `SENTRY_DSN` is set (`config/monitoring.ts`); `tests/monitoring.test.ts` (9 tests) run, a real Sentry delivery and the Playwright suite not run.
 - 2026-11-18: DB-1 partly done, `apps/image-service` (Go) and `POST /events/cover-upload` built; Go tests (39, race detector) and a live upload with a Node-minted token ran, the S3 store, Docker build, compose services and the web form wiring did not.
+- 2026-11-18: DB-1, the create and edit form uploads covers through the image service (with a base64 fallback when it is not set up); 20 new web unit tests, the real upload code run against the Go service; no browser review and no Playwright run.
