@@ -102,7 +102,7 @@ Concrete "don't reintroduce this" rules, accumulated as issues get found and fix
 - Don't add a new ad-hoc auth check. `requireAuth` (`apps/api/src/middleware/auth.ts`) reading the `Token` cookie is the one mechanism this API uses — see `apps/api/docs/specs/auth.md`.
 - Don't return a raw Mongoose `User` document to a client. Always go through `userService.sanitize()` or the `PUBLIC_FIELDS` projection — see `apps/api/docs/specs/users.md`.
 - Don't add a new "create X, checking uniqueness first" flow that assumes the existence-check-then-save pattern is race-safe - it isn't (see the `userName`/`productSlug` races cataloged in `apps/api/docs/specs/known-issues.md`); rely on the schema's own `unique: true` index and handle the resulting Mongo-11000 error if you need this to be truly race-safe.
-- Don't wire a new mutation to identify "which user" purely by an `email` string in the request body without also gating it behind `requireAuth`. `POST /product/cart/add` already does this and it's cataloged as the most significant access-control gap in the codebase, not a pattern to repeat — see `apps/api/docs/specs/known-issues.md#products`.
+- Don't wire a new mutation to identify "which user" purely by an `email` string in the request body without also gating it behind `requireAuth`. `POST /product/cart/add` used to do this (anyone who knew a user's email could write into that user's cart) and was fixed in September 2026 by `requireAuth` plus `req.auth.email`; that is the pattern to follow, see `apps/api/docs/specs/known-issues.md#products` and `apps/api/tests/products.test.ts`.
 
 ## when you're not sure which duplicate a request means
 

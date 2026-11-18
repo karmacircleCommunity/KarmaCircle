@@ -34,7 +34,7 @@ Work on these, in this order.
 Tier 1, fix first (small, and reviewers spot them fast):
 - S-1 session cookie in logs (done 2026-11-17).
 - S-3 vulnerable packages, and add the audit to CI.
-- S-7 cart add trusts an email from the request.
+- S-7 cart add trusts an email from the request (already fixed, see the item).
 - S-5 weak secret check.
 - O-1 failed first database connection is remembered.
 - DB-2 and DB-3 indexes, DB-6 unique user name.
@@ -678,9 +678,15 @@ Confirm it, and keep the signature check strict.
 The signature check itself is present.
 
 ### S-7 Cart add trusts an email from the request
-Status: open. Priority: P1.
+Status: done (already fixed 2026-09-13, checked 2026-11-18). Priority: P1.
 This is the access gap already listed in the API known issues.
 It is not events code, but it is the most serious access problem in the backend.
+Result: this entry was stale.
+`POST /product/cart/add` has been behind `requireAuth` since September 2026 and writes only to `req.auth.email`'s own cart, with no `email` field in the body.
+`apps/api/tests/products.test.ts` covers it (no cookie is refused, own cart only, a named victim is ignored).
+Checked again against the running app on 2026-11-18: the old attack (victim email in the body, no cookie), a garbage `Token` cookie, and a token signed with the wrong secret all return `401`.
+The authenticated path was not run here (no MongoDB in this sandbox).
+What is left near it, still open in the API known issues: `POST /product/addproduct` has no auth at all, `productId` is never checked against real products, and the cart has no de-duplication or remove.
 
 ### S-8 Per-request database read for sign-in checks
 Status: parked (was open, parked 2026-11-18). Priority: P3.
@@ -807,3 +813,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-17: S-1, the request logger redacts the cookie, authorization and set-cookie headers; new `tests/logger.test.ts` (3 tests) fails without the redaction. Run on its own without MongoDB (the Mongo binary download is blocked in this sandbox); the full API suite was not run.
 - 2026-11-18: added the Showcase plan and parked 34 items (front-end polish tier, registration rules, organizer features, money and hackathons, smaller items). Nothing deleted.
 - 2026-11-18: S-3 partly done, see the item for what remains (`zod` 4, `picomatch`, `glob` and `minimatch`); the production audit has no critical findings and CI audits at critical.
+- 2026-11-18: S-7 was already fixed in September 2026 (the item and the AGENTS.md guardrail were stale); re-checked against the running app and corrected both.
