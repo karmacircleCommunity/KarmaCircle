@@ -3,6 +3,7 @@ import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AuthenticatedRequest } from "../../middleware/auth";
 import { AppError } from "../../middleware/error-handler";
 import { buildPaginationMeta, toSkipLimit } from "../../utils/pagination";
+import { issueCoverUploadGrant } from "./cover-upload.service";
 import * as eventService from "./event.service";
 import {
   AttendeesQuery,
@@ -81,6 +82,14 @@ export async function createEvent(req: AuthenticatedRequest, res: Response) {
     .json({ message: "Event Created", savedEvent });
 }
 
+export async function createCoverUpload(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  const grant = await issueCoverUploadGrant(req.auth.email);
+  res.status(STATUS_CODE.OK).json(grant);
+}
+
 export async function updateEvent(req: AuthenticatedRequest, res: Response) {
   const event = await eventService.updateEvent(
     req.auth.email,
@@ -145,7 +154,9 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
     // Best effort, like the attendee's own confirmation: a failed notice never
     // undoes the registration.
     try {
-      const organizerEmail = await eventService.findOrganizerEmail(result.event);
+      const organizerEmail = await eventService.findOrganizerEmail(
+        result.event,
+      );
       if (organizerEmail) {
         await sendEventJoinOrganizerNotice(
           organizerEmail,
@@ -203,7 +214,10 @@ export async function listAttendees(req: AuthenticatedRequest, res: Response) {
   });
 }
 
-export async function exportAttendees(req: AuthenticatedRequest, res: Response) {
+export async function exportAttendees(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
   const csv = await eventService.exportAttendeesCsv(
     req.auth.email,
     req.params.uid,
@@ -217,7 +231,10 @@ export async function exportAttendees(req: AuthenticatedRequest, res: Response) 
   return res.status(STATUS_CODE.OK).send(csv);
 }
 
-export async function checkInAttendee(req: AuthenticatedRequest, res: Response) {
+export async function checkInAttendee(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
   const attendee = await eventService.setCheckIn(
     req.auth.email,
     req.params.uid,

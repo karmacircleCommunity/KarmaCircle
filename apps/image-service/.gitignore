@@ -1,0 +1,3 @@
+# Local development storage (STORAGE=fs) and built binaries.
+/data/
+/image-service

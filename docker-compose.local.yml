@@ -1,11 +1,13 @@
 name: karmacircle-local
 
-# Local development infra for the monorepo — currently just MongoDB, so
-# apps/api has something to connect to without needing a MongoDB Atlas
-# account. Not used in CI or production; apps/web and apps/api still run
-# as plain `npm run dev` processes on the host, not in containers here.
+# Local development infra for the monorepo: MongoDB, so apps/api has
+# something to connect to without needing a MongoDB Atlas account, and, under
+# the "images" profile, a MinIO bucket plus apps/image-service. Not used in
+# CI or production; apps/web and apps/api still run as plain `npm run dev`
+# processes on the host, not in containers here.
 #
 # Usage: docker compose -f docker-compose.local.yml up -d
+#        docker compose -f docker-compose.local.yml --profile images up -d
 # See docs/LocalDevSetup.md for the full walkthrough.
 
 services:
@@ -18,5 +20,58 @@ services:
     volumes:
       - karmacircle-mongo-data:/data/db
 
+  # Image storage for apps/image-service. An S3 compatible bucket on your
+  # machine; production uses a real one (S3, Cloudflare R2). The console is on
+  # http://localhost:9001. Local-only credentials, never reuse them.
+  minio:
+    profiles: ["images"]
+    image: minio/minio:latest
+    container_name: karmacircle-local-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: karmacircle-local
+      MINIO_ROOT_PASSWORD: karmacircle-local-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - karmacircle-minio-data:/data
+
+  # Creates the bucket once MinIO is up, then exits.
+  minio-setup:
+    profiles: ["images"]
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 karmacircle-local karmacircle-local-secret; do sleep 1; done;
+      mc mb --ignore-existing local/karmacircle-images;
+      "
+
+  # Event cover uploads, see apps/image-service/README.md. Give apps/api the
+  # same IMAGE_SERVICE_URL and IMAGE_SERVICE_SECRET as below.
+  image-service:
+    profiles: ["images"]
+    build: ./apps/image-service
+    container_name: karmacircle-local-image-service
+    restart: unless-stopped
+    depends_on:
+      - minio-setup
+    ports:
+      - "8080:8080"
+    environment:
+      IMAGE_SERVICE_SECRET: a-shared-secret-of-at-least-32-chars!!
+      PUBLIC_BASE_URL: http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:3000
+      STORAGE: s3
+      S3_ENDPOINT: minio:9000
+      S3_BUCKET: karmacircle-images
+      S3_ACCESS_KEY: karmacircle-local
+      S3_SECRET_KEY: karmacircle-local-secret
+      S3_USE_SSL: "false"
+
 volumes:
   karmacircle-mongo-data:
+  karmacircle-minio-data:

@@ -247,6 +247,22 @@ Every event the API returns carries `status` (`published` or `cancelled`). The
 list filters do not hide cancelled events: the directory and the host list show
 them with a badge.
 
+## `POST /events/cover-upload`
+
+`requireAuth` → `eventController.createCoverUpload` → `issueCoverUploadGrant` in `cover-upload.service.ts`.
+Same account rules as creating an event: an unknown account is `401`, a non-organization account is `403`.
+Answers `200 { uploadUrl, token, expiresAt, maxBytes }`.
+When `IMAGE_SERVICE_URL` and `IMAGE_SERVICE_SECRET` are not both set it answers `503` ("Image uploads are not set up on this server !"), and nothing is signed.
+
+The browser then sends the picture to `uploadUrl` as multipart form data (field `file`) with `Authorization: Bearer <token>`, and the image service answers with the stored sizes (`thumb`, `card`, `large`, each a `url`).
+The `card` URL is what goes in `coverImage` on create or edit, which the existing rule already accepts (an https URL up to 2048 characters).
+The picture itself never passes through this API, and the event keeps a link of about 70 characters instead of a base64 string of several hundred thousand.
+The token is an HS256 JWT: issuer `karmacircle-api`, audience `image-service`, `purpose: "event-cover"`, a `sub` that is a hash of the account (never the email), valid five minutes.
+Those claims are a contract with `apps/image-service/internal/auth/token.go`; change both together.
+See [apps/image-service/README.md](../../../image-service/README.md) for the service itself.
+
+The web create form does not use this route yet, so base64 covers are still accepted and still stored inside the event document until it does (DB-1 in the events to-do list).
+
 ## `POST /events/create`
 
 `requireAuth` → `validate(createEventSchema)` → `eventController.createEvent`.

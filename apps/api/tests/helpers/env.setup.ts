@@ -14,3 +14,6 @@ process.env.ORIGIN_URL = "http://localhost:3000";
 // Empty, matching local dev: cookies are host-only, with no Domain attribute.
 process.env.ORIGIN_DOMAIN = "";
 process.env.CORS_ORIGINS = "";
+// The image service, so the cover upload route can issue tokens in tests.
+process.env.IMAGE_SERVICE_URL = "http://127.0.0.1:8080";
+process.env.IMAGE_SERVICE_SECRET = "test-image-service-secret-0123456789";

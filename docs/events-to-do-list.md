@@ -41,7 +41,7 @@ Tier 1, fix first (small, and reviewers spot them fast):
 - O-5 real health check and error tracking (done 2026-11-18, needs your Sentry DSN and an uptime monitor).
 
 Tier 2, depth (the showcase):
-- DB-1, S-4 and UI-5: a small image service (Go proposed) with object storage and thumbnails, so the event stores only a link.
+- DB-1, S-4 and UI-5: a small image service (Go, built 2026-11-18, not yet wired to the form) with object storage and thumbnails, so the event stores only a link.
 - S-2: rate limits in a shared store (Redis).
 - PG-18 with O-6: a reminder and notice worker (Go proposed) with a queue, retries and no double sends.
 - PG-19: add to calendar.
@@ -511,9 +511,10 @@ Status: parked (was open, parked 2026-11-18). Priority: P2.
 Check keyboard use of the create form, the mode choice, the filter dropdowns, focus order, focus after a failed submit, and color contrast on the badges.
 
 ### UI-5 Cover image handling
-Status: open. Priority: P2.
+Status: open, waiting for the form to use the image service. Priority: P2.
 The form reads the image as a base64 string up to 5 MB.
 Check the preview, the slow-network behavior, and what is shown when the image is very tall or very small.
+2026-11-18: the server side is ready (it turns photos upright, never enlarges, flattens transparency, rejects non-images and giant pictures with a clear message and status), so the form only has to show progress and those messages.
 
 ### UI-6 Design system conformity
 Status: parked (was open, parked 2026-11-18). Priority: P3.
@@ -578,12 +579,22 @@ Keep as is, or standardize with a note in the API contract.
 ## 6. Database (MongoDB)
 
 ### DB-1 Cover images are stored inside the event document
-Status: open. Priority: P1.
+Status: partly done (2026-11-18), the service is built, the web form is not wired to it. Priority: P1.
 The browser sends the image as a text string and it is saved in the event record.
 The public list returns whole records, so every cover image travels in the list response.
 With 100 events at a few megabytes each, one page load could be hundreds of megabytes.
 Fix: upload images to object storage, save only a link on the event, and validate type and size on upload.
 Short-term: stop returning the cover string in the list and serve it separately.
+Result 2026-11-18: built `apps/image-service`, a Go service for this (see its README).
+The API issues a five minute upload token (`POST /events/cover-upload`), the browser sends the picture to the service, the service checks it, makes `thumb`, `card` and `large` JPEGs, stores them in an S3 compatible bucket (or a folder in development) and returns links, and the event keeps the `card` link.
+Run live with a folder as storage and a token minted by the real API code: upload, three sizes (5.8, 17 and 35 KB for a 122 KB PNG), caching headers, `304` on a repeat visit, CORS, and bad tokens all behaved; a 122 KB PNG that would be about 164,000 characters inside the event becomes a link of 70.
+Go: 39 tests, `go test -race` clean. API: 12 tests without a database pass.
+Still to do before this item is closed:
+- Wire the create and edit form (`CreateEvents.tsx`) to call `POST /events/cover-upload`, upload, and send the returned `card` URL as `coverImage`. This is front-end work and needs your go-ahead for the visual review.
+- Run it against a real bucket (MinIO through `docker-compose.local.yml --profile images`, then R2 or S3). The S3 store is compiled and vet-clean but was not exercised, and the Dockerfile and compose services were not built or started here (no Docker in this sandbox).
+- Choose where the service runs in production. The API is on Vercel serverless, so this needs a host that keeps a process running, such as Fly.io, Render or Railway, and `IMAGE_SERVICE_URL`, `IMAGE_SERVICE_SECRET` and `ALLOWED_ORIGINS` set to match.
+- Existing events that hold a base64 cover are not moved (no migration tool, see DB-7).
+- Pictures uploaded and never attached to an event stay in the bucket: add a lifecycle rule or a sweep.
 
 ### DB-2 The event list has no fixed order
 Status: done (2026-11-18). Priority: P1.
@@ -672,10 +683,12 @@ Not verified: the API Jest suite and the Playwright suite need a MongoDB test bi
 Ran instead: API and web type-check, lint and build, the 196 web unit tests, the logger test, and a boot of the real app checking `/health`, gzip on `/docs`, per-client rate limiting behind `X-Forwarded-For`, and a `400` from validation.
 
 ### S-4 Large request bodies are accepted on every route
-Status: open. Priority: P2.
+Status: open, unblocked by DB-1 once the form uses the image service. Priority: P2.
 The JSON body limit is 10 MB for the whole API, because event covers need it.
 Every other route accepts the same, which makes memory exhaustion easier.
 Fix: set a small default and a larger limit only where needed, or remove the need through DB-1.
+2026-11-18: the pictures no longer need to pass through the API, so once the web form uses the image service the 10 MB limit can be lowered to a small default.
+Do not lower it before then, or covers sent as base64 will be refused.
 
 ### S-5 Weak secret check
 Status: done (2026-11-18), check your production values before deploying. Priority: P2.
@@ -848,3 +861,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: DB-2, DB-3 and DB-6: events list, host and attendee indexes, unique `userName`, `scripts/sync-indexes.ts` and `scripts/explain-events.ts`; `tests/indexes.test.ts` (10) run, `tests/user-username-unique.test.ts` (2) and both scripts not run (no MongoDB in this sandbox).
 - 2026-11-18: S-5, production refuses short or placeholder `JWT_SECRET` and `SECRET_KEY` and the example Google OAuth values (`parseEnv`); `tests/env.test.ts` (17 tests); the same weak production values boot on the old code.
 - 2026-11-18: O-5, `/health` pings MongoDB and answers `503` when it fails; unexpected errors go to Sentry when `SENTRY_DSN` is set (`config/monitoring.ts`); `tests/monitoring.test.ts` (9 tests) run, a real Sentry delivery and the Playwright suite not run.
+- 2026-11-18: DB-1 partly done, `apps/image-service` (Go) and `POST /events/cover-upload` built; Go tests (39, race detector) and a live upload with a Node-minted token ran, the S3 store, Docker build, compose services and the web form wiring did not.

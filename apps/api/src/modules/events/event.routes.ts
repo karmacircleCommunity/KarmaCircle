@@ -365,6 +365,42 @@ router.delete(
  *       403: { description: The authenticated account is not an organization }
  *       409: { description: uid already exists }
  */
+/**
+ * @openapi
+ * /events/cover-upload:
+ *   post:
+ *     summary: Get a short-lived token to upload an event cover to the image service
+ *     description: >
+ *       The browser sends the picture straight to the image service
+ *       (`uploadUrl`) as multipart/form-data in a field named `file`, with
+ *       `Authorization: Bearer <token>`. The service returns the stored sizes;
+ *       use the `card` URL as the event's `coverImage`. The token is valid for
+ *       five minutes and only for event covers. Same account rules as
+ *       creating an event.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Upload grant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 uploadUrl: { type: string, example: "https://images.example.org/v1/images" }
+ *                 token: { type: string }
+ *                 expiresAt: { type: string, format: date-time }
+ *                 maxBytes: { type: integer, example: 5242880 }
+ *       401: { description: Unauthorized }
+ *       403: { description: The authenticated account is not an organization }
+ *       503: { description: Image uploads are not set up on this server }
+ */
+router.post(
+  "/cover-upload",
+  requireAuth,
+  asyncHandler<AuthenticatedRequest>(eventController.createCoverUpload),
+);
+
 router.post(
   "/create",
   requireAuth,

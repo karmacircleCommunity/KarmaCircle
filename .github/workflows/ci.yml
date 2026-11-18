@@ -43,6 +43,16 @@ jobs:
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level critical
 
+      # The Go image service. Go is preinstalled on the runner and go.mod
+      # names the version, so the matching toolchain is fetched if needed.
+      - name: Check image service
+        working-directory: apps/image-service
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race ./...
+          go build ./...
+
       - name: Lint apps
         run: pnpm lint
 

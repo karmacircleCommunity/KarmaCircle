@@ -107,6 +107,26 @@ const envSchema = z
     // what local dev actually wants. See auth.cookies.ts.
     ORIGIN_DOMAIN: z.string().optional(),
 
+    // The image service (apps/image-service). Optional: without both, the
+    // upload-token route answers 503 and event covers keep using the old
+    // in-form image. The URL is where browsers reach the service; the secret
+    // signs the short upload tokens and must equal the service's own
+    // IMAGE_SERVICE_SECRET.
+    IMAGE_SERVICE_URL: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim().replace(/\/+$/, "") || undefined)
+      .refine(
+        (value) => value === undefined || /^https?:\/\/[^/]/.test(value),
+        {
+          message: "must be an http or https URL",
+        },
+      ),
+    IMAGE_SERVICE_SECRET: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() || undefined),
+
     // Optional error tracking (Sentry). Unset or empty means off: nothing is
     // sent and the SDK is never started. See config/monitoring.ts.
     SENTRY_DSN: z
@@ -120,12 +140,45 @@ const envSchema = z
     SENTRY_RELEASE: z.string().optional(),
   })
   .superRefine((value, ctx) => {
+    // The image service needs both settings or neither. A secret that is set
+    // must be long enough in every environment, since it guards uploads even
+    // on a shared staging server.
+    if (
+      value.IMAGE_SERVICE_SECRET &&
+      value.IMAGE_SERVICE_SECRET.length < MIN_SECRET_LENGTH
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["IMAGE_SERVICE_SECRET"],
+        message: `must be at least ${MIN_SECRET_LENGTH} characters`,
+      });
+    }
+    if (
+      Boolean(value.IMAGE_SERVICE_URL) !== Boolean(value.IMAGE_SERVICE_SECRET)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [
+          value.IMAGE_SERVICE_URL
+            ? "IMAGE_SERVICE_SECRET"
+            : "IMAGE_SERVICE_URL",
+        ],
+        message: "must be set together with the other IMAGE_SERVICE_ variable",
+      });
+    }
+
     // Local development and tests use short example secrets on purpose
     // (.env.example), so the strict checks apply to production only.
     if (value.NODE_ENV !== "production") return;
 
-    for (const name of ["JWT_SECRET", "SECRET_KEY"] as const) {
-      const reason = weakSecretReason(value[name]);
+    for (const name of [
+      "JWT_SECRET",
+      "SECRET_KEY",
+      "IMAGE_SERVICE_SECRET",
+    ] as const) {
+      const secret = value[name];
+      if (secret === undefined) continue;
+      const reason = weakSecretReason(secret);
       if (reason) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

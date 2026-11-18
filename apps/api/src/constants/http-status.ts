@@ -38,6 +38,7 @@ export const STATUS_MESSAGE = {
   INVALID_CREDENTIALS: "Invalid credentials !",
   INTERNAL_SERVER_ERROR: "Internal server error, try again later !",
   SERVICE_UNAVAILABLE: "Service temporarily unavailable, try again shortly !",
+  IMAGE_UPLOADS_NOT_CONFIGURED: "Image uploads are not set up on this server !",
   UNAUTHORIZED: "Unauthorized !",
   FORBIDDEN: "Forbidden !",
   NOT_FOUND: "Not found !",
