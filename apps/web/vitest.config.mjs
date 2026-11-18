@@ -9,7 +9,7 @@ import { defineConfig } from "vitest/config";
  * PWA, SVGR, React or Tailwind plugins, and keeping them out makes the run
  * fast and free of build side effects. It is also separate from
  * `playwright.config.ts`: Playwright owns `e2e/`, Vitest owns only
- * `src/**` `*.test.ts` files, so neither runner can pick up the other's specs.
+ * `src/**` and `api/**` `*.test.ts` files, so neither runner can pick up the other's specs.
  *
  * The path aliases below mirror `vite.config.mjs` and `tsconfig.json` - keep
  * all three in sync when an alias is added.
@@ -39,7 +39,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "api/**/*.test.ts"],
     exclude: ["node_modules/**", "dist/**", "e2e/**"],
   },
 });

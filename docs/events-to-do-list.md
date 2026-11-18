@@ -45,7 +45,7 @@ Tier 2, depth (the showcase):
 - S-2: rate limits in a shared store (Redis), built 2026-11-18, needs a hosted Redis and `REDIS_URL`.
 - PG-18 with O-6: a reminder and notice worker (Go), built 2026-11-18 with a queue, retries and no double sends; organizer announcements and real delivery are still to do.
 - PG-19: add to calendar (built 2026-11-18: three links on the event page, an `.ics` route, a link in the join confirmation).
-- PG-20: share previews and event markup, cheap version only.
+- PG-20: share previews and event markup, built 2026-11-18 as a Vercel function; needs deploying to check.
 - One-command local stack for web, API, MongoDB, Redis and the services, with CI building all of them, and a request id that follows a request across services.
 
 Quick hygiene, do when nearby: O-3, O-4, CH-4 (delete the marquee), CH-5.
@@ -288,11 +288,17 @@ Tests: API 27 for the file and the route (no database) and 3 for the email; web 
 Not verified: opening the file in a real calendar app (Apple Calendar, Outlook, Google), the Google and Outlook links opening their real pages with the right fields, and how the row looks (visual review pending, not authorized). The reminder and change emails from the worker do not carry a calendar link yet.
 
 ### PG-20 No search-engine event markup
-Status: open. Priority: P2.
+Status: done (2026-11-18), needs deploying to check. Priority: P2.
 A search of the web code found no structured event data.
 Google reads event name, dates, location, status and attendance mode from that markup to show events in search.
 Fix: add event markup to the detail page, and make sure what it states is visible on the page.
 This needs the status from PG-15 and the mode from PG-10, both of which now exist; only published and cancelled events should get markup, never a draft.
+Result 2026-11-18: a Vercel function (`apps/web/api/event-page.ts`, routed from `/events/<address>` in `vercel.json`) returns the app page with the event's title, description, canonical address, Open Graph and Twitter tags and a schema.org `Event` block in the HTML, so link previews and crawlers that do not run JavaScript see them.
+The block states name, dates, `EventScheduled` or `EventCancelled`, offline, online or mixed attendance, the place or meeting link, cover, organizer and a price only when there is one, all of which the page shows. A draft or unknown event gets the plain page, and so does any failure, so the page can only get better.
+The tab title on an event page is now the event's (it said "KarmaCircle | Events"). Hostile names (`</script>`) are escaped for HTML and for the script block.
+Tests: web 52 (286 unit tests in all, with mutation checks on both escapes and on the address check). Run live with the real function behind a real HTTP server and a stand-in API, read the way a crawler reads it with an HTML parser: right tags, JSON-LD that parses for an in-person, an online, a cancelled and a paid event, one of each tag, and the app still boots.
+Not verified: it has not run on Vercel (the routing from `vercel.json` to the function in particular), no validator from Google, Facebook or X has seen a real page, and the site-wide fallback share image is an SVG that most platforms will not draw (see the web known issues). Set `SITE_URL` and `API_URL` in the Vercel project.
+Not done: a sitemap of events, and a real `404` status for unknown pages (SEO-03).
 
 ### PG-21 Discovery filters are limited
 Status: parked (was open, parked 2026-11-18). Priority: P3.
@@ -892,3 +898,4 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-18: S-2, rate limits shared through Redis with a memory fallback (`RedisRateLimitStore`, `FailoverStore`, `REDIS_URL`); 15 tests, 11 against a real Redis, and two API processes compared live (40 allowed without Redis, 20 with); a hosted Redis and the full API suite not run.
 - 2026-11-18: PG-18 partly done, `apps/notification-worker` (Go) and `src/modules/notifications`: reminders, change notices and cancellation notices through a Redis queue with retries, leases and idempotency keys; 60 Go tests and 53 API tests, plus live runs of delivery, provider failure and a killed worker; organizer announcements, real delivery and the Mongo-backed hook paths not done or not run.
 - 2026-11-18: PG-19, add to calendar: `GET /events/:uid/calendar.ics` (UTC, stable UID, SEQUENCE, cancelled status, escaped and folded), Google, Outlook and `.ics` links on the event page, a calendar link in the join confirmation email when `API_PUBLIC_URL` is set; 27 + 3 API and 18 web tests, the file read by an independent parser; no browser check of the row and no real calendar app tried.
+- 2026-11-18: PG-20, share previews and event markup: `apps/web/api/event-page.ts` serves `/events/<address>` with the event's tags and schema.org `Event` in the HTML, falls back to the plain page on any failure, never fetches from a host a request names; 52 web tests, read live as a crawler; not run on Vercel, no validator seen it, the fallback share image is an SVG.

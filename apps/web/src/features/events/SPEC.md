@@ -65,6 +65,24 @@ It is three plain links under an "Add to calendar" label (no menu, no script, so
 `utils/calendarLinks.ts` builds the entry and the two URLs (`toCalendarEntry`, `googleCalendarUrl`, `outlookCalendarUrl`, `icsUrl`, `calendarLocation`); `calendarLinks.test.ts` has 18 tests, including that a title with `&`, `#`, quotes or emoji comes through the URL intact. An end time that is not after the start becomes one hour, and an unreadable start renders nothing. The wording of the place mirrors `placeOf` in the API's `event.place.ts` so the three ways of adding an event never describe it differently.
 Not checked in a browser: the look of the row at 320 px and on a wide screen, and the links opening the real Google and Outlook pages (visual review is pending, UI testing is not authorized).
 
+## Share previews and search markup (PG-20)
+
+The app is a single-page app, so the HTML a server sends has the same title for every page, and the programs that make link previews (WhatsApp, Slack, Facebook, LinkedIn, X) and many crawlers read that HTML without running the JavaScript that would show an event's name. `apps/web/api/event-page.ts` is a Vercel function that fixes this for `/events/<address>`: `vercel.json` routes that path to it (before the catch-all that sends everything else to the app), and it answers with the app's own `index.html` with this event's tags put in its head. The app boots exactly as before.
+
+What goes in, from `src/features/events/seo/eventHead.ts` (no imports from the rest of the app, so the function can use it as it is):
+- the title (`<event> | KarmaCircle`), description (at most 200 characters), canonical address, Open Graph and Twitter tags, replacing the site-wide ones;
+- one schema.org `Event` block (JSON-LD): name, description, start and end, `eventStatus` (`EventCancelled` for a cancelled event, so it is marked, not dropped), `eventAttendanceMode` (offline, online or mixed for Hybrid), the place or a virtual location with the meeting link, the cover as the image, the organizer, and a price only when the page shows one (a free event says `isAccessibleForFree`). It states only what the page shows. No block is written when it would be invalid (an unreadable start, or an in-person event with no address at all); the share tags still are.
+- The event name and description are person-typed text, so they are escaped as HTML in the tags and written as JSON with `<`, `>` and `&` escaped inside the script block, so an event called `</script>` stays text.
+- A cover stored inside the event as a data URL cannot be fetched by a crawler, so such events use the site-wide share image.
+
+It never makes the page worse: an address that is not an event address (`^[a-z0-9][a-z0-9-]{0,98}$`) is not sent to the API; an event that does not exist or is a draft (the API answers `404` without a login), an API that is down or slower than 3 seconds, or a page the tags cannot be put into all give the plain app page. Only the app page itself being unreadable is an error (`502`, not cached). Answers are cached at the edge for 5 minutes and served stale for a day while they refresh.
+It reads the app page from the deployment itself (`VERCEL_URL`), never from a host a request names. Settings, in the Vercel project: `API_URL` (defaults to `VITE_API_URL`) and `SITE_URL` (the public address used in the tags; set it in production).
+
+In the app, `components/EventHelmet.tsx` sets the tab title, description and canonical address once the event has loaded (the tab used to say "KarmaCircle | Events" on every event page). It does not repeat the markup, because two copies would be counted twice.
+
+Tests: `seo/eventHead.test.ts` (28), `seo/renderEventPage.test.ts` (16) and `api/event-page.test.ts` (8), including that the real `index.html` ends up with one of each tag, that applying twice does not pile tags up, and that hostile names stay text.
+Not verified: Vercel's routing (`vercel.json` `routes` to a function) and the function running on Vercel, what Facebook's, X's or Google's own validators say about a real page, and the site-wide share image (see known issues).
+
 ## File manifest
 
 | File                                | Role                                                                                                                                                                                                                                      | Live?                                                                                                                                                                                                                  |

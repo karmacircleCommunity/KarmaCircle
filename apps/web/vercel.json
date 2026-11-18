@@ -17,6 +17,10 @@
       "continue": true
     },
     {
+      "src": "/events/([a-z0-9][a-z0-9-]*)",
+      "dest": "/api/event-page?uid=$1"
+    },
+    {
       "src": "/[^.]+",
       "dest": "/",
       "status": 200

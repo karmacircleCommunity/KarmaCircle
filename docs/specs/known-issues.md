@@ -93,6 +93,9 @@ Also built in November 2026: an event has a **timezone** (PG-11): the form reads
 
 ## Events - open issues (November 2026)
 
+- **The site-wide share image is an SVG on a GitHub raw address** (`index.html`, `og:image` and `twitter:image`). Most platforms (Facebook, X, LinkedIn, WhatsApp) do not draw SVG previews, so a page with no picture of its own, and an event whose cover is not a fetchable link, gets a preview with no image. Needs a 1200 by 630 PNG or JPEG in `public/`, then point `index.html` at it (event pages use whatever `index.html` names as their fallback).
+- **An address that is not an event gets the app page with status 200** (a soft 404 for search engines), both from the catch-all route and from `api/event-page.ts`; see SEO-03 in the performance and SEO audit.
+
 - **`formatDuration` returns "NaN days"** (`features/events/utils/formatEventFacts.ts`) when either date cannot be read. Recorded as an `it.todo` in `formatEventFacts.test.ts`.
 - **`getFormattedDate` returns "NaNth undefined"** (`features/events/utils/getFormattedDate.ts`) for a missing or invalid date. Its only consumer is the unused `EventsMarqueeCards`. Recorded as an `it.todo` in `getFormattedDate.test.ts`.
 - **`fundedPercent` (`src/utils/formatMoney.ts`) has no lower clamp.** A negative raised amount gives a negative percent, and a NaN goal or raised value returns NaN. Not asserted in tests.

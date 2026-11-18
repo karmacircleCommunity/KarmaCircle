@@ -5,7 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import useSWR, { useSWRConfig } from "swr";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
-import ComponentHelmet from "@components/ComponentHelmet";
+import EventHelmet from "@features/events/components/EventHelmet";
 import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import { selectUser } from "@app/store/slices/userSlice";
@@ -239,7 +239,7 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
 
   return (
     <>
-      <ComponentHelmet type="Events" />
+      <EventHelmet event={event} />
       <Navbar />
 
       {event.draft && (
