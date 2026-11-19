@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createApp } from "./app";
+import { createApp } from "./create-app";
 import { connectToMongo } from "./config/database";
 import { env } from "./config/env";
 import { logger } from "./config/logger";

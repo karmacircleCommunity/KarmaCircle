@@ -31,7 +31,12 @@ function loggedLinesFor(
   app.use(pinoHttp({ logger }));
   app.get("/", handle);
 
-  return send(request.agent(app)).then(() => lines.join(""));
+  // pino-http writes its line when the response emits `finish`, which can land
+  // just after the client has read the body, so let that settle before reading
+  // what was written. Without this the test failed now and then on a busy run.
+  return send(request.agent(app))
+    .then(() => new Promise<void>((resolve) => setImmediate(resolve)))
+    .then(() => lines.join(""));
 }
 
 describe("request logging", () => {

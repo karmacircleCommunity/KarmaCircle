@@ -1,9 +1,6 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/api" }
-  ],
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "github": {
     "enabled": false,
     "silent": true

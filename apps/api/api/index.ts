@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { IncomingMessage, ServerResponse } from "http";
-import { createApp } from "../src/app";
+import { createApp } from "../src/create-app";
 import { createConnectionGate } from "../src/config/database";
 
 const app = createApp();

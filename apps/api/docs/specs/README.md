@@ -26,7 +26,7 @@ See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate a
 - **Helmet, compression, cors, express-rate-limit, pino/pino-http** for the standard middleware stack — see [architecture.md](./architecture.md).
 - **swagger-jsdoc + swagger-ui-express** — every route file carries `@openapi` JSDoc blocks; the generated spec is served at `/docs`. Treat a route's JSDoc block as documentation of intent, not as a guarantee it matches the Zod schema next to it — cross-check both when in doubt.
 - **Jest + ts-jest + Supertest + mongodb-memory-server** for tests (`tests/*.test.ts`) — an in-memory Mongo instance per test run, no real database needed. Every module has a test file. A separate standalone e2e server (`tests/e2e/server.ts`) also exists, used only by `apps/web`'s Playwright suite. See [testing.md](./testing.md).
-- **Vercel serverless** is the production deploy target (`api/index.ts` wraps `createApp()` as a handler, `vercel.json` rewrites everything to it); `npm start` (plain `node dist/src/server.js` after `npm run build`) is the non-Vercel path. Both boot the exact same `createApp()` from `src/app.ts`. See [architecture.md](./architecture.md).
+- **Vercel serverless** is the production deploy target (`api/index.ts` wraps `createApp()` as a handler, `vercel.json` rewrites everything to it); `npm start` (plain `node dist/src/server.js` after `npm run build`) is the non-Vercel path. Both boot the exact same `createApp()` from `src/create-app.ts`. See [architecture.md](./architecture.md).
 
 ## Folder structure
 
@@ -42,7 +42,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | `<name>.model.ts` | Mongoose `Schema`/`model`, only in modules that own a collection (`users`, `organizations`, `events`, `products`, `reports`, and — since September 2026, for its `Order` model — `payments`; `directory`/`auth` don't have one; see below) |
 
 `src/config/` (env, database, logger, passport, swagger), `src/middleware/` (auth, error-handler, rate-limit, validate), `src/constants/` (`STATUS_CODE`/`STATUS_MESSAGE`), and `src/utils/` (`asyncHandler`, `pagination`) hold everything shared across modules — see [architecture.md](./architecture.md) for what each does.
-`src/routes/index.ts` mounts every module's router onto its base path; `src/app.ts` assembles the whole Express app (middleware stack + mounted routes); `src/server.ts` and `api/index.ts` are the two ways that app actually gets served (see [architecture.md](./architecture.md#two-entry-points)).
+`src/routes/index.ts` mounts every module's router onto its base path; `src/create-app.ts` assembles the whole Express app (middleware stack + mounted routes); `src/server.ts` and `api/index.ts` are the two ways that app actually gets served (see [architecture.md](./architecture.md#two-entry-points)).
 
 ## Module map
 
