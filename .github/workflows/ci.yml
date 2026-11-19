@@ -4,6 +4,12 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      # The deploy workflows pass false: they skip the slow browser tests and run
+      # the API and unit tests only. Pull requests keep the full suite.
+      browser-tests:
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -48,10 +54,18 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright browsers
+        if: inputs.browser-tests != false
         run: pnpm --filter karmacircle-frontend exec playwright install --with-deps
 
       - name: Run API and browser tests
+        if: inputs.browser-tests != false
         run: pnpm test
+
+      - name: Run API and unit tests
+        if: inputs.browser-tests == false
+        run: |
+          pnpm --filter karmacircle-api test
+          pnpm --filter karmacircle-frontend test:unit
 
       - name: Save browser failure artifacts
         if: failure()

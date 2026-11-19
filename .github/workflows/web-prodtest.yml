@@ -18,6 +18,8 @@ permissions:
 jobs:
   Validate:
     uses: ./.github/workflows/ci.yml
+    with:
+      browser-tests: false
 
   Deploy-Production:
     if: github.ref == 'refs/heads/main'

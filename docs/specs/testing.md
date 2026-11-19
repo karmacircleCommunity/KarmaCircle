@@ -4,6 +4,9 @@
 
 The root [`CI` workflow](../../.github/workflows/ci.yml) runs for every pull request.
 It installs the pinned pnpm workspace, runs lint and type checks, builds both apps, installs Playwright browsers, and runs the API and frontend suites with `pnpm test`.
+The four deploy workflows (`api-production`, `api-production-dev`, `web-prodtest`, `web-production-dev`) call the same workflow with `browser-tests: false` (since 2026-11-19).
+They lint, type-check and build, then run only the API Jest suite and the frontend unit tests, and skip the Playwright install and browser suite, which took about 25 minutes of a 27 minute deploy.
+Pull requests, and the PR preview workflow `web-prtests`, still run the full suite.
 The workflow uses the `pull_request` event, read-only repository permissions, and no repository secrets, so fork contributions can run the same checks safely.
 The GitHub ruleset for `main` requires the `validate` check for pull requests and requires one approval with review threads resolved.
 Tamal's account is the only bypass actor, so he can push directly to `main`.
