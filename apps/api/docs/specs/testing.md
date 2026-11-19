@@ -11,7 +11,7 @@ This backend has two separate, independent test setups, for two different jobs:
 
 [tests/helpers/env.setup.ts](../../tests/helpers/env.setup.ts) (a Jest `setupFiles` entry, runs before the test framework loads) stubs every required env var with a placeholder so `env.ts`'s Zod validation passes in CI without real secrets.
 
-[tests/helpers/jest.setup.ts](../../tests/helpers/jest.setup.ts) (`setupFilesAfterEnv`) spins up `mongodb-memory-server` once per test file (`beforeAll`), wipes every collection after each test (`afterEach`), and tears the in-memory server down (`afterAll`) — so tests never touch a real MongoDB instance and don't need one running locally.
+[tests/helpers/jest.setup.ts](../../tests/helpers/jest.setup.ts) (`setupFilesAfterEnv`) spins up `mongodb-memory-server` once per test file (`beforeAll`), wipes every collection after each test (`afterEach`), and tears the in-memory server down (`afterAll`) — so tests never touch a real MongoDB instance and don't need one running locally. [tests/helpers/global.setup.ts](../../tests/helpers/global.setup.ts) (`globalSetup`) starts and stops one server before any file runs, so on a cold CI runner the `mongod` binary is downloaded and locked once instead of by every parallel worker at once (that race failed a deploy's validate step with `UnableToUnlockLockfileError` on 2026-11-19).
 
 `apiLimiter`/`authLimiter` ([rate-limit.ts](../../src/middleware/rate-limit.ts)) are `skip`ped entirely when `env.NODE_ENV === "test"`, so a test file making many requests across its suite never trips a rate limit unrelated to what it's actually checking.
 
