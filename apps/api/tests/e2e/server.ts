@@ -25,7 +25,7 @@ import "./env.setup";
 import express from "express";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { createApp } from "../../src/create-app";
+import { createApp } from "../../src/app";
 import { createE2eTestRouter } from "./test-routes";
 
 async function main() {

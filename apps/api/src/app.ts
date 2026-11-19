@@ -176,3 +176,20 @@ export function createApp(): Express {
 
   return app;
 }
+
+/**
+ * Vercel's zero-config detection recognises `src/app.ts` as an Express
+ * entrypoint (the build fails without one that imports express) and runs it
+ * directly for `GET /`. That needs a default export that is a handler, or the
+ * root URL answers 500 `FUNCTION_INVOCATION_FAILED`. Every other path goes
+ * through `api/index.ts`, which also waits for the database. The root route
+ * needs no database, so this handler does not.
+ */
+let rootApp: Express | undefined;
+export default function handler(
+  req: express.Request,
+  res: express.Response,
+): void {
+  rootApp ??= createApp();
+  rootApp(req, res);
+}

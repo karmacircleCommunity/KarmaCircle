@@ -144,7 +144,7 @@ A caller could set `tokenVersion`, `resetPasswordToken`/`resetPasswordExpires`, 
 Now an allowlist (`SIGNUP_PROFILE_FIELDS`).
 Regression test in `tests/auth.test.ts`.
 
-### Medium: rate limiting keyed to the proxy (`create-app.ts`)
+### Medium: rate limiting keyed to the proxy (`app.ts`)
 No `trust proxy` behind Vercel meant `req.ip` was the proxy address, so all clients shared one bucket.
 One attacker could burn `authLimiter`'s 20 attempts for everyone, and per-IP limits did nothing.
 Now `app.set("trust proxy", 1)`.
