@@ -427,20 +427,17 @@ Fix: upload images to object storage, save only a link on the event, and validat
 Short-term: stop returning the cover string in the list and serve it separately.
 
 ### DB-2 The event list has no fixed order
-Status: open. Priority: P1.
-The list query uses skip and limit with no sort.
-Without a sort, MongoDB does not guarantee a stable order, so pages can repeat or skip events.
-Fix: sort by start time with the id as a tiebreaker, and add a matching index.
-Partly done 2026-11-04: `GET /events` now sorts by start time with the id as tiebreaker (see CH-6), so pages no longer repeat or skip events.
-The matching index is still missing, so this item stays open until DB-3 adds it.
+Status: done (2026-11-19). Priority: P1.
+The list query used skip and limit with no sort, so pages could repeat or skip events.
+Result: `GET /events` sorts by start time with the id as tiebreaker (done 2026-11-04, see CH-6), and the matching index now exists (see DB-3).
 
 ### DB-3 Missing indexes
-Status: open. Priority: P1.
-The host filter matches on `hostUsername` or `organizerHandle`, but only `organizerHandle` is indexed.
-The `$or` therefore falls back to scanning the collection.
-`startTime` is used for upcoming and past and has no index.
-Fix: index `hostUsername`, index `startTime`, and consider a compound index with the host.
-The separate `eventUid` index on registrations is redundant with the unique pair index and can be dropped.
+Status: done (2026-11-19), with a manual cleanup left. Priority: P1.
+The host filter matches on `hostUsername` or `organizerHandle`, but only `organizerHandle` was indexed, and `startTime` had no index, so list queries scanned the whole collection.
+Result: events have `(startTime, _id)`, `(hostUsername, startTime, _id)` and `(organizerHandle, startTime, _id)`, and `tests/event-indexes.test.ts` checks the real query plans for no collection scan and no blocking sort.
+The redundant single `eventUid` index on registrations is removed from the schema.
+Mongoose builds missing indexes on connect but never drops old ones, so the old `organizerHandle_1` index on `events` and `eventUid_1` on `eventregistrations` stay in a database that already has them until someone drops them by hand.
+They are harmless, only extra write cost, and not worth a risky production change by themselves.
 
 ### DB-6 Username uniqueness is not enforced by the database
 Status: open. Priority: P2.
@@ -451,10 +448,10 @@ Fix: make it unique after cleaning existing data.
 ## 7. Backend security
 
 ### S-1 Session cookie is written to the logs
-Status: open. Priority: P1.
-The request logger prints all request headers, including the cookie that holds the login token.
-Anyone with log access could copy a valid session.
-Fix: configure the logger to remove the cookie and authorization headers.
+Status: done (2026-11-19). Priority: P1.
+The request logger printed all request headers, including the cookie that holds the login token, so anyone with log access could copy a valid session.
+Result: the logger redacts the `Cookie` and `Authorization` request headers and the `Set-Cookie` response header (`REDACTED_LOG_PATHS` in `apps/api/src/config/logger.ts`), tested against the real `pino-http` output in `tests/logger.test.ts`.
+Logs written before this fix may still hold session tokens; sessions can be revoked by bumping the token version if that matters.
 
 ### S-2 Rate limits do not work across servers
 Status: open. Priority: P1.
@@ -463,12 +460,13 @@ On Vercel, many instances run at once and each starts at zero, so the limit is e
 Fix: use a shared store such as Redis or a database-backed counter, at least for sign-in and password reset.
 
 ### S-3 Known vulnerable packages
-Status: open. Priority: P1.
-A production dependency audit on 2026-11-04 found 1 critical, 12 high, 18 moderate and 4 low issues.
-The critical one is in `proxy-addr`, which affects how the client address is read, and the rate limiter and trusted proxy setting depend on it.
-Others include `compression`, `body-parser`, `zod`, `follow-redirects`, `qs` and `fast-uri`.
-GitHub also reports 165 issues across the whole repo, including development tools.
-Fix: update the packages, rerun the audit, and add the audit to CI.
+Status: partly done (2026-11-19). Priority: P1.
+A dependency audit on 2026-11-04 found 1 critical, 12 high, 18 moderate and 4 low issues in the API, and GitHub counts 170 across the whole repo, mostly development tools.
+Result for the API: every fix that does not need a breaking upgrade is applied in both lockfiles (`apps/api/package-lock.json` and the root `pnpm-lock.yaml`, which CI uses): express and proxy-addr, compression, body-parser, mongoose, axios, qs, follow-redirects, fast-uri (held at a safe version by an override in `pnpm-workspace.yaml`), ip-address and a few more.
+What is left: `zod` 3 to 4 is a breaking upgrade that touches every schema in the API, skipped on purpose (the flaw is memory use on huge arrays).
+The remaining critical `tar` and the npm tooling flaws live inside `semantic-release`'s bundled `npm`, which is development-only and never ships with the API.
+`apps/web` was not touched, and `vite` in the web app has open advisories of its own.
+`npm audit` also does not run in CI yet.
 
 ### S-4 Large request bodies are accepted on every route
 Status: open. Priority: P2.
@@ -488,17 +486,16 @@ That is intended, so anonymous donations stay as they are, and the signature che
 The signature check itself is present.
 
 ### S-7 Cart add trusts an email from the request
-Status: open. Priority: P1.
-This is the access gap already listed in the API known issues.
-It is not events code, but it is the most serious access problem in the backend.
+Status: done (already fixed, found stale on 2026-11-19). Priority: P1.
+This entry was out of date: `POST /product/cart/add` is behind `requireAuth` and only ever changes the signed-in user's own cart (see `apps/api/docs/specs/known-issues.md`).
+Still open elsewhere in the products module and not events code: `POST /product/addproduct` has no sign-in check, and the cart accepts product ids that do not exist.
 
 ## 8. Backend scalability and operations
 
 ### O-1 A failed first database connection is remembered
-Status: open. Priority: P1.
-The serverless handler stores the connection attempt once and never clears it.
-If the first attempt fails, every later request on that instance fails until it restarts.
-Fix: clear the stored attempt when it fails so the next request retries.
+Status: done (2026-11-19). Priority: P1.
+The serverless handler kept its first connection attempt for good, so one failed attempt broke every later request on that instance until it restarted.
+Result: `createConnectionGate()` in `apps/api/src/config/database.ts` shares one attempt between concurrent requests and forgets it on failure, so the next request retries; the request that hit the failure gets `503`. Tested in `tests/database-gate.test.ts`.
 
 ### O-2 Unbounded work in some queries
 Status: open. Priority: P2.
@@ -590,3 +587,5 @@ Update them in the same change.
 - 2026-11-19: web unit tests for `joinView` and `parseInviteEmails` plus the access cases in the mapper and change builder; the web unit suite passed 235 tests and 2 todo.
 - 2026-11-19: Playwright `event-access.spec.ts` (5) written but **not run**, and the older specs were updated for `access`; run the events folder once Tamal allows UI tests.
 - 2026-11-19: S-6 decided (anonymous donations stay), and the decisions on hackathons, volunteering shifts and event payments recorded as out of scope.
+- 2026-11-19: S-1 (cookie and set-cookie redacted from logs), O-1 (failed database connection is retried), DB-2 and DB-3 (event list indexes, checked by query-plan tests), S-3 (safe dependency updates in both lockfiles, zod 4 skipped), S-7 (found already fixed).
+- 2026-11-19: API tests `logger.test.ts` (4), `database-gate.test.ts` (3) and `event-indexes.test.ts` (5); the API suite passed 22 suites and 430 tests.

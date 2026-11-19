@@ -6,3 +6,10 @@ allowBuilds:
   "@scarf/scarf": false
   esbuild: true
   mongodb-memory-server: true
+
+# Security: pnpm kept resolving fast-uri 3.1.6 for ajv (swagger-jsdoc, commitlint)
+# even though 3.1.9 satisfies ajv's range, and 3.1.6 has known URI-parsing
+# vulnerabilities. Drop this once a plain `pnpm update --depth Infinity fast-uri`
+# already lands on 3.1.9 or later.
+overrides:
+  fast-uri: ">=3.1.9"

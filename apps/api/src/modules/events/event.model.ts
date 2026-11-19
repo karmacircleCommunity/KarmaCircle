@@ -267,7 +267,6 @@ const eventSchema = new Schema<IEvent>(
     },
     organizerHandle: {
       type: String,
-      index: true,
     },
     coverImage: {
       type: String,
@@ -390,11 +389,21 @@ const eventSchema = new Schema<IEvent>(
   },
 );
 
+// Indexes for the list queries in `findAll` (DB-3). The directory splits on
+// `startTime` and sorts by it, with `_id` breaking ties. A host's own list
+// matches `hostUsername` or `organizerHandle` (each branch of the `$or` uses its
+// own index) and sorts newest first, or soonest first for a period; carrying
+// `_id` in the key lets either direction come straight off the index. `uid` is
+// unique on its own.
+eventSchema.index({ startTime: 1, _id: 1 });
+eventSchema.index({ hostUsername: 1, startTime: -1, _id: -1 });
+eventSchema.index({ organizerHandle: 1, startTime: -1, _id: -1 });
+
 export const Event = mongoose.model<IEvent>("Event", eventSchema);
 
 const eventRegistrationSchema = new Schema<IEventRegistration>(
   {
-    eventUid: { type: String, required: true, index: true },
+    eventUid: { type: String, required: true },
     userId: { type: Schema.Types.ObjectId, required: true, index: true },
     attendeeEmail: { type: String, required: true },
     attendeeName: { type: String, required: true },

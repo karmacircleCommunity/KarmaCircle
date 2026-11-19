@@ -217,6 +217,15 @@ and with each other:
 - **`search`** - trimmed, at most 100 characters; a blank value is ignored. A
   case-insensitive literal match (regex characters are escaped) on `name`,
   `city` or `hostName`. It is an unindexed scan.
+- **Indexes (November 2026, was DB-3):** `(startTime, _id)` serves the directory's
+  period split and order; `(hostUsername, startTime, _id)` and
+  `(organizerHandle, startTime, _id)` serve a host's list, one per branch of its
+  `$or`, in either direction; `uid` is unique. `tests/event-indexes.test.ts` asks
+  MongoDB for the query plans and fails on a collection scan or a blocking sort.
+  Mongoose builds missing indexes when the app connects, but never drops old ones:
+  the retired `organizerHandle_1` index on `events` and `eventUid_1` on
+  `eventregistrations` stay in a database that already has them until someone drops
+  them by hand (harmless, only extra write cost).
 - **`period`** - `upcoming` (`startTime >= now`, server clock) or `past`
   (`startTime < now`). Left out, every event is returned.
 - **`mode`** - `Online`, `Offline` or `Hybrid`.
@@ -450,7 +459,9 @@ Accepts shared `page`/`limit` parameters (default page 1, limit 20, max 100) and
 `startTime >= now` and sort ascending; past events have `startTime < now` and
 sort descending. The endpoint does not accept a user identifier and never
 returns registration attendee details. The registration schema indexes `userId`
-for this attendee lookup, alongside its unique `(eventUid, userId)` constraint.
+for this attendee lookup, alongside its unique `(eventUid, userId)` constraint and
+`(eventUid, status, createdAt)` for the attendee list. A separate `eventUid` index
+was removed in November 2026 because those two compound indexes already start with it.
 
 ## Access levels, requests, the waitlist and invitations (November 2026, PG-4 and PG-14)
 
