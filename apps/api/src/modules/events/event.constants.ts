@@ -28,9 +28,11 @@ export const EVENT_ADDRESS_MAX_LENGTH = 200;
 export const EVENT_PLATFORM_MAX_LENGTH = 60;
 export const EVENT_PLATFORM_LINK_MAX_LENGTH = 2048;
 
-/** Cover image: an https link, or a base64 data URL of one of these types. */
-export const COVER_IMAGE_MIME_TYPES = ["png", "jpeg", "webp", "gif"] as const;
-/** Same 5 MB ceiling the browser applies to the chosen file (decoded bytes). */
+/**
+ * Cover image: an https link to an uploaded image (DB-1). The image types it can
+ * have are in `modules/uploads/upload.validation.ts`, where the upload is checked.
+ * Same 5 MB ceiling the browser applies to the chosen file.
+ */
 export const COVER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const COVER_IMAGE_URL_MAX_LENGTH = 2048;
 

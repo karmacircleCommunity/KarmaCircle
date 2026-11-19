@@ -30,7 +30,7 @@ See [../../../../CLAUDE.md](../../../../CLAUDE.md) for how the two apps relate a
 
 ## Folder structure
 
-The codebase is organized **module-first** under `src/modules/<name>/`, one folder per domain concept: `auth`, `users`, `organizations`, `directory`, `events`, `payments`, `products`, `reports`.
+The codebase is organized **module-first** under `src/modules/<name>/`, one folder per domain concept: `auth`, `users`, `organizations`, `directory`, `events`, `payments`, `products`, `reports`, `uploads` (event cover images, November 2026).
 Every module folder follows the same file-per-concern pattern (not every module needs every file):
 
 | File | Role |

@@ -88,6 +88,8 @@ const eventEndpoints = {
   /** `POST` to take a published event back to a draft. */
   unpublish: (uid: string) =>
     `${API}/events/${encodeURIComponent(uid)}/unpublish`,
+  /** `POST` to ask for permission to upload one cover image (DB-1). */
+  coverUpload: `${API}/uploads/event-covers`,
   /** `POST` to cancel one of the organization's own events. */
   cancel: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/cancel`,
   join: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/join`,

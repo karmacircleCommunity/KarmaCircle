@@ -15,7 +15,7 @@ Both entry points read configuration through [src/config/env.ts](../../src/confi
 2. `compression()` — gzip response bodies.
 3. `pinoHttp({ logger })` — structured request/response logging. The logger redacts the `Cookie` and `Authorization` request headers and the `Set-Cookie` response header (`REDACTED_LOG_PATHS` in `logger.ts`), so a session token never reaches the logs.
 4. `cors(...)` — see "CORS" below.
-5. `express.json({ limit: "10mb" })`, then `express.urlencoded({ extended: false })`.
+5. `express.json({ limit: "1mb" })` (images are uploaded to object storage, never sent in a JSON body; was 10 MB until November 2026, S-4), then `express.urlencoded({ extended: false })`.
 6. `cookieParser()` — required for `req.cookies.Token` (see [auth.md](./auth.md)) to exist anywhere downstream.
 7. `passport.initialize()` — required for the Google OAuth route (`passport.authenticate("google", ...)` in `auth.routes.ts`); note there's no `passport.session()` — OAuth is `{ session: false }`, so Passport never touches `req.session` and this app has no server-side session store at all.
 8. (Before this, `app.set("trust proxy", 1)` so `req.ip` is the real client behind Vercel; without it every client shared one rate-limit bucket.) `apiLimiter` (`src/middleware/rate-limit.ts`) — a **global** rate limit, 300 requests / 15 min per IP, applied to every route below it. `authLimiter` (20 requests / 15 min) is a second, stricter limiter applied only inside `auth.routes.ts` on top of the global one. Both are `skip`ped entirely when `env.NODE_ENV === "test"`, so Jest runs never trip them regardless of how many requests one test file makes.

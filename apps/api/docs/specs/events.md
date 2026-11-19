@@ -140,7 +140,8 @@ Only the organization that hosts the event can call it.
   **`uid` is a `400`** because the page address never changes (registrations
   point at it, see DB-5 in the events to-do list). An empty body is a `400`.
 - **Cover image:** omit it to keep the current one. The web edit form only sends
-  it when a new image was chosen, so a multi-megabyte data URL is not re-sent.
+  it when a new image was chosen. A new cover is an https link to an uploaded
+  image (see "Cover images" below).
 - **Cross-field rules** run in the service on the stored event merged with the
   body (`assertEventRules`, shared with create through `addEventRuleIssues` in
   `event.validation.ts`): the end must follow the start; an Offline event needs
@@ -291,11 +292,14 @@ values).
   event therefore creates it through the `Event` model (and its registrations
   through the `EventRegistration` model), not through this route; the seed
   scripts write through the model too, so they are unaffected.
-- `coverImage` - an https URL (at most 2048 characters) or a base64 data URL of
-  `image/png`, `image/jpeg`, `image/webp` or `image/gif` that decodes to at most
-  5 MiB. `http`, `javascript:`, `file:`, SVG, other data types, invalid base64
-  and oversized values are rejected (a `data:` string longer than about 6.99
-  million characters is rejected before it is parsed).
+- `coverImage` - an https URL, at most 2048 characters: the link of an image
+  uploaded through `POST /uploads/event-covers`, or one hosted elsewhere. A base64
+  data URL is refused with "Upload the cover image and send its https link" (it is
+  what used to put every image inside every event record, DB-1), and so are
+  `http`, `javascript:` and `file:` links. In development and test only, an
+  `http` link to this API's own `/uploads/files/event-covers/` is accepted too,
+  because the local upload driver has no TLS. Events saved with a data URL before
+  still read fine until `scripts/migrate-event-covers.ts` moves them.
 - Maximum lengths: `city`, `state`, `country` 100; `address` 200; `platform` 60;
   `platformLink` 2048. `mapIframe` is still unbounded. Required **only if `mode` is `Offline` or `Hybrid`** (`createEventSchema`'s
 `superRefine`): `city`, `state`, `country`, and `address` — each missing one
@@ -530,6 +534,35 @@ has a **status**.
 - **Tests:** `tests/events-access.test.ts` (30 tests: the levels and the legacy
   flag, requests, notes, approve and decline, the waitlist, invitations, host-only
   and cancelled rules).
+
+## Cover images (November 2026, DB-1)
+
+A cover used to be saved as a base64 string inside the event document, so the
+directory list sent every image of every event. Now the image lives in object
+storage and the event keeps only its https link. The upload endpoints are in the
+`uploads` module (`src/modules/uploads/`), documented in
+[api-contract.md](./api-contract.md).
+
+- **Flow:** the organizer's browser calls `POST /uploads/event-covers` with the
+  file's type and size, gets an upload ticket, sends the bytes straight to storage
+  (never through this API: a serverless function cannot take a body that large),
+  and puts the resulting link in `coverImage` when it creates or edits the event.
+- **Production** uses Vercel Blob. The ticket is a short-lived client token that
+  allows one pathname (`event-covers/<uuid>.<ext>`), one content type and 5 MiB.
+  It needs `BLOB_READ_WRITE_TOKEN` (a public Blob store) in the API's environment.
+  Without it a production API answers `503` to a ticket request.
+- **Development and test** use the local disk when there is no token: the ticket
+  is a signed URL on this API, the bytes go to `UPLOADS_DIR` (default `.uploads`,
+  ignored by git) and are served from `/uploads/files`. The signed ticket fixes the
+  file name and image type, and the real bytes must match that type (checked by
+  their first bytes), so nothing but one of the four image types can be written.
+- **Moving old covers:** `scripts/migrate-event-covers.ts --dry-run` lists events
+  whose cover is still a data URL, and `--confirm` uploads each to Blob and
+  replaces it with the link. It is safe to run twice and never overwrites a cover
+  that changed while it ran. It needs `MONGO_URI` and `BLOB_READ_WRITE_TOKEN`.
+- **Tests:** `tests/uploads.test.ts` (tickets for both drivers, the local upload
+  and its checks, serving, an event keeping the link) and
+  `tests/cover-migration.test.ts`.
 
 ## Tests
 

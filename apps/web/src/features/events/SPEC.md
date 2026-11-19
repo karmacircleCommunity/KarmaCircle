@@ -92,7 +92,7 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `components/EventCard.tsx`          | Card rendered in the `/events` grid                                                                                                                                                                                                       | ✅ rendered, typed against `EventCardEvent`                                                                                                                                                                            |
 | `utils/toDisplayEvent.ts`           | Maps a live `ApiEvent` onto `EventCardEvent`                                                                                                                                                                                              | ✅ used by `Events.tsx`                                                                                                                                                                                                |
 | `components/EventsMarqueeCards.tsx` | Data-driven event card (correctly reads an `event` prop)                                                                                                                                                                                  | ❌ not rendered anywhere                                                                                                                                                                                               |
-| `utils/convertToBase64.ts`          | File→base64 helper used by `CreateEvents.tsx`'s cover-image upload                                                                                                                                                                        | ✅ used by `CreateEvents` only                                                                                                                                                                                         |
+| `utils/uploadCoverImage.ts`         | Uploads one cover to object storage and returns its https link (November 2026, DB-1)                                                                                                                                                                        | ✅ used by `CreateEvents` only                                                                                                                                                                                         |
 | `utils/getFormattedDate.ts`         | Ordinal-suffix date formatter (`"1st January"`)                                                                                                                                                                                           | ✅ used by `EventsMarqueeCards` only (itself unused)                                                                                                                                                                   |
 | `constants/reservedEventAddresses.ts` | `RESERVED_EVENT_ADDRESSES`: page addresses the create form refuses (`mine`, `new`, `create`, `edit`, `admin`, `api`). The API keeps its own copy | ✅ used by `useEvent.ts` |
 | `constants/coverImageTypes.ts` | `COVER_IMAGE_MIME_TYPES`, `COVER_IMAGE_ACCEPT`, `COVER_IMAGE_TYPE_ERROR`: the four cover image types the API accepts | ✅ used by `CreateEvents.tsx` |
@@ -364,9 +364,17 @@ into a timestamp before sending the API request.
 **Cover image:** image uploads are limited to 5 MB and to PNG, JPEG, WebP or GIF
 (`constants/coverImageTypes.ts`, mirroring `COVER_IMAGE_MIME_TYPES` in the API's
 `event.constants.ts`; the file input's `accept` and the error text come from
-the same constant), and converted to a base64 data URL by
-`convertToBase64(file)`. The API rejects any other type, so the browser blocks
-SVG, AVIF and BMP up front instead of failing on submit. The form starts without
+the same constant), and uploaded as soon as it is chosen by
+`uploadCoverImage(file)` (`utils/uploadCoverImage.ts`, November 2026, DB-1): it
+asks `POST /uploads/event-covers` where to send the file, sends it there (Vercel
+Blob with a short-lived token in production, a signed URL on the API in
+development and test), and the form keeps only the returned https link in
+`coverImage`. The chosen file previews from the browser with an "Uploading…" label,
+the file input and every submit button are disabled until it finishes, and a
+failure keeps the previous cover and shows the message inline. The API rejects
+any other type, so the browser blocks SVG, AVIF and BMP up front instead of
+failing on submit. Events saved before this change may still hold a data URL; they
+display as before, and an edit that does not change the cover does not send it. The form starts without
 a placeholder asset and shows an intentional preview placeholder until the
 organizer chooses an image.
 
@@ -488,11 +496,13 @@ a later render cannot replace it with an empty or stale error object.
 exists on disk either. A "my hosted events" view for the dashboard is new work;
 `YourEvents.tsx` is the existing hosted-events page.
 
-## `utils/convertToBase64.ts`
+## `utils/uploadCoverImage.ts`
 
-`convertToBase64(file)` wraps `FileReader.readAsDataURL` in a promise and
-rejects if the result cannot be read. The page validates the selected image and
-handles upload errors inline before updating form state.
+`uploadCoverImage(file)` returns the https link of an uploaded cover and throws
+`CoverUploadError` (its message is safe to show) when the ticket request, the
+Blob upload or the direct upload fails. `convertToBase64.ts` was deleted in
+November 2026: an image no longer travels as data inside the form or the event.
+Unit tests cover both strategies and the failures (`uploadCoverImage.test.ts`).
 
 ## `utils/getFormattedDate.ts`
 
@@ -603,8 +613,6 @@ changing together.
   string pair — if `EventsMarqueeCards.tsx` is ever wired up against a live
   record, the two date formatters should collapse into one rather than staying
   split.
-- `convertToBase64.ts`'s `converter` can hang forever on a falsy file (currently
-  unreachable via the guarded call site) — new finding.
 - **Unit-tested helpers with open bugs (November 2026):** `formatDuration`
   returns "NaN days" for an unreadable date, `getFormattedDate` returns "NaNth
   undefined", and `fundedPercent` (shared `@utils/formatMoney`) has no lower

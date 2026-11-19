@@ -181,7 +181,8 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
       uid,
       name,
       description: "A regression-test event created by the Playwright suite.",
-      coverImage: `data:image/png;base64,${TINY_PNG_BASE64}`,
+      // Events keep the https link of a cover, never the image itself (DB-1).
+      coverImage: "https://example.com/e2e-cover.png",
       mode,
       startDate: start.toISOString(),
       endDate: end.toISOString(),

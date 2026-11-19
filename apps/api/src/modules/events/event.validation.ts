@@ -1,8 +1,7 @@
 import { z } from "zod";
+import { env } from "../../config/env";
 import { paginationQuerySchema } from "../../utils/pagination";
 import {
-  COVER_IMAGE_MAX_BYTES,
-  COVER_IMAGE_MIME_TYPES,
   COVER_IMAGE_URL_MAX_LENGTH,
   EVENT_ACCESS_LEVELS,
   EVENT_ADDRESS_MAX_LENGTH,
@@ -78,14 +77,6 @@ const isHttpUrl = (value: string) => {
   }
 };
 
-const COVER_IMAGE_DATA_URL_PATTERN = new RegExp(
-  `^data:image/(?:${COVER_IMAGE_MIME_TYPES.join("|")});base64,`,
-);
-const BASE64_PAYLOAD_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/;
-/** Longest data URL string that could still decode to the byte cap. */
-const COVER_IMAGE_MAX_DATA_URL_LENGTH =
-  Math.ceil(COVER_IMAGE_MAX_BYTES / 3) * 4 + 64;
-
 const isHttpsUrl = (value: string) => {
   try {
     return new URL(value).protocol === "https:";
@@ -94,59 +85,52 @@ const isHttpsUrl = (value: string) => {
   }
 };
 
-/** Decoded size of a base64 payload, from its length and `=` padding. */
-const base64DecodedBytes = (payload: string) => {
-  const padding = payload.endsWith("==") ? 2 : payload.endsWith("=") ? 1 : 0;
-  return (payload.length * 3) / 4 - padding;
+/**
+ * Outside production, an image uploaded to this API's own disk (the `direct`
+ * upload driver) is served over plain http from `/uploads/files/`, since local
+ * development has no TLS. Accepted only there, and only for that path.
+ */
+const isLocalUploadUrl = (value: string) => {
+  if (env.NODE_ENV === "production") return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "http:" &&
+      url.pathname.startsWith("/uploads/files/event-covers/")
+    );
+  } catch {
+    return false;
+  }
 };
 
 /**
- * A cover image is either an https link or a base64 data URL of an allowed
- * image type no larger than the browser's own 5 MB file limit. Anything else
- * (http, javascript:, svg, other data types, oversized payloads) is rejected.
+ * A cover image is an https link: to an image uploaded through
+ * `POST /uploads/event-covers` (the form's own path), or to one hosted
+ * elsewhere. A base64 data URL is refused: that is what used to put every
+ * image inside the event document and every image inside every event list
+ * (DB-1). Events saved that way before still read fine; `scripts/migrate-event-covers.ts`
+ * moves them to storage.
  */
 const coverImageSchema = z
   .string()
   .min(1, "Missing Required Fields")
   .superRefine((value, ctx) => {
     if (value.startsWith("data:")) {
-      if (value.length > COVER_IMAGE_MAX_DATA_URL_LENGTH) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Cover image must be 5 MB or smaller",
-        });
-        return;
-      }
-      const header = COVER_IMAGE_DATA_URL_PATTERN.exec(value);
-      if (!header) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Cover image must be a PNG, JPEG, WebP or GIF image",
-        });
-        return;
-      }
-      const payload = value.slice(header[0].length);
-      if (!BASE64_PAYLOAD_PATTERN.test(payload) || payload.length % 4 !== 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Cover image data is not valid base64",
-        });
-        return;
-      }
-      if (base64DecodedBytes(payload) > COVER_IMAGE_MAX_BYTES) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Cover image must be 5 MB or smaller",
-        });
-      }
-      return;
-    }
-
-    if (value.length > COVER_IMAGE_URL_MAX_LENGTH || !isHttpsUrl(value)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          "Cover image must be an https link or an uploaded PNG, JPEG, WebP or GIF image",
+          "Upload the cover image and send its https link, not the image data",
+      });
+      return;
+    }
+
+    if (
+      value.length > COVER_IMAGE_URL_MAX_LENGTH ||
+      !(isHttpsUrl(value) || isLocalUploadUrl(value))
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Cover image must be an https link to an uploaded image",
       });
     }
   });

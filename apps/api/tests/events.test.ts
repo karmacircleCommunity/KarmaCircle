@@ -543,53 +543,52 @@ describe("Events", () => {
       },
     );
 
-    // V-4
-    const tinyPng =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-
+    // V-4, and DB-1: a cover is the https link of an uploaded image.
     it.each([
       ["an https link", "https://example.com/cover.webp"],
-      ["a PNG data URL", tinyPng],
-      ["a JPEG data URL", "data:image/jpeg;base64,/9j/4AAQSkZJRg=="],
-      ["a WebP data URL", "data:image/webp;base64,UklGRg=="],
-      ["a GIF data URL", "data:image/gif;base64,R0lGODlhAQABAAAAACw="],
+      [
+        "the link of an uploaded cover",
+        "https://abc123.public.blob.vercel-storage.com/event-covers/0b2f.png",
+      ],
     ])("accepts %s as the cover image", async (_label, coverImage) => {
       const res = await createWith({ coverImage });
       expect(res.status).toBe(201);
+      expect(res.body.savedEvent.coverImage).toBe(coverImage);
     });
 
     it.each([
       ["an http link", "http://example.com/cover.png"],
       ["a javascript: URL", "javascript:alert(1)"],
       ["plain text", "not a url"],
-      ["an SVG data URL", "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="],
-      ["a non-image data URL", "data:text/html;base64,PGgxPmhpPC9oMT4="],
-      ["a data URL that is not base64", "data:image/png,rawbytes"],
-      ["a data URL with a broken payload", "data:image/png;base64,@@@@"],
       ["a file: URL", "file:///etc/passwd"],
+      ["a link over 2048 characters", `https://example.com/${"a".repeat(2100)}`],
     ])("rejects %s as the cover image", async (_label, coverImage) => {
       const res = await createWith({ coverImage });
       expect(res.status).toBe(400);
       expect(issuePaths(res)).toContain("coverImage");
     });
 
-    it("rejects a data URL image larger than 5 MB", async () => {
-      const oversized = `data:image/png;base64,${"A".repeat(
-        Math.ceil((5 * 1024 * 1024 + 3) / 3) * 4,
-      )}`;
-      const res = await createWith({ coverImage: oversized });
-      expect(res.status).toBe(400);
-      expect(issuePaths(res)).toContain("coverImage");
-    });
-
-    it("accepts a data URL image at exactly 5 MB", async () => {
-      // Built from a real buffer so base64 adds its own padding.
-      const exact = Buffer.alloc(5 * 1024 * 1024).toString("base64");
-      const res = await createWith({
-        coverImage: `data:image/png;base64,${exact}`,
-      });
-      expect(res.status).toBe(201);
-    });
+    it.each([
+      [
+        "a PNG data URL",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      ],
+      ["a JPEG data URL", "data:image/jpeg;base64,/9j/4AAQSkZJRg=="],
+      ["an SVG data URL", "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="],
+      ["a non-image data URL", "data:text/html;base64,PGgxPmhpPC9oMT4="],
+    ])(
+      "refuses %s, so images are never stored in the event record",
+      async (_label, coverImage) => {
+        const res = await createWith({ coverImage });
+        expect(res.status).toBe(400);
+        expect(issuePaths(res)).toContain("coverImage");
+        const message = res.body.errors.find(
+          (error: { path: string }) => error.path === "coverImage",
+        ).message;
+        expect(message).toMatch(/Upload the cover image/);
+        expect(await Event.countDocuments({})).toBe(0);
+      },
+    );
 
     // V-5
     it.each(["mine", "new", "create", "edit", "admin", "api"])(

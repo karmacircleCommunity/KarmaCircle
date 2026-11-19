@@ -560,7 +560,11 @@ leave-event confirmation in `DetailedEvent.tsx` are both built on it.
 
 All creation work belongs in the `CreateEvents` page and `useEvent` hook. The
 cover picker accepts PNG, JPEG, WebP and GIF up to 5 MB, the same four types the
-API accepts (`constants/coverImageTypes.ts`).
+API accepts (`constants/coverImageTypes.ts`). The chosen file is uploaded straight
+to object storage as soon as it is picked (`utils/uploadCoverImage.ts`, November
+2026, DB-1) and the form keeps only the returned https link, so an event record
+never holds an image and the event list stays light; see the cover section of
+[events/SPEC.md](../../apps/web/src/features/events/SPEC.md).
 
 ## `useEvent` hook
 

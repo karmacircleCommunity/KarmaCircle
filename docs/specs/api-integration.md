@@ -61,7 +61,7 @@ organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, ta
 eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, type, access, page, limit })
 ```
 
-The attendee and invitation endpoints added in November 2026: `attendees(uid, { page, limit, search, status })`, `attendee(uid, id)`, `approveAttendee(uid, id)`, `declineAttendee(uid, id)`, `invites(uid)`, `invite(uid, inviteId)` and `attendeesExport(uid)`. The matching calls in `KarmaCircleApi.ts` are `ApproveAttendee`, `DeclineAttendee`, `InviteToEvent` and `RevokeInvite`.
+The attendee and invitation endpoints added in November 2026: `attendees(uid, { page, limit, search, status })`, `attendee(uid, id)`, `approveAttendee(uid, id)`, `declineAttendee(uid, id)`, `invites(uid)`, `invite(uid, inviteId)` and `attendeesExport(uid)`, and `coverUpload` (November 2026, `POST /uploads/event-covers`, used by `RequestCoverUpload`). The matching calls in `KarmaCircleApi.ts` are `ApproveAttendee`, `DeclineAttendee`, `InviteToEvent` and `RevokeInvite`.
 
 ```js
 paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)

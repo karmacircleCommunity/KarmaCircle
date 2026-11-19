@@ -13,7 +13,10 @@ import {
   paymentEndpoints,
   userEndpoints,
 } from "./ApiEndpoints";
-import type { ApiInviteResult } from "@features/events/types";
+import type {
+  ApiInviteResult,
+  CoverUploadTicket,
+} from "@features/events/types";
 
 // LOGIN USER
 export const LoginUser = async (credentials: unknown) => {
@@ -386,6 +389,29 @@ export const SetAttendeeCheckIn = async (
     return { ok: true, status: response.status };
   } catch (error) {
     return toEventWriteFailure(error);
+  }
+};
+
+// ask the API where to send one event cover image (DB-1); organization only
+export const RequestCoverUpload = async (
+  contentType: string,
+  size: number,
+): Promise<
+  { ok: true; ticket: CoverUploadTicket } | { ok: false; message?: string }
+> => {
+  try {
+    const response = await Axios.post<CoverUploadTicket>(
+      eventEndpoints.coverUpload,
+      { contentType, size },
+      { withCredentials: true },
+    );
+    return { ok: true, ticket: response.data };
+  } catch (error) {
+    const failure = toEventWriteFailure(error);
+    return {
+      ok: false,
+      message: failure.errors?.[0]?.message ?? failure.message,
+    };
   }
 };
 

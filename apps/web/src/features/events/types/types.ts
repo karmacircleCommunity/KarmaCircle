@@ -50,6 +50,21 @@ export type EventFactsProps = DetailedEventRecord;
 export type EventLocationPanelProps = DetailedEventRecord;
 
 /**
+ * Where to send the bytes of one event cover (DB-1), as `POST /uploads/event-covers`
+ * answers: straight to Vercel Blob with a short-lived token, or (development and
+ * test) to a signed URL on the API itself. Either way the event keeps only the
+ * resulting https link.
+ */
+export type CoverUploadTicket =
+  | { strategy: "vercel-blob"; clientToken: string; pathname: string }
+  | {
+      strategy: "direct";
+      uploadUrl: string;
+      method: "PUT";
+      publicUrl: string;
+    };
+
+/**
  * What the signed-in person can do about joining one event right now, worked
  * out by `utils/joinView.ts` and read by both join controls.
  */

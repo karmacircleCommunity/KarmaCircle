@@ -13,6 +13,7 @@ import passport from "./config/passport";
 import { swaggerSpec } from "./config/swagger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { apiLimiter } from "./middleware/rate-limit";
+import { storageDriver, uploadsDir } from "./modules/uploads/upload.service";
 import routes from "./routes/index";
 
 export function createApp(): Express {
@@ -56,12 +57,37 @@ export function createApp(): Express {
     }),
   );
 
-  app.use(express.json({ limit: "10mb" }));
+  // Text only. Images never travel in a JSON body: an event cover is uploaded to
+  // object storage and the event keeps its link (DB-1), so nothing here needs
+  // more than a few hundred kilobytes. A small ceiling keeps one request from
+  // exhausting memory (S-4).
+  app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
   app.use(passport.initialize());
 
   app.use(apiLimiter);
+
+  // Uploaded event covers when images go to local disk (development and test;
+  // a deployment with a Blob token serves them from Blob). Helmet's default
+  // same-origin resource policy would stop the web app, on another origin,
+  // from showing them. Files are named by random id and never change, so they
+  // cache for good.
+  if (storageDriver() === "local") {
+    app.use(
+      "/uploads/files",
+      (_req, res, next) => {
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+        next();
+      },
+      express.static(uploadsDir(), {
+        index: false,
+        dotfiles: "deny",
+        immutable: true,
+        maxAge: "1y",
+      }),
+    );
+  }
 
   app.get("/", (_req, res) => {
     res.send("HELLO FROM API");

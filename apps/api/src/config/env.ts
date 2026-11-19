@@ -51,6 +51,16 @@ const envSchema = z.object({
         .filter(Boolean),
     ),
 
+  // Where uploaded images go (event covers). With a Vercel Blob read-write
+  // token, the browser uploads straight to Blob using a short-lived token this
+  // API mints, so images never pass through (or get stored in) the database or
+  // the serverless function. Without it, development and test fall back to the
+  // local disk (UPLOADS_DIR, default `.uploads` next to the API), and a
+  // production API answers `503` to an upload request. See
+  // modules/uploads/upload.service.ts.
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
+  UPLOADS_DIR: z.string().optional(),
+
   // The `Domain` attribute for auth cookies. Set it to the registrable
   // domain shared by the frontend and this API (".karmacircle.org") so one
   // cookie covers www/dev/api. Leave it UNSET for localhost: an explicit

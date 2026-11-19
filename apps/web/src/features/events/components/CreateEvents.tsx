@@ -30,7 +30,10 @@ import {
 import EditSectionTabs from "@features/events/components/EditSectionTabs";
 import EventDetailsSection from "@features/events/components/EventDetailsSection";
 import { emptyDetailFields } from "@features/events/utils/eventDetailFields";
-import convertToBase64 from "@features/events/utils/convertToBase64";
+import {
+  CoverUploadError,
+  uploadCoverImage,
+} from "@features/events/utils/uploadCoverImage";
 import { useEvent } from "@features/events/hooks/useEvent";
 import { buildEventChanges } from "@features/events/utils/buildEventChanges";
 import {
@@ -179,6 +182,10 @@ export const EventForm = ({
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverError, setCoverError] = useState("");
+  // The cover is uploaded as soon as it is chosen (DB-1); the form keeps only
+  // the link. While it uploads, the chosen file previews from the browser.
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUidEdited, setIsUidEdited] = useState(isEdit);
   const { validateEvent, submitCallback } = useEvent(event, original);
   const allowNavigation = useRef(false);
@@ -298,11 +305,23 @@ export const EventForm = ({
       return;
     }
 
+    const preview = URL.createObjectURL(file);
+    setCoverPreview(preview);
+    setCoverUploading(true);
     try {
-      const image = await convertToBase64(file);
-      setEvent((current) => ({ ...current, coverImage: image }));
-    } catch {
-      setCoverError("We couldn’t read that image. Choose it again to retry.");
+      const url = await uploadCoverImage(file);
+      setEvent((current) => ({ ...current, coverImage: url }));
+    } catch (error) {
+      // The previous cover (if any) stays; only the message says what happened.
+      setCoverError(
+        error instanceof CoverUploadError
+          ? error.message
+          : "We couldn’t upload that image. Try again.",
+      );
+    } finally {
+      setCoverUploading(false);
+      setCoverPreview(null);
+      URL.revokeObjectURL(preview);
     }
   };
 
@@ -323,6 +342,7 @@ export const EventForm = ({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (coverUploading) return;
     if (isEdit && !isDraftEdit && !isDirty) return;
     void submit("publish");
   };
@@ -569,12 +589,22 @@ export const EventForm = ({
                       htmlFor="coverImage"
                       className="group flex min-h-48 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-brand-secondary/20 bg-surface-warm text-center transition hover:border-brand/50"
                     >
-                      {event.coverImage ? (
-                        <img
-                          src={event.coverImage}
-                          alt="Event cover preview"
-                          className="h-56 w-full object-cover"
-                        />
+                      {coverPreview || event.coverImage ? (
+                        <span className="relative block w-full">
+                          <img
+                            src={coverPreview ?? event.coverImage}
+                            alt="Event cover preview"
+                            className={`h-56 w-full object-cover ${coverUploading ? "opacity-60" : ""}`}
+                          />
+                          {coverUploading && (
+                            <span
+                              role="status"
+                              className="absolute inset-0 flex items-center justify-center font-outfit text-body font-semibold text-brand-secondary"
+                            >
+                              Uploading…
+                            </span>
+                          )}
+                        </span>
                       ) : (
                         <span className="flex flex-col items-center px-6 py-8">
                           <span className="flex size-12 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -593,6 +623,7 @@ export const EventForm = ({
                       id="coverImage"
                       type="file"
                       accept={COVER_IMAGE_ACCEPT}
+                      disabled={coverUploading}
                       onChange={handleCoverChange}
                       className="sr-only"
                       aria-invalid={Boolean(errors.coverImage || coverError)}
@@ -928,7 +959,7 @@ export const EventForm = ({
                   {(!isEdit || isDraftEdit) && (
                     <button
                       type="button"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || coverUploading}
                       onClick={() => void submit("draft")}
                       className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-brand-secondary/20 bg-white px-6 font-outfit text-body font-semibold text-brand-secondary transition hover:border-brand/45 disabled:cursor-wait disabled:opacity-60"
                     >
@@ -938,7 +969,7 @@ export const EventForm = ({
                   {(!isEdit || isDraftEdit) && (
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || coverUploading}
                       className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
                     >
                       {isSubmitting ? "Publishing…" : "Publish event"}
@@ -962,7 +993,7 @@ export const EventForm = ({
                       </button>
                       <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || coverUploading}
                         className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
                       >
                         {isSubmitting ? "Saving…" : "Save changes"}

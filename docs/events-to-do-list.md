@@ -56,7 +56,7 @@ There is no way to cancel or remove an event.
 Decide first whether "cancel" keeps the event visible with a cancelled badge, or removes it.
 People who already registered need to be told, which links to the email work in PG-6.
 Result: `POST /events/:uid/cancel` and a "Cancel event" button on the same rows, behind a confirmation dialog.
-Decided while Tamal was away, so Tamal should confirm it: a cancelled event stays public with a "Cancelled" badge on the card, the detail page and My Events, and there is no delete and no reinstate.
+Decided while Tamal was away and confirmed by him on 2026-11-19: a cancelled event stays public with a "Cancelled" badge on the card, the detail page and My Events, and there is no delete and no reinstate.
 It adds an `Event.status` (`published` or `cancelled`) and `cancelledAt`; an event saved before the field existed reads as published.
 New joins are refused with `409`, and existing registrations are kept.
 Only the hosting organization can cancel, and only before the event ends.
@@ -419,12 +419,16 @@ Result: city, state and country are capped at 100, address at 200, platform at 6
 ## 6. Database (MongoDB)
 
 ### DB-1 Cover images are stored inside the event document
-Status: open. Priority: P1.
-The browser sends the image as a text string and it is saved in the event record.
-The public list returns whole records, so every cover image travels in the list response.
-With 100 events at a few megabytes each, one page load could be hundreds of megabytes.
-Fix: upload images to object storage, save only a link on the event, and validate type and size on upload.
-Short-term: stop returning the cover string in the list and serve it separately.
+Status: built (2026-11-19), waiting on the production setup below. Priority: P1.
+The browser sent the image as a text string and it was saved in the event record, so the public list returned every cover image in every response.
+Decided with Tamal on 2026-11-19: the long-term fix, real object storage.
+Result: the cover is uploaded as soon as it is chosen, straight from the browser to Vercel Blob with a short-lived token from the API (`POST /uploads/event-covers`), and the event keeps only the https link.
+The API now refuses a base64 cover and the JSON body limit dropped from 10 MB to 1 MB (this also closes S-4).
+Local development and the test suites need nothing: with no Blob token the API writes uploads to `apps/api/.uploads` and serves them itself.
+`scripts/migrate-event-covers.ts` moves existing data-URL covers to Blob (`--dry-run` to look, `--confirm` to do it).
+Still to do by Tamal, because they are in his Vercel account: (1) create a PUBLIC Blob store, (2) add its `BLOB_READ_WRITE_TOKEN` to the `karmacircle-api` and `karmacircle-api-dev` projects, (3) deploy, (4) run the migration against production once.
+Until the token is set, a production API answers `503` to an upload, so organizers cannot publish a new cover.
+Not verified in a browser: the Playwright specs that upload a cover ran only against the code, not on a real run.
 
 ### DB-2 The event list has no fixed order
 Status: done (2026-11-19). Priority: P1.
@@ -469,10 +473,9 @@ The remaining critical `tar` and the npm tooling flaws live inside `semantic-rel
 `npm audit` also does not run in CI yet.
 
 ### S-4 Large request bodies are accepted on every route
-Status: open. Priority: P2.
-The JSON body limit is 10 MB for the whole API, because event covers need it.
-Every other route accepts the same, which makes memory exhaustion easier.
-Fix: set a small default and a larger limit only where needed, or remove the need through DB-1.
+Status: done (2026-11-19). Priority: P2.
+The JSON body limit was 10 MB for the whole API, because event covers travelled inside it.
+Result: covers are uploaded to object storage (DB-1), so the limit is now 1 MB everywhere. A body over it answers `413` instead of a generic `500`.
 
 ### S-5 Weak secret check
 Status: open. Priority: P2.
@@ -524,11 +527,11 @@ Update them in the same change.
 ## 10. Decisions needed from Tamal
 
 1. Decided 2026-11-18 and built 2026-11-19: invite-only is a private-style event for invited emails, next to an Approval required level (PG-4).
-2. Decided 2026-11-16 while Tamal was away, still to confirm: a cancelled event stays visible with a badge, and there is no delete (PG-2).
+2. Decided 2026-11-16 and confirmed by Tamal 2026-11-19: a cancelled event stays up with a Cancelled label (PG-2).
 3. Decided 2026-11-04: past start dates are not allowed (V-2).
-4. Marquee cards: wire to live data or delete (CH-4). Leaning delete; Tamal wants to talk it through first.
+4. Marquee cards: wire to live data or delete (CH-4). Postponed by Tamal on 2026-11-19; do not act on it until he brings it back.
 5. Decided 2026-11-19: anonymous donations stay as they are (S-6).
-6. Cover images: move to object storage now, or ship the short-term fix first (DB-1).
+6. Decided 2026-11-19: cover images move to real object storage, the long-term fix (DB-1). Built; the Blob store and token still need setting up in Vercel.
 7. Decided 2026-11-18 and built 2026-11-19: waitlist and approval share one registration state machine with invite-only; manual promotion (PG-14 and PG-4).
 8. Decided 2026-11-19: hackathons are out of scope.
 9. Decided 2026-11-19: volunteering roles and shifts are not an event feature.
@@ -589,3 +592,5 @@ Update them in the same change.
 - 2026-11-19: S-6 decided (anonymous donations stay), and the decisions on hackathons, volunteering shifts and event payments recorded as out of scope.
 - 2026-11-19: S-1 (cookie and set-cookie redacted from logs), O-1 (failed database connection is retried), DB-2 and DB-3 (event list indexes, checked by query-plan tests), S-3 (safe dependency updates in both lockfiles, zod 4 skipped), S-7 (found already fixed).
 - 2026-11-19: API tests `logger.test.ts` (4), `database-gate.test.ts` (3) and `event-indexes.test.ts` (5); the API suite passed 22 suites and 430 tests.
+- 2026-11-19: DB-1 (code) and S-4: event covers are uploaded to object storage and the event keeps a link; JSON body limit is 1 MB. API tests `uploads.test.ts` (17) and `cover-migration.test.ts` (7); the API suite passed 24 suites and 450 tests, and the web unit suite 241 tests and 2 todo. Production setup and the one-time migration are Tamal's to do.
+- 2026-11-19: decided that a cancelled event stays up with a Cancelled label (decision 2), and that cover images get the long-term fix (decision 6).

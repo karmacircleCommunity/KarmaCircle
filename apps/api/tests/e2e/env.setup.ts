@@ -8,6 +8,8 @@
  * never listens on anything, so it never needed one; this script does
  * (see ./server.ts).
  */
+import os from "node:os";
+import path from "node:path";
 import "../helpers/env.setup";
 
 // A dedicated port, deliberately different from the real local dev API's
@@ -20,3 +22,8 @@ process.env.PORT = process.env.PORT ?? "5051";
 // reason — override the inherited ORIGIN_URL (3000) so CORS actually
 // allows it.
 process.env.ORIGIN_URL = "http://localhost:3001";
+
+// Event cover uploads land on disk in the e2e API (no Blob token), so they go
+// to a throwaway folder instead of the working tree.
+process.env.UPLOADS_DIR =
+  process.env.UPLOADS_DIR ?? path.join(os.tmpdir(), "karmacircle-e2e-uploads");

@@ -7,6 +7,7 @@ import directoryRoutes from "../modules/directory/directory.routes";
 import paymentRoutes from "../modules/payments/payment.routes";
 import productRoutes from "../modules/products/product.routes";
 import eventRoutes from "../modules/events/event.routes";
+import uploadRoutes from "../modules/uploads/upload.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/display", directoryRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/product", productRoutes);
 router.use("/events", eventRoutes);
+router.use("/uploads", uploadRoutes);
 
 export default router;

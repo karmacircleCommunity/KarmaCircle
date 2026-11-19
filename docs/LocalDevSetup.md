@@ -82,6 +82,7 @@ Never point `MONGO_URI` at production or a database containing important persona
 | `ORIGIN_URL` | `http://localhost:3000` | Frontend origin, CORS origin, and password-reset link base. Keep `http` for local auth cookies. |
 | `CORS_ORIGINS` | Empty | Optional comma-separated extra browser origins. Leave empty for the default local setup. |
 | `ORIGIN_DOMAIN` | Empty | Keep empty for localhost so the browser accepts auth cookies. |
+| `BLOB_READ_WRITE_TOKEN` | Empty | Keep empty locally. Event cover images are then saved to `apps/api/.uploads` and served by the API itself, so image upload works offline. Deployments set a Vercel Blob token. |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Empty | Optional. Add test-account keys only when testing payments. |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Empty | Not needed locally. Development captures reset links and does not send email. |
 | `NODE_ENV` | Defaults to `development` | Do not set to `production` for local development. |

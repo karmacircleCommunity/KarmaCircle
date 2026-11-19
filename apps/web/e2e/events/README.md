@@ -218,3 +218,8 @@ the API with `access`, and each attendee has their own browser context.
 
 The full-event refusal test in `event-attendees.spec.ts` now creates its event with
 `waitlistEnabled: false`, because a full event takes a waitlist by default.
+
+## Cover uploads (DB-1)
+
+Since 2026-11-19 an event keeps only the https link of its cover. The specs that pick a cover with `setInputFiles` on `#coverImage` now go through the real upload: the form asks `POST /uploads/event-covers`, the e2e API has no Blob token so it answers with the local driver, the browser `PUT`s the file to a signed URL on the API, and the form keeps the returned link (files go to a temp folder, see `apps/api/tests/e2e/env.setup.ts`). `createEvent` in `event-helpers.ts` posts a plain https cover link instead of a data URL, because the API now refuses data URLs.
+These specs have **not been run** since that change (UI tests wait for Tamal's go-ahead), so treat the upload path in them as written but unverified.
