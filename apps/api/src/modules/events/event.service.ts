@@ -12,8 +12,29 @@ import {
   UpdateEventInput,
   assertEventRules,
 } from "./event.validation";
-import { Event, EventRegistration, IEvent } from "./event.model";
-import type { EventType } from "./event.constants";
+import {
+  Event,
+  EventInvite,
+  EventRegistration,
+  IEvent,
+  effectiveAccess,
+} from "./event.model";
+import {
+  EVENT_INVITES_PER_EVENT_MAX,
+  type EventAccess,
+  type EventType,
+  type RegistrationStatus,
+} from "./event.constants";
+
+/**
+ * Matches the registrations that hold a spot. A row saved before `status`
+ * existed has none and is going, which `$nin` matches too.
+ */
+const GOING = { status: { $nin: ["pending", "waitlisted", "declined"] } } as const;
+
+/** The status of a registration, with the pre-`status` rows read as going. */
+const statusOf = (registration: { status?: RegistrationStatus | null }) =>
+  registration.status ?? "going";
 
 export async function findByUid(uid: string) {
   return Event.findOne({ uid });
@@ -70,8 +91,25 @@ export interface EventListFilters {
   search?: string;
   period?: "upcoming" | "past";
   mode?: "Online" | "Offline" | "Hybrid";
-  inviteOnly?: boolean;
+  access?: EventAccess;
   type?: EventType;
+}
+
+/**
+ * The filter for one access level. An event saved before `access` existed has
+ * none: it is open, or approval-style if its old `inviteOnly` flag was set.
+ */
+function accessCondition(access: EventAccess): FilterQuery<IEvent> {
+  if (access === "invite") return { access: "invite" };
+  if (access === "approval") {
+    return {
+      $or: [{ access: "approval" }, { access: null, inviteOnly: true }],
+    } as FilterQuery<IEvent>;
+  }
+  return {
+    access: { $in: ["open", null] },
+    inviteOnly: { $ne: true },
+  } as FilterQuery<IEvent>;
 }
 
 const escapeRegExp = (value: string) =>
@@ -121,13 +159,7 @@ export async function findAll(
   if (filters.mode) conditions.push({ mode: filters.mode });
   if (filters.type) conditions.push({ eventType: filters.type });
 
-  if (filters.inviteOnly !== undefined) {
-    // Events saved before `inviteOnly` existed have no value, and read as
-    // open to everyone, so "open" must match a missing field too.
-    conditions.push(
-      filters.inviteOnly ? { inviteOnly: true } : { inviteOnly: { $ne: true } },
-    );
-  }
+  if (filters.access) conditions.push(accessCondition(filters.access));
 
   const query: FilterQuery<IEvent> = conditions.length
     ? { $and: conditions }
@@ -167,25 +199,106 @@ export async function findForAttendee(
   }
 
   const registrations = await EventRegistration.find({ userId: attendee._id })
-    .select({ eventUid: 1 })
+    .select({ eventUid: 1, status: 1 })
     .lean();
-  const eventUids = registrations.map(({ eventUid }) => eventUid);
-  if (eventUids.length === 0) return { data: [], total: 0 };
+  if (registrations.length === 0) return { data: [], total: 0 };
+  // Each event carries the person's own standing (PG-14): going, asked to
+  // join, on the waitlist, or not approved.
+  const statusByUid = new Map(
+    registrations.map((row) => [row.eventUid, statusOf(row)]),
+  );
 
   const now = new Date();
   const query = {
-    uid: { $in: eventUids },
+    uid: { $in: [...statusByUid.keys()] },
     startTime: pagination.period === "upcoming" ? { $gte: now } : { $lt: now },
   };
   const sort = pagination.period === "upcoming" ? 1 : -1;
-  const [data, total] = await Promise.all([
+  const [events, total] = await Promise.all([
     Event.find(query)
       .sort({ startTime: sort, uid: sort })
       .skip(pagination.skip)
       .limit(pagination.limit),
     Event.countDocuments(query),
   ]);
+  const data = events.map((event) => ({
+    ...event.toJSON(),
+    registrationStatus: statusByUid.get(event.uid) ?? "going",
+  }));
   return { data, total };
+}
+
+/**
+ * The upcoming events the attendee has been invited to by email (PG-4) and has
+ * not joined yet: what the "Invited" tab of My Events lists. A draft or
+ * cancelled event, one that has started, and one the person already holds a
+ * registration for are left out.
+ */
+export async function findInvitedFor(
+  email: string,
+  pagination: { skip: number; limit: number },
+) {
+  const attendee = await findByEmail(email);
+  if (!attendee) {
+    throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
+  }
+
+  const invites = await EventInvite.find({
+    email: attendee.email.toLowerCase(),
+    usedAt: null,
+  })
+    .select({ eventUid: 1 })
+    .lean();
+  const invitedUids = invites.map(({ eventUid }) => eventUid);
+  if (invitedUids.length === 0) return { data: [], total: 0 };
+
+  const registered = await EventRegistration.find({
+    userId: attendee._id,
+    eventUid: { $in: invitedUids },
+  })
+    .select({ eventUid: 1 })
+    .lean();
+  const taken = new Set(registered.map(({ eventUid }) => eventUid));
+
+  const query = {
+    uid: { $in: invitedUids.filter((uid) => !taken.has(uid)) },
+    status: "published",
+    startTime: { $gte: new Date() },
+  };
+  const [data, total] = await Promise.all([
+    Event.find(query)
+      .sort({ startTime: 1, uid: 1 })
+      .skip(pagination.skip)
+      .limit(pagination.limit),
+    Event.countDocuments(query),
+  ]);
+  return { data, total };
+}
+
+/**
+ * Adds `requestCount` (people waiting on the organizer: pending requests and
+ * the waitlist) to each event, for the host's own list (PG-14). One grouped
+ * query for the whole page, never per event.
+ */
+export async function withRequestCounts(events: IEvent[]) {
+  if (events.length === 0) return [];
+  const counts = await EventRegistration.aggregate<{
+    _id: string;
+    count: number;
+  }>([
+    {
+      $match: {
+        eventUid: { $in: events.map((event) => event.uid) },
+        status: { $in: ["pending", "waitlisted"] },
+      },
+    },
+    { $group: { _id: "$eventUid", count: { $sum: 1 } } },
+  ]);
+  const byUid = new Map(counts.map((row) => [row._id, row.count]));
+  return events.map((event) => ({
+    ...event.toJSON(),
+    requestCount: byUid.get(event.uid) ?? 0,
+  }));
 }
 
 export async function createEvent(
@@ -297,13 +410,18 @@ async function findManagedEvent(email: string, uid: string) {
 }
 
 /** Edits and cancellations stop once an event is over, or already cancelled. */
-function assertEventStillOpen(event: IEvent, action: "edited" | "cancelled") {
+function assertEventStillOpen(
+  event: IEvent,
+  action: "edited" | "cancelled" | "invited" | "decided",
+) {
   if (event.status === "cancelled") {
     throw new AppError(
       STATUS_CODE.CONFLICT,
       action === "edited"
         ? "A cancelled event cannot be edited."
-        : "This event is already cancelled.",
+        : action === "invited" || action === "decided"
+          ? "This event was cancelled."
+          : "This event is already cancelled.",
     );
   }
   if (event.endTime.getTime() < Date.now()) {
@@ -349,9 +467,10 @@ function withoutNulls<T extends Record<string, unknown>>(fields: T) {
 
 /**
  * Sets or removes an event's capacity (PG-5). Setting one recounts
- * `registrationCount` from the real registrations, because the counter is not
- * trusted for an event that never had a capacity (it may predate the field),
- * and refuses a limit below the number of people already registered.
+ * `registrationCount` from the real registrations that are going, because the
+ * counter is not trusted for an event that never had a capacity (it may
+ * predate the field), and refuses a limit below the number of people going.
+ * People pending or on the waitlist do not count.
  */
 async function applyCapacity(event: IEvent, capacity: number | null) {
   if (capacity === null) {
@@ -361,11 +480,12 @@ async function applyCapacity(event: IEvent, capacity: number | null) {
 
   const registered = await EventRegistration.countDocuments({
     eventUid: event.uid,
+    ...GOING,
   });
   if (capacity < registered) {
     throw new AppError(
       STATUS_CODE.CONFLICT,
-      `Capacity cannot be lower than the ${registered} ${registered === 1 ? "person" : "people"} already registered.`,
+      `Capacity cannot be lower than the ${registered} ${registered === 1 ? "person" : "people"} already going.`,
     );
   }
   event.capacity = capacity;
@@ -513,7 +633,74 @@ export async function deleteDraft(email: string, uid: string): Promise<void> {
   await Event.deleteOne({ _id: event._id });
 }
 
-export async function joinEvent(email: string, uid: string) {
+/** Whether a limited event has no room left for someone else to go. */
+const isFull = (event: IEvent) =>
+  event.capacity != null && (event.registrationCount ?? 0) >= event.capacity;
+
+/**
+ * Takes one spot atomically: the update only matches while the event has no
+ * capacity or the counter is still below it, so two people racing for the last
+ * spot cannot both get it. Returns the updated event, or `null` when it is full.
+ */
+function reserveSpot(uid: string) {
+  return Event.findOneAndUpdate(
+    {
+      uid,
+      $or: [
+        { capacity: null },
+        { $expr: { $lt: [{ $ifNull: ["$registrationCount", 0] }, "$capacity"] } },
+      ],
+    },
+    { $inc: { registrationCount: 1 } },
+    { new: true },
+  );
+}
+
+/** Takes a spot without checking the capacity (invited people, approvals). */
+function takeSpot(uid: string) {
+  return Event.findOneAndUpdate(
+    { uid },
+    { $inc: { registrationCount: 1 } },
+    { new: true },
+  );
+}
+
+/**
+ * Moves a registration that is not going to going (PG-4, PG-14) and takes a
+ * spot for it, past the capacity if need be. Matches on the current status in
+ * the same update, so two taps cannot count one person twice. `null` when the
+ * registration was not in one of `from`.
+ */
+async function moveToGoing(
+  uid: string,
+  filter: Record<string, unknown>,
+  from: readonly RegistrationStatus[] = ["pending", "waitlisted", "declined"],
+) {
+  const moved = await EventRegistration.findOneAndUpdate(
+    { ...filter, eventUid: uid, status: { $in: from } },
+    { $set: { status: "going", decidedAt: new Date() } },
+    { new: true },
+  );
+  if (moved) await takeSpot(uid);
+  return moved;
+}
+
+/**
+ * Registers the authenticated person for an event, or asks for them (PG-4,
+ * PG-14). What happens depends on who is joining and the event's access level:
+ *
+ * - an invited email goes straight in on any level, past the capacity (and
+ *   turns a pending, waitlisted or declined request into going);
+ * - `invite` events refuse everyone else with `403`;
+ * - `open` events take the person (going), or waitlist them when the event is
+ *   full and the waitlist is on, or answer `409` when it is full and it is off;
+ * - `approval` events make the person `pending` for the organizer (or
+ *   `waitlisted` when the event is already full and the waitlist is on).
+ *
+ * A person the organizer declined gets `403` and cannot ask again. Asking
+ * twice is harmless and returns the existing standing.
+ */
+export async function joinEvent(email: string, uid: string, note?: string) {
   const [event, attendee] = await Promise.all([
     findPublicByUid(uid),
     findByEmail(email),
@@ -528,36 +715,69 @@ export async function joinEvent(email: string, uid: string) {
   if (event.status === "cancelled") {
     throw new AppError(STATUS_CODE.CONFLICT, "This event was cancelled.");
   }
-  if (event.inviteOnly) {
-    throw new AppError(STATUS_CODE.FORBIDDEN, "This event is invite-only.");
-  }
   if (event.startTime.getTime() < Date.now()) {
     throw new AppError(STATUS_CODE.CONFLICT, "This event has already started.");
   }
 
-  const existing = await EventRegistration.findOne({
-    eventUid: uid,
-    userId: attendee._id,
-  });
-  if (existing) return { event, attendee, alreadyJoined: true };
+  const access = effectiveAccess(event);
+  const [invite, existing] = await Promise.all([
+    EventInvite.findOne({ eventUid: uid, email: attendee.email.toLowerCase() }),
+    EventRegistration.findOne({ eventUid: uid, userId: attendee._id }),
+  ]);
 
-  // Reserve a spot first, atomically: the update only matches while the event
-  // has no capacity or the counter is still below it, so two people racing for
-  // the last spot cannot both get it. It is given back if the registration
-  // cannot be saved.
-  const reserved = await Event.findOneAndUpdate(
-    {
-      uid,
-      $or: [
-        { capacity: null },
-        { $expr: { $lt: [{ $ifNull: ["$registrationCount", 0] }, "$capacity"] } },
-      ],
-    },
-    { $inc: { registrationCount: 1 } },
-    { new: true },
-  );
-  if (!reserved) {
-    throw new AppError(STATUS_CODE.CONFLICT, "This event is full.");
+  if (existing) {
+    const current = statusOf(existing);
+    if (current !== "going" && invite) {
+      // An invitation settles it: the organizer picked this person.
+      const moved = await moveToGoing(uid, { _id: existing._id });
+      if (moved) {
+        await EventInvite.updateOne(
+          { _id: invite._id, usedAt: null },
+          { $set: { usedAt: new Date() } },
+        );
+        const fresh = await findByUid(uid);
+        return {
+          event: fresh ?? event,
+          attendee,
+          status: "going" as RegistrationStatus,
+          alreadyJoined: false,
+        };
+      }
+    }
+    if (current === "declined") {
+      throw new AppError(
+        STATUS_CODE.FORBIDDEN,
+        "The organizer did not approve your request to join this event.",
+      );
+    }
+    return { event, attendee, status: current, alreadyJoined: true };
+  }
+
+  if (access === "invite" && !invite) {
+    throw new AppError(
+      STATUS_CODE.FORBIDDEN,
+      "This event is invite-only. Only people the organizer invited can join.",
+    );
+  }
+
+  const waitlistOn = event.waitlistEnabled !== false;
+  const full = new AppError(STATUS_CODE.CONFLICT, "This event is full.");
+  let status: RegistrationStatus;
+  let counted: IEvent | null = null;
+
+  if (invite) {
+    counted = await takeSpot(uid);
+    status = "going";
+  } else if (access === "open") {
+    counted = await reserveSpot(uid);
+    if (counted) status = "going";
+    else if (waitlistOn) status = "waitlisted";
+    else throw full;
+  } else if (isFull(event)) {
+    if (!waitlistOn) throw full;
+    status = "waitlisted";
+  } else {
+    status = "pending";
   }
 
   try {
@@ -566,15 +786,33 @@ export async function joinEvent(email: string, uid: string) {
       userId: attendee._id,
       attendeeEmail: attendee.email,
       attendeeName: attendee.name || "",
+      status,
+      ...(status !== "going" && note ? { note } : {}),
     });
   } catch (error) {
-    await releaseSpot(uid);
+    if (status === "going") await releaseSpot(uid);
     // The compound unique index closes the concurrent double-click race.
     if ((error as { code?: number }).code !== 11000) throw error;
-    return { event, attendee, alreadyJoined: true };
+    const raced = await EventRegistration.findOne({
+      eventUid: uid,
+      userId: attendee._id,
+    });
+    return {
+      event,
+      attendee,
+      status: raced ? statusOf(raced) : status,
+      alreadyJoined: true,
+    };
   }
 
-  return { event: reserved, attendee, alreadyJoined: false };
+  if (invite) {
+    await EventInvite.updateOne(
+      { _id: invite._id, usedAt: null },
+      { $set: { usedAt: new Date() } },
+    );
+  }
+
+  return { event: counted ?? event, attendee, status, alreadyJoined: false };
 }
 
 /** Gives one spot back. Never drops the counter below zero. */
@@ -586,10 +824,13 @@ async function releaseSpot(uid: string) {
 }
 
 /**
- * An attendee gives up their registration (PG-3). `404` for an unknown event,
+ * A person gives up their place or their request (PG-3). Works for going,
+ * pending and waitlisted registrations alike. `404` for an unknown event,
  * `409` once the event has started (a registration from then on is a record of
- * who was there), `404` if they were not registered. A cancelled event can
- * still be left. The freed spot is released for the next person.
+ * who was there), `404` if they had none, and `409` for a person the organizer
+ * declined (that record stays, so they cannot simply ask again). A cancelled
+ * event can still be left. A freed spot is released only when the person was
+ * going.
  */
 export async function leaveEvent(email: string, uid: string) {
   const [event, attendee] = await Promise.all([
@@ -610,18 +851,24 @@ export async function leaveEvent(email: string, uid: string) {
     );
   }
 
-  const removed = await EventRegistration.findOneAndDelete({
-    eventUid: uid,
-    userId: attendee._id,
-  });
+  const removed = await EventRegistration.findOneAndDelete(
+    { eventUid: uid, userId: attendee._id, status: { $ne: "declined" } },
+    { includeResultMetadata: false },
+  );
   if (!removed) {
+    const declined = await EventRegistration.exists({
+      eventUid: uid,
+      userId: attendee._id,
+    });
     throw new AppError(
-      STATUS_CODE.NOT_FOUND,
-      "You are not registered for this event.",
+      declined ? STATUS_CODE.CONFLICT : STATUS_CODE.NOT_FOUND,
+      declined
+        ? "The organizer did not approve your request, so there is nothing to leave."
+        : "You are not registered for this event.",
     );
   }
 
-  await releaseSpot(uid);
+  if (statusOf(removed) === "going") await releaseSpot(uid);
   return { event, attendee };
 }
 
@@ -646,6 +893,9 @@ function toAttendee(registration: {
   attendeeName: string;
   attendeeEmail: string;
   createdAt: Date;
+  status?: RegistrationStatus | null;
+  note?: string | null;
+  decidedAt?: Date | null;
   checkedInAt?: Date | null;
 }) {
   return {
@@ -653,6 +903,9 @@ function toAttendee(registration: {
     name: registration.attendeeName,
     email: registration.attendeeEmail,
     joinedAt: registration.createdAt,
+    status: statusOf(registration),
+    note: registration.note ?? null,
+    decidedAt: registration.decidedAt ?? null,
     checkedIn: Boolean(registration.checkedInAt),
     checkedInAt: registration.checkedInAt ?? null,
   };
@@ -660,42 +913,62 @@ function toAttendee(registration: {
 
 /**
  * The organizer's attendee list for one event (PG-6): one page of
- * registrations oldest first, optionally narrowed by a literal search on name or
- * email, plus overall totals. Only the hosting organization can read it; the
- * public never sees attendee identities.
+ * registrations oldest first, narrowed to one status (going by default, PG-14)
+ * and optionally by a literal search on name or email, plus overall totals for
+ * every status. Only the hosting organization can read it; the public never
+ * sees attendee identities.
  */
 export async function listAttendees(
   email: string,
   uid: string,
-  query: { search?: string; skip: number; limit: number },
+  query: {
+    search?: string;
+    status: RegistrationStatus | "all";
+    skip: number;
+    limit: number;
+  },
 ) {
   const event = await findManagedEvent(email, uid);
 
   const filter: FilterQuery<unknown> = { eventUid: uid };
+  if (query.status === "going") Object.assign(filter, GOING);
+  else if (query.status !== "all") filter.status = query.status;
   if (query.search) {
     const pattern = new RegExp(escapeRegExp(query.search), "i");
     filter.$or = [{ attendeeName: pattern }, { attendeeEmail: pattern }];
   }
 
-  const [rows, matching, registered, checkedIn] = await Promise.all([
+  const [rows, matching, grouped, checkedIn] = await Promise.all([
     EventRegistration.find(filter)
       .sort({ createdAt: 1, _id: 1 })
       .skip(query.skip)
       .limit(query.limit)
       .lean(),
     EventRegistration.countDocuments(filter),
-    EventRegistration.countDocuments({ eventUid: uid }),
+    EventRegistration.aggregate<{ _id: RegistrationStatus; count: number }>([
+      { $match: { eventUid: uid } },
+      { $group: { _id: { $ifNull: ["$status", "going"] }, count: { $sum: 1 } } },
+    ]),
     EventRegistration.countDocuments({
       eventUid: uid,
+      ...GOING,
       checkedInAt: { $exists: true, $ne: null },
     }),
   ]);
+  const count = (status: RegistrationStatus) =>
+    grouped.find((row) => row._id === status)?.count ?? 0;
 
   return {
     event,
     data: rows.map(toAttendee),
     total: matching,
-    summary: { registered, checkedIn },
+    summary: {
+      registered: count("going"),
+      checkedIn,
+      pending: count("pending"),
+      waitlisted: count("waitlisted"),
+      declined: count("declined"),
+    },
   };
 }
 
@@ -707,7 +980,10 @@ function csvCell(value: string) {
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
-/** Every registration for an event as CSV, for the host (PG-6). */
+/**
+ * Every registration for an event as CSV, for the host (PG-6): people going,
+ * asking to join, on the waitlist and declined, told apart by the Status column.
+ */
 export async function exportAttendeesCsv(email: string, uid: string) {
   await findManagedEvent(email, uid);
 
@@ -715,7 +991,15 @@ export async function exportAttendeesCsv(email: string, uid: string) {
     .sort({ createdAt: 1, _id: 1 })
     .lean();
 
-  const header = ["Name", "Email", "Registered at", "Checked in", "Checked in at"];
+  const header = [
+    "Name",
+    "Email",
+    "Registered at",
+    "Checked in",
+    "Checked in at",
+    "Status",
+    "Note",
+  ];
   const lines = rows.map((row) => {
     const attendee = toAttendee(row);
     return [
@@ -724,6 +1008,8 @@ export async function exportAttendeesCsv(email: string, uid: string) {
       attendee.joinedAt.toISOString(),
       attendee.checkedIn ? "Yes" : "No",
       attendee.checkedInAt ? attendee.checkedInAt.toISOString() : "",
+      attendee.status,
+      attendee.note ?? "",
     ]
       .map(csvCell)
       .join(",");
@@ -733,8 +1019,9 @@ export async function exportAttendeesCsv(email: string, uid: string) {
 
 /**
  * Marks one attendee as checked in or not (PG-6). Host only. `409` for a
- * cancelled event, `404` if the registration is not for this event. Checking in
- * someone already checked in keeps the original time.
+ * cancelled event and for a person who is not going, `404` if the registration
+ * is not for this event. Checking in someone already checked in keeps the
+ * original time.
  */
 export async function setCheckIn(
   email: string,
@@ -757,6 +1044,12 @@ export async function setCheckIn(
   if (!registration) {
     throw new AppError(STATUS_CODE.NOT_FOUND, "Registration not found.");
   }
+  if (statusOf(registration) !== "going") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "Only people who are going can be checked in.",
+    );
+  }
 
   if (checkedIn && !registration.checkedInAt) {
     registration.checkedInAt = new Date();
@@ -769,6 +1062,187 @@ export async function setCheckIn(
   return toAttendee(registration);
 }
 
+/**
+ * The organizer approves a request or promotes someone off the waitlist
+ * (PG-4, PG-14): the person becomes going and takes a spot, past the capacity
+ * if the event is full (the limit is soft). Also reverses a decline. Host only;
+ * `409` for a cancelled or ended event, `404` for an unknown registration.
+ * Approving someone already going changes nothing (`changed` is false).
+ */
+export async function approveRegistration(
+  email: string,
+  uid: string,
+  registrationId: string,
+) {
+  const event = await findManagedEvent(email, uid);
+  assertEventStillOpen(event, "decided");
+  if (event.endTime.getTime() < Date.now()) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "An event that has already ended cannot take new people.",
+    );
+  }
+
+  const moved = await moveToGoing(uid, { _id: registrationId });
+  const registration =
+    moved ??
+    (await EventRegistration.findOne({ _id: registrationId, eventUid: uid }));
+  if (!registration) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, "Registration not found.");
+  }
+
+  return {
+    event: (await findByUid(uid)) ?? event,
+    attendee: toAttendee(registration),
+    changed: Boolean(moved),
+  };
+}
+
+/**
+ * The organizer declines a request, a waitlisted person, or removes someone
+ * who was going (PG-4, PG-14). The record stays as `declined`, so the person
+ * cannot ask again unless the organizer approves them later. A freed spot is
+ * released when the person was going, and their check-in is cleared. Host only;
+ * `409` for a cancelled event, `404` for an unknown registration. Declining
+ * someone already declined changes nothing.
+ */
+export async function declineRegistration(
+  email: string,
+  uid: string,
+  registrationId: string,
+) {
+  const event = await findManagedEvent(email, uid);
+  assertEventStillOpen(event, "decided");
+
+  const previous = await EventRegistration.findOneAndUpdate(
+    { _id: registrationId, eventUid: uid, status: { $ne: "declined" } },
+    { $set: { status: "declined", decidedAt: new Date() }, $unset: { checkedInAt: 1 } },
+    { returnDocument: "before" },
+  );
+  if (previous && statusOf(previous) === "going") await releaseSpot(uid);
+
+  const registration = await EventRegistration.findOne({
+    _id: registrationId,
+    eventUid: uid,
+  });
+  if (!registration) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, "Registration not found.");
+  }
+  return { attendee: toAttendee(registration), changed: Boolean(previous) };
+}
+
+function toInvite(invite: {
+  _id: unknown;
+  email: string;
+  createdAt: Date;
+  usedAt?: Date | null;
+}) {
+  return {
+    id: String(invite._id),
+    email: invite.email,
+    invitedAt: invite.createdAt,
+    joined: Boolean(invite.usedAt),
+  };
+}
+
+/**
+ * The organizer invites people by email (PG-4). An invited person must sign in
+ * with that exact email; the invite lets them join on any access level and past
+ * the capacity. Emails already invited, or already registered for the event, are
+ * skipped and reported. `409` for a draft, a cancelled or ended event, or when
+ * the event would pass its invite limit.
+ */
+export async function inviteByEmail(
+  email: string,
+  uid: string,
+  emails: string[],
+) {
+  const event = await findManagedEvent(email, uid);
+  assertEventStillOpen(event, "invited");
+  if (event.status === "draft") {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "Publish the event before inviting people.",
+    );
+  }
+
+  const [existing, registered] = await Promise.all([
+    EventInvite.find({ eventUid: uid }).select({ email: 1 }).lean(),
+    EventRegistration.find({ eventUid: uid, attendeeEmail: { $in: emails } })
+      .select({ attendeeEmail: 1 })
+      .lean(),
+  ]);
+  const invited = new Set(existing.map((row) => row.email));
+  const registeredEmails = new Set(
+    registered.map((row) => row.attendeeEmail.toLowerCase()),
+  );
+
+  const skipped: { email: string; reason: "already-invited" | "already-registered" }[] = [];
+  const fresh: string[] = [];
+  for (const address of emails) {
+    if (invited.has(address)) skipped.push({ email: address, reason: "already-invited" });
+    else if (registeredEmails.has(address))
+      skipped.push({ email: address, reason: "already-registered" });
+    else fresh.push(address);
+  }
+
+  if (invited.size + fresh.length > EVENT_INVITES_PER_EVENT_MAX) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      `You can invite up to ${EVENT_INVITES_PER_EVENT_MAX} people to one event.`,
+    );
+  }
+
+  if (fresh.length > 0) {
+    // An upsert per email, so a race with another request cannot double-invite.
+    await EventInvite.bulkWrite(
+      fresh.map((address) => ({
+        updateOne: {
+          filter: { eventUid: uid, email: address },
+          update: { $setOnInsert: { eventUid: uid, email: address, invitedBy: email } },
+          upsert: true,
+        },
+      })),
+    );
+  }
+
+  return { event, invited: fresh, skipped };
+}
+
+/** Every invite for an event (PG-4), newest first. Host only. */
+export async function listInvites(email: string, uid: string) {
+  await findManagedEvent(email, uid);
+  const rows = await EventInvite.find({ eventUid: uid })
+    .sort({ createdAt: -1, _id: -1 })
+    .lean();
+  return rows.map(toInvite);
+}
+
+/**
+ * Takes an invite back (PG-4). Host only. `404` for an unknown invite, `409` once
+ * the person has joined through it (they are an attendee by then; decline them
+ * from the attendee list instead).
+ */
+export async function revokeInvite(email: string, uid: string, inviteId: string) {
+  await findManagedEvent(email, uid);
+  const invite = await EventInvite.findOne({ _id: inviteId, eventUid: uid });
+  if (!invite) {
+    throw new AppError(STATUS_CODE.NOT_FOUND, "Invite not found.");
+  }
+  if (invite.usedAt) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "This person already joined through the invite. Decline them from the attendee list instead.",
+    );
+  }
+  await invite.deleteOne();
+}
+
+/**
+ * The authenticated person's standing for one event (PG-14): `status` is
+ * `going`, `pending`, `waitlisted`, `declined` or `none`, and `invited` says an
+ * unused invitation exists for their email. `joined` stays true only for going.
+ */
 export async function getRegistrationStatus(email: string, uid: string) {
   const event = await findPublicByUid(uid);
   if (!event) {
@@ -780,9 +1254,18 @@ export async function getRegistrationStatus(email: string, uid: string) {
     throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
   }
 
-  const registration = await EventRegistration.exists({
+  const registration = await EventRegistration.findOne({
     eventUid: uid,
     userId: attendee._id,
+  }).select({ status: 1 });
+  if (registration) {
+    const status = statusOf(registration);
+    return { joined: status === "going", status, invited: false };
+  }
+
+  const invited = await EventInvite.exists({
+    eventUid: uid,
+    email: attendee.email.toLowerCase(),
   });
-  return { joined: Boolean(registration) };
+  return { joined: false, status: "none" as const, invited: Boolean(invited) };
 }

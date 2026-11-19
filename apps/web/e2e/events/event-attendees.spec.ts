@@ -9,6 +9,7 @@ import {
 import { E2E_API_URL } from "../env";
 import {
   createEvent,
+  openEditSection,
   publishOrganizationProfile,
   signUpIndividual,
   signUpOrganization,
@@ -101,7 +102,7 @@ test("an attendee can leave an event, give the spot back and join again", async 
   }
 });
 
-test("a full event refuses the next person until someone leaves", async ({
+test("a full event with no waitlist refuses the next person until someone leaves", async ({
   page,
   browser,
 }) => {
@@ -109,7 +110,7 @@ test("a full event refuses the next person until someone leaves", async ({
   const uid = `evt-e2e-full-${stamp}`;
   const name = `Riverbank Cleanup ${stamp}`;
   await signedInHost(page, stamp);
-  await createEvent(page, { uid, name, capacity: 1 });
+  await createEvent(page, { uid, name, capacity: 1, waitlistEnabled: false });
 
   const first = await openAttendee(browser, stamp);
   const second = await openAttendee(browser, stamp + 1);
@@ -187,6 +188,7 @@ test("an organization sets a capacity from the edit form and cannot go below who
   }
 
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "Attendance");
   const capacity = page.getByLabel("Maximum attendees (optional)");
   await expect(capacity).toHaveValue("");
 
@@ -207,6 +209,7 @@ test("an organization sets a capacity from the edit form and cannot go below who
 
   // Removing it again returns to no limit.
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "Attendance");
   await expect(page.getByLabel("Maximum attendees (optional)")).toHaveValue(
     "2",
   );
@@ -240,6 +243,7 @@ test("the API refuses a capacity below the people already registered", async ({
   }
 
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "Attendance");
   await page.getByLabel("Maximum attendees (optional)").fill("1");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(

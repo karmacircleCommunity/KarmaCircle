@@ -27,7 +27,7 @@ to match only the row's main link.
   My Events from the Profile menu, and goes back to the detail page. Also covers
   the My Events empty states (Upcoming and Past copy, "Explore events" link on
   Upcoming only), an invite-only event (label, no Join button, API join returns
-  `403`, no registration left), a past event (completed state, Share still
+  `403`, no registration left; the invited path is in `event-access.spec.ts`), a past event (completed state, Share still
   present, API join returns `409`), and a joined event moving from Upcoming to
   Past after it is backdated. A signed-out visitor clicking Join is not covered
   because the intended behavior is undecided.
@@ -41,6 +41,14 @@ to match only the row's main link.
   the real UI, publishing the organization profile, creating a future event
   through the API, backdating an event, opening My Events from the menu). It uses
   a data-URL cover image so no third-party host is hit. It is not a test file.
+  It also holds `dropdown`, `chooseOption` and `chooseKind` for the form's
+  custom `Dropdown` lists (there is no native `<select>` to call `selectOption`
+  on): `dropdown(page, "Timezone")` finds the trigger by its label and exposes
+  the chosen value as its `data-value` attribute, and `chooseOption` opens it
+  and clicks an option by name. `openEditSection(page, "Attendance")` opens one
+  section tab of the edit form: the edit form shows one section at a time (Basics,
+  Date & place, Attendance, More details), so a field in another section is hidden
+  until its tab is open.
 
 The attendee runs in a second browser context from the organization, and specs
 seed future events through the API. Past events come from the E2E-only
@@ -65,10 +73,11 @@ organization up through the UI, publishes the profile and an event through the A
 (`event-helpers.ts`), and uses unique names.
 
 - An organization opens Edit from "Your events": the page address is read-only,
-  the form starts as stored (name, invite-only), the change is saved, "Event
+  the form starts as stored (name, "Who can join" set to Invite only), the change is saved, "Event
   updated" shows, the event page has the new name and no "Invite only" label, and
   the API record matches.
-- Saving an unchanged form shows "Nothing has changed yet." and stays on the page.
+- An unchanged form offers no "Save changes" (the bar appears once a field
+  differs and goes away when it is put back).
 - Cancelling: "Keep event" closes the dialog and the event stays published;
   confirming shows "Event cancelled", a "Cancelled" pill and no Edit or Cancel
   actions; the public page says "This event was cancelled" with no Join button; an
@@ -169,7 +178,7 @@ Added November 2026; all 45 tests of the folder pass on Chromium.
   own zone shows no "your time" note; editing a Kolkata event from New York opens on
   the Kolkata clock and changing only the zone to Tokyo moves the real start by 3.5
   hours; an older event with no timezone shows no zone, opening and saving it
-  unchanged says "Nothing has changed yet." and a real change pins the browser's
+  unchanged offers no Save changes and a real change pins the browser's
   zone without moving the event.
 
 ## Directory search after November 2026
@@ -183,3 +192,29 @@ city name so it checks the API-side city match. These edits to
 Run this feature with `npx playwright test e2e/events/` from `apps/web` (add
 `--project=chromium` for one browser). The run starts its own web and API servers
 on ports 3001 and 5051, so it does not touch a running `pnpm dev` session.
+
+## Who can join and the waitlist
+
+`event-access.spec.ts` (5 tests, 2026-11-19, **not run yet**: it waits for Tamal's
+go-ahead to run UI tests, so treat it as written but unverified). Organizations are
+signed up and their profile published through the UI, events are published through
+the API with `access`, and each attendee has their own browser context.
+
+- An approval event: the page says "Approval required" and offers "Request to join",
+  the attendee sees "Request sent" and "Requested" on My Events, the organizer sees
+  the person on the Requests tab and approves, and the attendee then sees "You are
+  going".
+- A declined request: the attendee sees "did not approve your request" and no
+  button, the organizer sees the person on the Declined tab, and approving reverses
+  it.
+- A full event with the waitlist on: the next person sees "Join the waitlist" and
+  then "On the waitlist", and the organizer's "Move up" on the Waitlist tab makes
+  them going.
+- An invite-only event: the organizer invites an email from the attendee page, that
+  person sees "Accept invitation" and joins, and another signed-in person only sees
+  the invite-only message.
+- The create form's "Who can join" dropdown and the "Allow a waitlist when full"
+  switch, which only appears once a capacity is typed.
+
+The full-event refusal test in `event-attendees.spec.ts` now creates its event with
+`waitlistEnabled: false`, because a full event takes a waitlist by default.

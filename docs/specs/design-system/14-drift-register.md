@@ -209,6 +209,17 @@ The "standardized August 2026" card hover ([06-radius-elevation.md](./06-radius-
 
 ---
 
+## D16 — One native `<select>` remains outside the event form — OPEN
+
+[OrganizationProfileEditor.tsx](../../../apps/web/src/features/organizations/components/OrganizationProfileEditor.tsx) still renders a native `<select id="organization-tag">` (Organization type).
+Its open list is drawn by the operating system, so it does not match the shared [`Dropdown`](./08-components-shared.md#dropdown) the event form uses.
+It was left alone because it sits in the organization profile editor, which has its own field styling (`fieldClass`) and was outside the events audit that introduced `Dropdown` (November 2026).
+
+**Fix:** swap it for `<Dropdown id="organization-tag" ...>`, keep the `SetupFieldLabel htmlFor`, and pass `invalid` from the same condition as `aria-invalid`.
+Check `e2e/organizations/` for any `selectOption` on it first.
+
+---
+
 ## FIXED in the commit that created this directory
 
 ### F1 — `leading-<decimal>` classes generated no CSS

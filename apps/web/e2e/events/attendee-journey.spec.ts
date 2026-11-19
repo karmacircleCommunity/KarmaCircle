@@ -178,7 +178,7 @@ test("an invite-only event shows the ask-the-organizer state and refuses a join"
   const uid = `evt-e2e-invite-only-${stamp}`;
   const name = `Founders Preview ${stamp}`;
   await signUpOrganization(page, stamp);
-  await createEvent(page, { uid, name, inviteOnly: true });
+  await createEvent(page, { uid, name, access: "invite" });
 
   const { context, page: attendee } = await openAttendee(browser, stamp);
   try {
@@ -192,7 +192,9 @@ test("an invite-only event shows the ask-the-organizer state and refuses a join"
     await expect(
       attendee.getByText("Invite only", { exact: true }).first(),
     ).toBeVisible();
-    await expect(attendee.getByText(/This event is invite-only/)).toBeVisible();
+    await expect(
+      attendee.getByText(/This event is invite-only. Only people the organizer invited/),
+    ).toBeVisible();
     await expect(
       attendee.getByRole("button", { name: "Join this event" }),
     ).toHaveCount(0);

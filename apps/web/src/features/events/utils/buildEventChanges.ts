@@ -37,8 +37,9 @@ export function buildEventChanges(
   if (form.description !== original.description) {
     changes.description = form.description;
   }
-  if (form.inviteOnly !== original.inviteOnly) {
-    changes.inviteOnly = form.inviteOnly;
+  if (form.access !== original.access) changes.access = form.access;
+  if (form.waitlistEnabled !== (original.waitlistEnabled !== false)) {
+    changes.waitlistEnabled = form.waitlistEnabled;
   }
   if (form.coverImage !== (original.coverImage ?? "")) {
     changes.coverImage = form.coverImage;

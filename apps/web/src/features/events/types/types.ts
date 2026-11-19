@@ -14,6 +14,20 @@ export type EventType =
   | "other";
 
 /**
+ * Who can join (PG-4): anyone, anyone the organizer approves, or only invited
+ * emails. Mirrors `EventAccess` in the API's `event.constants.ts`.
+ */
+export type EventAccess = "open" | "approval" | "invite";
+
+/**
+ * Where a registration stands (PG-14): going holds a spot; pending (asked to
+ * join), waitlisted (the event was full) and declined do not. Mirrors
+ * `RegistrationStatus` in the API's `event.constants.ts`.
+ */
+export type RegistrationStatus =
+  "going" | "pending" | "waitlisted" | "declined";
+
+/**
  * What pressing a form button asks for: make the event public, or keep it as a
  * draft only its organization can see (PG-15).
  */
@@ -34,3 +48,19 @@ export type EventHeroProps = DetailedEventRecord;
 export type EventFactsProps = DetailedEventRecord;
 
 export type EventLocationPanelProps = DetailedEventRecord;
+
+/**
+ * What the signed-in person can do about joining one event right now, worked
+ * out by `utils/joinView.ts` and read by both join controls.
+ */
+export type JoinView =
+  | { kind: "going" }
+  | { kind: "pending" }
+  | { kind: "waitlisted" }
+  | { kind: "declined" }
+  /** Invite-only, and the person has no invitation. */
+  | { kind: "invite-only" }
+  /** Full, and the organizer turned the waitlist off. */
+  | { kind: "full" }
+  /** Pressing the button joins, asks to join, or joins the waitlist. */
+  | { kind: "join"; label: string; shortLabel: string };

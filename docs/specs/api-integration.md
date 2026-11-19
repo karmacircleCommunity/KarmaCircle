@@ -58,7 +58,12 @@ by both layers above.
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
 organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, follow(handle), profileView(handle), byHandle(handle), directory({...})
-eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, type, inviteOnly, page, limit })
+eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, type, access, page, limit })
+```
+
+The attendee and invitation endpoints added in November 2026: `attendees(uid, { page, limit, search, status })`, `attendee(uid, id)`, `approveAttendee(uid, id)`, `declineAttendee(uid, id)`, `invites(uid)`, `invite(uid, inviteId)` and `attendeesExport(uid)`. The matching calls in `KarmaCircleApi.ts` are `ApproveAttendee`, `DeclineAttendee`, `InviteToEvent` and `RevokeInvite`.
+
+```js
 paymentEndpoints: razorpay, sponsorshipOrder(handle), sponsorshipVerify(handle)
 authEndpoints:  signin, signup, checkEmail, forgotPassword, resetPassword, googleLogin, googleLoginSuccess, logout
 ```
@@ -66,7 +71,7 @@ authEndpoints:  signin, signup, checkEmail, forgotPassword, resetPassword, googl
 `eventEndpoints.all` was removed in November 2026 (only the deleted
 `getEvents()` used it). `eventEndpoints.directory(params)` takes an object with a
 required `period` (`upcoming` or `past`) and optional `search`, `mode`,
-`inviteOnly`, `page` (default 1) and `limit` (default 12), and builds the
+`access` (`open`, `approval` or `invite`), `page` (default 1) and `limit` (default 12), and builds the
 `GET /events?...` URL; it no longer returns a fixed URL. `eventEndpoints.byHost(handle)`
 is `/events?host=<handle>&limit=100`. There is no `isDirectoryKey` helper: SWR's
 global `mutate` skips `useSWRInfinite` keys, so the directory refreshes itself.

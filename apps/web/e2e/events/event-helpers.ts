@@ -90,9 +90,39 @@ export async function signUpIndividual(page: Page, stamp: number) {
   return { email };
 }
 
+/** The form's dropdown (`Dropdown`, a custom listbox rather than a native
+ *  `<select>`) named by its visible label. */
+export function dropdown(page: Page, label: string) {
+  return page.getByLabel(label, { exact: true });
+}
+
+/** Opens the dropdown named `label` and clicks the option called `option`.
+ *  Pass a RegExp when the option's text has a part that varies by machine, such
+ *  as a timezone's abbreviation. */
+export async function chooseOption(
+  page: Page,
+  label: string,
+  option: string | RegExp,
+) {
+  await dropdown(page, label).click();
+  await page
+    .getByRole("option", { name: option, exact: typeof option === "string" })
+    .click();
+}
+
+const KIND_LABELS: Record<string, string> = {
+  volunteering: "Volunteering drive",
+  fundraiser: "Fundraiser",
+  workshop: "Workshop or training",
+  awareness: "Awareness campaign",
+  meetup: "Meetup or networking",
+  cultural: "Cultural or community event",
+  other: "Other",
+};
+
 /** Picks the form's required "Kind of event". Every publishing test needs one. */
 export async function chooseKind(page: Page, kind = "volunteering") {
-  await page.getByLabel("Kind of event").selectOption(kind);
+  await chooseOption(page, "Kind of event", KIND_LABELS[kind]);
 }
 
 export interface SeedEventOptions {
@@ -102,10 +132,13 @@ export interface SeedEventOptions {
   /** Days from now that the event starts. Must be positive: the API rejects
    *  an event that starts in the past (use `backdateEvent` afterwards). */
   startsInDays?: number;
-  inviteOnly?: boolean;
+  /** Who can join; leave out for an open event. */
+  access?: "open" | "approval" | "invite";
   mode?: "Online" | "Offline" | "Hybrid";
   /** Most people who can join; leave out for no limit. */
   capacity?: number;
+  /** Whether a full event takes a waitlist; on unless this is `false` (PG-14). */
+  waitlistEnabled?: boolean;
   /** What kind of event it is; the edit form requires one, so seeded events have one. */
   eventType?: string;
   /** `draft` saves it hidden from everyone but its organization (PG-15). */
@@ -116,13 +149,25 @@ export interface SeedEventOptions {
 
 /** Publishes an event as the organization signed in on `page`. The API only
  *  accepts a start time in the future and an end after the start. */
+/**
+ * Opens one section tab of the event edit form ("Basics", "Date & place",
+ * "Attendance" or "More details"). The edit form shows one section at a time, so
+ * a field in another section is hidden until its tab is open.
+ */
+export async function openEditSection(page: Page, section: string) {
+  const tab = page.getByRole("tab", { name: new RegExp(`${section}$`) });
+  await tab.click();
+  await expect(tab).toHaveAttribute("aria-selected", "true");
+}
+
 export async function createEvent(page: Page, options: SeedEventOptions) {
   const {
     uid,
     name,
     startsInDays = 3,
-    inviteOnly = false,
+    access = "open",
     capacity,
+    waitlistEnabled,
     eventType = "volunteering",
     status,
     timezone,
@@ -142,11 +187,12 @@ export async function createEvent(page: Page, options: SeedEventOptions) {
       endDate: end.toISOString(),
       startTime: start.toISOString(),
       endTime: end.toISOString(),
-      inviteOnly,
+      access,
       eventType,
       ...(status ? { status } : {}),
       ...(timezone ? { timezone } : {}),
       ...(capacity === undefined ? {} : { capacity }),
+      ...(waitlistEnabled === undefined ? {} : { waitlistEnabled }),
       ...(mode === "Online"
         ? {}
         : {

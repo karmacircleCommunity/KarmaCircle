@@ -57,15 +57,38 @@ type FormSectionProps = {
   title: string;
   description: string;
   children: ReactNode;
+  sectionKey?: string;
+  hidden?: boolean;
+  /** Set when the section is a tab panel (the edit form), so it is announced as
+   * one and labelled by its tab (see `EditSectionTabs`). */
+  asTabPanel?: boolean;
 };
+
+/** The DOM id of the tab for a section, and of its panel. */
+export const sectionTabId = (key: string) => `event-section-tab-${key}`;
+export const sectionPanelId = (key: string) => `event-section-panel-${key}`;
 
 export const FormSection = ({
   number,
   title,
   description,
   children,
+  sectionKey,
+  hidden,
+  asTabPanel,
 }: FormSectionProps) => (
-  <section className="rounded-2xl border border-brand-secondary/10 bg-surface-warm/55 p-5 sm:p-6">
+  <section
+    data-event-form-section={sectionKey}
+    hidden={hidden}
+    {...(asTabPanel && sectionKey
+      ? {
+          id: sectionPanelId(sectionKey),
+          role: "tabpanel",
+          "aria-labelledby": sectionTabId(sectionKey),
+        }
+      : {})}
+    className="rounded-2xl border border-brand-secondary/10 bg-surface-warm/55 p-5 sm:p-6"
+  >
     <div className="mb-5 flex items-start gap-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 font-outfit text-caption font-semibold text-brand">
         {number}

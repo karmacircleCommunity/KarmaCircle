@@ -17,7 +17,7 @@ const baseEvent: ApiEvent = {
   startTime: "2026-09-12T08:30:00.000Z",
   endTime: "2026-09-12T12:00:00.000Z",
   isGovernmentSponsored: false,
-  inviteOnly: false,
+  access: "open",
 };
 
 describe("toDisplayEvent", () => {
@@ -30,7 +30,7 @@ describe("toDisplayEvent", () => {
       country: "India",
       platform: "Zoom",
       isGovernmentSponsored: true,
-      inviteOnly: true,
+      access: "invite",
     });
 
     expect(card).toMatchObject({
@@ -46,7 +46,7 @@ describe("toDisplayEvent", () => {
       country: "India",
       platform: "Zoom",
       isGovernmentSponsored: true,
-      inviteOnly: true,
+      access: "invite",
     });
   });
 
@@ -73,10 +73,28 @@ describe("toDisplayEvent", () => {
     expect(toDisplayEvent(baseEvent).organizerUserName).toBeUndefined();
   });
 
-  it("turns false flags into undefined so the card omits the pills", () => {
+  it("turns false flags and open access into undefined so the card omits the pills", () => {
     const card = toDisplayEvent(baseEvent);
     expect(card.isGovernmentSponsored).toBeUndefined();
-    expect(card.inviteOnly).toBeUndefined();
+    expect(card.access).toBeUndefined();
+  });
+
+  it("keeps a restricted access level so the card can label it", () => {
+    expect(toDisplayEvent({ ...baseEvent, access: "approval" }).access).toBe(
+      "approval",
+    );
+  });
+
+  it("shows the person's own standing on My Events unless they are going", () => {
+    expect(
+      toDisplayEvent({ ...baseEvent, registrationStatus: "pending" })
+        .registrationStatus,
+    ).toBe("pending");
+    expect(
+      toDisplayEvent({ ...baseEvent, registrationStatus: "going" })
+        .registrationStatus,
+    ).toBeUndefined();
+    expect(toDisplayEvent(baseEvent).registrationStatus).toBeUndefined();
   });
 
   describe("accent", () => {
@@ -133,7 +151,8 @@ describe("toDisplayEventDetail", () => {
       state: "Goa",
       platformLink: "https://zoom.example/j/1",
       isGovernmentSponsored: false,
-      inviteOnly: false,
+      access: "open",
+      waitlistEnabled: true,
     });
     expect(event.going).toBeUndefined();
     expect(event.spotsLeft).toBeUndefined();

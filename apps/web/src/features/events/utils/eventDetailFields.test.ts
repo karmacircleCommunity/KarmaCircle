@@ -35,7 +35,7 @@ const base: ApiEvent = {
   startTime: "2030-05-01T09:30:00.000Z",
   endTime: "2030-05-01T12:00:00.000Z",
   isGovernmentSponsored: false,
-  inviteOnly: false,
+  access: "open",
 };
 
 const rich: ApiEvent = {

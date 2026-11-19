@@ -211,3 +211,59 @@ export async function sendEventJoinOrganizerNotice(
 
   return true;
 }
+
+/**
+ * Emails an invitation to an event (PG-4), with a link to its page. Best effort
+ * and production only, like the other event emails. The invitee must sign in
+ * with this exact address to use the invite, which the email says.
+ */
+export async function sendEventInvitation(
+  to: string,
+  event: IEvent,
+  organizerName: string,
+): Promise<boolean> {
+  if (env.NODE_ENV !== "production") return false;
+
+  const eventUrl = `${env.ORIGIN_URL.replace(/\/$/, "")}/events/${encodeURIComponent(event.uid)}`;
+  const zone =
+    event.timezone && isUsableZone(event.timezone) ? event.timezone : undefined;
+  const date = new Intl.DateTimeFormat("en", {
+    dateStyle: "full",
+    timeStyle: zone ? "long" : "short",
+    timeZone: zone ?? "UTC",
+  }).format(new Date(event.startTime));
+  const safeEventName = escapeHtml(event.name);
+  const safeOrganizer = escapeHtml(organizerName || "An organizer");
+  const safeTo = escapeHtml(to);
+
+  const client = getResendClient();
+
+  const { error } = await client.emails.send({
+    from: env.RESEND_FROM_EMAIL || DEFAULT_FROM,
+    to,
+    subject: `You're invited to ${event.name}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #282828;">
+        <h2>You're invited</h2>
+        <p><strong>${safeOrganizer}</strong> invited you to <strong>${safeEventName}</strong>.</p>
+        <p>${escapeHtml(zone ? date : `${date} UTC`)}</p>
+        <p><a href="${eventUrl}" style="display:inline-block;padding:12px 20px;background:#a8623e;color:#fff;border-radius:8px;text-decoration:none;">View the event</a></p>
+        <p>To join, sign in or sign up to KarmaCircle with <strong>${safeTo}</strong>, the address this invitation was sent to.</p>
+        <p>KarmaCircle</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger.error(
+      { error, eventUid: event.uid },
+      "Failed to send event invitation",
+    );
+    throw new AppError(
+      STATUS_CODE.INTERNAL_SERVER_ERROR,
+      "Failed to send the event invitation.",
+    );
+  }
+
+  return true;
+}

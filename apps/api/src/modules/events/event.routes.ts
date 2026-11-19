@@ -7,12 +7,16 @@ import {
 import { validate } from "../../middleware/validate";
 import { asyncHandler } from "../../utils/async-handler";
 import * as eventController from "./event.controller";
+import { paginationQuerySchema } from "../../utils/pagination";
 import {
   attendeeParamsSchema,
   attendeesQuerySchema,
   checkInBodySchema,
   createEventSchema,
   eventUidParamsSchema,
+  inviteBodySchema,
+  inviteParamsSchema,
+  joinBodySchema,
   listEventsQuerySchema,
   myEventsQuerySchema,
   updateEventSchema,
@@ -46,6 +50,34 @@ router.get(
   requireAuth,
   validate(myEventsQuerySchema, "query"),
   asyncHandler<AuthenticatedRequest>(eventController.listMyEvents),
+);
+
+/**
+ * @openapi
+ * /events/invitations:
+ *   get:
+ *     summary: Upcoming events the authenticated person was invited to
+ *     description: >
+ *       The events an organizer invited the person's email to that the person has
+ *       not joined yet. Drafts, cancelled and started events are left out.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *     responses:
+ *       200: { description: "{ data, pagination }" }
+ *       401: { description: Unauthorized }
+ */
+router.get(
+  "/invitations",
+  requireAuth,
+  validate(paginationQuerySchema, "query"),
+  asyncHandler<AuthenticatedRequest>(eventController.listInvitations),
 );
 
 /**
@@ -85,9 +117,9 @@ router.get(
  *         description: What kind of event it is
  *         schema: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other] }
  *       - in: query
- *         name: inviteOnly
- *         description: "true for invite-only events, false for events open to everyone"
- *         schema: { type: string, enum: ["true", "false"] }
+ *         name: access
+ *         description: "Who can join: open (anyone), approval (the organizer approves each person) or invite (only invited emails)"
+ *         schema: { type: string, enum: [open, approval, invite] }
  *       - in: query
  *         name: page
  *         schema: { type: integer, minimum: 1, default: 1 }
@@ -110,7 +142,15 @@ router.get(
  * @openapi
  * /events/{uid}/join:
  *   post:
- *     summary: Join an upcoming public event and email the attendee a confirmation
+ *     summary: Join an upcoming public event, or ask to join it
+ *     description: >
+ *       What happens depends on the event's access level and the person. An
+ *       invited email goes straight in on any level and ignores the capacity.
+ *       An open event takes the person (status going), or puts them on the
+ *       waitlist when it is full and the waitlist is on. An approval event makes
+ *       them pending (or waitlisted when it is full). An invite-only event
+ *       refuses anyone not invited. The confirmation email goes only to people
+ *       who are going, in production only.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -118,18 +158,27 @@ router.get(
  *         name: uid
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               note: { type: string, maxLength: 300, description: "Shown to the organizer when the person is asking to join" }
  *     responses:
- *       201: { description: Event joined; confirmation email is sent only in production and reported in emailSent }
- *       200: { description: Already joined }
+ *       201: { description: "{ message, joined, status (going, pending or waitlisted), alreadyJoined, emailSent }" }
+ *       200: { description: Already registered, with the existing status }
  *       401: { description: Unauthorized }
- *       403: { description: Event is invite-only }
+ *       403: { description: The event is invite-only and the person was not invited, or the organizer declined them }
  *       404: { description: Event not found }
- *       409: { description: Event has already started, was cancelled, or is full }
+ *       409: { description: Event has already started, was cancelled, or is full with no waitlist }
  */
 router.post(
   "/:uid/join",
   requireAuth,
   validate(eventUidParamsSchema, "params"),
+  validate(joinBodySchema),
   asyncHandler<AuthenticatedRequest>(eventController.joinEvent),
 );
 
@@ -137,7 +186,11 @@ router.post(
  * @openapi
  * /events/{uid}/registration:
  *   get:
- *     summary: Check whether the authenticated attendee joined an event
+ *     summary: The authenticated person's standing for an event
+ *     description: >
+ *       `status` is going, pending, waitlisted, declined or none. `joined` is true
+ *       only for going. `invited` says an unused invitation exists for the
+ *       person's email.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -146,7 +199,7 @@ router.post(
  *         required: true
  *         schema: { type: string }
  *     responses:
- *       200: { description: "{ joined: boolean }" }
+ *       200: { description: "{ joined, status, invited }" }
  *       401: { description: Unauthorized }
  *       404: { description: Event not found }
  */
@@ -164,8 +217,9 @@ router.get(
  *     summary: The attendee list for an event the authenticated organization hosts
  *     description: >
  *       One page of registrations, oldest first, with each person's name, email,
- *       registration time and check-in state, plus overall totals. Host only; the
- *       public never sees attendee identities.
+ *       registration time, status, note and check-in state, plus overall totals
+ *       for every status. Only people going are listed unless `status` says
+ *       otherwise. Host only; the public never sees attendee identities.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -173,6 +227,9 @@ router.get(
  *         name: uid
  *         required: true
  *         schema: { type: string }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [going, pending, waitlisted, declined, all], default: going }
  *       - in: query
  *         name: search
  *         description: Case-insensitive literal match on the name or email
@@ -184,7 +241,7 @@ router.get(
  *         name: limit
  *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
  *     responses:
- *       200: { description: "{ event, data, pagination, summary: { registered, checkedIn } }" }
+ *       200: { description: "{ event, data, pagination, summary: { registered, checkedIn, pending, waitlisted, declined } }" }
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
@@ -336,7 +393,8 @@ router.delete(
  *               endTime: { type: string, format: date-time, description: Must be after startTime }
  *               startDate: { type: string, format: date-time }
  *               endDate: { type: string, format: date-time }
- *               inviteOnly: { type: boolean, description: "Label only for now: joining an invite-only event is refused with 403" }
+ *               access: { type: string, enum: [open, approval, invite], default: open, description: "Who can join: open (anyone), approval (the organizer approves each person) or invite (only invited emails)" }
+ *               waitlistEnabled: { type: boolean, default: true, description: "Whether a full event takes a waitlist" }
  *               timezone: { type: string, example: Asia/Kolkata, description: "The IANA timezone the event is held in. Does not move startTime or endTime; it says which clock the organizer meant" }
  *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
  *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
@@ -406,7 +464,8 @@ router.post(
  *               endTime: { type: string, format: date-time }
  *               startDate: { type: string, format: date-time }
  *               endDate: { type: string, format: date-time }
- *               inviteOnly: { type: boolean }
+ *               access: { type: string, enum: [open, approval, invite] }
+ *               waitlistEnabled: { type: boolean }
  *               timezone: { type: string, example: Asia/Kolkata, description: "The IANA timezone the event is held in. Does not move startTime or endTime; it says which clock the organizer meant" }
  *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
  *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
@@ -562,6 +621,174 @@ router.post(
   requireAuth,
   validate(eventUidParamsSchema, "params"),
   asyncHandler<AuthenticatedRequest>(eventController.cancelEvent),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/attendees/{registrationId}/approve:
+ *   post:
+ *     summary: Approve a request, promote someone off the waitlist, or reverse a decline
+ *     description: >
+ *       Host only. The person becomes going and takes a spot, past the capacity if
+ *       the event is full (the limit is soft). Approving someone already going
+ *       changes nothing. A cancelled or ended event answers 409.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: registrationId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ attendee }" }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event or registration not found }
+ *       409: { description: The event was cancelled or has ended }
+ */
+router.post(
+  "/:uid/attendees/:registrationId/approve",
+  requireAuth,
+  validate(attendeeParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.approveAttendee),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/attendees/{registrationId}/decline:
+ *   post:
+ *     summary: Decline a request or waitlisted person, or remove someone who was going
+ *     description: >
+ *       Host only. The record stays as declined, so the person cannot ask again
+ *       unless the organizer approves them later. A freed spot is released when
+ *       the person was going. A cancelled event answers 409.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: registrationId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ attendee }" }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event or registration not found }
+ *       409: { description: The event was cancelled }
+ */
+router.post(
+  "/:uid/attendees/:registrationId/decline",
+  requireAuth,
+  validate(attendeeParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.declineAttendee),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/invites:
+ *   get:
+ *     summary: The emails invited to an event
+ *     description: Host only. Newest first, each with whether the person has joined.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ data: [{ id, email, invitedAt, joined }], total }" }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event not found }
+ */
+router.get(
+  "/:uid/invites",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.listInvites),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/invites:
+ *   post:
+ *     summary: Invite people to an event by email
+ *     description: >
+ *       Host only. An invited person must sign in with that exact email, and can
+ *       then join on any access level, past the capacity. Emails already invited
+ *       or already registered are skipped and reported. The invitation email goes
+ *       out in production only. A draft, cancelled or ended event, or one past
+ *       its limit of 200 invites, answers 409.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [emails]
+ *             properties:
+ *               emails: { type: array, minItems: 1, maxItems: 50, items: { type: string, format: email } }
+ *     responses:
+ *       201: { description: "{ invited: string[], skipped: [{ email, reason }] }" }
+ *       400: { description: Invalid emails }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event not found }
+ *       409: { description: Draft, cancelled or ended event, or too many invites }
+ */
+router.post(
+  "/:uid/invites",
+  requireAuth,
+  validate(eventUidParamsSchema, "params"),
+  validate(inviteBodySchema),
+  asyncHandler<AuthenticatedRequest>(eventController.inviteAttendees),
+);
+
+/**
+ * @openapi
+ * /events/{uid}/invites/{inviteId}:
+ *   delete:
+ *     summary: Take an invite back
+ *     description: Host only. Refused with 409 once the person has joined through it.
+ *     tags: [Events]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: inviteId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: "{ message: Invite removed }" }
+ *       401: { description: Unauthorized }
+ *       403: { description: Not an organization, or not the event's own host }
+ *       404: { description: Event or invite not found }
+ *       409: { description: The person already joined through the invite }
+ */
+router.delete(
+  "/:uid/invites/:inviteId",
+  requireAuth,
+  validate(inviteParamsSchema, "params"),
+  asyncHandler<AuthenticatedRequest>(eventController.revokeInvite),
 );
 
 export default router;

@@ -2,6 +2,8 @@ export { default as BacktoTop } from "./buttons/BacktoTop";
 export { default as Button } from "./buttons/Button";
 export { default as Combobox } from "./inputs/Combobox";
 export { default as DirectoryToolbar } from "./DirectoryToolbar";
+export { default as Dropdown } from "./inputs/Dropdown";
+export type { DropdownOption } from "./inputs/Dropdown";
 export { default as Footer } from "./footer/Footer";
 export { default as Header } from "./header/Header";
 export { default as Loading } from "./Loading";

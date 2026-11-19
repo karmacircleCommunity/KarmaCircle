@@ -3,10 +3,13 @@ import { E2E_API_URL } from "../env";
 import {
   chooseKind,
   createEvent,
+  openEditSection,
   publishOrganizationProfile,
   signUpOrganization,
   TINY_PNG_BASE64,
   uniqueStamp,
+  chooseOption,
+  dropdown,
 } from "./event-helpers";
 
 /**
@@ -62,7 +65,10 @@ test("the form reads its times in the chosen timezone, and the page shows that c
   const day = dateAhead(10);
   try {
     await page.goto("/organization/events/new");
-    await expect(page.getByLabel("Timezone")).toHaveValue("Europe/London");
+    await expect(dropdown(page, "Timezone")).toHaveAttribute(
+      "data-value",
+      "Europe/London",
+    );
 
     await page.getByLabel("Event name").fill(name);
     await page
@@ -78,7 +84,7 @@ test("the form reads its times in the chosen timezone, and the page shows that c
     await page.getByLabel("City").fill("Tokyo");
     await page.getByLabel("State or region").fill("Kanto");
 
-    await page.getByLabel("Timezone").selectOption("Asia/Tokyo");
+    await chooseOption(page, "Timezone", /^Asia\/Tokyo/);
     await page.locator("#startDate").fill(day);
     await page.locator("#startTime").fill("10:00");
     await page.locator("#endDate").fill(day);
@@ -178,11 +184,15 @@ test("editing opens in the event's clock whoever is editing, and changing the ti
     const mm = String(kolkata.getUTCMinutes()).padStart(2, "0");
 
     await page.goto(`/organization/events/${uid}/edit`);
-    await expect(page.getByLabel("Timezone")).toHaveValue("Asia/Kolkata");
+    await openEditSection(page, "Date & place");
+    await expect(dropdown(page, "Timezone")).toHaveAttribute(
+      "data-value",
+      "Asia/Kolkata",
+    );
     await expect(page.locator("#startTime")).toHaveValue(`${hh}:${mm}`);
 
     // Same digits, other clock: the real start moves by the difference (Kolkata is 3.5h behind Tokyo).
-    await page.getByLabel("Timezone").selectOption("Asia/Tokyo");
+    await chooseOption(page, "Timezone", /^Asia\/Tokyo/);
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(page).toHaveURL(new RegExp(`/events/${uid}$`));
 
@@ -219,13 +229,19 @@ test("an older event with no timezone shows no zone, and saving an edit pins the
 
     // Opening the form and leaving changes nothing.
     await page.goto(`/organization/events/${uid}/edit`);
-    await expect(page.getByLabel("Timezone")).toHaveValue("America/New_York");
-    await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(page.getByText("Nothing has changed yet.")).toBeVisible();
+    await openEditSection(page, "Date & place");
+    await expect(dropdown(page, "Timezone")).toHaveAttribute(
+      "data-value",
+      "America/New_York",
+    );
+    await expect(
+      page.getByRole("button", { name: "Save changes" }),
+    ).toHaveCount(0);
     expect((await readEvent(page, uid)).timezone).toBeUndefined();
 
     // Saving a real change pins the zone shown, without moving the event.
     const before = await readEvent(page, uid);
+    await openEditSection(page, "Basics");
     await page.locator("#name").fill(`Riverbank Cleanup ${stamp}, renamed`);
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(page).toHaveURL(new RegExp(`/events/${uid}$`));

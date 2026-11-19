@@ -22,7 +22,9 @@ list with check-in. Owns the `Event` and `EventRegistration` models.
 | `platform`, `platformLink`                         | `string?` (trimmed)                                                | Online events require a platform and an absolute HTTP or HTTPS meeting URL; offline events do not require these fields                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `startTime`, `endTime`, `startDate`, `endDate`     | `Date` (all required)                                              | Four separate date/time fields rather than two combined datetimes — see the frontend's own event-creation spec for how its date/time pickers populate these                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `isGovernmentSponsored`                            | `boolean`, default `false`                                         | **September 2026.** A trust badge, not a real government API integration — mirrors `Organization.verified` exactly: server/seed-set only, absent from `createEventSchema` entirely, so a client-supplied value is silently stripped by Zod before it ever reaches `event.service.ts` (see `tests/events.test.ts`). Letting an event's own creator self-declare government backing would be trivially fake-able, which is the whole reason `Organization.verified` isn't client-writable either                                                                                                                                                        |
-| `inviteOnly`                                       | `boolean`, default `false`                                         | **September 2026.** Unlike `isGovernmentSponsored`, this one _is_ in `createEventSchema` and organizer-settable at creation — it's a statement about their own event, not a claim about a third party, so there's no equivalent abuse concern                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `access`                                           | `open` \| `approval` \| `invite`, absent on old events           | **November 2026 (PG-4).** Who can join. Organizer-settable on create and edit. Always read through `effectiveAccess()`: an event with no `access` is `open`, or `approval` if its old `inviteOnly` flag was set. The JSON the API returns always carries `access` and never `inviteOnly` |
+| `inviteOnly`                                       | `boolean?`, retired                                                | **Retired November 2026.** Never written or accepted any more; kept in the schema only so old documents can be read (see `access`). Create and edit drop it like any unknown field |
+| `waitlistEnabled`                                  | `boolean`, default `true`                                          | **November 2026 (PG-14).** Whether a full event takes a waitlist. Organizer-settable on create and edit |
 | `capacity`                                         | `number?` (integer, 1 to 100000)                                   | **November 2026 (PG-5).** Most people who can join; absent means no limit. Settable on create and edit (`null` removes it on edit)                                                                                                                                                                                                              |
 | `registrationCount`                                | `number`, default `0`                                              | **November 2026 (PG-5).** How many people are registered, kept in step with `EventRegistration` by `joinEvent` and `leaveEvent` with atomic `$inc`s so the last spot cannot be taken twice. **Only trustworthy for an event with a `capacity`**: `updateEvent` recounts it from the registrations whenever it sets a capacity, which also covers events saved before the field existed, and the web only shows going and spots left when a capacity exists |
 | `status`                                           | `"draft" \| "published" \| "cancelled"`, default `"published"`   | **November 2026 (PG-2, PG-15).** Where the event is in its life. A **draft** is saved but visible only to its own organization; **published** is public; **cancelled** stays public with a badge. Postponed is still to do. A document with no stored status reads as `published`. Create may send `draft` or `published`; after that only the publish, unpublish and cancel routes change it (an edit body with `status` is a `400`) |
@@ -59,12 +61,13 @@ count is an aggregate, never identities.
 
 **Public reads remain unauthenticated, while joining requires `requireAuth`.**
 `POST /events/:uid/join` stores one registration per event and authenticated
-user, blocks past and invite-only events, and sends a confirmation email to the
-account email only in production. In development and test, delivery is
+user and, depending on the event's access level, makes the person going, pending
+or waitlisted (see "Access levels, requests, the waitlist and invitations"
+below); it blocks past events, and sends a confirmation email to the
+account email only to a person who is going, and only in production. In development and test, delivery is
 suppressed and `emailSent` is `false`. A production email failure does not undo
-registration; response also includes `emailSent: false`. There is no leave,
-invite or approval flow, and editing or cancelling an event does not email the
-people who joined (PG-18). A new registration does email the organization owner
+registration; response also includes `emailSent: false`. Editing or cancelling an
+event does not email the people who joined (PG-18). A new registration does email the organization owner
 (see `POST /events/:uid/join`). The separate organization dashboard aggregates registration counts but
 does not return attendee identities. The full-page frontend form at
 `/organization/events/new` calls this `POST /events/create`; the API
@@ -77,7 +80,7 @@ and [API contract map](./api-contract.md).
 - **`findByUid(uid)`** / **`findAll(filters, pagination)`** - no projection
   (unlike `users`, nothing here strips fields - an `Event` document has no
   secret fields to hide, so this is fine as-is). `findAll` builds one `$and` of
-  the optional filters (`host`, `search`, `period`, `mode`, `inviteOnly`; see
+  the optional filters (`host`, `search`, `period`, `mode`, `type`, `access`; see
   `GET /events`), sorts by `startTime` then `_id`, and counts with the same
   filter.
 - **`createEvent(email, data)`** — `409 EVENT_UID_ALREADY_EXISTS` if `data.uid`
@@ -129,7 +132,7 @@ and [API contract map](./api-contract.md).
 Only the organization that hosts the event can call it.
 
 - **Body:** any non-empty subset of `name`, `description`, `coverImage`, `mode`,
-  `startTime`, `endTime`, `startDate`, `endDate`, `inviteOnly`, `city`, `state`,
+  `startTime`, `endTime`, `startDate`, `endDate`, `access`, `waitlistEnabled`, `city`, `state`,
   `country`, `address`, `mapIframe`, `platform`, `platformLink`. Each present
   field follows the same rule as create (lengths, cover image type and size).
   The schema is `.strict()`: an unknown key is a `400`, so a client can never
@@ -176,14 +179,14 @@ reinstate**.
   event that has already ended cannot be cancelled."` once `endTime` has passed.
 - **Effects elsewhere:** `GET /events` and `GET /events/mine` keep returning the
   event with `status: "cancelled"`; `POST /events/:uid/join` refuses it with
-  `409 "This event was cancelled."` (checked before invite-only); existing
+  `409 "This event was cancelled."` (checked before the access level); existing
   registrations are kept, so the event stays in each attendee's My Events.
   Nobody is emailed (PG-18).
 
 ## `GET /events`
 
 No auth. `validate(listEventsQuerySchema, "query")` —
-`{ uid?, slug?, host?, search?, period?, mode?, inviteOnly?, page?, limit? }`
+`{ uid?, slug?, host?, search?, period?, mode?, type?, access?, page?, limit? }`
 (pagination merged in from
 [src/utils/pagination.ts](../../src/utils/pagination.ts), default
 `page=1`/`limit=20`, capped at 100), and the controller reads **either**
@@ -191,7 +194,7 @@ No auth. `validate(listEventsQuerySchema, "query")` —
 If either is set: `findByUid` → `404 NOT_FOUND` if none, single event object
 (`page`/`limit` accepted but ignored on this branch). Otherwise: the events as
 `{ data, pagination }` - `eventService.findAll({ host, search, period, mode,
-inviteOnly }, { skip, limit })` runs the `find` and a `countDocuments` in
+type, access }, { skip, limit })` runs the `find` and a `countDocuments` in
 parallel over the same filter, so `pagination.total` counts every matching event,
 not the page size. The response shape is unchanged. **`host`**
 (August 2026, matching widened September 2026) narrows that list to one host's
@@ -225,8 +228,12 @@ and with each other:
   reads the `Token` cookie, and only then does that host's own list include its
   drafts. `GET /events?uid=` returns a draft only to its own organization and `404`
   to everyone else, including another organization.
-- **`inviteOnly`** - the strings `true` or `false`. `false` also matches events
-  with no stored flag (events saved before the field existed read as open).
+- **`access`** - `open`, `approval` or `invite`. `open` also matches events with
+  no stored `access` and no old flag, and `approval` also matches events saved
+  with the old `inviteOnly: true` flag, so no migration was needed.
+- **`requestCount`** - on the host's own list only (the caller owns the `host`
+  handle), each event also carries how many people are pending or waitlisted, from
+  one grouped query for the page.
 - **Order** - `startTime` then `_id` (the tiebreaker, so a page boundary never
   repeats or skips an event), soonest first, except `period=past` (most recent
   first). A host-filtered list with no `period` is newest first, so a host with
@@ -239,7 +246,7 @@ and with each other:
 The `uid`/`slug` single-event branch ignores all of these. Tests:
 `tests/events-directory.test.ts` (period split and order, search by name, city
 and host, literal handling of regex characters, blank search, filter
-combinations, mode and invite-only including events with no stored flag, `400`
+combinations, mode and access including events with no stored `access`, `400`
 for bad input, tied start times, totals, a page past the end, the 100 maximum,
 the host filter, and a host with 21 events).
 
@@ -290,7 +297,7 @@ the create form; event detail builds a map search link from the address. Online
 and Hybrid events require `platform` and `platformLink` at the validation layer,
 matching the organizer form, so a **Hybrid** event needs all six fields and a
 `400` lists every missing one at once; the link must be http or https for both.
-`eventType` and `tags` are optional (see the model table). `inviteOnly` is optional, defaults `false`. `capacity` is
+`eventType` and `tags` are optional (see the model table). `access` is optional and defaults to `open`; `waitlistEnabled` is optional and defaults to `true`. `capacity` is
 optional (an integer from 1 to 100000; `null` is ignored on create).
 
 **Optional detail fields (November 2026, PG-7).** The detail-page fields are now
@@ -328,9 +335,9 @@ object).
 
 Requires `requireAuth`; registration identity and confirmation destination come
 from the authenticated account, never the request body. Returns `404` for an
-unknown event, `409` for a cancelled event, `403` for invite-only events, and
-`409` once `startTime` has passed. An attendee who is already registered gets
-`200 alreadyJoined` next. Then, for an event with a capacity, **`409 "This event
+unknown event, `409` for a cancelled event, `409` once `startTime` has passed, and
+`403` for an invite-only event when the person is not invited. An attendee who is
+already registered gets `200 alreadyJoined` (with the standing they hold) next. Then, for an event with a capacity, **`409 "This event
 is full."`** when no spot is left (see Capacity above: the spot is reserved
 atomically before the registration is written and returned if the write fails).
 A unique compound index on `(eventUid, userId)` makes the write
@@ -445,6 +452,74 @@ sort descending. The endpoint does not accept a user identifier and never
 returns registration attendee details. The registration schema indexes `userId`
 for this attendee lookup, alongside its unique `(eventUid, userId)` constraint.
 
+## Access levels, requests, the waitlist and invitations (November 2026, PG-4 and PG-14)
+
+This replaces the old `inviteOnly` flag, which was only a label that made every
+join answer `403`. An event has an **access level** (`access`) and a registration
+has a **status**.
+
+- **Access levels.** `open`: anyone signed in joins. `approval`: anyone can ask
+  and the organizer approves or declines each person. `invite`: only emails the
+  organizer invited can join (still listed in the directory). A person who is
+  invited joins straight in on any level.
+- **Registration status** (`EventRegistration.status`, absent reads as `going`).
+  `going` holds a spot and counts in `registrationCount`. `pending` (asked to join
+  an approval event), `waitlisted` (the event was full) and `declined` hold no spot.
+  A declined person cannot ask again; only the organizer can approve them later.
+  `note` (up to 300 characters, `joinBodySchema`) is stored on a request and shown
+  on the attendee list.
+- **`POST /events/:uid/join`** (optional body `{ note? }`, ignored when the person
+  goes straight in): an invited email becomes `going`, on any level, even when full
+  and past the capacity, and marks the invitation used; an `invite` event without
+  an invitation is `403`; an `open` event takes a spot atomically, or waitlists the
+  person when full and `waitlistEnabled`, or answers `409 "This event is full."`
+  when the waitlist is off; an `approval` event makes the person `pending`, or
+  `waitlisted` when it is already full and the waitlist is on. Response:
+  `{ message, joined, status, alreadyJoined, emailSent }` (`201`, or `200` for a
+  repeat). Only a person who is going gets the confirmation and the organizer's
+  notice email.
+- **Waitlist.** Promotion is manual: nobody moves up when a spot opens or the
+  capacity is raised. Approving or moving someone up on a full event is allowed and
+  goes past the capacity (Full is a soft limit, and the page shows no spots left,
+  never a count past the cap).
+- **`POST /events/:uid/attendees/:registrationId/approve`** and **`/decline`**
+  (host only, `requireAuth`): approve moves a pending, waitlisted or declined person
+  to `going` and takes a spot (idempotent for someone already going), and emails
+  them the join confirmation in production; decline sets `declined`, releases the
+  spot if they were going and clears their check-in. `409` for a cancelled event
+  (and for approving after the event ended), `404` for an unknown registration,
+  `403` for anyone but the host. Response `{ attendee }`.
+- **`GET /events/:uid/attendees?status=`** (`going` by default, or `pending`,
+  `waitlisted`, `declined`, `all`) lists that status; `event` now carries `access`
+  and `waitlistEnabled`, each attendee carries `status` and `note`, and `summary`
+  adds `pending`, `waitlisted` and `declined` next to `registered` and `checkedIn`.
+  The CSV export and check-in apply to people who are going.
+- **Invitations.** `POST /events/:uid/invites` `{ emails: string[] }` (1 to 50, at
+  most 200 per event; lower-cased, de-duplicated) saves an `EventInvite` per new
+  email and emails each one (`sendEventInvitation`, production only, best effort).
+  Emails already invited, or already holding a registration for the event, are
+  skipped and reported: `{ invited, skipped: [{ email, reason }] }` with
+  `already-invited` or `already-registered` (to settle someone who already asked,
+  the organizer approves them instead). `409` for a draft, a cancelled or an ended
+  event. `GET /events/:uid/invites` lists them (`{ id, email, invitedAt, joined }`)
+  and `DELETE /events/:uid/invites/:inviteId` takes back an unused one (`409` once
+  the person joined through it). All host only. The invited person must sign in
+  with that exact email.
+- **`GET /events/invitations`** (signed in; `{ data, pagination }`) lists the
+  upcoming, published events the caller is invited to and has not joined: what an
+  "Invited" tab would show. The web app does not use it yet.
+- **`GET /events/:uid/registration`** now returns `{ joined, status, invited }`:
+  `status` is `going`, `pending`, `waitlisted`, `declined` or `none`, `invited`
+  says an unused invitation exists, and `joined` is true only for `going`.
+- **`GET /events/mine`** lists an event for a person who holds any registration
+  and adds `registrationStatus` to each row.
+- **Leaving.** `DELETE /events/:uid/registration` works for going, pending and
+  waitlisted people (a spot is released only when they were going); a declined
+  person gets `409`.
+- **Tests:** `tests/events-access.test.ts` (30 tests: the levels and the legacy
+  flag, requests, notes, approve and decline, the waitlist, invitations, host-only
+  and cancelled rules).
+
 ## Tests
 
 `tests/events.test.ts` (78 tests when last run) covers create, list, host filter,
@@ -452,17 +527,18 @@ the create-validation rules above (valid and invalid values, boundaries, and the
 `11000` path, tested by mocking the pre-check to return `null` so the real unique
 index rejects the second save), join, the registration check, and `/events/mine`.
 Its "join rules and My Events" block covers: joining an invite-only event
-(`403`), an already-started event (`409`), an unknown event (`404`); the
+without an invitation (`403`), an already-started event (`409`), an unknown event (`404`); the
 registration check for an unknown event (`404`), for a known event not joined
 (`{ joined: false }`) and without sign-in (`401`); and `/events/mine`
 defaulting to upcoming, `period=past` order, paging for both periods, a page
 past the end, `limit=101` and an unknown `period` returning `400`, and one
 attendee's registrations never showing for another. Order of checks in
 `joinEvent`: event not found (`404`), attendee not found (`401`), cancelled
-(`409`), invite-only (`403`), already started (`409`), already registered
-(`200`), full (`409`), so an invite-only event that has also started returns
-`403`, a cancelled one always answers `409 "This event was cancelled."`, and a
-full event still reports "already joined" to its own attendees. `tests/events-directory.test.ts` covers the list filters (see
+(`409`), already started (`409`), already registered (`200`, or `403` if the
+organizer declined them), invite-only without an invitation (`403`), then the
+capacity, so a cancelled event always answers `409 "This event was cancelled."`,
+an invite-only event that has also started answers `409`, and a full event still
+reports "already joined" to its own attendees. `tests/events-directory.test.ts` covers the list filters (see
 `GET /events`). `tests/events-hybrid.test.ts` (14 tests, PG-10) covers a Hybrid
 event needing both field sets (each missing field named), the link rule, both sets
 of notes kept, editing Online or Offline into Hybrid (and the missing fields it

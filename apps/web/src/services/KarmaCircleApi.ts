@@ -13,6 +13,7 @@ import {
   paymentEndpoints,
   userEndpoints,
 } from "./ApiEndpoints";
+import type { ApiInviteResult } from "@features/events/types";
 
 // LOGIN USER
 export const LoginUser = async (credentials: unknown) => {
@@ -382,6 +383,72 @@ export const SetAttendeeCheckIn = async (
       { checkedIn },
       { withCredentials: true },
     );
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// approve a request or move someone off the waitlist; host only (PG-4, PG-14)
+export const ApproveAttendee = async (
+  uid: string,
+  registrationId: string,
+): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.post(
+      eventEndpoints.approveAttendee(uid, registrationId),
+      undefined,
+      { withCredentials: true },
+    );
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// decline a request or a waitlisted person; host only (PG-4, PG-14)
+export const DeclineAttendee = async (
+  uid: string,
+  registrationId: string,
+): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.post(
+      eventEndpoints.declineAttendee(uid, registrationId),
+      undefined,
+      { withCredentials: true },
+    );
+    return { ok: true, status: response.status };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// invite people to an event by email; host only (PG-4)
+export const InviteToEvent = async (
+  uid: string,
+  emails: string[],
+): Promise<EventWriteResult & { result?: ApiInviteResult }> => {
+  try {
+    const response = await Axios.post<ApiInviteResult>(
+      eventEndpoints.invites(uid),
+      { emails },
+      { withCredentials: true },
+    );
+    return { ok: true, status: response.status, result: response.data };
+  } catch (error) {
+    return toEventWriteFailure(error);
+  }
+};
+
+// take back an invitation that was not used yet; host only (PG-4)
+export const RevokeInvite = async (
+  uid: string,
+  inviteId: string,
+): Promise<EventWriteResult> => {
+  try {
+    const response = await Axios.delete(eventEndpoints.invite(uid, inviteId), {
+      withCredentials: true,
+    });
     return { ok: true, status: response.status };
   } catch (error) {
     return toEventWriteFailure(error);

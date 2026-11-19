@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
+import { chooseKind } from "./event-helpers";
 
 /**
  * Responsive/behavior coverage for `/events` (September 2026 rewrite —
@@ -66,7 +67,7 @@ async function createEvent(
     mode: EventMode;
     startDate: Date;
     city?: string;
-    inviteOnly?: boolean;
+    access?: "open" | "approval" | "invite";
   },
 ) {
   const isPast = opts.startDate.getTime() <= Date.now();
@@ -83,7 +84,7 @@ async function createEvent(
       endDate: end.toISOString(),
       startTime: start.toISOString(),
       endTime: end.toISOString(),
-      inviteOnly: opts.inviteOnly,
+      access: opts.access,
       ...(opts.mode === "Offline"
         ? {
             city: opts.city ?? "Guwahati",
@@ -177,20 +178,20 @@ test("the directory renders both an upcoming and a past event, filterable by tim
   // gap is real and intentional (the navbar's own shell is max-w-6xl).
   const logoBox = await page.locator('nav a[href="/"]').boundingBox();
   const headingBox = await heading.boundingBox();
-  if (logoBox && headingBox) {
-    expect(Math.abs(logoBox.x - headingBox.x)).toBeLessThanOrEqual(70);
-  }
+  expect(logoBox).not.toBeNull();
+  expect(headingBox).not.toBeNull();
+  expect(Math.abs(logoBox!.x - headingBox!.x)).toBeLessThanOrEqual(70);
   await expectNoHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 375, height: 812 });
   await expectNoHorizontalOverflow(page);
   const mobileLogoBox = await page.locator('nav a[href="/"]').boundingBox();
   const mobileHeadingBox = await heading.boundingBox();
-  if (mobileLogoBox && mobileHeadingBox) {
-    expect(Math.abs(mobileLogoBox.x - mobileHeadingBox.x)).toBeLessThanOrEqual(
-      1,
-    );
-  }
+  expect(mobileLogoBox).not.toBeNull();
+  expect(mobileHeadingBox).not.toBeNull();
+  expect(Math.abs(mobileLogoBox!.x - mobileHeadingBox!.x)).toBeLessThanOrEqual(
+    1,
+  );
 });
 
 test("search narrows the directory by city", async ({ page }) => {
@@ -225,7 +226,7 @@ test("search narrows the directory by city", async ({ page }) => {
   await expect(page.getByText(`Delhi Drive ${stamp}`)).toHaveCount(0);
 });
 
-test("the type filter narrows by invite-only/open-to-all and online/offline", async ({
+test("the type filter narrows by who can join and by online/offline", async ({
   page,
 }) => {
   const stamp = Date.now() + Math.floor(Math.random() * 1_000_000);
@@ -241,7 +242,7 @@ test("the type filter narrows by invite-only/open-to-all and online/offline", as
     mode: "Offline",
     startDate: soon(3),
     city: "Pune",
-    inviteOnly: true,
+    access: "invite",
   });
   await createEvent(page, {
     uid: `evt-e2e-open-online-${stamp}`,
@@ -249,7 +250,7 @@ test("the type filter narrows by invite-only/open-to-all and online/offline", as
     description: "Online, open-to-all regression-test event.",
     mode: "Online",
     startDate: soon(4),
-    inviteOnly: false,
+    access: "open",
   });
 
   await page.goto("/events");
@@ -326,7 +327,7 @@ test("an organization publishes an in-person event from the full-page form", asy
       "base64",
     ),
   });
-  await page.getByLabel("Kind of event").selectOption("volunteering");
+  await chooseKind(page, "volunteering");
   await page.getByRole("button", { name: /Online/ }).click();
   await page.getByLabel("Meeting link").fill("zoom.example.com/j/123");
   await page.getByRole("button", { name: "Publish event" }).click();

@@ -7,6 +7,7 @@ import {
   signUpOrganization,
   TINY_PNG_BASE64,
   uniqueStamp,
+  dropdown,
 } from "./event-helpers";
 
 /**
@@ -104,8 +105,11 @@ test("the edit form shows the stored kind and tags and can change them", async (
   });
 
   await page.goto(`/organization/events/${uid}/edit`);
-  await expect(page.getByLabel("Kind of event")).toHaveValue("workshop");
-  await page.getByLabel("Kind of event").selectOption("meetup");
+  await expect(dropdown(page, "Kind of event")).toHaveAttribute(
+    "data-value",
+    "workshop",
+  );
+  await chooseKind(page, "meetup");
   await page.getByLabel("Tags (optional)").fill("networking");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(new RegExp(`/events/${uid}$`));

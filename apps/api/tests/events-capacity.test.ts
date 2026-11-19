@@ -101,7 +101,11 @@ describe("Leaving an event (PG-3)", () => {
     const status = await request(app)
       .get("/events/leave-basic/registration")
       .set("Cookie", attendee);
-    expect(status.body).toEqual({ joined: false });
+    expect(status.body).toEqual({
+      joined: false,
+      status: "none",
+      invited: false,
+    });
     const mine = await request(app).get("/events/mine").set("Cookie", attendee);
     expect(mine.body.data).toEqual([]);
   });
@@ -132,7 +136,11 @@ describe("Leaving an event (PG-3)", () => {
     const bobStatus = await request(app)
       .get("/events/leave-isolated/registration")
       .set("Cookie", bob);
-    expect(bobStatus.body).toEqual({ joined: true });
+    expect(bobStatus.body).toEqual({
+      joined: true,
+      status: "going",
+      invited: false,
+    });
   });
 
   it("returns 404 when the attendee was not registered", async () => {
@@ -224,9 +232,9 @@ describe("Capacity (PG-5)", () => {
     },
   );
 
-  it("counts joins, and refuses a join once the event is full", async () => {
+  it("counts joins, and refuses a join once the event is full (waitlist off)", async () => {
     const host = await signupHost();
-    await createEvent(host, "cap-full", { capacity: 2 });
+    await createEvent(host, "cap-full", { capacity: 2, waitlistEnabled: false });
 
     await join(await signupAttendee(), "cap-full").expect(201);
     await join(await signupAttendee(), "cap-full").expect(201);
@@ -253,7 +261,7 @@ describe("Capacity (PG-5)", () => {
 
   it("gives the last spot to exactly one of many people joining at once", async () => {
     const host = await signupHost();
-    await createEvent(host, "cap-race", { capacity: 2 });
+    await createEvent(host, "cap-race", { capacity: 2, waitlistEnabled: false });
     const cookies = await Promise.all(
       Array.from({ length: 8 }, () => signupAttendee()),
     );
@@ -269,7 +277,7 @@ describe("Capacity (PG-5)", () => {
 
   it("frees a spot when someone leaves, and the next person can take it", async () => {
     const host = await signupHost();
-    await createEvent(host, "cap-leave", { capacity: 1 });
+    await createEvent(host, "cap-leave", { capacity: 1, waitlistEnabled: false });
     const first = await signupAttendee();
     const second = await signupAttendee();
     await join(first, "cap-leave").expect(201);
@@ -307,7 +315,7 @@ describe("Capacity (PG-5)", () => {
   describe("editing", () => {
     it("sets a capacity and recounts the people already registered", async () => {
       const host = await signupHost();
-      await createEvent(host, "cap-edit-set");
+      await createEvent(host, "cap-edit-set", { waitlistEnabled: false });
       await join(await signupAttendee(), "cap-edit-set").expect(201);
       await join(await signupAttendee(), "cap-edit-set").expect(201);
       // An event from before the counter existed has registrations but no count.
@@ -327,7 +335,7 @@ describe("Capacity (PG-5)", () => {
       );
     });
 
-    it("refuses a capacity below the number already registered", async () => {
+    it("refuses a capacity below the number already going", async () => {
       const host = await signupHost();
       await createEvent(host, "cap-edit-low", { capacity: 5 });
       await join(await signupAttendee(), "cap-edit-low").expect(201);
@@ -336,14 +344,14 @@ describe("Capacity (PG-5)", () => {
       const res = await patch(host, "cap-edit-low", { capacity: 1 });
       expect(res.status).toBe(409);
       expect(res.body.message).toBe(
-        "Capacity cannot be lower than the 2 people already registered.",
+        "Capacity cannot be lower than the 2 people already going.",
       );
       expect((await stored("cap-edit-low")).capacity).toBe(5);
     });
 
     it("allows a capacity equal to the number registered (the event becomes full)", async () => {
       const host = await signupHost();
-      await createEvent(host, "cap-edit-equal");
+      await createEvent(host, "cap-edit-equal", { waitlistEnabled: false });
       await join(await signupAttendee(), "cap-edit-equal").expect(201);
 
       await patch(host, "cap-edit-equal", { capacity: 1 }).expect(200);

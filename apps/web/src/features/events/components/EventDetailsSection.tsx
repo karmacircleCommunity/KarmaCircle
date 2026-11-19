@@ -1,5 +1,7 @@
 import { FiPlus, FiTrash2 } from "react-icons/fi";
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
+import { Dropdown } from "@components";
+import type { DropdownOption } from "@components";
 import {
   Field,
   FormSection,
@@ -18,6 +20,8 @@ interface EventDetailsSectionProps {
   event: EventFormState;
   setEvent: Dispatch<SetStateAction<EventFormState>>;
   errors: EventFormErrors;
+  hidden?: boolean;
+  asTabPanel?: boolean;
 }
 
 /**
@@ -34,11 +38,13 @@ const EventDetailsSection = ({
   event,
   setEvent,
   errors,
+  hidden,
+  asTabPanel,
 }: EventDetailsSectionProps) => {
   const L = DETAIL_LIMITS;
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setEvent((current) => ({ ...current, [name]: value }));
@@ -73,12 +79,18 @@ const EventDetailsSection = ({
   )
     ? COST_CURRENCIES
     : [...COST_CURRENCIES, event.costCurrency];
+  const currencyOptions: readonly DropdownOption[] = currencies.map(
+    (currency) => ({ value: currency, label: currency }),
+  );
 
   return (
     <FormSection
       number="04"
       title="More about the event"
       description="All optional. Anything you leave empty stays off the event page."
+      sectionKey="details"
+      hidden={hidden}
+      asTabPanel={asTabPanel}
     >
       <div className="space-y-5">
         <Field
@@ -189,19 +201,15 @@ const EventDetailsSection = ({
               label="Currency"
               error={errors.costCurrency}
             >
-              <select
+              <Dropdown
                 id="costCurrency"
-                name="costCurrency"
+                options={currencyOptions}
                 value={event.costCurrency}
-                onChange={handleChange}
-                className={inputClasses}
-              >
-                {currencies.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) =>
+                  setEvent((current) => ({ ...current, costCurrency: value }))
+                }
+                invalid={Boolean(errors.costCurrency)}
+              />
             </Field>
           </div>
           <div className="mt-4">
@@ -209,6 +217,7 @@ const EventDetailsSection = ({
               id="costNote"
               label="What the fee covers"
               error={errors.costNote}
+              hint="Shown next to the fee on the event page."
               count={{ value: event.costNote.length, max: L.costNoteLength }}
             >
               <input
@@ -246,14 +255,14 @@ const EventDetailsSection = ({
             id="languages"
             label="Languages"
             error={errors.languages}
-            hint="Separate with commas."
+            hint="Separate with commas or put one language per line."
           >
-            <input
+            <textarea
               id="languages"
               name="languages"
               value={event.languages}
               onChange={handleChange}
-              className={inputClasses}
+              className={`${inputClasses} min-h-28 resize-y`}
               placeholder="English, Hindi"
               aria-invalid={Boolean(errors.languages)}
             />

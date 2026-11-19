@@ -3,6 +3,7 @@ import { E2E_API_URL } from "../env";
 import {
   chooseKind,
   createEvent,
+  openEditSection,
   publishOrganizationProfile,
   signUpOrganization,
   TINY_PNG_BASE64,
@@ -174,6 +175,7 @@ test("details can be edited and cleared from the edit form", async ({
 
   // Add details to an event that has none.
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "More details");
   await page.getByLabel("Full write-up").fill("A long and useful write-up.");
   await page.getByLabel("Fee", { exact: true }).fill("100");
   await page.getByLabel("Contact email").fill("hello@riverbend.example");
@@ -190,6 +192,7 @@ test("details can be edited and cleared from the edit form", async ({
 
   // The form opens filled in with them.
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "More details");
   await expect(page.getByLabel("Full write-up")).toHaveValue(
     "A long and useful write-up.",
   );

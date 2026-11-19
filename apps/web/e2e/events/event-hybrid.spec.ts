@@ -3,10 +3,12 @@ import { E2E_API_URL } from "../env";
 import {
   chooseKind,
   createEvent,
+  openEditSection,
   publishOrganizationProfile,
   signUpOrganization,
   TINY_PNG_BASE64,
   uniqueStamp,
+  dropdown,
 } from "./event-helpers";
 
 /**
@@ -64,7 +66,7 @@ test("an organization publishes a hybrid event with a venue and a stream", async
     "true",
   );
   await expect(page.getByLabel("Street address")).toBeVisible();
-  await expect(page.getByLabel("Video platform")).toBeVisible();
+  await expect(dropdown(page, "Video platform")).toBeVisible();
   await expect(page.getByLabel("Meeting link")).toBeVisible();
   await expect(page.getByLabel("Getting there")).toBeVisible();
   await expect(page.getByLabel("When the join link arrives")).toBeVisible();
@@ -131,6 +133,7 @@ test("the edit form moves an event between in person, online and hybrid", async 
 
   // In person to hybrid: the form already holds the venue, it asks for a link.
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "Date & place");
   await page.getByRole("button", { name: /^Hybrid/ }).click();
   await page.getByLabel("Meeting link").fill("");
   await page.getByRole("button", { name: "Save changes" }).click();
@@ -146,6 +149,7 @@ test("the edit form moves an event between in person, online and hybrid", async 
 
   // Hybrid to online: the venue is dropped.
   await page.goto(`/organization/events/${uid}/edit`);
+  await openEditSection(page, "Date & place");
   await expect(page.getByRole("button", { name: /^Hybrid/ })).toHaveAttribute(
     "aria-pressed",
     "true",

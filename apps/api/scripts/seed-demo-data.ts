@@ -361,7 +361,7 @@ async function seed() {
     endHour: number;
     endMinute?: number;
     isGovernmentSponsored?: boolean;
-    inviteOnly?: boolean;
+    access?: "open" | "approval" | "invite";
     about: string[];
     agenda: { time: string; title: string; detail?: string }[];
     // Optional, not required - matches IEvent/ApiEvent's own optional
@@ -608,7 +608,7 @@ async function seed() {
       startHour: 19,
       endsIn: 21,
       endHour: 21,
-      inviteOnly: true,
+      access: "invite",
       about: [
         "A small dinner for the people who backed us when we were four students and a WhatsApp group — a first look at the plans for a second elder-care day centre in Kothrud before anything goes public.",
         "Kept deliberately small so it's a conversation, not a presentation: expect the founding team, this year's numbers, and a lot of questions we don't have polished answers to yet.",
@@ -938,7 +938,7 @@ async function seed() {
       startHour: 18,
       endsIn: -5,
       endHour: 19,
-      inviteOnly: true,
+      access: "invite",
       about: [
         "An annual closed session for the directors of our five partner NGOs to compare notes on the grant cycle just closed, before the next one opens - not open registration, by design.",
         "Recordings aren't shared afterward; this was a working session for the people already in the room, not a public webinar.",
@@ -1000,7 +1000,7 @@ async function seed() {
         startDate: atHour(event.startsIn, event.startHour, event.startMinute),
         endDate: atHour(event.endsIn, event.endHour, event.endMinute),
         isGovernmentSponsored: event.isGovernmentSponsored ?? false,
-        inviteOnly: event.inviteOnly ?? false,
+        access: event.access ?? "open",
         eventType: demoEventTypes[event.uid] ?? "other",
         about: event.about,
         agenda: event.agenda,

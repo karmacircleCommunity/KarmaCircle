@@ -213,6 +213,11 @@ const YourEvents = () => {
                     >
                       <FiUsers aria-hidden className="size-4" />
                       Attendees
+                      {event.requestCount ? (
+                        <span className="rounded-full bg-brand px-2 py-0.5 text-caption font-semibold text-white">
+                          {event.requestCount} waiting
+                        </span>
+                      ) : null}
                       <span className="sr-only"> for {event.name}</span>
                     </Link>
                   )}

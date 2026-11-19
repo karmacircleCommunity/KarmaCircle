@@ -1,7 +1,7 @@
 # 08 — Shared components
 
 Everything in [apps/web/src/components/](../../../apps/web/src/components/).
-The barrel is [components/index.ts](../../../apps/web/src/components/index.ts) and exports: `BacktoTop`, `Button`, `Combobox`, `DirectoryToolbar`, `Footer`, `Header`, `Loading`, `Modal`, `Navbar`, `ScrollProgress`, `SmoothScroll`.
+The barrel is [components/index.ts](../../../apps/web/src/components/index.ts) and exports: `BacktoTop`, `Button`, `Combobox`, `DirectoryToolbar`, `Dropdown` (and the `DropdownOption` type), `Footer`, `Header`, `Loading`, `Modal`, `Navbar`, `ScrollProgress`, `SmoothScroll`.
 Not in the barrel, import by path: `ClickAwayListener`, `ComponentHelmet`, `SplitPanelLayout`.
 
 **Prefer the barrel** (`@components`) for anything exported there.
@@ -330,7 +330,81 @@ Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/45 upper
 
 `/organizations` and `/events` each had exactly one filterable dimension at the time (cause; Upcoming/Past), so pattern 2 is the fit — pattern 1 would add an unneeded panel-plus-apply step for a single choice. Replaced the always-visible chip row (and the trailing-edge fade and horizontal scroller it needed once a taxonomy like `/organizations`' ten causes stopped fitting on one line — both now moot, there's nothing left to scroll) with [`FilterDropdown`](#filterdropdown), reusing `Combobox`'s own listbox geometry (radius, border, shadow, `motion-safe:animate-pop-in`) so it reads as the same product rather than a third distinct control. The `FiFilter` + `filterLabel` caption the fourth pass relocated into Row 1 is now the dropdown's own trigger button instead of adjacent decoration — one control, not two.
 
-**Superseded in part, September 2026:** `/events` grew a second dimension (`TypeFilter`, over `inviteOnly`/`mode`). Rather than switching that page to pattern 1's multi-facet panel, `DirectoryToolbar` gained a second, independent `secondaryFilter` slot (see `DirectoryToolbar`'s own Props above) - two pattern-2 dropdowns side by side, each still single-select. This holds only while a page has a small, fixed number of dimensions that don't need to combine through one "Apply"; a third dimension, or a need to filter by more than one facet at once (e.g. "online AND invite-only"), would be the point to revisit pattern 1 instead of adding a third dropdown.
+**Superseded in part, September 2026:** `/events` grew a second dimension (`TypeFilter`, over `access`/`mode`; `inviteOnly` became `access` in November 2026). Rather than switching that page to pattern 1's multi-facet panel, `DirectoryToolbar` gained a second, independent `secondaryFilter` slot (see `DirectoryToolbar`'s own Props above) - two pattern-2 dropdowns side by side, each still single-select. This holds only while a page has a small, fixed number of dimensions that don't need to combine through one "Apply"; a third dimension, or a need to filter by more than one facet at once (e.g. "online AND invite-only"), would be the point to revisit pattern 1 instead of adding a third dropdown.
+
+---
+
+## `Dropdown`
+
+[components/inputs/Dropdown.tsx](../../../apps/web/src/components/inputs/Dropdown.tsx), with its pure logic in [dropdownUtils.ts](../../../apps/web/src/components/inputs/dropdownUtils.ts) and tests in `dropdownUtils.test.ts`.
+The app's one single-select **form field**: use it wherever a native `<select>` would go.
+It is not `FilterDropdown` (a pill-shaped filter inside `DirectoryToolbar`) and not `Combobox` (a text field that suggests; whatever is typed stays the value).
+A `Dropdown` only ever holds one of its own options.
+
+### Why it exists
+
+The native `<select>` cannot be styled past its closed state.
+Its open list is drawn by the operating system, in a different font, with no search, so a 400-entry timezone list or a 250-entry country list is a scroll through an unstyled box.
+`Dropdown` keeps the closed control identical to every other form input and draws the open list in the design system's own panel.
+
+### Props
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `id` | `string` | Required. The trigger button's id. Point the field's `<label htmlFor>` at it so the label names the control and clicking the label opens it. |
+| `options` | `readonly DropdownOption<T>[]` | `{ value, label, description?, keywords?, disabled? }`. `label` is what people read and what search matches. `description` is a second line in the list only. `keywords` is extra searchable text that is never shown. |
+| `value` | `T \| ""` | The chosen `value`. `""` shows the placeholder. |
+| `onChange` | `(value: T) => void` | Receives the value, not an event. Callers that used `handleChange(e)` on a `<select>` set the field by name instead (see `setField` in `CreateEvents.tsx`). |
+| `placeholder` | `string` | Default `"Choose an option"`. Shown in `text-ink/40`. |
+| `invalid` | `boolean` | Draws `border-error` and `ring-error/15` and sets `aria-invalid`. The message belongs to the surrounding `Field`. |
+| `disabled` | `boolean` | Muted surface, `cursor-not-allowed`, cannot open. |
+| `searchable` | `boolean \| "auto"` | Default `"auto"`: a search box appears once there are more than `SEARCH_THRESHOLD` (10) options. |
+| `searchPlaceholder`, `emptyMessage` | `string` | Defaults `"Search"` and `"No matches"`. |
+| `aria-label`, `aria-describedby` | `string` | `aria-label` only when no `<label htmlFor={id}>` exists. |
+| `className`, `dataCy` | `string` | `className` is appended to the trigger. `dataCy` also tags `-panel`, `-options` and `-option-<value>`. |
+
+The trigger carries `data-value` with the current value, so a test can assert the choice without reading the displayed label.
+
+### Behavior
+
+- **Trigger.** `role="combobox"`, `aria-haspopup="listbox"`, `aria-expanded`. Click, Enter, Space, Arrow Down or Arrow Up opens it, with the chosen option highlighted.
+- **Typing on a closed trigger** opens a searchable list already filtering, or on a short list jumps to the option starting with that letter.
+- **Search.** Matches case-insensitively and ignores accents. Ranks labels that start with the text first, then labels with a word that starts with it, then any other match (label, description, keywords). Within a rank the original order holds, so an alphabetical list stays alphabetical.
+- **On a phone** the search box is present but is not focused for you, because the on-screen keyboard would cover the list the moment it took focus. On a device with a fine pointer it is focused as the panel opens.
+- **Keyboard while open.** Arrow Up and Down move the highlight and wrap, skipping disabled rows. Home and End jump to the ends (when the focus is not in the search box). Enter chooses. Space chooses on a list without search. Escape closes, returns focus to the trigger and stops the event so a surrounding dialog does not also close. Tab closes and moves on. Any other letter on a list without search is type-ahead: repeating one letter cycles through the options that start with it, like a native select.
+- **Pointer.** Moving over a row highlights it, a click chooses it. Pressing a row does not take focus from the trigger or search box. A press outside closes the panel (on `pointerdown`, not on blur, for the reason given under [`Combobox`](#combobox)).
+- **Placement.** The panel is `position: fixed` and rendered in a portal on `document.body`, so no `overflow: hidden` ancestor can clip it. It opens below the trigger, flips above when there is less room below than above and under about 280px below, is capped to the room on its side (never taller than 360px or shorter than 120px), is at least 224px wide and as wide as the trigger, and slides sideways to stay 12px inside the viewport. It follows the trigger while the page scrolls or resizes, and closes if the trigger scrolls out of view.
+
+### ARIA
+
+The trigger is the "select-only combobox": focus stays on it and the highlighted row is exposed through `aria-activedescendant`.
+When there is a search box and the device has a fine pointer, focus moves to the search box, which is an editable `role="combobox"` with `aria-autocomplete="list"` and takes over `aria-activedescendant`.
+The panel is a `role="listbox"` named after the field's `<label>` (or `aria-label`), its rows are `role="option"` with `aria-selected`, and a visually hidden `role="status"` reports how many options a search leaves.
+
+### Geometry
+
+Trigger: `flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 font-outfit text-body`, the same box as `inputClasses` in `EventFormParts.tsx`, so it lines up with the text inputs beside it.
+Rest: `border-brand-secondary/15 bg-white`, hover `border-brand/35`.
+Open or focused: `border-brand/55 ring-2 ring-brand/15`, and the `FiChevronDown` (`size-4`, `text-ink/45`) turns 180 degrees and goes `text-brand`.
+
+Panel: `fixed z-50 flex flex-col overflow-hidden rounded-xl border border-brand-secondary/12 bg-white shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in`, with `origin-top` or `origin-bottom` to match the side it opened on.
+The shadow is the same one `Combobox` and `FilterDropdown` use.
+Search row: `FiSearch` and a borderless `min-h-12` input over a `border-b border-brand-secondary/10` rule.
+List: `p-1.5`, scrolls inside the panel with `overscroll-contain`.
+Row: `flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2 font-outfit text-body`, so each row is at least 44px tall for touch.
+Highlighted: `bg-surface-muted text-ink`. Chosen: `font-medium text-brand` and a trailing `FiCheck`. Both: `bg-brand/8`.
+
+### Used today
+
+The event form (`CreateEvents.tsx` and `EventDetailsSection.tsx`): Kind of event, Timezone (searchable), Country (searchable), Video platform and Currency.
+`OrganizationProfileEditor.tsx` still has one native `<select>` (Organization type); see [14-drift-register.md](./14-drift-register.md).
+
+### Rules
+
+- Always give it a `<label htmlFor={id}>` (or `aria-label`). An unlabelled dropdown is announced as just "combobox".
+- Never put a `Dropdown` inside a container that is itself `position: fixed` with its own `z-index` above 50 without raising the panel's `z-50` (see the [z-index ladder](./06-radius-elevation.md#z-index-ladder)).
+- Do not use it to choose from fewer than three options when every choice should stay visible; use radio buttons or the format cards in the event form instead.
+- Do not add a native `<select>` to a form. If `Dropdown` is missing something, extend it here.
 
 ---
 

@@ -14,13 +14,47 @@ import { selectUser } from "@app/store/slices/userSlice";
 import OrganizationSetupGate from "@features/organizations/components/OrganizationSetupGate";
 import { eventEndpoints } from "@services/ApiEndpoints";
 import {
+  ApproveAttendee,
+  DeclineAttendee,
   FetchAttendeesCsv,
   SetAttendeeCheckIn,
 } from "@services/KarmaCircleApi";
 import fetcher from "@utils/Fetcher";
 import { showErrorToast } from "@utils/Toasts";
+import EventInvitePanel from "@features/events/components/EventInvitePanel";
 import { formatEventDate } from "@features/events/utils/formatEventFacts";
-import type { ApiAttendeeList, EventAttendee } from "@features/events/types";
+import type {
+  ApiAttendeeList,
+  EventAttendee,
+  RegistrationStatus,
+} from "@features/events/types";
+
+/** The lists the organizer can switch between, and what each is called. */
+const TABS: { status: RegistrationStatus; label: string }[] = [
+  { status: "going", label: "Going" },
+  { status: "pending", label: "Requests" },
+  { status: "waitlisted", label: "Waitlist" },
+  { status: "declined", label: "Declined" },
+];
+
+const EMPTY_COPY: Record<RegistrationStatus, [string, string]> = {
+  going: [
+    "Nobody has joined yet",
+    "People who join this event show up here the moment they do.",
+  ],
+  pending: [
+    "No requests waiting",
+    "When someone asks to join, they show up here for you to approve or decline.",
+  ],
+  waitlisted: [
+    "Nobody is on the waitlist",
+    "When the event is full, new people join the waitlist and you move them up here.",
+  ],
+  declined: [
+    "Nobody was declined",
+    "People you decline stay here, and you can approve them again later.",
+  ],
+};
 
 const PAGE_SIZE = 50;
 
@@ -33,7 +67,14 @@ const PAGE_SIZE = 50;
  * pages 50 at a time with a search on name or email, and the whole list can be
  * downloaded as CSV. Only the hosting organization can read it: the API answers
  * `403` to anyone else and this page says so. A cancelled event keeps its list
- * but has check-in turned off.
+ * but has check-in, approvals and invitations turned off.
+ *
+ * **Requests and the waitlist (PG-4, PG-14).** An event that asks for approval,
+ * or that has people waiting, also shows Requests, Waitlist and Declined tabs
+ * with their counts. A request or a waitlisted person can be approved (moved
+ * up, which may go past the capacity) or declined, and a declined person can be
+ * approved again. An approval or invite-only event also shows the invitation
+ * box.
  */
 const EventAttendees = () => {
   const { eventId } = useParams();
@@ -42,6 +83,7 @@ const EventAttendees = () => {
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [tab, setTab] = useState<RegistrationStatus>("going");
 
   // Wait for the person to stop typing before asking the API.
   useEffect(() => {
@@ -62,6 +104,7 @@ const EventAttendees = () => {
         page: pageIndex + 1,
         limit: PAGE_SIZE,
         search,
+        status: tab,
       }),
       user.email,
     ] as const;
@@ -81,8 +124,32 @@ const EventAttendees = () => {
   const first = data?.[0];
   const hasMore = size < (first?.pagination.totalPages ?? 0);
   const cancelled = first?.event.status === "cancelled";
+  const waiting =
+    (first?.summary.pending ?? 0) +
+    (first?.summary.waitlisted ?? 0) +
+    (first?.summary.declined ?? 0);
+  const showTabs = first
+    ? first.event.access !== "open" || waiting > 0 || tab !== "going"
+    : false;
+  const showInvites = first ? first.event.access !== "open" : false;
   const status = (error as { response?: { status?: number } } | undefined)
     ?.response?.status;
+
+  const decide = async (
+    attendee: EventAttendee,
+    action: typeof ApproveAttendee,
+    failure: string,
+  ) => {
+    if (!eventId || busyId) return;
+    setBusyId(attendee.id);
+    const result = await action(eventId, attendee.id);
+    setBusyId(null);
+    if (result.ok) {
+      void mutate();
+    } else {
+      showErrorToast(result.message ?? failure);
+    }
+  };
 
   const toggleCheckIn = async (attendee: EventAttendee) => {
     if (!eventId || busyId) return;
@@ -221,7 +288,47 @@ const EventAttendees = () => {
               </p>
             )}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {showInvites && (
+              <EventInvitePanel
+                uid={first.event.uid}
+                disabled={cancelled}
+                onChanged={() => void mutate()}
+              />
+            )}
+
+            {showTabs && (
+              <div
+                role="tablist"
+                aria-label="Registrations"
+                className="mt-8 flex flex-wrap gap-2"
+              >
+                {TABS.map(({ status: tabStatus, label }) => {
+                  const count =
+                    tabStatus === "going"
+                      ? first.summary.registered
+                      : first.summary[tabStatus];
+                  return (
+                    <button
+                      key={tabStatus}
+                      type="button"
+                      role="tab"
+                      aria-selected={tab === tabStatus}
+                      onClick={() => setTab(tabStatus)}
+                      className={`inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border px-4 font-outfit text-body font-medium transition ${
+                        tab === tabStatus
+                          ? "border-brand/35 bg-brand/8 text-brand"
+                          : "border-brand-secondary/15 bg-white text-brand-secondary hover:border-brand/45"
+                      }`}
+                    >
+                      {label}
+                      <span className="text-caption text-ink/55">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <FiSearch
                   aria-hidden="true"
@@ -241,6 +348,7 @@ const EventAttendees = () => {
                 type="button"
                 onClick={exportCsv}
                 disabled={exporting || first.summary.registered === 0}
+                title="Downloads the people who are going"
                 className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-brand-secondary/15 bg-white px-5 font-outfit text-body font-medium text-brand-secondary transition hover:border-brand/45 disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <FiDownload aria-hidden="true" />
@@ -251,14 +359,12 @@ const EventAttendees = () => {
             {attendees.length === 0 ? (
               <div className="mt-8 rounded-2xl border border-dashed border-brand-secondary/15 bg-white/60 px-8 py-14 text-center">
                 <p className="m-0 font-outfit text-body-lg font-medium text-brand-secondary">
-                  {search
-                    ? "Nobody matches that search"
-                    : "Nobody has joined yet"}
+                  {search ? "Nobody matches that search" : EMPTY_COPY[tab][0]}
                 </p>
                 <p className="mx-auto mt-2 mb-0 max-w-sm font-poppins text-body text-ink/60">
                   {search
                     ? "Try part of a name or an email address."
-                    : "People who join this event show up here the moment they do."}
+                    : EMPTY_COPY[tab][1]}
                 </p>
               </div>
             ) : (
@@ -276,31 +382,76 @@ const EventAttendees = () => {
                         {attendee.email}
                       </p>
                       <p className="mt-1 mb-0 font-poppins text-caption text-ink/50">
-                        Registered {formatEventDate(attendee.joinedAt)}
+                        {attendee.status === "going" ? "Registered" : "Asked"}{" "}
+                        {formatEventDate(attendee.joinedAt)}
                         {attendee.checkedInAt &&
                           ` · Checked in ${formatEventDate(attendee.checkedInAt)}`}
                       </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void toggleCheckIn(attendee)}
-                      disabled={cancelled || busyId !== null}
-                      aria-pressed={attendee.checkedIn}
-                      aria-label={`${attendee.checkedIn ? "Undo check-in for" : "Check in"} ${attendee.name || attendee.email}`}
-                      className={`inline-flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg px-5 font-outfit text-body font-semibold transition disabled:cursor-not-allowed disabled:opacity-55 ${
-                        attendee.checkedIn
-                          ? "border border-brand/35 bg-brand/8 text-brand"
-                          : "border-none bg-brand text-white hover:bg-brand-hover"
-                      }`}
-                    >
-                      {attendee.checkedIn ? (
-                        <>
-                          <FiCheck aria-hidden="true" /> Checked in
-                        </>
-                      ) : (
-                        "Check in"
+                      {attendee.note && (
+                        <p className="mt-2 mb-0 rounded-lg bg-surface-warm px-3 py-2 font-poppins text-body leading-6 text-ink/70">
+                          {attendee.note}
+                        </p>
                       )}
-                    </button>
+                    </div>
+                    {attendee.status !== "going" ? (
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void decide(
+                              attendee,
+                              ApproveAttendee,
+                              "Could not approve this person. Try again.",
+                            )
+                          }
+                          disabled={cancelled || busyId !== null}
+                          aria-label={`${attendee.status === "waitlisted" ? "Move up" : "Approve"} ${attendee.name || attendee.email}`}
+                          className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-lg border-none bg-brand px-5 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-55"
+                        >
+                          {attendee.status === "waitlisted"
+                            ? "Move up"
+                            : "Approve"}
+                        </button>
+                        {attendee.status !== "declined" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void decide(
+                                attendee,
+                                DeclineAttendee,
+                                "Could not decline this person. Try again.",
+                              )
+                            }
+                            disabled={cancelled || busyId !== null}
+                            aria-label={`Decline ${attendee.name || attendee.email}`}
+                            className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-lg border border-brand-secondary/15 bg-white px-5 font-outfit text-body font-medium text-brand-secondary transition hover:border-error/45 hover:text-error disabled:cursor-not-allowed disabled:opacity-55"
+                          >
+                            Decline
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void toggleCheckIn(attendee)}
+                        disabled={cancelled || busyId !== null}
+                        aria-pressed={attendee.checkedIn}
+                        aria-label={`${attendee.checkedIn ? "Undo check-in for" : "Check in"} ${attendee.name || attendee.email}`}
+                        className={`inline-flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg px-5 font-outfit text-body font-semibold transition disabled:cursor-not-allowed disabled:opacity-55 ${
+                          attendee.checkedIn
+                            ? "border border-brand/35 bg-brand/8 text-brand"
+                            : "border-none bg-brand text-white hover:bg-brand-hover"
+                        }`}
+                      >
+                        {attendee.checkedIn ? (
+                          <>
+                            <FiCheck aria-hidden="true" /> Checked in
+                          </>
+                        ) : (
+                          "Check in"
+                        )}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

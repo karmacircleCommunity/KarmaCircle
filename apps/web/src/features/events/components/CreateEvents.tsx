@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -11,7 +11,8 @@ import {
   FiRadio,
   FiVideo,
 } from "react-icons/fi";
-import { Footer, Navbar } from "@components";
+import { Dropdown, Footer, Navbar } from "@components";
+import type { DropdownOption } from "@components";
 import OrganizationSetupGate from "@features/organizations/components/OrganizationSetupGate";
 import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 import countries from "@statics/CountryList";
@@ -26,10 +27,12 @@ import {
   FormSection,
   inputClasses,
 } from "@features/events/components/EventFormParts";
+import EditSectionTabs from "@features/events/components/EditSectionTabs";
 import EventDetailsSection from "@features/events/components/EventDetailsSection";
 import { emptyDetailFields } from "@features/events/utils/eventDetailFields";
 import convertToBase64 from "@features/events/utils/convertToBase64";
 import { useEvent } from "@features/events/hooks/useEvent";
+import { buildEventChanges } from "@features/events/utils/buildEventChanges";
 import {
   browserTimeZone,
   combineInZone,
@@ -37,6 +40,10 @@ import {
   zoneAbbreviation,
   zoneOptionLabel,
 } from "@features/events/utils/eventTimezone";
+import {
+  accessLabel,
+  EVENT_ACCESS_OPTIONS,
+} from "@features/events/constants/eventAccess";
 import { EVENT_TYPE_OPTIONS } from "@features/events/constants/eventTypes";
 import {
   MODE_LABELS,
@@ -49,6 +56,60 @@ import type {
   EventFormState,
   SubmitIntent,
 } from "@features/events/types";
+
+type EditSectionKey = "basics" | "schedule" | "attendance" | "details";
+
+const EDIT_SECTIONS: { key: EditSectionKey; label: string }[] = [
+  { key: "basics", label: "Basics" },
+  { key: "schedule", label: "Date & place" },
+  { key: "attendance", label: "Attendance" },
+  { key: "details", label: "More details" },
+];
+const EDIT_SECTION_FIELDS: Record<EditSectionKey, (keyof EventFormState)[]> = {
+  basics: ["name", "uid", "description", "eventType", "tags", "coverImage"],
+  schedule: [
+    "mode",
+    "startDate",
+    "startTime",
+    "endDate",
+    "endTime",
+    "timezone",
+    "address",
+    "city",
+    "state",
+    "country",
+    "platform",
+    "platformLink",
+  ],
+  attendance: ["access", "capacity", "waitlistEnabled"],
+  details: [
+    "about",
+    "contactEmail",
+    "minimumAge",
+    "costAmount",
+    "costCurrency",
+    "costNote",
+    "bringAlong",
+    "languages",
+    "gettingThere",
+    "linkDelivery",
+    "joinRequirements",
+    "agenda",
+  ],
+};
+
+const EVENT_TYPE_DROPDOWN_OPTIONS: readonly DropdownOption[] =
+  EVENT_TYPE_OPTIONS;
+const ACCESS_DROPDOWN_OPTIONS: readonly DropdownOption[] =
+  EVENT_ACCESS_OPTIONS.map(({ value, label }) => ({ value, label }));
+// The stored value is the label (that is what the API keeps), so value and
+// label are the same string.
+const COUNTRY_DROPDOWN_OPTIONS: readonly DropdownOption[] = countries.map(
+  ({ label }) => ({ value: label, label }),
+);
+const PLATFORM_DROPDOWN_OPTIONS: readonly DropdownOption[] = platforms.map(
+  ({ label }) => ({ value: label, label }),
+);
 
 /** A blank form, with dates computed when the form opens (not at page load). */
 const createInitialEvent = (): EventFormState => ({
@@ -67,7 +128,8 @@ const createInitialEvent = (): EventFormState => ({
   coverImage: "",
   platform: "Zoom Meeting",
   platformLink: "",
-  inviteOnly: false,
+  access: "open",
+  waitlistEnabled: true,
   capacity: "",
   timezone: browserTimeZone(),
   eventType: "",
@@ -102,24 +164,111 @@ export const EventForm = ({
     () => listTimeZones([initial.timezone]),
     [initial.timezone],
   );
+  const timeZoneOptions = useMemo<readonly DropdownOption[]>(
+    () =>
+      timeZones.map((zone) => ({ value: zone, label: zoneOptionLabel(zone) })),
+    [timeZones],
+  );
   const isDraftEdit = original?.status === "draft";
   const navigate = useNavigate();
   const { organization } = useMyOrganization();
   const eventPageUrlPrefix = `${window.location.origin}/events/`;
   const [event, setEvent] = useState<EventFormState>(initial);
+  const [activeEditSection, setActiveEditSection] =
+    useState<EditSectionKey>("basics");
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverError, setCoverError] = useState("");
   const [isUidEdited, setIsUidEdited] = useState(isEdit);
   const { validateEvent, submitCallback } = useEvent(event, original);
+  const allowNavigation = useRef(false);
+  const isDirty = Boolean(
+    original && Object.keys(buildEventChanges(event, original)).length > 0,
+  );
+
+  useEffect(() => {
+    if (!isEdit || !isDirty) return;
+
+    const guardedUrl = window.location.href;
+    window.history.pushState(
+      { ...window.history.state, __eventEditGuard: true },
+      "",
+      guardedUrl,
+    );
+
+    const confirmLeave = () =>
+      window.confirm(
+        "You have unsaved changes. Leave this page and discard them?",
+      );
+
+    const handlePopState = () => {
+      if (allowNavigation.current || !isDirty) return;
+      if (confirmLeave()) {
+        allowNavigation.current = true;
+        window.history.go(-1);
+      } else {
+        window.history.pushState(
+          { ...window.history.state, __eventEditGuard: true },
+          "",
+          window.location.href,
+        );
+      }
+    };
+
+    const handleLinkClick = (e: MouseEvent) => {
+      if (allowNavigation.current || !isDirty || e.defaultPrevented) return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+        return;
+      if (!(e.target instanceof Element)) return;
+      const link = e.target.closest("a[href]");
+      if (!(link instanceof HTMLAnchorElement) || link.target === "_blank")
+        return;
+      const destination = new URL(link.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (confirmLeave()) {
+        allowNavigation.current = true;
+      } else {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    document.addEventListener("click", handleLinkClick, true);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("click", handleLinkClick, true);
+      if (
+        window.location.href === guardedUrl &&
+        window.history.state?.__eventEditGuard
+      ) {
+        window.history.back();
+      }
+    };
+  }, [isDirty, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit || !isDirty) return;
+    const warnBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (allowNavigation.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [isDirty, isEdit]);
   // The moment the preview's start means, to name its zone (daylight time and all).
   const previewInstant =
     event.startDate && event.startTime
       ? combineInZone(event.startDate, event.startTime, event.timezone)
       : new Date();
 
+  /** Sets one field to a value picked from a `Dropdown`. */
+  const setField = (name: keyof EventFormState, value: string) =>
+    setEvent((current) => ({ ...current, [name]: value }));
+
   const handleTextChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setEvent((current) => ({ ...current, [name]: value }));
@@ -174,6 +323,7 @@ export const EventForm = ({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isEdit && !isDraftEdit && !isDirty) return;
     void submit("publish");
   };
 
@@ -187,7 +337,29 @@ export const EventForm = ({
     const validationErrors = validateEvent();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
-      document.getElementById(Object.keys(validationErrors)[0])?.focus();
+      const firstInvalidId = Object.keys(validationErrors)[0];
+      const invalidField = document.getElementById(firstInvalidId);
+      const invalidSection = invalidField?.closest<HTMLElement>(
+        "[data-event-form-section]",
+      )?.dataset.eventFormSection as EditSectionKey | undefined;
+      const targetSection =
+        invalidSection ??
+        EDIT_SECTIONS.find((section) =>
+          EDIT_SECTION_FIELDS[section.key].includes(
+            firstInvalidId as keyof EventFormState,
+          ),
+        )?.key;
+
+      if (isEdit && targetSection) {
+        setActiveEditSection(targetSection);
+        requestAnimationFrame(() => {
+          const field = document.getElementById(firstInvalidId);
+          field?.focus();
+          field?.scrollIntoView({ block: "center" });
+        });
+      } else {
+        invalidField?.focus();
+      }
       return;
     }
 
@@ -195,12 +367,14 @@ export const EventForm = ({
     try {
       await submitCallback(
         event,
-        () =>
+        () => {
+          allowNavigation.current = true;
           navigate(
             intent === "draft"
               ? "/organization/events"
               : `/events/${event.uid}`,
-          ),
+          );
+        },
         validationErrors,
         intent,
       );
@@ -232,7 +406,9 @@ export const EventForm = ({
       }
     >
       <Navbar />
-      <main className="min-h-[70vh] bg-surface px-5 py-8 sm:px-9 sm:py-12 lg:px-12">
+      <main
+        className={`min-h-[70vh] bg-surface px-5 py-8 sm:px-9 sm:py-12 lg:px-12 ${isEdit && !isDraftEdit && isDirty ? "pb-24" : ""}`}
+      >
         <div className="mx-auto max-w-6xl">
           <Link
             to="/organization/events"
@@ -257,17 +433,33 @@ export const EventForm = ({
               {isDraftEdit
                 ? "This event is a draft: only you can see it until you publish it. Save as often as you like."
                 : isEdit
-                  ? "Change anything below. People see the update on the event page as soon as you save."
+                  ? "Choose a section to edit. Your changes appear on the event page after you save."
                   : "Share the essentials first. Your event will appear in discovery as soon as it’s published, or save a draft and finish later."}
             </p>
           </header>
 
-          <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] lg:gap-12">
+          <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] lg:gap-12">
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {isEdit && (
+                <EditSectionTabs
+                  tabs={EDIT_SECTIONS.map((section) => ({
+                    ...section,
+                    hasError: EDIT_SECTION_FIELDS[section.key].some((field) =>
+                      Boolean(errors[field]),
+                    ),
+                  }))}
+                  active={activeEditSection}
+                  onChange={setActiveEditSection}
+                />
+              )}
+
               <FormSection
                 number="01"
                 title="The basics"
                 description="Give your event a clear name and a cover image."
+                sectionKey="basics"
+                hidden={isEdit && activeEditSection !== "basics"}
+                asTabPanel={isEdit}
               >
                 <div className="space-y-5">
                   <Field
@@ -288,11 +480,15 @@ export const EventForm = ({
                   </Field>
                   <Field
                     id="uid"
-                    label="Event page address"
+                    label={
+                      isEdit
+                        ? "Event page address (locked)"
+                        : "Event page address"
+                    }
                     error={errors.uid}
                     hint={
                       isEdit
-                        ? "The page address can’t change after publishing, so links people already have keep working."
+                        ? "Locked after publishing so links people already have keep working."
                         : "This is your event’s page on KarmaCircle, not an external website. The address ending is suggested from the event name."
                     }
                   >
@@ -306,7 +502,7 @@ export const EventForm = ({
                         value={event.uid}
                         onChange={handleUidChange}
                         readOnly={isEdit}
-                        className={`min-h-12 w-full bg-transparent px-4 py-3 font-outfit text-body outline-none ${isEdit ? "cursor-not-allowed text-ink/55" : "text-ink"}`}
+                        className={`min-h-12 w-full bg-transparent px-4 py-3 font-outfit text-body outline-none ${isEdit ? "cursor-not-allowed bg-surface-warm/45 text-ink/55" : "text-ink"}`}
                         placeholder="your-event-name"
                         autoCapitalize="none"
                         autoCorrect="off"
@@ -338,23 +534,14 @@ export const EventForm = ({
                       label="Kind of event"
                       error={errors.eventType}
                     >
-                      <select
+                      <Dropdown
                         id="eventType"
-                        name="eventType"
+                        options={EVENT_TYPE_DROPDOWN_OPTIONS}
                         value={event.eventType}
-                        onChange={handleTextChange}
-                        className={inputClasses}
-                        aria-invalid={Boolean(errors.eventType)}
-                      >
-                        <option value="" disabled>
-                          Choose a kind
-                        </option>
-                        {EVENT_TYPE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => setField("eventType", value)}
+                        placeholder="Choose a kind"
+                        invalid={Boolean(errors.eventType)}
+                      />
                     </Field>
                     <Field
                       id="tags"
@@ -437,6 +624,9 @@ export const EventForm = ({
                 number="02"
                 title="When and where"
                 description="Choose a time window and how people will join."
+                sectionKey="schedule"
+                hidden={isEdit && activeEditSection !== "schedule"}
+                asTabPanel={isEdit}
               >
                 <fieldset className="space-y-4 border-0 p-0">
                   <legend className="mb-3 font-outfit text-body font-semibold text-brand-secondary">
@@ -537,19 +727,14 @@ export const EventForm = ({
                     error={errors.timezone}
                     hint="The dates and times above are in this timezone. People elsewhere see the event in theirs, with your time beside it."
                   >
-                    <select
+                    <Dropdown
                       id="timezone"
-                      name="timezone"
+                      options={timeZoneOptions}
                       value={event.timezone}
-                      onChange={handleTextChange}
-                      className={inputClasses}
-                    >
-                      {timeZones.map((zone) => (
-                        <option key={zone} value={zone}>
-                          {zoneOptionLabel(zone)}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setField("timezone", value)}
+                      searchPlaceholder="Search timezones"
+                      invalid={Boolean(errors.timezone)}
+                    />
                   </Field>
                 </div>
 
@@ -591,19 +776,14 @@ export const EventForm = ({
                       />
                     </Field>
                     <Field id="country" label="Country" error={errors.country}>
-                      <select
+                      <Dropdown
                         id="country"
-                        name="country"
+                        options={COUNTRY_DROPDOWN_OPTIONS}
                         value={event.country}
-                        onChange={handleTextChange}
-                        className={inputClasses}
-                      >
-                        {countries.map((country) => (
-                          <option key={country.value} value={country.label}>
-                            {country.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => setField("country", value)}
+                        searchPlaceholder="Search countries"
+                        invalid={Boolean(errors.country)}
+                      />
                     </Field>
                   </div>
                 )}
@@ -611,19 +791,12 @@ export const EventForm = ({
                 {hasOnlineAccess(event.mode) && (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <Field id="platform" label="Video platform">
-                      <select
+                      <Dropdown
                         id="platform"
-                        name="platform"
+                        options={PLATFORM_DROPDOWN_OPTIONS}
                         value={event.platform}
-                        onChange={handleTextChange}
-                        className={inputClasses}
-                      >
-                        {platforms.map((platform) => (
-                          <option key={platform.value} value={platform.label}>
-                            {platform.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => setField("platform", value)}
+                      />
                     </Field>
                     <Field
                       id="platformLink"
@@ -652,30 +825,30 @@ export const EventForm = ({
               <FormSection
                 number="03"
                 title="Who can attend?"
-                description="Choose whether anyone can join or you’ll share details directly."
+                description="Choose whether anyone can join, or you approve or invite each person."
+                sectionKey="attendance"
+                hidden={isEdit && activeEditSection !== "attendance"}
+                asTabPanel={isEdit}
               >
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-brand-secondary/12 bg-white p-4">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(event.inviteOnly)}
-                    onChange={(e) =>
-                      setEvent((current) => ({
-                        ...current,
-                        inviteOnly: e.target.checked,
-                      }))
+                <div className="max-w-md">
+                  <Field
+                    id="access"
+                    label="Who can join"
+                    hint={
+                      EVENT_ACCESS_OPTIONS.find(
+                        (option) => option.value === event.access,
+                      )?.hint
                     }
-                    className="mt-1 size-4 accent-brand"
-                  />
-                  <span>
-                    <span className="block font-outfit text-body font-semibold text-brand-secondary">
-                      Invite-only event
-                    </span>
-                    <span className="mt-1 block font-poppins text-caption leading-5 text-ink/60">
-                      Event stays visible in discovery, but attendees will be
-                      asked to contact your organization.
-                    </span>
-                  </span>
-                </label>
+                  >
+                    <Dropdown
+                      id="access"
+                      options={ACCESS_DROPDOWN_OPTIONS}
+                      value={event.access}
+                      onChange={(value) => setField("access", value)}
+                      searchable={false}
+                    />
+                  </Field>
+                </div>
                 <div className="mt-5 max-w-xs">
                   <Field
                     id="capacity"
@@ -684,7 +857,7 @@ export const EventForm = ({
                     hint={
                       isEdit
                         ? "Leave it empty for no limit. It can’t go below the people already registered."
-                        : "Leave it empty for no limit. Once it is full, nobody else can join."
+                        : "Leave it empty for no limit. Once it is full, new people can join a waitlist you manage."
                     }
                   >
                     <input
@@ -703,18 +876,50 @@ export const EventForm = ({
                     />
                   </Field>
                 </div>
+                {event.capacity.trim() !== "" && (
+                  <label className="mt-5 flex max-w-md cursor-pointer items-start gap-3 rounded-xl border border-brand-secondary/12 bg-white p-4">
+                    <input
+                      type="checkbox"
+                      checked={event.waitlistEnabled}
+                      onChange={(e) =>
+                        setEvent((current) => ({
+                          ...current,
+                          waitlistEnabled: e.target.checked,
+                        }))
+                      }
+                      className="mt-1 size-4 accent-brand"
+                    />
+                    <span>
+                      <span className="block font-outfit text-body font-semibold text-brand-secondary">
+                        Allow a waitlist when full
+                      </span>
+                      <span className="mt-1 block font-poppins text-caption leading-5 text-ink/60">
+                        People can still ask to join a full event, and you move
+                        them up yourself. Turned off, a full event just says
+                        Full.
+                      </span>
+                    </span>
+                  </label>
+                )}
               </FormSection>
 
               <EventDetailsSection
                 event={event}
                 setEvent={setEvent}
                 errors={errors}
+                hidden={isEdit && activeEditSection !== "details"}
+                asTabPanel={isEdit}
               />
 
-              <div className="flex flex-col-reverse gap-3 border-t border-brand-secondary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                className={`flex flex-col-reverse gap-3 border-t border-brand-secondary/10 pt-5 sm:flex-row sm:items-center sm:justify-between ${isEdit && !isDraftEdit ? "hidden" : ""}`}
+              >
                 <button
                   type="button"
-                  onClick={() => navigate("/organization/events")}
+                  onClick={() => {
+                    allowNavigation.current = true;
+                    navigate("/organization/events");
+                  }}
                   className="min-h-12 rounded-lg px-4 font-outfit text-body font-medium text-ink/65 transition hover:bg-brand-secondary/5 hover:text-brand-secondary"
                 >
                   {isEdit ? "Discard changes" : "Cancel"}
@@ -730,21 +935,42 @@ export const EventForm = ({
                       {isDraftEdit ? "Save draft" : "Save as draft"}
                     </button>
                   )}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
-                  >
-                    {isSubmitting
-                      ? isEdit && !isDraftEdit
-                        ? "Saving…"
-                        : "Publishing…"
-                      : isEdit && !isDraftEdit
-                        ? "Save changes"
-                        : "Publish event"}
-                  </button>
+                  {(!isEdit || isDraftEdit) && (
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {isSubmitting ? "Publishing…" : "Publish event"}
+                    </button>
+                  )}
                 </div>
               </div>
+              {isEdit && !isDraftEdit && isDirty && (
+                <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-secondary/15 bg-surface/95 px-5 py-3 shadow-[0_-12px_32px_-24px_rgba(47,36,30,0.45)] backdrop-blur sm:px-9">
+                  <div className="mx-auto grid max-w-6xl grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] lg:gap-12">
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          allowNavigation.current = true;
+                          navigate("/organization/events");
+                        }}
+                        className="min-h-12 rounded-lg px-4 font-outfit text-body font-medium text-ink/65 transition hover:bg-brand-secondary/5 hover:text-brand-secondary"
+                      >
+                        Discard changes
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {isSubmitting ? "Saving…" : "Save changes"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </form>
 
             <aside className="lg:sticky lg:top-8">
@@ -759,9 +985,9 @@ export const EventForm = ({
                     </p>
                   </div>
                   <span
-                    className={`rounded-full px-3 py-1 font-outfit text-caption font-medium ${event.inviteOnly ? "bg-brand-secondary/8 text-brand-secondary" : "bg-success/10 text-success"}`}
+                    className={`rounded-full px-3 py-1 font-outfit text-caption font-medium ${event.access !== "open" ? "bg-brand-secondary/8 text-brand-secondary" : "bg-success/10 text-success"}`}
                   >
-                    {event.inviteOnly ? "Invite only" : "Open to all"}
+                    {accessLabel(event.access)}
                   </span>
                 </div>
                 <article className="mt-4 overflow-hidden rounded-xl border border-brand-secondary/10">
@@ -832,9 +1058,11 @@ export const EventForm = ({
                 <p className="mt-4 font-poppins text-caption leading-5 text-ink/50">
                   {isDraftEdit
                     ? "This draft is visible only to you until you publish it."
-                    : event.inviteOnly
-                      ? "This event will appear in discovery with an invite-only label."
-                      : "This event will appear in discovery for everyone."}{" "}
+                    : event.access === "invite"
+                      ? "This event will appear in discovery with an invite-only label. Only people you invite can join."
+                      : event.access === "approval"
+                        ? "This event will appear in discovery. People ask to join and you approve each one."
+                        : "This event will appear in discovery for everyone."}{" "}
                   {isEdit
                     ? "Changes appear on the event page as soon as you save."
                     : "You can edit event details after publishing from your event workspace."}

@@ -80,3 +80,33 @@ export const EVENT_CAPACITY_MAX = 100_000;
 
 /** Longest `search` text the directory list accepts. */
 export const EVENT_SEARCH_MAX_LENGTH = 100;
+
+/**
+ * Who can join an event (PG-4, PG-14). `open`: anyone signed in. `approval`:
+ * anyone can ask and the organizer approves each person. `invite`: only the
+ * emails the organizer invited can join. An event saved before this field
+ * existed reads as `open`, or as `approval` when its old `inviteOnly` flag was
+ * set (see `effectiveAccess` in event.model.ts).
+ */
+export const EVENT_ACCESS_LEVELS = ["open", "approval", "invite"] as const;
+export type EventAccess = (typeof EVENT_ACCESS_LEVELS)[number];
+
+/**
+ * Where a registration stands. `going` holds a spot; `pending` (asked to join
+ * an approval event), `waitlisted` (the event was full) and `declined` do not.
+ * A registration saved before this field existed has no status and is `going`.
+ */
+export const REGISTRATION_STATUSES = [
+  "going",
+  "pending",
+  "waitlisted",
+  "declined",
+] as const;
+export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
+
+/** The note a person can attach when asking to join (PG-4). */
+export const REGISTRATION_NOTE_MAX_LENGTH = 300;
+
+/** Email invitations (PG-4): per request, and in total per event. */
+export const EVENT_INVITES_PER_REQUEST_MAX = 50;
+export const EVENT_INVITES_PER_EVENT_MAX = 200;

@@ -1,10 +1,13 @@
 import type { Dayjs } from "dayjs";
 import type { Cause } from "@features/organizations/types";
 import type {
+  EventAccess,
   EventMode,
   EventFormErrors,
   EventStatus,
   EventType,
+  JoinView,
+  RegistrationStatus,
   SubmitIntent,
 } from "./types";
 
@@ -30,7 +33,7 @@ export interface EventDetailFormFields {
   costNote: string;
   /** One item per line. */
   bringAlong: string;
-  /** Comma separated. */
+  /** Comma- or newline-separated. */
   languages: string;
   minimumAge: string;
   agenda: EventAgendaFormRow[];
@@ -57,7 +60,10 @@ export interface EventFormState extends EventDetailFormFields {
   coverImage: string;
   platform: string;
   platformLink: string;
-  inviteOnly: boolean;
+  /** Who can join (PG-4). */
+  access: EventAccess;
+  /** Whether a full event takes a waitlist (PG-14). */
+  waitlistEnabled: boolean;
   /** Most people who can join, as typed. Empty means no limit. */
   capacity: string;
   /** The IANA timezone the date and time pickers are read in (PG-11). */
@@ -128,9 +134,12 @@ export interface EventCardEvent {
    * never shows a badge for a falsy value either way.
    */
   isGovernmentSponsored?: boolean;
-  /** When set, the card shows an "Invite only" pill rather than implying
-   *  anyone can just turn up. */
-  inviteOnly?: boolean;
+  /** Set only when joining is restricted (`approval` or `invite`): the card
+   *  shows a pill rather than implying anyone can just turn up. */
+  access?: EventAccess;
+  /** The signed-in person's own standing, on My Events only, when it is
+   *  anything other than going. */
+  registrationStatus?: RegistrationStatus;
   /** The organizer cancelled this event. The card stays in the list with a
    *  "Cancelled" label, and nothing about joining is offered. */
   cancelled?: boolean;
@@ -223,7 +232,10 @@ export interface DisplayEvent {
   going?: number;
   spotsLeft?: number;
   isGovernmentSponsored: boolean;
-  inviteOnly: boolean;
+  /** Who can join (PG-4). */
+  access: EventAccess;
+  /** Whether a full event takes a waitlist (PG-14). */
+  waitlistEnabled: boolean;
   /** The organizer cancelled this event; see `EventCardEvent.cancelled`. */
   cancelled: boolean;
   /** A draft: saved but visible only to its own organization (PG-15). */
@@ -289,7 +301,8 @@ export interface EventJoinPanelFullProps extends EventJoinPanelProps {
 }
 
 export interface EventJoinPanelProps extends DetailedEventRecord {
-  joined: boolean;
+  /** What the signed-in person can do about joining right now. */
+  join: JoinView;
   joining: boolean;
   checkingRegistration: boolean;
   registrationCheckFailed: boolean;
@@ -332,7 +345,16 @@ export interface ApiEvent {
   startTime: string;
   endTime: string;
   isGovernmentSponsored: boolean;
-  inviteOnly: boolean;
+  /** Who can join. The API always sends it (an event saved before it existed
+   *  reads as `open`, or `approval` if it was flagged invite-only). */
+  access: EventAccess;
+  /** Whether a full event takes a waitlist; absent reads as on. */
+  waitlistEnabled?: boolean;
+  /** Only on the host's own list: people waiting on the organizer (pending
+   *  requests and the waitlist). */
+  requestCount?: number;
+  /** Only on My Events: the signed-in person's own standing. */
+  registrationStatus?: RegistrationStatus;
   /** Absent on events saved before the field existed; that reads as
    *  `published`. */
   status?: EventStatus;
@@ -376,6 +398,10 @@ export interface EventAttendee {
   name: string;
   email: string;
   joinedAt: string;
+  /** Where the registration stands (PG-14). */
+  status: RegistrationStatus;
+  /** What the person wrote when asking to join an approval event. */
+  note: string | null;
   checkedIn: boolean;
   checkedInAt: string | null;
 }
@@ -387,6 +413,8 @@ export interface ApiAttendeeList {
     name: string;
     status: EventStatus;
     capacity?: number;
+    access: EventAccess;
+    waitlistEnabled: boolean;
   };
   data: EventAttendee[];
   pagination: {
@@ -395,5 +423,39 @@ export interface ApiAttendeeList {
     total: number;
     totalPages: number;
   };
-  summary: { registered: number; checkedIn: number };
+  summary: {
+    registered: number;
+    checkedIn: number;
+    /** People who asked to join and wait on the organizer. */
+    pending: number;
+    waitlisted: number;
+    declined: number;
+  };
+}
+
+/** `GET /events/:uid/registration`: the signed-in person's own standing. */
+export interface ApiRegistration {
+  /** True only for a person who is going. */
+  joined: boolean;
+  status: RegistrationStatus | "none";
+  /** An unused invitation exists for the person's email. */
+  invited: boolean;
+}
+
+/** One invitation the organizer sent (PG-4). */
+export interface EventInvite {
+  id: string;
+  email: string;
+  invitedAt: string;
+  /** The person registered through the invite. */
+  joined: boolean;
+}
+
+/** `POST /events/:uid/invites`: who was invited and who was skipped. */
+export interface ApiInviteResult {
+  invited: string[];
+  skipped: {
+    email: string;
+    reason: "already-invited" | "already-registered";
+  }[];
 }

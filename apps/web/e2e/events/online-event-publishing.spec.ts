@@ -6,6 +6,8 @@ import {
   signUpOrganization,
   TINY_PNG_BASE64,
   uniqueStamp,
+  chooseOption,
+  dropdown,
 } from "./event-helpers";
 
 /**
@@ -50,7 +52,7 @@ async function fillOnlineEventBasics(page: Page, name: string) {
     buffer: Buffer.from(TINY_PNG_BASE64, "base64"),
   });
   await page.getByRole("button", { name: /^Online/ }).click();
-  await expect(page.getByLabel("Video platform")).toBeVisible();
+  await expect(dropdown(page, "Video platform")).toBeVisible();
   return slug;
 }
 
@@ -81,8 +83,11 @@ test("an organization publishes an online event with a platform and a meeting li
 
   // The platform list defaults to Zoom; pick another to prove the choice is
   // what gets saved.
-  await expect(page.getByLabel("Video platform")).toHaveValue("Zoom Meeting");
-  await page.getByLabel("Video platform").selectOption("Google Meet");
+  await expect(dropdown(page, "Video platform")).toHaveAttribute(
+    "data-value",
+    "Zoom Meeting",
+  );
+  await chooseOption(page, "Video platform", "Google Meet");
 
   // No link at all.
   await page.getByRole("button", { name: "Publish event" }).click();
@@ -158,7 +163,10 @@ test("an online event published with the default platform is saved as a Zoom mee
   const name = `Donor Briefing Call ${stamp}`;
   const slug = await fillOnlineEventBasics(page, name);
 
-  await expect(page.getByLabel("Video platform")).toHaveValue("Zoom Meeting");
+  await expect(dropdown(page, "Video platform")).toHaveAttribute(
+    "data-value",
+    "Zoom Meeting",
+  );
   const meetingLink = "https://zoom.example.com/j/987654321";
   await page.getByLabel("Meeting link").fill(meetingLink);
   await page.getByRole("button", { name: "Publish event" }).click();

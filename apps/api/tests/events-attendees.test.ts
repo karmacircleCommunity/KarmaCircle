@@ -119,7 +119,13 @@ describe("Organizer attendee list and check-in (PG-6)", () => {
       });
       expect(res.body.data[0].id).toMatch(/^[a-f\d]{24}$/);
       expect(res.body.data[0].joinedAt).toBeTruthy();
-      expect(res.body.summary).toEqual({ registered: 2, checkedIn: 0 });
+      expect(res.body.summary).toEqual({
+        registered: 2,
+        checkedIn: 0,
+        pending: 0,
+        waitlisted: 0,
+        declined: 0,
+      });
       expect(res.body.pagination).toMatchObject({ page: 1, total: 2 });
     });
 
@@ -130,7 +136,13 @@ describe("Organizer attendee list and check-in (PG-6)", () => {
       const res = await attendeesOf(host, "att-empty");
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
-      expect(res.body.summary).toEqual({ registered: 0, checkedIn: 0 });
+      expect(res.body.summary).toEqual({
+        registered: 0,
+        checkedIn: 0,
+        pending: 0,
+        waitlisted: 0,
+        declined: 0,
+      });
     });
 
     it("pages the list and still reports the overall total", async () => {
@@ -186,7 +198,13 @@ describe("Organizer attendee list and check-in (PG-6)", () => {
       }).expect(200);
 
       const res = await attendeesOf(host, "att-count");
-      expect(res.body.summary).toEqual({ registered: 2, checkedIn: 1 });
+      expect(res.body.summary).toEqual({
+        registered: 2,
+        checkedIn: 1,
+        pending: 0,
+        waitlisted: 0,
+        declined: 0,
+      });
       expect(res.body.data[0].checkedIn).toBe(true);
     });
 
@@ -382,11 +400,12 @@ describe("Organizer attendee list and check-in (PG-6)", () => {
       );
       const lines = res.text.trim().split("\r\n");
       expect(lines[0]).toBe(
-        '"Name","Email","Registered at","Checked in","Checked in at"',
+        '"Name","Email","Registered at","Checked in","Checked in at","Status","Note"',
       );
       expect(lines).toHaveLength(3);
       expect(lines[1]).toContain('"Ann Attendee","ann@example.com"');
       expect(lines[1]).toContain('"Yes"');
+      expect(lines[1]).toContain('"going"');
       expect(lines[2]).toContain('"Bob Attendee","bob@example.com"');
       expect(lines[2]).toContain('"No",""');
     });
@@ -479,7 +498,10 @@ describe("Organizer attendee list and check-in (PG-6)", () => {
 
     it("does not send one for a repeat join or a refused join", async () => {
       const host = await signupHost();
-      await createEvent(host, "notice-repeat", { capacity: 1 });
+      await createEvent(host, "notice-repeat", {
+        capacity: 1,
+        waitlistEnabled: false,
+      });
       const ann = await joinAs(
         "ann@example.com",
         "Ann Attendee",

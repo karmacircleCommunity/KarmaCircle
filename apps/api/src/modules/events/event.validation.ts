@@ -4,6 +4,7 @@ import {
   COVER_IMAGE_MAX_BYTES,
   COVER_IMAGE_MIME_TYPES,
   COVER_IMAGE_URL_MAX_LENGTH,
+  EVENT_ACCESS_LEVELS,
   EVENT_ADDRESS_MAX_LENGTH,
   EVENT_ABOUT_MAX_PARAGRAPHS,
   EVENT_ABOUT_PARAGRAPH_MAX_LENGTH,
@@ -19,6 +20,7 @@ import {
   EVENT_COST_MAX_AMOUNT,
   EVENT_COST_NOTE_MAX_LENGTH,
   EVENT_GETTING_THERE_MAX_LENGTH,
+  EVENT_INVITES_PER_REQUEST_MAX,
   EVENT_JOIN_NOTE_MAX_LENGTH,
   EVENT_LANGUAGE_MAX_LENGTH,
   EVENT_LANGUAGES_MAX_ITEMS,
@@ -36,6 +38,7 @@ import {
   EVENT_TAGS_MAX_ITEMS,
   EVENT_TYPES,
   EVENT_STATE_MAX_LENGTH,
+  REGISTRATION_NOTE_MAX_LENGTH,
   RESERVED_EVENT_UIDS,
 } from "./event.constants";
 
@@ -319,12 +322,14 @@ const editableEventShape = {
     .nullable()
     .optional(),
   /**
-   * Organizer-settable, unlike `isGovernmentSponsored` (server/seed-only
-   * — see event.model.ts). A statement about their own event, not a
-   * claim about a third party, so there's no abuse concern in letting the
-   * creator set it directly.
+   * Who can join (PG-4): `open` (the default), `approval` (the organizer
+   * approves each person) or `invite` (only invited emails). Organizer-settable,
+   * unlike `isGovernmentSponsored` (server/seed-only, see event.model.ts): it is
+   * a statement about their own event, not a claim about a third party.
    */
-  inviteOnly: z.boolean().optional(),
+  access: z.enum(EVENT_ACCESS_LEVELS).optional(),
+  /** Whether a full event takes a waitlist (PG-14). On by default. */
+  waitlistEnabled: z.boolean().optional(),
 };
 
 type EventRuleFields = {
@@ -481,11 +486,8 @@ export const listEventsQuerySchema = z
     mode: z.enum(["Online", "Offline", "Hybrid"]).optional(),
     /** Narrow by what kind of event it is (PG-9). */
     type: z.enum(EVENT_TYPES).optional(),
-    /** `true` is invite-only events, `false` is events open to everyone. */
-    inviteOnly: z
-      .enum(["true", "false"])
-      .transform((value) => value === "true")
-      .optional(),
+    /** Narrow by who can join (PG-4). */
+    access: z.enum(EVENT_ACCESS_LEVELS).optional(),
   })
   .merge(paginationQuerySchema);
 
@@ -506,9 +508,48 @@ export const attendeesQuerySchema = paginationQuerySchema.extend({
     .max(EVENT_SEARCH_MAX_LENGTH)
     .transform((value) => value || undefined)
     .optional(),
+  /** Which registrations to list (PG-14). Left out, only people going. */
+  status: z.enum(["going", "pending", "waitlisted", "declined", "all"]).default("going"),
 });
 
 export const checkInBodySchema = z.object({ checkedIn: z.boolean() }).strict();
+
+/**
+ * Optional body of a join (PG-4): the note a person can leave when asking to
+ * join an approval event. Ignored for the other access levels.
+ */
+export const joinBodySchema = z
+  .object({
+    note: z
+      .string()
+      .trim()
+      .max(
+        REGISTRATION_NOTE_MAX_LENGTH,
+        `Keep the note to ${REGISTRATION_NOTE_MAX_LENGTH} characters or fewer`,
+      )
+      .transform((value) => value || undefined)
+      .optional(),
+  })
+  .strict()
+  .default({});
+
+/** The people the organizer invites by email (PG-4). */
+export const inviteBodySchema = z
+  .object({
+    emails: z
+      .array(z.string().trim().toLowerCase().email("Enter a valid email").max(254))
+      .min(1, "Add at least one email")
+      .max(
+        EVENT_INVITES_PER_REQUEST_MAX,
+        `Invite at most ${EVENT_INVITES_PER_REQUEST_MAX} people at a time`,
+      )
+      .transform((emails) => [...new Set(emails)]),
+  })
+  .strict();
+
+export const inviteParamsSchema = eventUidParamsSchema.extend({
+  inviteId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid invite id"),
+});
 
 export const myEventsQuerySchema = paginationQuerySchema.extend({
   period: z.enum(["upcoming", "past"]).default("upcoming"),
@@ -520,3 +561,5 @@ export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
 export type MyEventsQuery = z.infer<typeof myEventsQuerySchema>;
 export type AttendeesQuery = z.infer<typeof attendeesQuerySchema>;
 export type CheckInBody = z.infer<typeof checkInBodySchema>;
+export type JoinBody = z.infer<typeof joinBodySchema>;
+export type InviteBody = z.infer<typeof inviteBodySchema>;

@@ -9,6 +9,10 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import {
+  accessLabel,
+  REGISTRATION_STATUS_LABELS,
+} from "@features/events/constants/eventAccess";
 import { eventTypeLabel } from "@features/events/constants/eventTypes";
 import { describeWhere } from "@features/events/utils/eventMode";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
@@ -119,7 +123,9 @@ const EventCard = ({ event }: EventCardProps) => {
             (a trust signal, like a verified tick); invite-only is a
             neutral one (a restriction, not a virtue) — stacked when an
             event carries both. */}
-        {(event.isGovernmentSponsored || event.inviteOnly) && (
+        {(event.isGovernmentSponsored ||
+          event.access ||
+          event.registrationStatus) && (
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
             {event.isGovernmentSponsored && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 font-outfit text-[0.65rem] font-semibold tracking-[0.08em] text-brand uppercase shadow-[0_2px_10px_-4px_rgba(0,0,0,0.35)]">
@@ -127,10 +133,15 @@ const EventCard = ({ event }: EventCardProps) => {
                 Govt
               </span>
             )}
-            {event.inviteOnly && (
+            {event.access && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 font-outfit text-[0.65rem] font-semibold tracking-[0.08em] text-ink/65 uppercase shadow-[0_2px_10px_-4px_rgba(0,0,0,0.35)]">
                 <FiUserCheck aria-hidden="true" className="size-3" />
-                Invite only
+                {accessLabel(event.access)}
+              </span>
+            )}
+            {event.registrationStatus && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 font-outfit text-[0.65rem] font-semibold tracking-[0.08em] text-white uppercase shadow-[0_2px_10px_-4px_rgba(0,0,0,0.35)]">
+                {REGISTRATION_STATUS_LABELS[event.registrationStatus]}
               </span>
             )}
           </div>

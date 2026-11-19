@@ -1,7 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
 import {
+  chooseOption,
   createEvent,
+  dropdown,
+  openEditSection,
   publishOrganizationProfile,
   signUpIndividual,
   signUpOrganization,
@@ -31,7 +34,7 @@ async function readEvent(page: Page, uid: string) {
   return response.json() as Promise<{
     name: string;
     status?: string;
-    inviteOnly: boolean;
+    access: string;
   }>;
 }
 
@@ -42,7 +45,7 @@ test("an organization edits an event from Your events and sees the change on the
   const uid = `evt-e2e-edit-${stamp}`;
   const name = `Riverbank Cleanup ${stamp}`;
   await signedInHost(page, stamp);
-  await createEvent(page, { uid, name, inviteOnly: true });
+  await createEvent(page, { uid, name, access: "invite" });
 
   await page.goto("/organization/events");
   await page.getByRole("link", { name: `Edit ${name}` }).click();
@@ -56,13 +59,13 @@ test("an organization edits an event from Your events and sees the change on the
   await expect(address).toHaveValue(uid);
   await expect(address).toHaveJSProperty("readOnly", true);
   await expect(page.locator("#name")).toHaveValue(name);
-  await expect(
-    page.getByRole("checkbox", { name: /Invite-only/ }),
-  ).toBeChecked();
+  await openEditSection(page, "Attendance");
+  await expect(dropdown(page, "Who can join")).toHaveText(/Invite only/);
 
   const newName = `Riverbank Cleanup, new venue ${stamp}`;
+  await chooseOption(page, "Who can join", "Open to everyone");
+  await openEditSection(page, "Basics");
   await page.locator("#name").fill(newName);
-  await page.getByRole("checkbox", { name: /Invite-only/ }).uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
 
   await expect(page).toHaveURL(new RegExp(`/events/${uid}$`));
@@ -74,10 +77,10 @@ test("an organization edits an event from Your events and sees the change on the
 
   const stored = await readEvent(page, uid);
   expect(stored.name).toBe(newName);
-  expect(stored.inviteOnly).toBe(false);
+  expect(stored.access).toBe("open");
 });
 
-test("saving an edit form that has not changed sends nothing", async ({
+test("an edit form that has not changed offers no save, and offers it once something differs", async ({
   page,
 }) => {
   const stamp = uniqueStamp();
@@ -88,9 +91,15 @@ test("saving an edit form that has not changed sends nothing", async ({
 
   await page.goto(`/organization/events/${uid}/edit`);
   await expect(page.locator("#name")).toHaveValue(name);
-  await page.getByRole("button", { name: "Save changes" }).click();
+  const save = page.getByRole("button", { name: "Save changes" });
+  await expect(save).toHaveCount(0);
 
-  await expect(page.getByText("Nothing has changed yet.")).toBeVisible();
+  await page.locator("#name").fill(`${name}, renamed`);
+  await expect(save).toBeVisible();
+
+  // Putting the name back means nothing differs again, so the save goes away.
+  await page.locator("#name").fill(name);
+  await expect(save).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`/organization/events/${uid}/edit$`));
 });
 

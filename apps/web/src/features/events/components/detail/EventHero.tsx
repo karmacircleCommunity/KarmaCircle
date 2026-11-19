@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
+import { accessLabel } from "@features/events/constants/eventAccess";
 import { eventTypeLabel } from "@features/events/constants/eventTypes";
 import { viewerTimeNote } from "@features/events/utils/eventTimezone";
 import { describeWhere } from "@features/events/utils/eventMode";
@@ -118,7 +119,7 @@ const EventHero = ({ event }: EventHeroProps) => {
             cancelled ||
             past ||
             event.isGovernmentSponsored ||
-            event.inviteOnly) && (
+            event.access !== "open") && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {typeLabel && (
                 <span className="inline-flex items-center rounded-full border border-brand-secondary/15 bg-white px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand-secondary uppercase">
@@ -149,10 +150,10 @@ const EventHero = ({ event }: EventHeroProps) => {
                   Government-backed
                 </span>
               )}
-              {event.inviteOnly && (
+              {event.access !== "open" && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-ink/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-ink/65 uppercase">
                   <FiUserCheck aria-hidden="true" className="size-3.5" />
-                  Invite only
+                  {accessLabel(event.access)}
                 </span>
               )}
             </div>

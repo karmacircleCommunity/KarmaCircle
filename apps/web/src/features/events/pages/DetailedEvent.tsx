@@ -27,8 +27,14 @@ import EventLocationPanel from "@features/events/components/detail/EventLocation
 import EventMobileActionBar from "@features/events/components/detail/EventMobileActionBar";
 import EventOrganizerPanel from "@features/events/components/detail/EventOrganizerPanel";
 import EventSection from "@features/events/components/detail/EventSection";
+import { joinView } from "@features/events/utils/joinView";
 import { toDisplayEventDetail } from "@features/events/utils/toDisplayEventDetail";
-import type { ApiEvent, DetailedEventRecord } from "@features/events/types";
+import type {
+  ApiEvent,
+  ApiRegistration,
+  DetailedEventRecord,
+  JoinView,
+} from "@features/events/types";
 
 /**
  * The event detail page, routed at `/events/:eventId` - the page an
@@ -52,6 +58,53 @@ import type { ApiEvent, DetailedEventRecord } from "@features/events/types";
  * to `/organization/:handle`, not just `EventHero`'s smaller inline
  * "Hosted by [name]" text under the title.
  */
+/**
+ * The wording of the leave confirmation for each standing a person can give up:
+ * a place they hold, a request still waiting, or a waitlist spot (PG-3, PG-14).
+ */
+const LEAVE_COPY: Partial<
+  Record<
+    JoinView["kind"],
+    {
+      title: string;
+      keep: string;
+      confirm: string;
+      body: string;
+      toast: string;
+    }
+  >
+> & {
+  going: {
+    title: string;
+    keep: string;
+    confirm: string;
+    body: string;
+    toast: string;
+  };
+} = {
+  going: {
+    title: "Leave this event?",
+    keep: "Stay registered",
+    confirm: "Leave event",
+    body: "will no longer show in My Events, and your place is given to someone else. You can join again later if there is still room.",
+    toast: "You left this event",
+  },
+  pending: {
+    title: "Withdraw your request?",
+    keep: "Keep my request",
+    confirm: "Withdraw request",
+    body: "will no longer show in My Events. You can ask again later.",
+    toast: "Your request was withdrawn",
+  },
+  waitlisted: {
+    title: "Leave the waitlist?",
+    keep: "Stay on the waitlist",
+    confirm: "Leave the waitlist",
+    body: "will no longer show in My Events. You can join the waitlist again later while the event is still full.",
+    toast: "You left the waitlist",
+  },
+};
+
 const DetailedEvent = () => {
   const { eventId } = useParams();
   const { data, error, isLoading } = useSWR<ApiEvent>(
@@ -115,8 +168,8 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
     error: registrationError,
     isLoading: registrationLoading,
     mutate: mutateRegistration,
-  } = useSWR<{ joined: boolean }>(registrationKey, ([url]) => fetcher(url));
-  const joined = registration?.joined ?? false;
+  } = useSWR<ApiRegistration>(registrationKey, ([url]) => fetcher(url));
+  const join = joinView(event, registration);
   const checkingRegistration = user.isLoggedIn && registrationLoading;
   const registrationCheckFailed = user.isLoggedIn && Boolean(registrationError);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -140,20 +193,31 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
   const [nearFooter, setNearFooter] = useState(false);
 
   const joinEvent = async () => {
-    if (joining || joined) return;
+    if (joining) return;
     if (registrationCheckFailed) {
       void mutateRegistration();
       return;
     }
+    if (join.kind !== "join") return;
     setJoining(true);
     const response = await JoinEvent(event.id);
     setJoining(false);
 
     if (response.ok) {
-      void mutateRegistration({ joined: true }, false);
+      // What the person now is: going, or waiting on the organizer (PG-14).
+      const status: ApiRegistration["status"] =
+        response.data?.status ?? "going";
+      void mutateRegistration(
+        { joined: status === "going", status, invited: false },
+        false,
+      );
       // Going / spots left come from the event record.
       void mutateGlobal(eventEndpoints.byUid(event.id));
-      if (response.data?.emailSent) {
+      if (status !== "going") {
+        showSuccessToast(
+          response.data?.message ?? "Your request was sent to the organizer.",
+        );
+      } else if (response.data?.emailSent) {
         showSuccessToast("You joined this event. Confirmation email sent.");
       } else {
         showWarningToast(
@@ -175,9 +239,14 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
     setConfirmingLeave(false);
 
     if (result.ok) {
-      void mutateRegistration({ joined: false }, false);
+      // Revalidates too: a person with an unused invitation reads as invited
+      // again.
+      void mutateRegistration(
+        { joined: false, status: "none", invited: false },
+        { revalidate: true },
+      );
       void mutateGlobal(eventEndpoints.byUid(event.id));
-      showSuccessToast("You left this event");
+      showSuccessToast(LEAVE_COPY[join.kind]?.toast ?? "You left this event");
       return;
     }
     showErrorToast(result.message || "Could not leave this event.");
@@ -341,7 +410,7 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                 <EventJoinPanel
                   event={event}
                   detail={detail}
-                  joined={joined}
+                  join={join}
                   joining={joining}
                   checkingRegistration={checkingRegistration}
                   registrationCheckFailed={registrationCheckFailed}
@@ -371,7 +440,7 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
       <EventMobileActionBar
         event={event}
         detail={detail}
-        joined={joined}
+        join={join}
         joining={joining}
         checkingRegistration={checkingRegistration}
         registrationCheckFailed={registrationCheckFailed}
@@ -381,9 +450,9 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
 
       {confirmingLeave && (
         <ConfirmDialog
-          title="Leave this event?"
-          cancelLabel="Stay registered"
-          confirmLabel="Leave event"
+          title={(LEAVE_COPY[join.kind] ?? LEAVE_COPY.going).title}
+          cancelLabel={(LEAVE_COPY[join.kind] ?? LEAVE_COPY.going).keep}
+          confirmLabel={(LEAVE_COPY[join.kind] ?? LEAVE_COPY.going).confirm}
           busyLabel="Leaving…"
           busy={leaving}
           destructive
@@ -394,8 +463,7 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
             <span className="font-medium text-brand-secondary">
               {event.title}
             </span>{" "}
-            will no longer show in My Events, and your place is given to someone
-            else. You can join again later if there is still room.
+            {(LEAVE_COPY[join.kind] ?? LEAVE_COPY.going).body}
           </p>
         </ConfirmDialog>
       )}

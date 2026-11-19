@@ -1,4 +1,5 @@
 import { FiGlobe, FiTag, FiUserCheck, FiUsers } from "react-icons/fi";
+import { accessLabel } from "@features/events/constants/eventAccess";
 import { formatSpotsLeft } from "@features/events/utils/formatEventFacts";
 import { formatMoney } from "@utils/formatMoney";
 import type { EventFactsProps } from "@features/events/types";
@@ -17,9 +18,9 @@ import type { EventFactsProps } from "@features/events/types";
  * capacity (PG-5), and "No limit" for one without: only a capped event has a
  * trustworthy count, so no "going" number is shown for the rest.
  *
- * **Who can come** doubles as the invite-only signal: an invite-only event
- * says so here instead of (or alongside) any age restriction, since it's
- * the bigger gate on whether a reader can actually show up.
+ * **Who can come** doubles as the access signal: an approval or invite-only
+ * event says so here instead of (or alongside) any age restriction, since
+ * it's the bigger gate on whether a reader can actually show up.
  */
 const EventFacts = ({ event, detail }: EventFactsProps) => {
   const hasCapacity =
@@ -59,16 +60,20 @@ const EventFacts = ({ event, detail }: EventFactsProps) => {
     {
       icon: FiUserCheck,
       label: "Who can come",
-      value: event.inviteOnly
-        ? "Invite only"
-        : detail.minimumAge
-          ? `${detail.minimumAge}+`
-          : "Everyone",
-      note: event.inviteOnly
-        ? "Ask the organizer for an invite"
-        : detail.minimumAge
-          ? "There is a real reason for this one - ask if it blocks you"
-          : "No age limit on this event",
+      value:
+        event.access !== "open"
+          ? accessLabel(event.access)
+          : detail.minimumAge
+            ? `${detail.minimumAge}+`
+            : "Everyone",
+      note:
+        event.access === "invite"
+          ? "Only people the organizer invites can join"
+          : event.access === "approval"
+            ? "The organizer approves each person"
+            : detail.minimumAge
+              ? "There is a real reason for this one - ask if it blocks you"
+              : "No age limit on this event",
     },
   ];
 

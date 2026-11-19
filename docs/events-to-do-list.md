@@ -11,8 +11,10 @@ Use plain language, not jargon.
 For each section say how many items are open and then read each open item as: what is wrong, why it matters, and what the fix is.
 Do not skip a section because it is empty; say it is empty.
 When an item is finished, tick it, move it to the "Done" section at the bottom, and update the specs in the same change.
-Do not delete items.
+Do not delete items on your own.
 Mark an item superseded and say what replaced it.
+Exception: on 2026-11-19 Tamal parked a batch of ideas and asked for them to be deleted from this file, so they are gone on purpose (large features, nice-to-haves and P3 cleanups).
+Do not add them back unless he asks.
 
 Item format: `ID`, then the title, then status, then the details.
 Status is `open`, `needs decision`, or `done`.
@@ -46,7 +48,7 @@ The body is any subset of the create fields and shares the create rules, except 
 The page address cannot change, because registrations point at it, so sending `uid` is a `400`.
 Switching between Online and In person drops the other mode's fields.
 The form sends only what changed, so a cover image is not re-sent unless a new one was picked.
-Not built: telling the people who joined (PG-18), and editing the long-form detail fields, which the create form cannot set either (PG-7).
+Not built: telling the people who joined (not planned), and editing the long-form detail fields, which the create form cannot set either (PG-7).
 
 ### PG-2 Cancel or delete an event
 Status: done (2026-11-16), cancel only. Priority: P1.
@@ -58,7 +60,7 @@ Decided while Tamal was away, so Tamal should confirm it: a cancelled event stay
 It adds an `Event.status` (`published` or `cancelled`) and `cancelledAt`; an event saved before the field existed reads as published.
 New joins are refused with `409`, and existing registrations are kept.
 Only the hosting organization can cancel, and only before the event ends.
-Not built: emailing the people who joined (PG-18), reinstating, and deleting.
+Not built: emailing the people who joined (not planned), reinstating, and deleting.
 
 ### PG-3 Leave an event (undo a registration)
 Status: done (2026-11-16). Priority: P2.
@@ -71,11 +73,19 @@ It is allowed until the event starts (`409` after), and on a cancelled event, wh
 Not built: telling the organizer that someone left.
 
 ### PG-4 Invite-only events do not work end to end
-Status: needs decision. Priority: P1.
-The invite-only flag is only a label.
-The API refuses every join on an invite-only event with a 403, and nothing exists to invite or approve anyone.
-Today nobody at all can join an invite-only event.
-Options: remove the flag until it is real, or build invitations or an approval request.
+Status: done (2026-11-19), with a small web side. Priority: P1.
+The invite-only flag was only a label: the API refused every join with a 403 and nothing existed to invite or approve anyone.
+Decided with Tamal on 2026-11-18 together with PG-14, built on 2026-11-19: one registration state machine instead of a flag.
+Result: an event has one of three access levels, set in the "Who can join" dropdown of the create and edit forms.
+**Open** (anyone joins), **Approval required** (anyone asks, the organizer approves or declines on the attendee page's Requests tab) and **Invite only** (only invited emails can join, still listed in the directory with a label).
+An invited email skips approval on any level and can join a full event.
+The organizer invites by email from the attendee page (up to 50 at a time, 200 per event), the invitee must sign in with that exact email, and in production the invitation email links to the event.
+A declined person cannot ask again until the organizer approves them.
+An approved person gets the join confirmation email in production.
+The old `inviteOnly` flag is retired: an old event with it set reads as Approval required, with no migration.
+The directory filter has "Open to all", "Approval required" and "Invite only".
+Not built: an "Invited" tab in My Events (the API has `GET /events/invitations` for it), a note box on the request (the API takes up to 300 characters), and any email for a decline or for the organizer on a new request.
+Inviting someone who already asked is skipped as already registered; the organizer approves them from the Requests tab instead.
 
 ### PG-5 Capacity and spots left
 Status: done (2026-11-16). Priority: P2.
@@ -111,7 +121,7 @@ Result: the create and edit API accept, and a new "More about the event" section
 Every field is optional, hidden from the event page when empty, validated on both sides with the same limits, and can be cleared again on edit.
 Only the chosen mode's notes are kept.
 The government-backed badge stays server-only.
-Not done: `fundraiser`, which waits on the money decision (PG-26).
+Not done: `fundraiser`: events do not take money (decided 2026-11-19), so it stays unset.
 
 ### PG-8 Contribute button does nothing
 Status: done (2026-11-16). Priority: P3.
@@ -121,7 +131,7 @@ Result (decided while building it, easy to change): it links to the hosting orga
 Contribute goes to the organization's profile with `?support=1`, which opens the Razorpay "Support" dialog straight away when that organization has direct support on, and just shows the profile when it does not.
 The helper line now says the money goes to the organization through its Support page, not to this event alone.
 An event from an individual host (no organization link) shows no button, and the "coming soon" toast is gone.
-Still open under PG-26: the panel's raised figure is not fed by any payment, and a fundraiser still cannot be set through the API.
+The panel's raised figure is not fed by any payment and a fundraiser cannot be set through the API; that stays as it is (decided 2026-11-19).
 
 ### Added 2026-11-16: gaps found by comparing with other event platforms
 
@@ -138,7 +148,7 @@ Fix: add a required event type and optional tags to the model, the create form, 
 Result: seven kinds (Volunteering drive, Fundraiser, Workshop or training, Awareness campaign, Meetup or networking, Cultural or community event, Other) and up to eight tags per event.
 The create and edit forms require a kind and take tags; the card shows the kind, the event page shows a kind badge and `#tag` chips, the directory has a third "Filter by kind" dropdown, and the directory search finds an event by its tags.
 The kind is required by the form but optional in the API, so older events and API clients keep working; a legacy event must be given a kind before the edit form saves.
-There is no Hackathon kind, because whether hackathons are an event type is still decision 8 (PG-27).
+There is no Hackathon kind: hackathons are out of scope (decided 2026-11-19).
 The local demo events now carry kinds in the seed script.
 
 ### PG-10 No Hybrid mode
@@ -174,17 +184,17 @@ The write-up now takes up to 4000 characters per paragraph (was 2000) and a smal
 It is parsed into data and rendered as React elements, never HTML, so organizer text cannot inject markup (tested with a script tag, an image tag and a `javascript:` link), and the form shows a live preview.
 Not supported on purpose: headings, images, tables, code and nesting.
 
-### PG-13 No registration window and no registration questions
-Status: open. Priority: P2.
-Registration cannot open or close on a date, and an organizer cannot ask attendees anything when they join.
-Fix: add optional registration open and close times, and a small set of custom questions with answers saved on the registration.
-
 ### PG-14 No waitlist and no approval step
-Status: needs decision. Priority: P2.
-Once capacity (PG-5) exists, a full event needs a waitlist, and some events need the organizer to approve each person.
-This is the same decision as invite-only (PG-4).
-Capacity (PG-5) now exists, so a full event refuses the next person with no waitlist.
-Fix: design one registration state machine (pending, approved, waitlisted, declined) and use it for capacity, approval and invite-only together.
+Status: done (2026-11-19), with a small web side. Priority: P2.
+Built together with PG-4, see there for the access levels.
+Result: a registration has a status: going (holds a spot), pending (asked to join), waitlisted, declined.
+A row with no status reads as going.
+A full event with the waitlist on (the default, switched off with "Allow a waitlist when full" in the form, which appears once a maximum is set) sends a new joiner to the waitlist, shown as "On the waitlist" with a "Leave the waitlist" link.
+With it off, a full event just says "Event is full" and the API answers 409.
+On an Approval required event that is full, a new request goes to the waitlist; otherwise it is pending, shown as "Request sent" with "Withdraw my request".
+Promotion is manual: the organizer clicks "Move up" or Approve, and nobody moves up on their own when a spot opens.
+Approving or moving someone up on a full event goes past the capacity (Full is a soft limit, and the page shows "Full", never a count past the cap).
+My Events labels a request, a waitlist spot or a decline on the card, and Your events shows "N waiting" on the Attendees link.
 
 ### PG-15 No draft, unpublish or event status
 Status: done (2026-11-16), except postponed. Priority: P1.
@@ -199,109 +209,11 @@ A published event can be taken back to a draft with "Unpublish" only while nobod
 Not built: postponed events, and a draft that skips the required fields (a draft is held to the full rules).
 Fix: add a status (draft, published, cancelled, postponed), let organizers save a draft, and make public lists show only published events.
 
-### PG-16 No clone event
-Status: open. Priority: P3.
-An organization running the same drive every month retypes everything.
-Eventbrite lets organizers copy details from a past event.
-Fix: add a "Duplicate event" action that prefills the form with a new date and a new page address.
-
-### PG-17 One owner only, no co-hosts or roles
-Status: open. Priority: P3.
-Only the organization owner can create or manage events.
-Luma has co-hosts, DoraHacks has multiple admins and Eventbrite has team permissions.
-Fix: decide whether organization members (the `members` array already exists) can manage events, and with which roles.
-
-### PG-18 No announcements, reminders or change notices
-Status: open. Priority: P2.
-The only email is the join confirmation, and only in production.
-There is no reminder before the event, no email when an event changes or is cancelled, no message from organizer to attendees, and no notice to the organizer when someone joins.
-Fix: add reminders and change or cancel notices first, then organizer announcements.
-This builds on PG-6 and the confirmation email work in O-6.
-The organizer already gets one email per new registration (PG-6, production only); attendees still get nothing about changes.
-
 ### PG-19 No add to calendar
 Status: open. Priority: P2.
 A search of the web code found no calendar export.
 Luma, Eventbrite and Meetup all offer one.
 Fix: add an `.ics` download and an "Add to Google Calendar" link on the detail page and in the confirmation email.
-
-### PG-20 No search-engine event markup
-Status: open. Priority: P2.
-A search of the web code found no structured event data.
-Google reads event name, dates, location, status and attendance mode from that markup to show events in search.
-Fix: add event markup to the detail page, and make sure what it states is visible on the page.
-This needs the status from PG-15 and the mode from PG-10, both of which now exist; only published and cancelled events should get markup, never a draft.
-
-### PG-21 Discovery filters are limited
-Status: open. Priority: P3.
-The directory has search, Upcoming or Past, and one combined type filter.
-It cannot filter by event type (PG-9), cause, city or date range, and filters cannot be combined.
-Fix: add those filters and make them combinable, after PG-9.
-Update 2026-11-16: PG-9 is done and the directory now has a separate "Filter by kind" dropdown that combines with the others and with search; cause, city and date range are still missing.
-
-### PG-22 No recurring or multi-session events
-Status: open. Priority: P3.
-A weekly class or a series needs one event per date today.
-Eventbrite, Meetup and Galaxy Digital support repeating events or shifts.
-Fix: decide whether a series is one event with many dates or many linked events.
-
-### PG-23 No accessibility, dietary or safeguarding information
-Status: open. Priority: P2.
-An organizer cannot say whether the venue is step-free, whether there is a quiet space or sign language, or how to ask for an accommodation.
-Registration cannot collect dietary needs.
-An event with minors has no consent or safeguarding step.
-Only a minimum age field exists on the model, and the create form cannot set it.
-Fix: add optional accessibility fields to the form and detail page, a dietary question (see PG-13), and a minors rule once the decision is made.
-
-### PG-24 No volunteer roles or shifts
-Status: needs decision. Priority: P2.
-Most KarmaCircle events are drives and community work, but an event has only one kind of attendee.
-Galaxy Digital and Better Impact let organizers define roles and shifts with slot counts, and let volunteers sign up and drop.
-Fix: decide whether volunteering is a feature of an event (roles with slots) or a separate opportunity type.
-
-### PG-25 No waivers, hours tracking or certificates
-Status: open. Priority: P3.
-Volunteer tools store signed waivers, log hours and export impact reports.
-Unstop and Devfolio give certificates.
-Fix: after PG-6 (check-in) and PG-24, record hours per attendee and offer a certificate or hours export.
-
-### PG-26 No paid or donation tickets, and the fundraiser cannot be set
-Status: needs decision. Priority: P3.
-Update 2026-11-16: the form can now set a fee (`cost`, PG-7), but it is only shown on the page: nothing collects the money, and the `fundraiser` fields still cannot be set.
-Every event is free to join in practice, and the create form cannot set the `fundraiser` field that the detail page can show.
-Eventbrite supports free, paid and donation tickets, and Zeffy and Givebutter put donations, auctions and raffles on the event page.
-Fix: decide whether events take money, then wire the fields, the Contribute button (PG-8) and the existing organization Support payment flow together.
-
-### PG-27 Hackathon-style events do not exist
-Status: needs decision. Priority: P3.
-There are no tracks, prizes, problem statements, team size limits, teams, project submissions, judging, winners, voting or certificates.
-Devfolio, HackQuest, DoraHacks and Devpost all provide these.
-This is a large module of its own and most NGO events will not need it.
-Fix: decide first whether hackathons are an event type here.
-If yes, start with PG-9 and PG-13, then tracks and teams, then submissions, then judging.
-
-### PG-28 Organizer analytics are counts only
-Status: open. Priority: P3.
-The dashboard shows registration totals.
-It does not show event page views, registrations over time, or where visitors came from.
-Luma and Devfolio both show more.
-Fix: record event page views and show a per-event chart.
-
-### PG-29 No code of conduct or reporting path
-Status: open. Priority: P3.
-MLH requires events to publish a code of conduct, ask registrants to agree, and have a way to report incidents.
-Fix: add an optional code of conduct link and agreement checkbox, and a report route.
-
-### PG-30 No speakers, sponsors, FAQ, links or gallery on the event page
-Status: open. Priority: P3.
-An event has one cover image and the text fields above.
-It cannot list speakers or judges, sponsors or partners, a FAQ, social or website links, or more photos.
-Fix: add these as optional sections that stay hidden when empty, like the existing detail sections.
-
-### PG-31 No option to register on another site
-Status: open. Priority: P3.
-An organizer who already sells tickets or collects sign-ups elsewhere cannot point the Join button at that link.
-Fix: add an optional external registration link that replaces the Join panel.
 
 ## 2. Code health (dead code and structure)
 
@@ -332,11 +244,6 @@ Status: needs decision. Priority: P3.
 Neither is rendered by a live route.
 `getFormattedDate.ts` exists only for the marquee.
 Decide to wire the marquee to live data or delete both.
-
-### CH-5 Loose `EventRecord` type
-Status: open. Priority: P3.
-`EventRecord` has an open index signature and is still used by the organization events list and the detail mapper.
-Replace it with the precise `ApiEvent` type and remove the loose one.
 
 ### CH-6 Directory search runs in the browser
 Status: done (2026-11-04). Priority: P2.
@@ -399,11 +306,6 @@ Result: Vitest is set up in `apps/web` (`vitest.config.mjs`, `pnpm test:unit`) w
 The `test` script is now `vitest run && playwright test`, so root `pnpm test` and CI run the unit tests first.
 Not covered: `convertToBase64` (needs a browser `FileReader`, so it would need jsdom or happy-dom), components and hooks.
 The tests found three helper bugs, tracked as T-8.
-
-### T-6 No coverage threshold
-Status: open. Priority: P3.
-The API Jest config has no coverage report or minimum.
-Add a coverage report, then a threshold per module once a baseline is known.
 
 ### T-7 API tests were not run in the last audit
 Status: done (2026-11-04). Priority: P1.
@@ -468,10 +370,6 @@ Status: open. Priority: P2.
 The form reads the image as a base64 string up to 5 MB.
 Check the preview, the slow-network behavior, and what is shown when the image is very tall or very small.
 
-### UI-6 Design system conformity
-Status: open. Priority: P3.
-Check the new form and panels against `docs/specs/design-system/README.md`: tokens, radii, shadows, shared components.
-
 ## 5. Backend API validation
 
 ### V-1 End time is never checked on the server
@@ -518,16 +416,6 @@ Add sensible maximums.
 Result: city, state and country are capped at 100, address at 200, platform at 60 and the meeting link at 2048 characters.
 `mapIframe` is still an unbounded optional string.
 
-### V-7 Online platform is free text
-Status: open. Priority: P3.
-The browser offers a fixed list, but the API accepts any string.
-Decide whether to enforce the list.
-
-### V-8 Response shape differs from other routes
-Status: open. Priority: P3.
-Create returns `message` plus `savedEvent`, unlike other modules.
-Keep as is, or standardize with a note in the API contract.
-
 ## 6. Database (MongoDB)
 
 ### DB-1 Cover images are stored inside the event document
@@ -554,29 +442,11 @@ The `$or` therefore falls back to scanning the collection.
 Fix: index `hostUsername`, index `startTime`, and consider a compound index with the host.
 The separate `eventUid` index on registrations is redundant with the unique pair index and can be dropped.
 
-### DB-4 Fetching all of a user's registrations at once
-Status: open. Priority: P3.
-My Events loads every registration id for the user and then queries events with `$in`.
-This is fine today and will slow down for very active users.
-Fix: switch to an aggregation with a lookup, with paging applied in the database.
-
-### DB-5 Events and registrations have no link by id
-Status: open. Priority: P3.
-Registrations link to the event by its text address, not by its id.
-This works while addresses never change.
-PG-1 shipped with the address locked (the edit route rejects `uid`), so it holds today.
-Decide whether the address becomes permanent for good, or registrations point at the event id, before anything lets an address change.
-
 ### DB-6 Username uniqueness is not enforced by the database
 Status: open. Priority: P2.
 The user name has a plain index, not a unique one, so a race can create duplicates.
 Events rely on the organization handle derived from it.
 Fix: make it unique after cleaning existing data.
-
-### DB-7 No data migrations
-Status: open. Priority: P3.
-Older events were handled by a fallback match instead of a migration.
-Decide on a small migration tool so the fallback can be removed.
 
 ## 7. Backend security
 
@@ -612,27 +482,15 @@ The environment check only requires the token secret to be non-empty.
 Require a minimum length and refuse obvious placeholder values in production.
 
 ### S-6 Payment routes are open to anyone
-Status: needs decision. Priority: P2.
+Status: done (2026-11-19), decided: anonymous donations stay. Priority: P2.
 Creating a donation order and verifying a payment do not need sign-in.
-This may be intended for anonymous donations.
-Confirm it, and keep the signature check strict.
+That is intended, so anonymous donations stay as they are, and the signature check stays strict.
 The signature check itself is present.
 
 ### S-7 Cart add trusts an email from the request
 Status: open. Priority: P1.
 This is the access gap already listed in the API known issues.
 It is not events code, but it is the most serious access problem in the backend.
-
-### S-8 Per-request database read for sign-in checks
-Status: open. Priority: P3.
-Each authenticated request reads the user to check the token version.
-This is a deliberate choice so sessions can be revoked.
-It is fine now and can be cached briefly if traffic grows.
-
-### S-9 Reports route is open and only globally rate limited
-Status: open. Priority: P3.
-Anyone can submit a report without signing in.
-Add a stricter limit or a simple bot check.
 
 ## 8. Backend scalability and operations
 
@@ -644,27 +502,13 @@ Fix: clear the stored attempt when it fails so the next request retries.
 
 ### O-2 Unbounded work in some queries
 Status: open. Priority: P2.
-CH-6 is done, so the events directory now loads 12 at a time and the API list is capped at 100 per page; DB-4 remains.
+CH-6 is done, so the events directory now loads 12 at a time and the API list is capped at 100 per page.
 Add a hard maximum page size everywhere, which exists for events at 100.
-
-### O-3 No connection settings
-Status: open. Priority: P3.
-The database connection uses defaults.
-Set pool size and timeouts explicitly, which matters most on serverless.
-
-### O-4 Shutdown does not close the database
-Status: open. Priority: P3.
-Graceful shutdown stops the server but does not close the MongoDB connection.
 
 ### O-5 No monitoring of errors
 Status: open. Priority: P2.
 Errors are logged but there is no alerting or error tracking.
 Add error tracking and a health check that reports real database status to an uptime monitor.
-
-### O-6 Confirmation email is production-only and best-effort
-Status: open. Priority: P3.
-A failed email is logged and not retried.
-Decide whether to queue and retry.
 
 ## 9. Docs and diagrams
 
@@ -680,22 +524,18 @@ Status: open. Priority: P2.
 Every item here changes at least one of: `apps/web/src/features/events/SPEC.md`, `docs/specs/events.md`, `apps/api/docs/specs/events.md`, `apps/api/docs/specs/api-contract.md`, and the known-issues files.
 Update them in the same change.
 
-### D-3 Document the backend audit
-Status: open. Priority: P3.
-Add the database and security findings above to the API known issues, so they survive outside this file.
-
 ## 10. Decisions needed from Tamal
 
-1. Invite-only: remove the flag until it is real, or build invitations (PG-4).
-2. Decided 2026-11-16 while Tamal was away, please confirm: a cancelled event stays visible with a badge, and there is no delete (PG-2).
+1. Decided 2026-11-18 and built 2026-11-19: invite-only is a private-style event for invited emails, next to an Approval required level (PG-4).
+2. Decided 2026-11-16 while Tamal was away, still to confirm: a cancelled event stays visible with a badge, and there is no delete (PG-2).
 3. Decided 2026-11-04: past start dates are not allowed (V-2).
-4. Marquee cards: wire to live data or delete (CH-4).
-5. Anonymous donations: intended or not (S-6).
+4. Marquee cards: wire to live data or delete (CH-4). Leaning delete; Tamal wants to talk it through first.
+5. Decided 2026-11-19: anonymous donations stay as they are (S-6).
 6. Cover images: move to object storage now, or ship the short-term fix first (DB-1).
-7. Added 2026-11-16: waitlist and approval share one registration design with invite-only (PG-14 and PG-4).
-8. Added 2026-11-16: are hackathons an event type on KarmaCircle, or out of scope (PG-27).
-9. Added 2026-11-16: is volunteering a role-and-shift feature of an event, or a separate opportunity type (PG-24).
-10. Added 2026-11-16: do events take money, through tickets or donations (PG-26).
+7. Decided 2026-11-18 and built 2026-11-19: waitlist and approval share one registration state machine with invite-only; manual promotion (PG-14 and PG-4).
+8. Decided 2026-11-19: hackathons are out of scope.
+9. Decided 2026-11-19: volunteering roles and shifts are not an event feature.
+10. Decided 2026-11-19: events do not take money through tickets or donations.
 
 ## 11. Done
 
@@ -745,3 +585,8 @@ Add the database and security findings above to the API known issues, so they su
 - 2026-11-16: web unit tests for `eventTimezone`, `richText` and `RichText` plus new cases in the mapper, change builder and formatters; the web unit suite passed 196 tests and 2 todo.
 - 2026-11-16: Playwright `event-contribute.spec.ts` (3), `event-timezone.spec.ts` (4) and a formatted write-up test; all 45 tests of the events folder passed on Chromium.
 - 2026-11-16: the API tests' flaky `404`, `501` and timeouts fixed at the root: `buildTestApp()` now listens on 127.0.0.1 (see `apps/api/docs/specs/testing.md`).
+- 2026-11-19: PG-4 and PG-14, access levels (open, approval required, invite only), registration statuses, the waitlist, approve and decline, email invitations, and the web side (form dropdown, labels, join states, Requests, Waitlist and Declined tabs, invite box, My Events pills); the retired `inviteOnly` flag reads as approval.
+- 2026-11-19: API test `events-access.test.ts` (30); the API suite passed 19 suites and 418 tests.
+- 2026-11-19: web unit tests for `joinView` and `parseInviteEmails` plus the access cases in the mapper and change builder; the web unit suite passed 235 tests and 2 todo.
+- 2026-11-19: Playwright `event-access.spec.ts` (5) written but **not run**, and the older specs were updated for `access`; run the events folder once Tamal allows UI tests.
+- 2026-11-19: S-6 decided (anonymous donations stay), and the decisions on hackathons, volunteering shifts and event payments recorded as out of scope.

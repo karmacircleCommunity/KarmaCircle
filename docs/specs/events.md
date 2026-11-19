@@ -19,12 +19,12 @@ Past events show a completed state, with no join action. A **cancelled** event
 with a "Cancelled" label instead; its Join action is replaced by a short
 explanation, and the API refuses a join with `409`. Cancelled wins over
 completed: a cancelled event that has since passed is still cancelled. Upcoming
-events marked
-`inviteOnly` remain visible in the public directory and detail page; the detail
-page replaces Join with “ask the organizer.” There is no invitation list, invite
-delivery, access check, or approval flow, so `inviteOnly` is currently a display
-flag rather than private access control. For an upcoming event that is not
-invite-only, Join requires a signed-in account and saves one registration per
+events have one of three **access levels** (November 2026, PG-4 and PG-14):
+open (anyone signed in joins), approval required (anyone can ask and the
+organizer approves or declines each person), or invite only (only emails the
+organizer invited can join). All three stay in the public directory and on the
+detail page; see "Who can join, requests and the waitlist" below. For an upcoming
+open event, Join requires a signed-in account and saves one registration per
 account. Production sends the attendee a confirmation email; local development
 suppresses delivery. Event detail checks the signed-in account's registration on
 load and shows “You are going” in place of Join when already registered. An
@@ -87,7 +87,7 @@ authenticated `POST /events/create` through `useEvent.ts`, then opens the
 published event detail page. The current organization's hosted-event list cache
 is revalidated after success, and the public directory refetches when `/events`
 is next opened. The form covers event
-basics, date/time, online or in-person details, invite-only visibility, an
+basics, date/time, online or in-person details, who can join, an
 optional maximum number of attendees, a section of optional details (below), and
 a live preview. The old `CreateEvent.tsx` component (which called
 `PATCH /user/update` instead of creating an event) was deleted in November 2026.
@@ -103,6 +103,13 @@ links people already hold must keep working. Saving sends only what changed to
 `PATCH /events/:uid` (`buildEventChanges`), so the cover image is not re-sent
 unless a new one was picked and a start time left alone is never re-sent. A
 cancelled event or one that has ended shows an explanation instead of the form.
+While the edit is dirty, leaving through an in-app link or browser Back asks for
+confirmation, and closing or refreshing uses the browser's unsaved-changes prompt.
+The published-event Save changes action appears in a fixed bottom bar only while
+there are unsaved changes.
+Edit mode presents Basics, Date & place, Attendance, and More details one at a
+time; switching sections preserves current values, and validation opens the
+section containing the first invalid field.
 On success the page revalidates that event and the host list, shows "Event
 updated" and opens the event page. Cancel opens `CancelEventDialog` (a native
 `<dialog>`, with "Keep event" focused first because cancelling cannot be undone),
@@ -110,9 +117,9 @@ then calls `POST /events/:uid/cancel` and revalidates the host list. A cancelled
 event stays public with a badge; there is no reinstate and no delete.
 The events feature has no `services/` folder: every event API call is in
 `src/services/KarmaCircleApi.ts` (writes) or goes through `useSWR` with
-`eventEndpoints` (reads). The create endpoint currently accepts the basic event fields and
-`inviteOnly`; most long-form detail fields shown by the detail page are not
-accepted by its request schema yet. Read the frontend deep spec at
+`eventEndpoints` (reads). The create endpoint accepts the basic event fields, `access` and
+`waitlistEnabled` (the retired `inviteOnly` flag is dropped like any unknown
+field), and the optional detail fields. Read the frontend deep spec at
 [events/SPEC.md](../../apps/web/src/features/events/SPEC.md), the backend spec
 at [apps/api/docs/specs/events.md](../../apps/api/docs/specs/events.md), and the
 route cross-reference at
@@ -133,13 +140,14 @@ flowchart TD
     X -->|Yes| Y[GET /events/:uid/registration]
     Y --> Z{Already joined?}
     Z -->|Yes| AA[Show You're going; hide Join]
-    Z -->|No| H{inviteOnly?}
+    Z -->|No| H{access level and standing}
     X -->|No| H
-    H -->|Yes| I[Show ask-organizer state; event remains public]
+    H -->|Invite only, not invited| I[Show invite-only state; event remains public]
     I --> J{contactEmail exists?}
     J -->|Yes| K[Ask opens mail client]
-    J -->|No| L[No invite or request workflow exists]
-    H -->|No| M[Prompt sign-in if needed; attendee joins via POST /events/:uid/join]
+    J -->|No| L[Only the organizer can invite]
+    H -->|Approval, or full| M2[Request to join or join the waitlist: pending or waitlisted until the organizer decides]
+    H -->|Open, or invited| M[Prompt sign-in if needed; attendee joins via POST /events/:uid/join]
     M --> N[Save one registration for this account and event]
     N --> EE{Confirmation email sent?}
     EE -->|Yes| EM[Send confirmation with View Event Details link]
@@ -195,7 +203,7 @@ second invite/mode `FilterDropdown` via its `secondaryFilter` prop, live result
 count, primary button), one flat grid of `<EventCard />` with an empty state,
 and `<Footer />`.
 
-**Live data, September 2026.** `GET /events` (`eventEndpoints.directory({ period, search, mode, inviteOnly,
+**Live data, September 2026.** `GET /events` (`eventEndpoints.directory({ period, search, mode, type, access,
 page, limit })`, 12 per page) via `useSWRInfinite`, with `keepPreviousData` and
 `revalidateAll`, mapped through
 [utils/toDisplayEvent.ts](../../apps/web/src/features/events/utils/toDisplayEvent.ts)
@@ -216,8 +224,9 @@ an event has a date and an organization doesn't:
   happening soon" is also just the more useful question for an events page to
   answer than a cause split ever was.
 - **A second filter dropdown** (`TypeFilter` -
-  `"All" | "Invite only" | "Open to all" | "Online" | "Offline"`,
-  September 2026) narrows by two real `Event` fields, `inviteOnly` and `mode`.
+  `"All" | "Open to all" | "Approval required" | "Invite only" | "Online" | "Offline" | "Hybrid"`,
+  September 2026, access levels November 2026) narrows by two real `Event`
+  fields, `access` and `mode`.
   It's one flat single-select list, not two independently-combinable dropdowns
   or a multi-select - picking one clears the others, so "online" and "invite
   only" can't be filtered together today; see `Events.tsx`'s own `TypeFilter`
@@ -247,11 +256,12 @@ event with no kind never matches it.
 
 **Search, filters and paging are server-side (November 2026).** `GET /events`
 (`listEventsQuerySchema`, apps/api) takes `search`, `period`, `mode` and
-`inviteOnly` as well as `uid`/`slug`/`host`/pagination. The search box is
+`access` as well as `uid`/`slug`/`host`/pagination. The search box is
 debounced by 300 ms and matched by the API against the name, city and host name
 (the old browser search also matched summary, country, platform and mode). The
-type filter maps `Invite only` to `inviteOnly=true`, `Open to all` to
-`inviteOnly=false`, and `Online`/`Offline` to `mode`. The count above the grid is
+type filter maps `Open to all`, `Approval required` and `Invite only` to
+`access=open`, `access=approval` and `access=invite`, and
+`Online`/`Offline`/`Hybrid` to `mode`. The count above the grid is
 `pagination.total`, and a "Load more events" pill button (same style as "Reset
 filters") fetches the next page; the page has error and retry states. A newly
 created event appears when `/events` is reopened because the page passes
@@ -269,7 +279,7 @@ the bottom is omitted entirely rather than showing invented numbers (see
 — real capacity tracking is future scope, not built).
 
 **September 2026:** two badge pills — "Govt" (`event.isGovernmentSponsored`) and
-"Invite only" (`event.inviteOnly`) — render top-right on the cover, in the slot
+the access label ("Approval required" or "Invite only", `event.access`) — render top-right on the cover, in the slot
 `OrganizationCard`'s "Featured" pill uses, when the underlying `Event` document
 carries either flag. The meta row's vertical spacing was also loosened and its
 date/time line's icon changed from a repeated `FiCalendar` to `FiClock`, so the
@@ -286,7 +296,8 @@ stored account type. `e2e/events/events-responsive.spec.ts` covers the public
 directory's Upcoming/Past filtering, search, type filter and responsive layout,
 plus an organization publishing an in-person event from the full-page form.
 `e2e/events/attendee-journey.spec.ts` (detail page, joining, "You are going", My
-Events, invite-only, past event), `e2e/events/online-event-publishing.spec.ts`
+Events, invite-only, past event), `e2e/events/event-access.spec.ts` (approval,
+waitlist and invitations; written, not run yet), `e2e/events/online-event-publishing.spec.ts`
 (online platform and meeting link) and `e2e/events/event-management.spec.ts`
 (edit and cancel, below), `e2e/events/event-attendees.spec.ts` (leave,
 capacity, attendee list) and `e2e/events/event-details.spec.ts` (optional details),
@@ -393,7 +404,7 @@ November 2026.
 
 [apps/web/src/features/events/components/CreateEvents.tsx](../../apps/web/src/features/events/components/CreateEvents.tsx).
 A responsive page with a live preview, event name, date/time, mode, KarmaCircle
-event-page address, description, cover upload, invite-only access, and
+event-page address, description, cover upload, who can join (and the waitlist), and
 mode-specific location or meeting details. The event-page address is an internal
 `/events/:uid` path, not an external website link; online meeting URLs require
 HTTP or HTTPS. It is routed at `/organization/events/new` for signed-in
@@ -412,8 +423,8 @@ plugins), so an organizer in London can set 10:00 in Tokyo and the stored start 
 zone's wall clock (`partsInZone`), so whoever opens the form sees the times that were
 typed, and changing only the zone moves the real moment (same digits, other clock).
 An older event has no timezone and opens in the browser's zone; the zone is pinned
-onto it only when something else is saved (opening the form and saving it unchanged
-still says "Nothing has changed yet.").
+onto it only when something else is saved (a published event opened and left
+unchanged offers no Save changes action at all).
 
 On the pages, an event with a timezone shows its own clock with the zone named ("Wed
 · May 1, 10:00 AM GMT+5:30") on the card (date badge and time), the hero, the join
@@ -493,6 +504,15 @@ and the other mode's notes are not sent. `fundraiser` and the government badge a
 not in the form. `Field`, `FormSection` and the input classes moved to
 `components/EventFormParts.tsx` so both files share them.
 
+Every list in the form (Kind of event, Timezone, Country, Video platform and
+Currency) is the shared `Dropdown` from `@components`, not a native `<select>`.
+Timezone and Country have a search box because the lists are long. The dropdown
+is documented in
+[08-components-shared.md](./design-system/08-components-shared.md#dropdown).
+In edit mode the four sections are chosen from underline tabs
+(`components/EditSectionTabs.tsx`) in the page flow, not a bar pinned to the
+window.
+
 All the conversions live in
 [utils/eventDetailFields.ts](../../apps/web/src/features/events/utils/eventDetailFields.ts):
 `normalizeDetails` turns the form's text into exactly what the API stores,
@@ -564,7 +584,8 @@ address is fixed), and "the start must be in the future" applies only when the
 start was moved (compared to the minute), matching the API, so an event already
 running can fix a typo. `submitCallback` then builds the `PATCH` body with
 `buildEventChanges(form, original)`, shows "Nothing has changed yet." and sends
-nothing if the body is empty, and otherwise calls `UpdateEvent(uid, changes)`.
+nothing if the body is empty (only a draft can reach this, since a published
+event's Save changes action is not offered until something differs), and otherwise calls `UpdateEvent(uid, changes)`.
 On success it shows "Event updated", calls the success callback (the form opens
 the event page) and revalidates `eventEndpoints.byUid(uid)` and the host list; on
 failure it shows the API's first field error, or its message, in an error toast.
@@ -624,10 +645,9 @@ optional `cost`, an optional `fundraiser`, `languages`, `minimumAge`,
 `contactEmail` — plus two flags. `isGovernmentSponsored` is a trust badge,
 server/seed-set only (mirrors `Organization.verified` exactly — self-declaring
 it would be trivially fake-able), rendered by `EventHero` as a brand-tinted
-pill. `inviteOnly` is organizer-settable; when set, `EventJoinPanel` replaces
-the Join control with an honest "ask the organizer" state instead of a control
-that would look live and do nothing useful, and `EventFacts`'s "Who can come"
-cell reports it directly.
+pill. `access` (`open`, `approval` or `invite`) is organizer-settable; it decides
+what `EventJoinPanel` offers (see "Who can join, requests and the waitlist"), and
+`EventFacts`'s "Who can come" cell reports it directly.
 
 **Content, top to bottom:** `EventHero` (the same cover photo as the card, so
 arriving reads as that card opening; the two badge pills when set; title,
@@ -706,7 +726,59 @@ a "Cancelled" pill and a short note (one wording for someone who had joined, one
 for everyone else), keeps Share and Ask, and reads "Was due {date}".
 `EventMobileActionBar` says "Cancelled" with a link to the organizer's page, or a
 "Closed" pill when there is no organizer link. All three give cancelled priority
-over completed and over invite-only.
+over completed and over the access states.
+
+**Who can join, requests and the waitlist (November 2026, PG-4 and PG-14).**
+The `invite-only` flag used to be a label with no way in; it is replaced by an
+`access` level and a registration status. The API half is in
+[apps/api/docs/specs/events.md](../../apps/api/docs/specs/events.md); this is the
+web half, kept small on purpose (no "Invited" tab in My Events, no note box on the
+request, no email to the organizer for a new request).
+
+- **The form** has a "Who can join" dropdown (`EVENT_ACCESS_OPTIONS` in
+  `constants/eventAccess.ts`: Open to everyone, Approval required, Invite only)
+  with a one-line hint per choice, and an "Allow a waitlist when full" checkbox that
+  only appears once a maximum is typed. Both go through `buildEventChanges`
+  (`access`, `waitlistEnabled`) and `eventToFormState`, and live in the edit form's
+  Attendance tab. The preview pill and sentence follow the choice.
+- **Labels.** The card and the hero show a pill for `approval` and `invite` only
+  (an open event has none); `EventFacts`' "Who can come" reads "Approval required" or
+  "Invite only" with a sentence under it. The directory filter has "Open to all",
+  "Approval required" and "Invite only".
+- **The join controls** read one value, `joinView(event, registration)`
+  (`utils/joinView.ts`, unit tested), so `EventJoinPanel` and
+  `EventMobileActionBar` cannot disagree. The registration check
+  (`GET /events/:uid/registration`) now returns `{ joined, status, invited }`.
+  A person who is going sees "You are going". An invited email sees "Accept
+  invitation" on any level, even when full. Without a standing or an invitation:
+  an invite-only event shows the invite-only message (no button); a full event
+  with a waitlist offers "Join the waitlist" and without one says "Event is full";
+  an approval event offers "Request to join"; an open event offers "Join this
+  event". After a request the panel shows "Request sent" and after a waitlist join
+  "On the waitlist", each with a "Withdraw my request" or "Leave the waitlist" link
+  (the same leave route, with its own confirmation wording), and a declined person
+  sees that the organizer did not approve them and no button. The mobile bar shows
+  the short form of the same state ("Requested", "Waitlisted", "Not approved").
+- **My Events** lists the event with a "Requested", "Waitlisted" or "Not approved"
+  pill on the card (the API adds `registrationStatus` to each row; a going event
+  has no pill).
+- **The attendee page** (`/organization/events/:id/attendees`) gains Going,
+  Requests, Waitlist and Declined tabs with counts, shown when the event needs
+  approval or invitations, or anyone is waiting. Each request or waitlist row has
+  Approve (Move up on the waitlist) and Decline; a declined row has Approve again,
+  which reverses it. Approving goes past the capacity (Full is a soft limit). The
+  request note, when the API has one, shows on the row. An approval or invite-only
+  event also shows an "Invite people" box (`EventInvitePanel`) that sends up to 50
+  emails at a time and lists what was sent, with a remove button on invitations
+  that were not used yet. All of it is disabled once the event is cancelled.
+- **Your events** shows "N waiting" on the Attendees link when people are
+  pending or waitlisted (`requestCount`, host list only).
+- **Not built here:** the API accepts a request note up to 300 characters but the
+  Join panel has no box for it, so requests carry no note today; the "Invited" tab
+  in My Events (the API has `GET /events/invitations` for it); emailing a person
+  when they are declined; inviting someone who already asked is skipped as
+  "already registered", so the organizer approves them from the Requests tab
+  instead.
 
 **Capacity and leaving (November 2026, PG-3 and PG-5).** `capacityCounts()`
 (in `toDisplayEvent.ts`) sets `going` and `spotsLeft` only for an event with a

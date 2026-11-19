@@ -1,6 +1,7 @@
 import {
   FiCheck,
   FiCheckCircle,
+  FiClock,
   FiEdit3,
   FiMail,
   FiShare2,
@@ -9,6 +10,7 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import { viewerTimeNote } from "@features/events/utils/eventTimezone";
+import { leaveLabel } from "@features/events/utils/joinView";
 import {
   formatEventDate,
   isEventPast,
@@ -20,15 +22,13 @@ import type { EventJoinPanelFullProps } from "@features/events/types";
 /**
  * The decision panel: cost, remaining spots, and the join control.
  *
- * **Joining is local-only, and deliberately so.** There is no attend/RSVP
- * endpoint in `KarmaCircleApi.ts` or `ApiEndpoints.ts` today (see
- * `docs/specs/api-integration.md`) — a deliberate non-goal, not an
- * oversight (see "Events — RSVP and attendee capacity" in
- * `docs/specs/known-issues.md`) — so the button
- * acknowledges the press and says out loud that the organizer has not been
- * told yet. A control that looks live and silently does nothing is the
- * worse failure - it is what an older profile-page Subscribe/Sponsor pair did,
- * and what this page is written not to copy.
+ * **What the button does depends on who is asking (PG-4, PG-14).** The state
+ * comes from `utils/joinView.ts`: join (open), request to join (approval),
+ * join the waitlist (a full event with a waitlist), accept an invitation (an
+ * invited email, on any level), or no button at all (invite-only without an
+ * invitation, full without a waitlist, or a request the organizer declined).
+ * A person whose request is pending or who is on the waitlist sees that
+ * standing and can withdraw.
  *
  * **Capacity (PG-5).** The Going/Spots-left row only renders for an event the
  * organizer gave a capacity; the numbers come from the API and are refreshed
@@ -39,12 +39,6 @@ import type { EventJoinPanelFullProps } from "@features/events/types";
  * **Leaving (PG-3).** An attendee who is going gets a "Leave event" link under
  * the status line, which asks `DetailedEvent.tsx` to open the confirmation. It
  * is gone once the event has started, because the API refuses it from then on.
- *
- * **Invite-only events get no Join control at all.** Toggling "going" on
- * an event you weren't actually invited to would be a control that looks
- * live and does nothing useful - the same failure the rest of this panel
- * is written to avoid - so the panel shows an honest "ask the organizer"
- * state instead.
  *
  * **A completed event (September 2026, `isEventPast`) gets no Join control
  * either - cost, capacity and "Join this event" all stop meaning anything
@@ -66,7 +60,7 @@ import type { EventJoinPanelFullProps } from "@features/events/types";
 const EventJoinPanel = ({
   event,
   detail,
-  joined,
+  join,
   joining,
   checkingRegistration,
   registrationCheckFailed,
@@ -82,7 +76,8 @@ const EventJoinPanel = ({
   // (`DetailedEvent.tsx`), so they already include this attendee.
   const going = hasCapacity ? event.going : undefined;
   const spotsLeft = hasCapacity ? event.spotsLeft : undefined;
-  const full = spotsLeft === 0 && !joined;
+  const kind = join.kind;
+  const leave = leaveLabel(kind, cancelled);
 
   const share = async () => {
     const url = window.location.href;
@@ -133,7 +128,7 @@ const EventJoinPanel = ({
             This event was cancelled
           </p>
           <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
-            {joined
+            {kind === "going"
               ? "You had joined this event. The organizer cancelled it, so please check with them for what happens next."
               : "The organizer cancelled this event, so nobody can join it any more. Their own page has what's next."}
           </p>
@@ -188,28 +183,53 @@ const EventJoinPanel = ({
             </dl>
           )}
 
-          {event.inviteOnly ? (
+          {kind === "invite-only" && !checkingRegistration ? (
             <div className="mt-6 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
               <FiUserCheck
                 aria-hidden="true"
                 className="mt-0.5 size-4 shrink-0 text-brand"
               />
-              This event is invite-only. Ask the organizer if you&apos;d like to
-              come.
+              This event is invite-only. Only people the organizer invited can
+              join. Ask the organizer if you&apos;d like to come.
             </div>
+          ) : kind === "declined" ? (
+            <div className="mt-6 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
+              <FiXCircle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-error"
+              />
+              The organizer did not approve your request to join this event.
+            </div>
+          ) : kind === "pending" || kind === "waitlisted" ? (
+            <>
+              <div className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-brand/35 bg-brand/8 px-6 py-3 font-poppins text-body font-medium text-brand">
+                <FiClock aria-hidden="true" />
+                {kind === "pending" ? "Request sent" : "On the waitlist"}
+              </div>
+              <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
+                {kind === "pending"
+                  ? "The organizer will approve or decline your request. The answer shows here, and My Events lists the event meanwhile."
+                  : "This event is full. The organizer moves people up when a spot opens, and it shows here when they do."}
+              </p>
+            </>
           ) : (
             <button
               type="button"
               onClick={onToggleJoin}
-              disabled={full || joining || checkingRegistration}
-              aria-pressed={joined}
+              disabled={
+                kind === "full" ||
+                kind === "invite-only" ||
+                joining ||
+                checkingRegistration
+              }
+              aria-pressed={kind === "going"}
               className={`mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-3 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
-                joined
+                kind === "going"
                   ? "border border-brand/35 bg-brand/8 text-brand"
                   : "border-none bg-brand text-white shadow-[0_10px_26px_-14px_var(--color-brand)] hover:bg-brand-hover"
               }`}
             >
-              {joined ? (
+              {kind === "going" ? (
                 <>
                   <FiCheck aria-hidden="true" /> You are going
                 </>
@@ -221,22 +241,24 @@ const EventJoinPanel = ({
                     : checkingRegistration
                       ? "Checking…"
                       : joining
-                        ? "Joining…"
-                        : full
+                        ? "Sending…"
+                        : kind === "full"
                           ? "Event is full"
-                          : "Join this event"}
+                          : kind === "join"
+                            ? join.label
+                            : "Join this event"}
                 </>
               )}
             </button>
           )}
 
-          {registrationCheckFailed && !joined && !event.inviteOnly && (
+          {registrationCheckFailed && kind !== "going" && (
             <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
               Could not verify your registration. Try again before joining.
             </p>
           )}
 
-          {joined && !event.inviteOnly && (
+          {kind === "going" && (
             <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
               You&apos;re registered for this event. Your registration is saved
               to your account.
@@ -245,13 +267,13 @@ const EventJoinPanel = ({
         </>
       )}
 
-      {joined && !past && (
+      {leave && !past && (
         <button
           type="button"
           onClick={onRequestLeave}
           className="mt-4 cursor-pointer border-none bg-transparent p-0 font-poppins text-body font-medium text-ink/60 underline underline-offset-4 transition-colors hover:text-error"
         >
-          {cancelled ? "Remove my registration" : "Leave event"}
+          {leave}
         </button>
       )}
 

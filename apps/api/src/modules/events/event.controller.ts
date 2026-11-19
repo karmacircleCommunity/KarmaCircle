@@ -8,15 +8,19 @@ import {
   AttendeesQuery,
   CheckInBody,
   CreateEventInput,
+  InviteBody,
+  JoinBody,
   ListEventsQuery,
   MyEventsQuery,
   UpdateEventInput,
 } from "./event.validation";
 import {
+  sendEventInvitation,
   sendEventJoinConfirmation,
   sendEventJoinOrganizerNotice,
 } from "../../config/mailer";
 import { logger } from "../../config/logger";
+import { effectiveAccess } from "./event.model";
 
 export async function listEvents(req: Request, res: Response) {
   const {
@@ -27,7 +31,7 @@ export async function listEvents(req: Request, res: Response) {
     period,
     mode,
     type,
-    inviteOnly,
+    access,
     page,
     limit,
   } = req.query as unknown as ListEventsQuery;
@@ -46,14 +50,17 @@ export async function listEvents(req: Request, res: Response) {
     return res.status(STATUS_CODE.OK).json(event);
   }
 
+  const ownsHandle = await eventService.viewerOwnsHandle(viewerEmail, host);
   const { data, total } = await eventService.findAll(
-    { host, search, period, mode, type, inviteOnly },
+    { host, search, period, mode, type, access },
     toSkipLimit({ page, limit }),
-    { includeDrafts: await eventService.viewerOwnsHandle(viewerEmail, host) },
+    { includeDrafts: ownsHandle },
   );
-  return res
-    .status(STATUS_CODE.OK)
-    .json({ data, pagination: buildPaginationMeta({ page, limit, total }) });
+  return res.status(STATUS_CODE.OK).json({
+    // The host's own list also says how many people are waiting on them.
+    data: ownsHandle ? await eventService.withRequestCounts(data) : data,
+    pagination: buildPaginationMeta({ page, limit, total }),
+  });
 }
 
 export async function listMyEvents(req: AuthenticatedRequest, res: Response) {
@@ -119,10 +126,17 @@ export async function cancelEvent(req: AuthenticatedRequest, res: Response) {
 }
 
 export async function joinEvent(req: AuthenticatedRequest, res: Response) {
-  const result = await eventService.joinEvent(req.auth.email, req.params.uid);
+  const result = await eventService.joinEvent(
+    req.auth.email,
+    req.params.uid,
+    (req.body as JoinBody).note,
+  );
+  const going = result.status === "going";
   let emailSent = false;
 
-  if (!result.alreadyJoined) {
+  // Only a person who is going gets the confirmation and counts toward the
+  // organizer's notice; a request or a waitlist spot waits on the organizer.
+  if (!result.alreadyJoined && going) {
     try {
       emailSent = await sendEventJoinConfirmation(
         result.attendee.email,
@@ -139,9 +153,7 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
         "Event joined but confirmation email failed",
       );
     }
-  }
 
-  if (!result.alreadyJoined) {
     // Best effort, like the attendee's own confirmation: a failed notice never
     // undoes the registration.
     try {
@@ -161,13 +173,24 @@ export async function joinEvent(req: AuthenticatedRequest, res: Response) {
     }
   }
 
+  const message = result.alreadyJoined
+    ? going
+      ? "You have already joined this event."
+      : result.status === "waitlisted"
+        ? "You are already on the waitlist for this event."
+        : "You have already asked to join this event."
+    : going
+      ? "You joined this event."
+      : result.status === "waitlisted"
+        ? "This event is full, so you are on the waitlist."
+        : "Your request was sent to the organizer.";
+
   return res
     .status(result.alreadyJoined ? STATUS_CODE.OK : STATUS_CODE.CREATED)
     .json({
-      message: result.alreadyJoined
-        ? "You have already joined this event."
-        : "You joined this event.",
-      joined: true,
+      message,
+      joined: going,
+      status: result.status,
       alreadyJoined: result.alreadyJoined,
       emailSent,
     });
@@ -183,11 +206,12 @@ export async function leaveEvent(req: AuthenticatedRequest, res: Response) {
 }
 
 export async function listAttendees(req: AuthenticatedRequest, res: Response) {
-  const { page, limit, search } = req.query as unknown as AttendeesQuery;
+  const { page, limit, search, status } =
+    req.query as unknown as AttendeesQuery;
   const { event, data, total, summary } = await eventService.listAttendees(
     req.auth.email,
     req.params.uid,
-    { search, ...toSkipLimit({ page, limit }) },
+    { search, status, ...toSkipLimit({ page, limit }) },
   );
 
   return res.status(STATUS_CODE.OK).json({
@@ -196,6 +220,8 @@ export async function listAttendees(req: AuthenticatedRequest, res: Response) {
       name: event.name,
       status: event.status,
       capacity: event.capacity,
+      access: effectiveAccess(event),
+      waitlistEnabled: event.waitlistEnabled !== false,
     },
     data,
     pagination: buildPaginationMeta({ page, limit, total }),
@@ -237,4 +263,89 @@ export async function getRegistrationStatus(
     req.params.uid,
   );
   return res.status(STATUS_CODE.OK).json(status);
+}
+
+/**
+ * Approves a request or promotes someone off the waitlist (PG-4, PG-14). The
+ * person is emailed that their place is confirmed, in production only and best
+ * effort; a failed email never undoes the approval.
+ */
+export async function approveAttendee(req: AuthenticatedRequest, res: Response) {
+  const { event, attendee, changed } = await eventService.approveRegistration(
+    req.auth.email,
+    req.params.uid,
+    req.params.registrationId,
+  );
+
+  if (changed) {
+    try {
+      await sendEventJoinConfirmation(attendee.email, attendee.name, event);
+    } catch (error) {
+      logger.error(
+        { error, eventUid: event.uid, attendeeEmail: attendee.email },
+        "Registration approved but confirmation email failed",
+      );
+    }
+  }
+
+  return res.status(STATUS_CODE.OK).json({ attendee });
+}
+
+export async function declineAttendee(req: AuthenticatedRequest, res: Response) {
+  const { attendee } = await eventService.declineRegistration(
+    req.auth.email,
+    req.params.uid,
+    req.params.registrationId,
+  );
+
+  return res.status(STATUS_CODE.OK).json({ attendee });
+}
+
+export async function inviteAttendees(req: AuthenticatedRequest, res: Response) {
+  const { event, invited, skipped } = await eventService.inviteByEmail(
+    req.auth.email,
+    req.params.uid,
+    (req.body as InviteBody).emails,
+  );
+
+  // One email per new invite, best effort and production only.
+  const organizerName = event.hostName;
+  for (const address of invited) {
+    try {
+      await sendEventInvitation(address, event, organizerName);
+    } catch (error) {
+      logger.error(
+        { error, eventUid: event.uid, inviteeEmail: address },
+        "Invite saved but invitation email failed",
+      );
+    }
+  }
+
+  return res.status(STATUS_CODE.CREATED).json({ invited, skipped });
+}
+
+export async function listInvites(req: AuthenticatedRequest, res: Response) {
+  const data = await eventService.listInvites(req.auth.email, req.params.uid);
+  return res.status(STATUS_CODE.OK).json({ data, total: data.length });
+}
+
+export async function revokeInvite(req: AuthenticatedRequest, res: Response) {
+  await eventService.revokeInvite(
+    req.auth.email,
+    req.params.uid,
+    req.params.inviteId,
+  );
+  return res.status(STATUS_CODE.OK).json({ message: "Invite removed" });
+}
+
+export async function listInvitations(req: AuthenticatedRequest, res: Response) {
+  const { page, limit } = req.query as unknown as { page: number; limit: number };
+  const { data, total } = await eventService.findInvitedFor(
+    req.auth.email,
+    toSkipLimit({ page, limit }),
+  );
+
+  return res
+    .status(STATUS_CODE.OK)
+    .json({ data, pagination: buildPaginationMeta({ page, limit, total }) });
 }

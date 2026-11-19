@@ -24,7 +24,7 @@ const offline: ApiEvent = {
   startTime: "2030-05-01T09:30:20.000Z",
   endTime: "2030-05-01T12:00:00.000Z",
   isGovernmentSponsored: false,
-  inviteOnly: false,
+  access: "open",
 };
 
 const online: ApiEvent = {
@@ -51,14 +51,24 @@ describe("buildEventChanges", () => {
 
   it("sends only the text fields that changed", () => {
     const changes = buildEventChanges(
-      edit(offline, { name: "Beach clean-up drive 2", inviteOnly: true }),
+      edit(offline, { name: "Beach clean-up drive 2", access: "approval" }),
       offline,
     );
 
     expect(changes).toEqual({
       name: "Beach clean-up drive 2",
-      inviteOnly: true,
+      access: "approval",
     });
+  });
+
+  it("sends the waitlist switch only when it differs from the stored one", () => {
+    // An event with no stored `waitlistEnabled` reads as on.
+    expect(
+      buildEventChanges(edit(offline, { waitlistEnabled: true }), offline),
+    ).toEqual({});
+    expect(
+      buildEventChanges(edit(offline, { waitlistEnabled: false }), offline),
+    ).toEqual({ waitlistEnabled: false });
   });
 
   it("leaves the cover image out unless a new one was chosen", () => {

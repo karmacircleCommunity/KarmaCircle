@@ -106,7 +106,11 @@ describe("Events", () => {
       .get("/events/join-confirmation-event/registration")
       .set("Cookie", attendeeCookie);
     expect(registrationStatus.status).toBe(200);
-    expect(registrationStatus.body).toEqual({ joined: true });
+    expect(registrationStatus.body).toEqual({
+      joined: true,
+      status: "going",
+      invited: false,
+    });
 
     const myEvents = await request(app)
       .get("/events/mine")
@@ -400,14 +404,15 @@ describe("Events", () => {
     expect(res.status).toBe(404);
   });
 
-  it("defaults inviteOnly/isGovernmentSponsored to false and lets the client set inviteOnly", async () => {
+  it("defaults access to open and isGovernmentSponsored to false, and lets the client set access", async () => {
     const cookie = await signupAndGetCookie();
 
     const defaulted = await request(app)
       .post("/events/create")
       .set("Cookie", cookie)
       .send({ ...validOnlineEvent, uid: "invite-default-event" });
-    expect(defaulted.body.savedEvent.inviteOnly).toBe(false);
+    expect(defaulted.body.savedEvent.access).toBe("open");
+    expect(defaulted.body.savedEvent.waitlistEnabled).toBe(true);
     expect(defaulted.body.savedEvent.isGovernmentSponsored).toBe(false);
 
     const inviteOnly = await request(app)
@@ -416,10 +421,11 @@ describe("Events", () => {
       .send({
         ...validOnlineEvent,
         uid: "invite-only-event",
-        inviteOnly: true,
+        access: "invite",
       });
     expect(inviteOnly.status).toBe(201);
-    expect(inviteOnly.body.savedEvent.inviteOnly).toBe(true);
+    expect(inviteOnly.body.savedEvent.access).toBe("invite");
+    expect(inviteOnly.body.savedEvent.inviteOnly).toBeUndefined();
   });
 
   it("silently strips a client-supplied isGovernmentSponsored rather than persisting it", async () => {
@@ -450,13 +456,13 @@ describe("Events", () => {
       .send({
         ...validOnlineEvent,
         uid: "detail-fields-event",
-        inviteOnly: true,
+        access: "approval",
       });
 
     const res = await request(app).get("/events?uid=detail-fields-event");
 
     expect(res.status).toBe(200);
-    expect(res.body.inviteOnly).toBe(true);
+    expect(res.body.access).toBe("approval");
     expect(res.body.isGovernmentSponsored).toBe(false);
   });
 
@@ -753,7 +759,7 @@ describe("Events", () => {
 
     describe("joining", () => {
       it("rejects joining an invite-only event with 403 and saves nothing", async () => {
-        await insertEvent("invite-only-join", DAY_MS, { inviteOnly: true });
+        await insertEvent("invite-only-join", DAY_MS, { access: "invite" });
         const cookie = await signupAttendee("invitee@example.com");
 
         const res = await request(app)
@@ -761,7 +767,9 @@ describe("Events", () => {
           .set("Cookie", cookie);
 
         expect(res.status).toBe(403);
-        expect(res.body.message).toBe("This event is invite-only.");
+        expect(res.body.message).toBe(
+          "This event is invite-only. Only people the organizer invited can join.",
+        );
         expect(sendEventJoinConfirmation).not.toHaveBeenCalled();
         expect(await EventRegistration.countDocuments({})).toBe(0);
       });
@@ -812,7 +820,11 @@ describe("Events", () => {
           .set("Cookie", cookie);
 
         expect(res.status).toBe(200);
-        expect(res.body).toEqual({ joined: false });
+        expect(res.body).toEqual({
+          joined: false,
+          status: "none",
+          invited: false,
+        });
       });
 
       it("requires sign-in", async () => {

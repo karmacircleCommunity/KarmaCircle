@@ -22,7 +22,8 @@ stored account type and returns `403` for individual hosts.
 `e2e/events/events-responsive.spec.ts` covers live directory cards,
 Upcoming/Past filtering, city search, mobile/desktop overflow, and publishing an
 in-person event through the full-page form. `attendee-journey.spec.ts` (detail
-page, join, My Events, invite-only, past event),
+page, join, My Events, invite-only, past event), `event-access.spec.ts`
+(approval, waitlist and invitations; written, not run yet),
 `online-event-publishing.spec.ts` (online platform and meeting link) and
 `event-management.spec.ts` (edit and cancel) were added in November 2026. All 15
 specs passed on Chromium, Firefox and WebKit on 2026-11-16 (45 of 45), after
@@ -72,9 +73,14 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `utils/eventToFormState.ts` | Turns a stored `ApiEvent` into the form's starting values for editing | ✅ used by `EditEvent.tsx` |
 | `utils/buildEventChanges.ts` | Diffs the form against the stored event into the `PATCH /events/:uid` body (only changed fields; cover only if replaced; a start left alone is not re-sent; location fields travel as a group) | ✅ used by `useEvent.ts` |
 | `pages/EventAttendees.tsx` | The `/organization/events/:eventId/attendees` page (November 2026, PG-6): totals, search, per-person check-in toggle, CSV download, load more (50 per page); host only | ✅ routed behind `RequireSignIn` |
+| `components/EventInvitePanel.tsx` | The "Invite people" box on the attendee page (November 2026, PG-4): emails typed, sent to `POST /events/:uid/invites`, list of invitations with remove for unused ones | ✅ used by `EventAttendees.tsx` for approval and invite-only events |
+| `utils/joinView.ts` | `joinView(event, registration)` and `leaveLabel`: the one place that decides what the join controls offer (PG-4, PG-14); unit tested | ✅ used by `DetailedEvent.tsx` and both join controls |
+| `utils/inviteEmails.ts` | `parseInviteEmails`: splits the typed emails and folds case | ✅ used by `EventInvitePanel.tsx` |
+| `constants/eventAccess.ts` | The three access levels (slug, label, hint), `accessLabel` and `REGISTRATION_STATUS_LABELS`; mirrors the API | ✅ used by the form, card, hero, facts and My Events |
 | `components/ConfirmDialog.tsx` | Shared native `<dialog>` confirmation (safe answer focused first, Escape held while busy) | ✅ used by `CancelEventDialog.tsx` and the leave confirmation in `DetailedEvent.tsx` |
 | `components/EventDetailsSection.tsx` | Section 04 of the event form (November 2026, PG-7): write-up, contact email, minimum age, fee, what to bring, languages, agenda editor and the mode's own notes | ✅ used by `CreateEvents.tsx` |
-| `components/EventFormParts.tsx` | `Field`, `FormSection` and the shared input classes of the event form | ✅ used by `CreateEvents.tsx` and `EventDetailsSection.tsx` |
+| `components/EventFormParts.tsx` | `Field`, `FormSection` and the shared input classes of the event form; `FormSection` becomes a `role="tabpanel"` in edit mode | ✅ used by `CreateEvents.tsx` and `EventDetailsSection.tsx` |
+| `components/EditSectionTabs.tsx` | The four section tabs of the edit form (Basics, Date & place, Attendance, More details): underline tabs in the page flow, roving tabindex, arrow-key navigation, error dot | ✅ used by `CreateEvents.tsx` in edit mode |
 | `utils/eventDetailFields.ts` | Form text to API shape and back for the optional details: `normalizeDetails`, `detailPayloadForCreate`, `detailChanges`, `validateDetails`, limits (mirror the API) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
 | `utils/eventMode.ts` | `hasVenue`, `hasOnlineAccess`, `MODE_LABELS` and `describeWhere` for the three formats (In person, Online, Hybrid; November 2026, PG-10) | ✅ used by the form, hero, card, lists and location panel |
 | `utils/eventTags.ts` | `parseTags`, `formatTags`, `validateTags` (comma separated, lower-cased, de-duplicated, up to 8; PG-9) | ✅ used by `useEvent.ts`, `buildEventChanges.ts`, `eventToFormState.ts` |
@@ -113,7 +119,7 @@ club → organization rename.
 
 **The event list is live (September 2026) and server-driven (November 2026)** -
 `GET /events` through
-`eventEndpoints.directory({ period, search, mode, inviteOnly, page, limit })`
+`eventEndpoints.directory({ period, search, mode, type, access, page, limit })`
 with `useSWRInfinite`, 12 cards per page (`PAGE_SIZE`), mapped through
 `utils/toDisplayEvent.ts` into `EventCardEvent`. Search, the Upcoming/Past split
 and the type filter are all sent to the API; the browser no longer fetches 100
@@ -157,15 +163,16 @@ real divergences: the primary filter dropdown is **Upcoming/Past**, not a cause
 taxonomy - a live event has no cause field to filter by, and "what's happening
 soon" is the more useful question here anyway - and a second dropdown
 (`secondaryFilter`, September 2026) filters by `TypeFilter`
-(`All`/`Invite only`/`Open to all`/`Online`/`Offline`), a flat single-select
-list over the two real `inviteOnly`/`mode` fields rather than combinable
+(`All`/`Open to all`/`Approval required`/`Invite only`/`Online`/`Offline`/`Hybrid`),
+a flat single-select list over the two real `access`/`mode` fields rather than combinable
 checkboxes. Both directories still render the same `DirectoryToolbar` component,
 so its search/count/button chrome cannot drift between them again; this page
 supplies its own copy, filter options and button, plus the `secondaryFilter`
 prop `/organizations` doesn't use (one filterable dimension there vs. two here).
-`GET /events` takes `search`, `period`, `mode` and `inviteOnly` (November 2026),
-so the type filter maps to API params: `Invite only` is `inviteOnly=true`, `Open
-to all` is `inviteOnly=false`, and `Online`/`Offline` are `mode`. Search matches
+`GET /events` takes `search`, `period`, `mode` and `access` (November 2026),
+so the type filter maps to API params: `Open to all`, `Approval required` and
+`Invite only` are `access=open`, `access=approval` and `access=invite`, and
+`Online`/`Offline`/`Hybrid` are `mode`. Search matches
 only name, city and host name now; the old browser search also matched summary,
 country, platform and mode. Upcoming sorts soonest first and Past most recent
 first, decided by the API.
@@ -220,18 +227,22 @@ wired the fetch: `about`, `agenda`, `bringAlong`,
 `languages`, `minimumAge`, `contactEmail`, plus two flags —
 `isGovernmentSponsored` (server/seed-only, mirrors `Organization.verified`;
 `EventHero` renders a brand-tinted "Government-backed" pill when set) and
-`inviteOnly` (organizer-settable; `EventJoinPanel` replaces the Join control
-with an honest "ask the organizer" state, and `EventFacts`'s "Who can come" cell
-reports it, when set). See
+`access` (organizer-settable: `open`, `approval` or `invite`; `EventJoinPanel`
+and `EventMobileActionBar` offer a join, a request, the waitlist, accepting an
+invitation, or nothing, from `utils/joinView.ts`, and `EventFacts`'s "Who can
+come" cell reports a restricted level). See "Who can join, requests and the
+waitlist" in [docs/specs/events.md](../../../../../docs/specs/events.md). See
 [apps/api/docs/specs/events.md](../../../../../apps/api/docs/specs/events.md)
 for the schema.
 
-**Registration is saved, but capacity is still untracked.** Joining calls
-authenticated `POST /events/:uid/join` and saves one registration per account.
-The API sends confirmation to the account email only in production; development
-and test suppress delivery and report `emailSent: false`. Past and invite-only
-events are rejected by the API. `going`/`spotsLeft` stay undefined on
-`DisplayEvent`; do not derive counts from registrations. See
+**Registration is saved.** Joining calls authenticated `POST /events/:uid/join`
+and saves one registration per account, which is going, pending (asked to join an
+approval event), waitlisted (the event was full) or declined. The API sends
+confirmation to the account email only in production, and only to a person who is
+going; development and test suppress delivery and report `emailSent: false`. Past
+events are rejected by the API, and so is a person who is not invited to an
+invite-only event. `going`/`spotsLeft` come from the event's capacity
+(`capacityCounts`); do not derive counts from registrations. See
 [known-issues.md](../../../../../docs/specs/known-issues.md#events--attendee-capacity-not-tracked).
 
 **Every `EventSection` with nothing behind it doesn't render** — "About this
@@ -307,15 +318,26 @@ Routed at `/organization/events/new` for signed-in organization accounts with a
 live public profile. Since November 2026 the file exports `EventForm` (the form
 itself) next to the default `CreateEvents` (which renders `EventForm` with blank
 values); `pages/EditEvent.tsx` renders the same `EventForm` with a stored event
-for `/organization/events/:eventId/edit`. In edit mode (`original` prop) the page
-address is read-only, the heading is "Edit your event", the buttons read "Save
-changes" and "Discard changes", and `useEvent` sends only the changed fields to
-`PATCH /events/:uid`. The blank values are built by `createInitialEvent()` when
-the form opens, no longer once at module load.
+for `/organization/events/:eventId/edit`. In edit mode (`original` prop) the
+page address is read-only, the heading is "Edit your event", and `useEvent`
+sends only the changed fields to `PATCH /events/:uid`. Edit mode shows Basics,
+Date & place, Attendance, and More details as one section at a time, chosen from
+underline tabs (`components/EditSectionTabs.tsx`) that sit in the page flow and
+scroll away with the form rather than being pinned to the window. The tabs
+follow the ARIA tabs pattern (Left, Right, Home and End move between them), and
+a red dot marks a tab whose section has a validation error. Switching sections
+keeps the current values, and validation opens the section with the first
+invalid field. A fixed bottom Save changes action appears only while the
+form differs from the stored event. The event page address is clearly marked as
+locked after publishing. Leaving through an in-app link or browser Back asks
+before discarding edits; closing or refreshing uses the browser's
+unsaved-changes prompt. The blank values are built by `createInitialEvent()`
+when the form opens, no longer once at module load.
 
-This is a page, not a modal. It uses a responsive form with three sections,
+This is a page, not a modal. It uses a responsive form with four sections,
 native date/time controls, mode-specific location or meeting details,
-invite-only access, image upload, and a live event preview. Event name and
+who can join (a dropdown) and an optional waitlist, image upload, and a live event preview. Edit mode shows one
+section at a time; event creation keeps the sections together. Event name and
 description character counts sit beside their field labels. The description
 includes a prompt for useful event details. The event page address is an
 editable URL-safe path ending generated from the event name; it is part of the
@@ -331,7 +353,7 @@ invalid field. On success, the organizer lands on `/events/:uid`.
   startTime: dayjs().add(1, "hour"), endTime: dayjs().add(2, "hour"),
   mode: "Offline", uid: "", description: "",
   city: "", state: "", address: "", country: "India",
-  coverImage: "", inviteOnly: false,
+  coverImage: "", access: "open", waitlistEnabled: true,
   platform: "Zoom Meeting", platformLink: "",
 }
 ```
@@ -433,7 +455,8 @@ a later render cannot replace it with an empty or stale error object.
   badge above it) read as the same fact printed twice rather than two distinct
   ones, and the tight gap between the two meta lines made the block read as
   cramped. Two badge pills — "Govt" (`isGovernmentSponsored`, brand-tinted) and
-  "Invite only" (`inviteOnly`, neutral) — were added top-right on the cover in
+  the access label ("Approval required" or "Invite only", from `access`,
+  neutral; an open event has none) — were added top-right on the cover in
   the same slot `OrganizationCard`'s "Featured" pill uses, stacked when an event
   carries both.
 
@@ -486,7 +509,7 @@ unused) — so this function currently has no live call path either.
 ```
 Events.tsx render
    ▼
-GET /events via eventEndpoints.directory({ period, search, mode, inviteOnly, page, limit })
+GET /events via eventEndpoints.directory({ period, search, mode, type, access, page, limit })
 and useSWRInfinite (12 per page, Load more events)
    ▼
 toDisplayEvent() maps each ApiEvent to EventCardEvent
@@ -497,7 +520,7 @@ EventCard renders the live event
 ```
 CreateEvents.tsx — full-page form at /organization/events/new
    ▼
-local `event` state (name/dates/mode/uid/description/coverImage/mode-specific fields/inviteOnly)
+local `event` state (name/dates/mode/uid/description/coverImage/mode-specific fields/access/waitlistEnabled)
    ▼
 handleSubmit() → validateEvent() → submitCallback(event, onSuccess, errors)
    ▼
@@ -625,9 +648,9 @@ changing together.
   `/organization/events` now mount `CreateEvents.tsx` + `useEvent.ts`, which
   submit to `POST /events/create`. The old `CreateEvent.tsx` profile-editor copy
   is deleted; do not recreate it. The backend schema accepts the basic fields
-  plus `inviteOnly`; detail-page fields
-  (`about`/`agenda`/`cost`/`fundraiser`/etc.) are still not creatable through
-  the endpoint and require a future API change.
+  plus `access` and `waitlistEnabled`, and
+  the optional detail-page fields; `fundraiser` is still not creatable through
+  the endpoint and needs the money decision (PG-26).
 - **"Review the Events page SEO label"** → `Events.tsx` currently uses
   `type="Events"`; verify the route and title branch before changing it.
 - **"Build a 'my hosted events' view for the dashboard"** → `YourEvents.tsx`

@@ -115,7 +115,7 @@ async function seedDashboardDemo() {
           startDate: startTime,
           endDate: endTime,
           isGovernmentSponsored: false,
-          inviteOnly: false,
+          access: "open",
           about: ["A community-led day of practical repairs, safety preparation, and volunteer coordination."],
           agenda: [
             { time: "9:00 am", title: "Check in and safety briefing" },

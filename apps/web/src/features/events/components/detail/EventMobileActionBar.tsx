@@ -69,7 +69,7 @@ import type { EventJoinPanelProps } from "@features/events/types";
  * organizer's page on the left, and a "Visit" link straight to
  * `/organization/:handle` on the right (an "Ended" pill instead, for a
  * pre-existing record with no organizer link at all). This takes priority
- * over the invite-only branch below it - a past invite-only event is still
+ * over the access branches below it - a past invite-only event is still
  * past, not still asking to be invited to.
  *
  * **Cancelled event (PG-2).** Takes priority over everything else, including
@@ -80,7 +80,7 @@ import type { EventJoinPanelProps } from "@features/events/types";
 const EventMobileActionBar = ({
   event,
   detail,
-  joined,
+  join,
   joining,
   checkingRegistration,
   registrationCheckFailed,
@@ -97,7 +97,7 @@ const EventMobileActionBar = ({
     event.going !== undefined && event.spotsLeft !== undefined;
   // Counts come from the API and already include this attendee.
   const spotsLeft = hasCapacity ? event.spotsLeft : undefined;
-  const full = spotsLeft === 0 && !joined;
+  const kind = join.kind;
 
   return (
     <div
@@ -153,7 +153,7 @@ const EventMobileActionBar = ({
             {cancelled ? "Closed" : "Ended"}
           </span>
         )
-      ) : event.inviteOnly ? (
+      ) : kind === "invite-only" && !checkingRegistration ? (
         detail.contactEmail ? (
           <a
             href={`mailto:${detail.contactEmail}?subject=${encodeURIComponent(event.title)}`}
@@ -167,20 +167,33 @@ const EventMobileActionBar = ({
             Invite only
           </span>
         )
+      ) : kind === "pending" || kind === "waitlisted" || kind === "declined" ? (
+        <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/60">
+          {kind === "pending"
+            ? "Requested"
+            : kind === "waitlisted"
+              ? "Waitlisted"
+              : "Not approved"}
+        </span>
       ) : (
         <button
           type="button"
           onClick={onToggleJoin}
-          disabled={full || joining || checkingRegistration}
-          aria-pressed={joined}
+          disabled={
+            kind === "full" ||
+            kind === "invite-only" ||
+            joining ||
+            checkingRegistration
+          }
+          aria-pressed={kind === "going"}
           tabIndex={hidden ? -1 : undefined}
           className={`inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
-            joined
+            kind === "going"
               ? "border border-brand/35 bg-brand/8 text-brand"
               : "border-none bg-brand text-white shadow-[0_10px_26px_-14px_var(--color-brand)]"
           }`}
         >
-          {joined ? (
+          {kind === "going" ? (
             <>
               <FiCheck aria-hidden="true" /> Going
             </>
@@ -192,10 +205,12 @@ const EventMobileActionBar = ({
                 : checkingRegistration
                   ? "Checking…"
                   : joining
-                    ? "Joining…"
-                    : full
+                    ? "Sending…"
+                    : kind === "full"
                       ? "Full"
-                      : "Join event"}
+                      : kind === "join"
+                        ? join.shortLabel
+                        : "Join event"}
             </>
           )}
         </button>

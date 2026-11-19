@@ -21,7 +21,8 @@ const stored: ApiEvent = {
   startTime: "2030-05-01T09:30:00.000Z",
   endTime: "2030-05-01T12:00:00.000Z",
   isGovernmentSponsored: false,
-  inviteOnly: true,
+  access: "approval",
+  waitlistEnabled: false,
 };
 
 describe("eventToFormState", () => {
@@ -38,7 +39,8 @@ describe("eventToFormState", () => {
       city: "Mumbai",
       state: "Maharashtra",
       country: "India",
-      inviteOnly: true,
+      access: "approval",
+      waitlistEnabled: false,
     });
   });
 

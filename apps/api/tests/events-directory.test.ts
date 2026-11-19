@@ -13,6 +13,8 @@ interface SeedOptions {
   city?: string;
   hostName?: string;
   mode?: "Online" | "Offline";
+  access?: "open" | "approval" | "invite";
+  /** The retired flag, written only to prove old events still read right. */
   inviteOnly?: boolean;
   startTime: Date;
 }
@@ -34,6 +36,7 @@ async function seed(options: SeedOptions) {
     organizerHandle: "seed-host",
     mode: options.mode ?? "Offline",
     city: options.city ?? "Guwahati",
+    access: options.access,
     inviteOnly: options.inviteOnly,
     startTime,
     endTime,
@@ -180,19 +183,28 @@ describe("Events directory listing", () => {
       await seed({
         uid: "offline-invite",
         mode: "Offline",
-        inviteOnly: true,
+        access: "invite",
         startTime: inDays(2),
       });
       await seed({
         uid: "offline-open",
         mode: "Offline",
-        inviteOnly: false,
+        access: "open",
         startTime: inDays(3),
+      });
+      await seed({
+        uid: "online-approval",
+        mode: "Online",
+        access: "approval",
+        startTime: inDays(4),
       });
     });
 
     it("filters by mode", async () => {
-      expect(uidsOf(await list({ mode: "Online" }))).toEqual(["online-open"]);
+      expect(uidsOf(await list({ mode: "Online" }))).toEqual([
+        "online-open",
+        "online-approval",
+      ]);
       expect(uidsOf(await list({ mode: "Offline" }))).toEqual([
         "offline-invite",
         "offline-open",
@@ -200,26 +212,48 @@ describe("Events directory listing", () => {
     });
 
     it("filters to invite-only events", async () => {
-      expect(uidsOf(await list({ inviteOnly: "true" }))).toEqual([
+      expect(uidsOf(await list({ access: "invite" }))).toEqual([
         "offline-invite",
       ]);
     });
 
-    it("filters to events open to everyone, including ones with no stored flag", async () => {
+    it("filters to events that need approval", async () => {
+      expect(uidsOf(await list({ access: "approval" }))).toEqual([
+        "online-approval",
+      ]);
+    });
+
+    it("filters to open events, including ones with no stored access", async () => {
       // Written below the model so the field is truly absent, like events
-      // saved before `inviteOnly` existed.
+      // saved before `access` existed.
       await Event.collection.updateOne(
         { uid: "online-open" },
-        { $unset: { inviteOnly: "" } },
+        { $unset: { access: "" } },
       );
-      expect(uidsOf(await list({ inviteOnly: "false" }))).toEqual([
+      expect(uidsOf(await list({ access: "open" }))).toEqual([
         "online-open",
         "offline-open",
       ]);
     });
 
-    it("rejects a non-boolean inviteOnly with 400", async () => {
-      const res = await request(app).get("/events?inviteOnly=maybe");
+    it("reads an event saved with the retired inviteOnly flag as needing approval", async () => {
+      await Event.collection.updateOne(
+        { uid: "offline-open" },
+        { $unset: { access: "" }, $set: { inviteOnly: true } },
+      );
+      expect(uidsOf(await list({ access: "approval" }))).toEqual([
+        "offline-open",
+        "online-approval",
+      ]);
+      expect(uidsOf(await list({ access: "open" }))).toEqual(["online-open"]);
+
+      const one = await request(app).get("/events?uid=offline-open");
+      expect(one.body.access).toBe("approval");
+      expect(one.body.inviteOnly).toBeUndefined();
+    });
+
+    it("rejects an unknown access level with 400", async () => {
+      const res = await request(app).get("/events?access=maybe");
       expect(res.status).toBe(400);
     });
   });

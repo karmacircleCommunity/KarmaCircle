@@ -59,8 +59,12 @@ export function toDisplayEvent(event: ApiEvent): EventCardEvent {
     // correct if they're ever set independently.
     startsAt: event.startTime,
     isGovernmentSponsored: event.isGovernmentSponsored || undefined,
-    inviteOnly: event.inviteOnly || undefined,
+    access: event.access === "open" ? undefined : event.access,
     cancelled: event.status === "cancelled" || undefined,
+    registrationStatus:
+      event.registrationStatus && event.registrationStatus !== "going"
+        ? event.registrationStatus
+        : undefined,
     eventType: event.eventType,
     timezone: event.timezone,
     ...capacityCounts(event),

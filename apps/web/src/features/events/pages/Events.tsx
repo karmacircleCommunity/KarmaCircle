@@ -18,22 +18,29 @@ type TimeFilter = "Upcoming" | "Past";
 const TIME_FILTERS: TimeFilter[] = ["Upcoming", "Past"];
 
 /**
- * The second, independent filter dimension (September 2026) - audience
- * (`inviteOnly`) and mode (`Online`/`Offline`) are two unrelated fields on
- * `event.model.ts`, not four values of one taxonomy, but this directory
+ * The second, independent filter dimension (September 2026) - who can join
+ * (`access`) and mode (`Online`/`Offline`/`Hybrid`) are two unrelated fields on
+ * `event.model.ts`, not values of one taxonomy, but this directory
  * exposes them as one flat single-select list rather than two more
  * dropdowns crowding the toolbar - matching how `/organizations`' single
  * cause `FilterDropdown` reads. Picking one clears the others (the same
  * "one value wins" behavior `FilterDropdown` already has), so "online" and
  * "invite only" can't be combined here; that tradeoff was a deliberate
- * choice over building a multi-select variant for a four-option list.
+ * choice over building a multi-select variant for a short list.
  */
 type TypeFilter =
-  "All" | "Invite only" | "Open to all" | "Online" | "Offline" | "Hybrid";
+  | "All"
+  | "Open to all"
+  | "Approval required"
+  | "Invite only"
+  | "Online"
+  | "Offline"
+  | "Hybrid";
 const TYPE_FILTERS: TypeFilter[] = [
   "All",
-  "Invite only",
   "Open to all",
+  "Approval required",
+  "Invite only",
   "Online",
   "Offline",
   "Hybrid",
@@ -64,10 +71,12 @@ const SEARCH_DEBOUNCE_MS = 300;
 /** The API query params a `TypeFilter` choice stands for. */
 const typeToParams = (type: TypeFilter) => {
   switch (type) {
-    case "Invite only":
-      return { inviteOnly: true };
     case "Open to all":
-      return { inviteOnly: false };
+      return { access: "open" as const };
+    case "Approval required":
+      return { access: "approval" as const };
+    case "Invite only":
+      return { access: "invite" as const };
     case "Online":
       return { mode: "Online" as const };
     case "Offline":
@@ -95,8 +104,8 @@ const typeToParams = (type: TypeFilter) => {
  *   event has no cause field at all (`event.model.ts`), and "what's
  *   happening soon" is the question this page actually answers.
  * - A second filter (`TypeFilter`, September 2026) narrows by
- *   invite-only/open-to-all and online/offline — two real fields on
- *   `event.model.ts` (`inviteOnly`, `mode`), flattened into one
+ *   who can join (open, approval, invite) and online/offline/hybrid — two real
+ *   fields on `event.model.ts` (`access`, `mode`), flattened into one
  *   single-select list rather than combinable checkboxes (see that type's
  *   own comment for the tradeoff).
  * - Results render as one flat grid, sorted soonest-first for Upcoming and

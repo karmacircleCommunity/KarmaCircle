@@ -1,5 +1,12 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { EVENT_TYPES, type EventType } from "./event.constants";
+import {
+  EVENT_ACCESS_LEVELS,
+  EVENT_TYPES,
+  REGISTRATION_STATUSES,
+  type EventAccess,
+  type EventType,
+  type RegistrationStatus,
+} from "./event.constants";
 
 /**
  * Where an event happens. `Hybrid` (PG-10) has both a venue and a live stream,
@@ -88,13 +95,22 @@ export interface IEvent extends Document {
    */
   isGovernmentSponsored: boolean;
   /**
-   * Unlike `isGovernmentSponsored`, this one *is* organizer-settable — it's
-   * a statement about their own event, not a claim about a third party, so
-   * there's no abuse concern. `EventJoinPanel` on the frontend replaces the
-   * Join control with an honest "ask the organizer" state when this is set,
-   * rather than a button that looks live and silently does nothing.
+   * Who can join (PG-4). Organizer-settable, unlike `isGovernmentSponsored`:
+   * it is a statement about their own event. Absent on events saved before it
+   * existed; read it through `effectiveAccess`, never directly.
    */
-  inviteOnly: boolean;
+  access?: EventAccess;
+  /**
+   * The retired yes/no flag `access` replaced. Never written any more, and
+   * only read to give an old event an access level (`inviteOnly: true` was an
+   * approval-style event). Stripped from the JSON the API returns.
+   */
+  inviteOnly?: boolean;
+  /**
+   * Whether a full event takes a waitlist (PG-14). When off, a full event just
+   * refuses the next person, as before. Defaults to on.
+   */
+  waitlistEnabled: boolean;
   /**
    * The IANA timezone the event is held in, such as `Asia/Kolkata` (PG-11).
    * The start and end are real instants either way; this says which clock the
@@ -107,14 +123,19 @@ export interface IEvent extends Document {
   eventType?: EventType;
   /** Free-text tags, lower-case, at most 8 (PG-9). */
   tags: string[];
-  /** Most people who can join. Absent means no limit (PG-5). */
+  /**
+   * Most people who can join. Absent means no limit (PG-5). A soft limit
+   * (PG-14): invited people and the organizer's own approvals can go past it.
+   */
   capacity?: number;
   /**
-   * How many people are registered, kept in step with `EventRegistration` by
-   * `joinEvent` and `leaveEvent` with atomic `$inc`s, so the last spot cannot
-   * be taken twice. Only meaningful (and only shown) when `capacity` is set;
-   * `updateEvent` recounts it from the registrations whenever it sets a
-   * capacity, which also covers events saved before the field existed.
+   * How many people are going, kept in step with the `going` rows of
+   * `EventRegistration` by `joinEvent`, `leaveEvent` and the organizer's
+   * approvals with atomic `$inc`s, so the last spot cannot be taken twice by
+   * two open joins. Pending, waitlisted and declined people are not counted.
+   * Only meaningful (and only shown) when `capacity` is set; `updateEvent`
+   * recounts it whenever it sets a capacity, which also covers events saved
+   * before the field existed.
    */
   registrationCount: number;
   /** `cancelled` events stay visible with a badge and refuse new joins. */
@@ -147,14 +168,44 @@ export interface IEvent extends Document {
   updatedAt: Date;
 }
 
+/**
+ * The access level an event really has: its `access`, or for an event saved
+ * before that field existed, `approval` when it was flagged `inviteOnly` and
+ * `open` otherwise.
+ */
+export function effectiveAccess(
+  event: Pick<IEvent, "access" | "inviteOnly">,
+): EventAccess {
+  return event.access ?? (event.inviteOnly ? "approval" : "open");
+}
+
 export interface IEventRegistration extends Document {
   eventUid: string;
   userId: mongoose.Types.ObjectId;
   attendeeEmail: string;
   attendeeName: string;
+  /** Absent on rows saved before it existed, which are `going` (PG-14). */
+  status?: RegistrationStatus;
+  /** What the person wrote when asking to join an approval event (PG-4). */
+  note?: string;
+  /** When the organizer last approved or declined the person (PG-14). */
+  decidedAt?: Date;
   /** Set by the organizer when the attendee turns up (PG-6). */
   checkedInAt?: Date;
   isDemo: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** An email the organizer invited to an event (PG-4). */
+export interface IEventInvite extends Document {
+  eventUid: string;
+  /** Lower-cased. The invited person must sign in with this exact email. */
+  email: string;
+  /** Email of the organization account that sent the invite. */
+  invitedBy: string;
+  /** Set when the person registers through the invite. */
+  usedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -275,9 +326,16 @@ const eventSchema = new Schema<IEvent>(
       type: Boolean,
       default: false,
     },
+    access: {
+      type: String,
+      enum: EVENT_ACCESS_LEVELS,
+    },
     inviteOnly: {
       type: Boolean,
-      default: false,
+    },
+    waitlistEnabled: {
+      type: Boolean,
+      default: true,
     },
     timezone: {
       type: String,
@@ -318,7 +376,18 @@ const eventSchema = new Schema<IEvent>(
     contactEmail: { type: String, trim: true },
     isDemo: { type: Boolean, default: false },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: {
+      // The API speaks `access`; the retired `inviteOnly` flag is folded into
+      // it for old documents and never sent.
+      transform: (_doc, ret) => {
+        ret.access = effectiveAccess(ret as Pick<IEvent, "access" | "inviteOnly">);
+        delete ret.inviteOnly;
+        return ret;
+      },
+    },
+  },
 );
 
 export const Event = mongoose.model<IEvent>("Event", eventSchema);
@@ -329,6 +398,9 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
     userId: { type: Schema.Types.ObjectId, required: true, index: true },
     attendeeEmail: { type: String, required: true },
     attendeeName: { type: String, required: true },
+    status: { type: String, enum: REGISTRATION_STATUSES },
+    note: { type: String, trim: true },
+    decidedAt: { type: Date },
     checkedInAt: { type: Date },
     isDemo: { type: Boolean, default: false },
   },
@@ -336,8 +408,28 @@ const eventRegistrationSchema = new Schema<IEventRegistration>(
 );
 
 eventRegistrationSchema.index({ eventUid: 1, userId: 1 }, { unique: true });
+eventRegistrationSchema.index({ eventUid: 1, status: 1, createdAt: 1 });
 
 export const EventRegistration = mongoose.model<IEventRegistration>(
   "EventRegistration",
   eventRegistrationSchema,
+);
+
+const eventInviteSchema = new Schema<IEventInvite>(
+  {
+    eventUid: { type: String, required: true },
+    email: { type: String, required: true, trim: true, lowercase: true },
+    invitedBy: { type: String, required: true },
+    usedAt: { type: Date },
+  },
+  { timestamps: true },
+);
+
+eventInviteSchema.index({ eventUid: 1, email: 1 }, { unique: true });
+// "Which events am I invited to": looked up by the invited email alone.
+eventInviteSchema.index({ email: 1 });
+
+export const EventInvite = mongoose.model<IEventInvite>(
+  "EventInvite",
+  eventInviteSchema,
 );

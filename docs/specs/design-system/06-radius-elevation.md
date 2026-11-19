@@ -184,6 +184,7 @@ Hairline dividers are `h-px w-full bg-...`, not `border`, inside the Navbar drop
 | --- | --- |
 | `z-999` | `ScrollProgress`, `BacktoTop` |
 | `z-99` | Navbar bar |
+| `z-50` | `Dropdown` panel (portaled to `document.body`, `position: fixed`) |
 | `z-30` | `Combobox` suggestion panel |
 | `z-20` | `Modal` scrim, Navbar mobile sheet scrim |
 | `z-10` | Navbar logo, Navbar dropdown panel, `SplitPanelLayout` aside content, `EventMobileActionBar` (the event detail page's fixed mobile join bar — deliberately below the Navbar mobile sheet scrim's `z-20`, so an open hamburger menu covers it rather than floating above it) |

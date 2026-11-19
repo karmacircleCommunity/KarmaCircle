@@ -97,20 +97,40 @@ const eventEndpoints = {
    *  the `GET` registration check). */
   leave: (uid: string) =>
     `${API}/events/${encodeURIComponent(uid)}/registration`,
-  /** The host's attendee list: one page, optionally narrowed by `search`. */
+  /**
+   * The host's attendee list: one page, narrowed to one `status` (people who
+   * are going by default) and optionally by `search`.
+   */
   attendees: (
     uid: string,
-    params: { page?: number; limit?: number; search?: string } = {},
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: "going" | "pending" | "waitlisted" | "declined";
+    } = {},
   ) => {
     const query = new URLSearchParams();
     query.set("page", String(params.page ?? 1));
     query.set("limit", String(params.limit ?? 50));
     if (params.search) query.set("search", params.search);
+    if (params.status) query.set("status", params.status);
     return `${API}/events/${encodeURIComponent(uid)}/attendees?${query.toString()}`;
   },
   /** `PATCH` to check one attendee in or out. */
   attendee: (uid: string, registrationId: string) =>
     `${API}/events/${encodeURIComponent(uid)}/attendees/${encodeURIComponent(registrationId)}`,
+  /** `POST` to approve a request or move someone off the waitlist. */
+  approveAttendee: (uid: string, registrationId: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/attendees/${encodeURIComponent(registrationId)}/approve`,
+  /** `POST` to decline a request or a waitlisted person. */
+  declineAttendee: (uid: string, registrationId: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/attendees/${encodeURIComponent(registrationId)}/decline`,
+  /** `GET` the invitations sent for an event, `POST` to invite more emails. */
+  invites: (uid: string) => `${API}/events/${encodeURIComponent(uid)}/invites`,
+  /** `DELETE` to take back one invitation. */
+  invite: (uid: string, inviteId: string) =>
+    `${API}/events/${encodeURIComponent(uid)}/invites/${encodeURIComponent(inviteId)}`,
   /** The attendee list as a CSV download. */
   attendeesExport: (uid: string) =>
     `${API}/events/${encodeURIComponent(uid)}/attendees/export`,
@@ -129,7 +149,8 @@ const eventEndpoints = {
     mode?: "Online" | "Offline" | "Hybrid";
     /** What kind of event it is (PG-9), as the API's slug. */
     type?: string;
-    inviteOnly?: boolean;
+    /** Who can join (PG-4). */
+    access?: "open" | "approval" | "invite";
     page?: number;
     limit?: number;
   }) => {
@@ -138,9 +159,7 @@ const eventEndpoints = {
     if (params.search) query.set("search", params.search);
     if (params.mode) query.set("mode", params.mode);
     if (params.type) query.set("type", params.type);
-    if (params.inviteOnly !== undefined) {
-      query.set("inviteOnly", String(params.inviteOnly));
-    }
+    if (params.access) query.set("access", params.access);
     query.set("page", String(params.page ?? 1));
     query.set("limit", String(params.limit ?? 12));
     return `${API}/events?${query.toString()}`;

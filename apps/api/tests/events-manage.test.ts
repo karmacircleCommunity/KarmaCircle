@@ -88,13 +88,13 @@ describe("Editing and cancelling events", () => {
 
       const res = await patch(cookie, "edit-basics", {
         name: "Beach clean-up drive, new date",
-        inviteOnly: true,
+        access: "approval",
       });
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Event Updated");
       expect(res.body.event.name).toBe("Beach clean-up drive, new date");
-      expect(res.body.event.inviteOnly).toBe(true);
+      expect(res.body.event.access).toBe("approval");
       expect(res.body.event.description).toBe(
         "Join us to clean the beach and sort the waste together",
       );

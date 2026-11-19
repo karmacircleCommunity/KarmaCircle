@@ -408,7 +408,7 @@ flowchart TD
     e_fetch["GET /events, limit 100 - SWR fetch and revalidation"]:::general
     e_search["Search - client-side"]:::general
     e_time["Upcoming / Past filter - client-side"]:::general
-    e_type["Type filter: invite-only, open, online, offline - client-side"]:::general
+    e_type["Type filter: open, approval required, invite only, online, offline, hybrid - API params"]:::general
     e_grid["Grid of Event Cards"]:::general
     e_access{{"Redux says signed in, organization account?"}}:::decision
     e_browse["Personal account or visitor - public browsing only"]:::general
@@ -438,22 +438,23 @@ flowchart TD
     e_draft["Save as draft - hidden from everyone but the organization"]:::general
     e_publish["POST /events/:uid/publish - draft becomes public"]:::general
     e_unpublish["POST /events/:uid/unpublish - only while nobody has registered"]:::general
-    e_attendees["Attendee page - /organization/events/:uid/attendees: totals, search, check-in, CSV"]:::general
+    e_attendees["Attendee page - /organization/events/:uid/attendees: totals, search, check-in, CSV, Requests / Waitlist / Declined tabs, invitations"]:::general
     e_full{{"Capacity set and full?"}}:::decision
-    e_full_state["Event is full - Join disabled; API join returns 409"]:::general
+    e_full_state["Event is full - Join the waitlist, or Event is full when the waitlist is off (409)"]:::general
     e_leave["Leave event link and confirmation, until the event starts"]:::general
     e_leave_req["DELETE /events/:uid/registration - spot given back"]:::general
     e_edit_page["Edit form - /organization/events/:uid/edit, page address locked"]:::general
     e_patch["PATCH /events/:uid - only changed fields, host only"]:::general
     e_cancel_dialog["Confirm dialog - stays public, cannot be undone"]:::general
     e_cancel_post["POST /events/:uid/cancel - host only"]:::general
-    e_invite{{"Invite only?"}}:::decision
-    e_nojoin["Ask organizer state; no invite or approval flow"]:::general
+    e_invite{{"Invite only, and not invited?"}}:::decision
+    e_nojoin["Invite-only message, no button; only invited emails can join"]:::general
     e_auth{{"Signed in?"}}:::decision
     e_signin["Sign in, then return to event"]:::general
     e_status["GET /events/:uid/registration"]:::general
     e_already{{"Already registered?"}}:::decision
     e_going["You're going - Join action hidden"]:::terminator
+    e_request["Approval event: Request to join, then Request sent until the organizer approves or declines (declined: cannot ask again)"]:::general
     e_joinactive["Join this event"]:::general
     e_post["POST /events/:uid/join - save one registration per account"]:::general
     e_email{{"Confirmation email sent?"}}:::decision
@@ -532,6 +533,7 @@ flowchart TD
     e_already -->|"Yes"| e_going
     e_already -->|"No"| e_joinactive
     e_joinactive --> e_post
+    e_joinactive -.->|"approval event"| e_request
     e_post --> e_email
     e_email -->|"Yes"| e_email_sent
     e_email -->|"No"| e_email_failed
