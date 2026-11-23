@@ -64,7 +64,7 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `pages/YourEvents.tsx`              | The `/organization/events` page — one organization's own events, behind `OrganizationSetupGate`                                                                                                                                           | ✅ routed, renders **live data** via `GET /events?host={handle}`                                                                                                                                                       |
 | `pages/MyEvents.tsx`                | The signed-in individual's `/events/mine` page — registered events split into Upcoming and Past                                                                                                                                           | ✅ routed, reads authenticated attendee data from `GET /events/mine`                                                                                                                                                   |
 | `pages/DetailedEvent.tsx`           | The `/events/:eventId` detail page                                                                                                                                                                                                        | ✅ routed, renders **live data** via `GET /events?uid={id}` (September 2026 — see below)                                                                                                                               |
-| `components/detail/`                | The eight pieces that page composes — `EventHero`, `EventFacts`, `EventAgenda`, `EventLocationPanel`, `EventJoinPanel`, `EventMobileActionBar`, `EventFundraiserPanel`, `EventSection`                                                    | ✅ rendered by `DetailedEvent.tsx` only                                                                                                                                                                                |
+| `components/detail/`                | The nine pieces that page composes — `EventHero`, `EventFacts`, `EventCalendarLinks` (PG-19), `EventAgenda`, `EventLocationPanel`, `EventJoinPanel`, `EventMobileActionBar`, `EventFundraiserPanel`, `EventSection`                                                    | ✅ rendered by `DetailedEvent.tsx` only                                                                                                                                                                                |
 | `utils/toDisplayEventDetail.ts`     | Maps a live `ApiEvent` onto the `{ event, detail }` shape `DetailedEvent.tsx` renders                                                                                                                                                     | ✅ used by `DetailedEvent.tsx`                                                                                                                                                                                         |
 | `utils/formatEventFacts.ts`         | `formatEventDate`/`formatEventBadge`/`formatEventTime` plus duration, maps-URL and `isEventPast` helpers — one home for "format an event" (the first three moved here from the now-deleted `constants/eventDirectory.ts` fixture). Money helpers (`formatMoney`, `fundedPercent`) live in the shared `@utils/formatMoney`, not here | ✅ used across `EventCard` and the detail components                                                                                                                                                                   |
 | `components/CreateEvents.tsx`       | Responsive full-page event creation flow with preview                                                                                                                                                                                     | ✅ routed at `/organization/events/new`                                                                                                                                                                                |
@@ -91,12 +91,10 @@ and every read goes through `useSWR` with `eventEndpoints` from
 | `hooks/useEvent.ts`                 | Validator, date/time payload conversion, submit and list refresh                                                                                                                                                                          | ✅ used by `CreateEvents` page                                                                                                                                                                                         |
 | `components/EventCard.tsx`          | Card rendered in the `/events` grid                                                                                                                                                                                                       | ✅ rendered, typed against `EventCardEvent`                                                                                                                                                                            |
 | `utils/toDisplayEvent.ts`           | Maps a live `ApiEvent` onto `EventCardEvent`                                                                                                                                                                                              | ✅ used by `Events.tsx`                                                                                                                                                                                                |
-| `components/EventsMarqueeCards.tsx` | Data-driven event card (correctly reads an `event` prop)                                                                                                                                                                                  | ❌ not rendered anywhere                                                                                                                                                                                               |
 | `utils/uploadCoverImage.ts`         | Uploads one cover to object storage and returns its https link (November 2026, DB-1)                                                                                                                                                                        | ✅ used by `CreateEvents` only                                                                                                                                                                                         |
-| `utils/getFormattedDate.ts`         | Ordinal-suffix date formatter (`"1st January"`)                                                                                                                                                                                           | ✅ used by `EventsMarqueeCards` only (itself unused)                                                                                                                                                                   |
 | `constants/reservedEventAddresses.ts` | `RESERVED_EVENT_ADDRESSES`: page addresses the create form refuses (`mine`, `new`, `create`, `edit`, `admin`, `api`). The API keeps its own copy | ✅ used by `useEvent.ts` |
 | `constants/coverImageTypes.ts` | `COVER_IMAGE_MIME_TYPES`, `COVER_IMAGE_ACCEPT`, `COVER_IMAGE_TYPE_ERROR`: the four cover image types the API accepts | ✅ used by `CreateEvents.tsx` |
-| `utils/*.test.ts` | Vitest unit tests next to `formatEventFacts.ts`, `getFormattedDate.ts` and `toDisplayEvent.ts` (the last also covers `toDisplayEventDetail`); `src/utils/formatMoney.test.ts` covers the shared money helpers | ✅ run by `pnpm test:unit` in `apps/web` |
+| `utils/*.test.ts` | Vitest unit tests next to `formatEventFacts.ts`, `calendarLinks.ts` and `toDisplayEvent.ts` (the last also covers `toDisplayEventDetail`); `src/utils/formatMoney.test.ts` covers the shared money helpers | ✅ run by `pnpm test:unit` in `apps/web` |
 
 **Retired, September 2026:** `constants/eventDirectory.ts` (twelve sample
 events) and `constants/eventDetails.ts` (their detail-page content), plus the
@@ -483,9 +481,7 @@ a later render cannot replace it with an empty or stale error object.
   of identical hardcoded content, with no pause-on-hover, no manual controls and
   no accessibility affordances. Nothing outside itself imported them.)
 
-- **`EventsMarqueeCards.tsx`** - an unused event card component that renders a
-  cover, name, location or online platform, and start date/time from its `event`
-  prop. **Not rendered by any page.** Its future placement remains undecided.
+- `EventsMarqueeCards.tsx` and `utils/getFormattedDate.ts` (with its test) were deleted on 2026-11-23 (CH-4): neither was rendered by any route.
 
 ## Deleted files, November 2026
 
@@ -503,16 +499,6 @@ exists on disk either. A "my hosted events" view for the dashboard is new work;
 Blob upload or the direct upload fails. `convertToBase64.ts` was deleted in
 November 2026: an image no longer travels as data inside the form or the event.
 Unit tests cover both strategies and the failures (`uploadCoverImage.test.ts`).
-
-## `utils/getFormattedDate.ts`
-
-Pure function, `getFormattedDate(dateString) → "1st January"`-style string
-(day + ordinal suffix + full month name, no year). Correctly handles the
-11th–13th "th" exception (unit-tested in `getFormattedDate.test.ts`). A missing
-or invalid date returns "NaNth undefined" (recorded as an `it.todo`). No timezone handling - relies on
-`new Date(dateString)`'s local-timezone interpretation, whatever that resolves
-to in the visitor's browser. Only consumer is `EventsMarqueeCards.tsx` (itself
-unused) — so this function currently has no live call path either.
 
 ## Data flow summary — live event reads and creation
 
@@ -606,16 +592,8 @@ changing together.
   `../../` paths. Only same-folder `./` imports remain, in `types/`. Keep it that
   way when adding files. Generic helpers with no event knowledge (money, counts)
   belong in shared `apps/web/src/utils/`, not in `features/events/utils/`.
-- `EventsMarqueeCards.tsx` still isn't rendered anywhere, and
-  `getFormattedDate.ts` exists only for it. `utils/formatEventFacts.ts` has its
-  own `formatEventDate`/`formatEventBadge` (real ISO timestamps, matching every
-  live `Event` field) while `getFormattedDate` takes the API's `{ date, time }`
-  string pair — if `EventsMarqueeCards.tsx` is ever wired up against a live
-  record, the two date formatters should collapse into one rather than staying
-  split.
 - **Unit-tested helpers with open bugs (November 2026):** `formatDuration`
-  returns "NaN days" for an unreadable date, `getFormattedDate` returns "NaNth
-  undefined", and `fundedPercent` (shared `@utils/formatMoney`) has no lower
+  returns "NaN days" for an unreadable date, and `fundedPercent` (shared `@utils/formatMoney`) has no lower
   clamp and returns NaN for NaN input. See `known-issues.md` and the events
   to-do list (T-8).
 - **Format example is en-GB, output is en-US:** the JSDoc on `formatEventDate`
@@ -667,7 +645,7 @@ changing together.
 - **"Show a real event's location/platform info somewhere"** -> the routed event
   directory, event detail page, organization profile's hosted-event section, and
   My Events page already render live event data. Check the relevant feature spec
-  before wiring the unused `EventsMarqueeCards.tsx` into a new surface.
+  before adding another surface.
 - **"Add RSVP / attendee capacity"** → deliberately not built yet, see
   [known-issues.md](../../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built)
   for what it would need (a `capacity` field, a write endpoint, an attendee

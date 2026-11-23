@@ -35,14 +35,13 @@ import type { OrganizationCardProps } from "../types";
  *
  * **Hover, richer than the standardized card recipe (September 2026).**
  * The app-standard card hover (`docs/specs/ui-kit.md#card-components`) is
- * `-translate-y-1` plus a brand-token glow, shared by this card, `EventCard`
- * and `EventsMarqueeCards`. This card alone adds a touch more: a slightly
- * taller lift (`-translate-y-1.5`), a bigger shadow bloom, the name shifting
- * to `text-brand`, and the arrow gaining a filled circle behind it rather
+ * `-translate-y-1` plus a brand-token glow, shared by this card and
+ * `EventCard`. This card alone adds a touch more: a slightly taller lift
+ * (`-translate-y-1.5`), a bigger shadow bloom, the name shifting to
+ * `text-brand`, and the arrow gaining a filled circle behind it rather
  * than only translating. Direct feedback was that the standard recipe read
- * as "nothing happens" on this specific page — `EventCard`/
- * `EventsMarqueeCards` still use the plain recipe and are not (yet) part of
- * this same complaint; see
+ * as "nothing happens" on this specific page — `EventCard` still uses the
+ * plain recipe and is not (yet) part of this same complaint; see
  * [14-drift-register.md](../../../../docs/specs/design-system/14-drift-register.md)
  * for this as a tracked, deliberate divergence rather than an oversight.
  *

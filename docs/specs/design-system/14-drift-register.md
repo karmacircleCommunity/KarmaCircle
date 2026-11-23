@@ -199,13 +199,13 @@ No equivalent is needed here while the app stays light-only; `--color-border-mut
 
 ---
 
-## D15 — `OrganizationCard`'s hover no longer matches `EventCard`/`EventsMarqueeCards` — OPEN, deliberate
+## D15 — `OrganizationCard`'s hover no longer matches `EventCard` — OPEN, deliberate
 
 The "standardized August 2026" card hover ([06-radius-elevation.md](./06-radius-elevation.md#card-hover-standardized-august-2026)) — `-translate-y-1` plus a brand glow — was shared identically by all three cards. September 2026: direct feedback that `/organizations` specifically read as "nothing happens" on hover led to [features/organizations/components/OrganizationCard.tsx](../../../apps/web/src/features/organizations/components/OrganizationCard.tsx) alone gaining a richer variant — `-translate-y-1.5`, a bigger shadow bloom, the name shifting to `text-brand`, and the arrow gaining a filled circle behind it (see that file's own doc comment for the exact classes).
 
-`EventCard` and `EventsMarqueeCards` were not touched and still use the original, plainer recipe. This is a real, tracked inconsistency, not an oversight — the feedback was specific to `/organizations`, and bringing `/events`' cards along was out of scope for that change.
+`EventCard` was not touched and still uses the original, plainer recipe. This is a real, tracked inconsistency, not an oversight — the feedback was specific to `/organizations`, and bringing `/events`' cards along was out of scope for that change.
 
-**Fix, if `/events` gets the same complaint:** copy `OrganizationCard`'s hover classes onto `EventCard`/`EventsMarqueeCards` and fold the two variants back into one entry in [07-motion.md](./07-motion.md#app-wide-interaction-conventions), rather than letting a third variant appear.
+**Fix, if `/events` gets the same complaint:** copy `OrganizationCard`'s hover classes onto `EventCard` and fold the two variants back into one entry in [07-motion.md](./07-motion.md#app-wide-interaction-conventions), rather than letting a third variant appear.
 
 ---
 

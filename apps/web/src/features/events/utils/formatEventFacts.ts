@@ -16,11 +16,6 @@ import { eventZone } from "@features/events/utils/eventTimezone";
  * because it shows both and the two would otherwise print the same day
  * number twice.
  *
- * Deliberately not `getFormattedDate.ts` (this feature's other date
- * helper): that one takes the API's `{ date, time }` string pair, while
- * this one takes a real ISO timestamp, which is what a live `Event`
- * record's `startTime` actually is.
- *
  * **With an event's `timezone` (PG-11)** the time is the event's own clock, not
  * the viewer's, and ends with the zone ("Sat · Sep 12, 9:00 PM GMT+5:30") so
  * nobody has to guess which clock it is. With none (an older event, or a

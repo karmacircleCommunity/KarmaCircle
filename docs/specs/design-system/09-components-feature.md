@@ -83,11 +83,6 @@ Historical note: the component it replaced **declared no props at all**. Every f
 
 ---
 
-## `EventsMarqueeCards`
-
-[features/events/components/EventsMarqueeCards.tsx](../../../apps/web/src/features/events/components/EventsMarqueeCards.tsx).
-Shares the standardized card hover. See [events.md](../events.md).
-
 `EventSlider`, `FeaturedEventCard` and `FeaturedEventImage` were deleted in the August 2026 events-directory rewrite. Do not reintroduce them.
 
 ---

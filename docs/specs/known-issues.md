@@ -94,7 +94,6 @@ Also built in November 2026: an event has a **timezone** (PG-11): the form reads
 ## Events - open issues (November 2026)
 
 - **`formatDuration` returns "NaN days"** (`features/events/utils/formatEventFacts.ts`) when either date cannot be read. Recorded as an `it.todo` in `formatEventFacts.test.ts`.
-- **`getFormattedDate` returns "NaNth undefined"** (`features/events/utils/getFormattedDate.ts`) for a missing or invalid date. Its only consumer is the unused `EventsMarqueeCards`. Recorded as an `it.todo` in `getFormattedDate.test.ts`.
 - **`fundedPercent` (`src/utils/formatMoney.ts`) has no lower clamp.** A negative raised amount gives a negative percent, and a NaN goal or raised value returns NaN. Not asserted in tests.
 - **`isEventPast` treats an unreadable date as not past** (a NaN comparison is false). Asserted as current behavior in `formatEventFacts.test.ts`.
 - **`formatEventDate`'s JSDoc example does not match its output.** It says "Sat 12 Sep · 9:00 pm", but only the first ", " is replaced, so en-US yields "Sat · Sep 12, 9:00 PM". The format is locale-dependent by design.

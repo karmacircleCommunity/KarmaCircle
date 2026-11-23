@@ -52,7 +52,7 @@ hover:shadow-[0_18px_38px_-16px_color-mix(in_srgb,var(--color-brand)_55%,transpa
 motion-safe:hover:-translate-y-1
 ```
 
-Applied by `OrganizationCard`, `EventCard`, `EventsMarqueeCards`.
+Applied by `OrganizationCard` and `EventCard`.
 All three previously shared a hardcoded `rgba(226,105,89,0.32)` glow, the pre-rebrand orange, a color that no longer exists in the palette.
 This form follows a retheme, and the card lifts rather than only glowing.
 The duplicated `hover:transition-all hover:duration-300 hover:ease-in-out` trio each carried alongside an identical unprefixed one was dropped in the same pass; it never did anything.

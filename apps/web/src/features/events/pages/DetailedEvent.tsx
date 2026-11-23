@@ -19,6 +19,7 @@ import {
 import RichText from "@features/events/components/RichText";
 import ConfirmDialog from "@features/events/components/ConfirmDialog";
 import EventAgenda from "@features/events/components/detail/EventAgenda";
+import EventCalendarLinks from "@features/events/components/detail/EventCalendarLinks";
 import EventFacts from "@features/events/components/detail/EventFacts";
 import EventFundraiserPanel from "@features/events/components/detail/EventFundraiserPanel";
 import EventHero from "@features/events/components/detail/EventHero";
@@ -361,6 +362,7 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
 
               <EventSection title="The details" id="details">
                 <EventFacts event={event} detail={detail} />
+                <EventCalendarLinks event={event} detail={detail} />
               </EventSection>
 
               {detail.agenda.length > 0 && (

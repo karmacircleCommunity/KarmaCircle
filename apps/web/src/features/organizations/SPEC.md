@@ -264,9 +264,9 @@ from before this pass. New in September 2026:
   direct feedback that hovering "didn't do too much".** Taller lift
   (`-translate-y-1.5` vs. the standard `-translate-y-1`), a bigger shadow
   bloom, the name to `text-brand`, the arrow gaining a filled `bg-brand/10`
-  circle behind it. `EventCard`/`EventsMarqueeCards` still use the plain
+  circle behind it. `EventCard` still uses the plain
   recipe — see
-  [design-system/14-drift-register.md#d15](../../../../../docs/specs/design-system/14-drift-register.md#d15--organizationcards-hover-no-longer-matches-eventcardeventsmarqueecards--open-deliberate)
+  [design-system/14-drift-register.md#d15](../../../../../docs/specs/design-system/14-drift-register.md#d15--organizationcards-hover-no-longer-matches-eventcard--open-deliberate)
   for why that's tracked rather than silently inconsistent.
 
 Not exported from the shared barrel (`apps/web/src/components/index.ts`) —

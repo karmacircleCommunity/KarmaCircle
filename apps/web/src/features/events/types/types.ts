@@ -49,6 +49,8 @@ export type EventFactsProps = DetailedEventRecord;
 
 export type EventLocationPanelProps = DetailedEventRecord;
 
+export type EventCalendarLinksProps = DetailedEventRecord;
+
 /**
  * Where to send the bytes of one event cover (DB-1), as `POST /uploads/event-covers`
  * answers: straight to Vercel Blob with a short-lived token, or (development and

@@ -596,10 +596,6 @@ failure it shows the API's first field error, or its message, in an error toast.
 
 ## Event display components
 
-- [EventsMarqueeCards.tsx](../../apps/web/src/features/events/components/EventsMarqueeCards.tsx)
-  — takes an `event` prop and renders its cover, name, location or online
-  platform, and start date/time. It is not rendered by a current route; its
-  future placement remains undecided.
 - [EventCard.tsx](../../apps/web/src/features/events/components/EventCard.tsx) —
   the card in the `Events.tsx` grid, typed against `EventCardEvent`
   (`types/interfaces.ts`). It renders a 16:9 cover or fallback, a date badge,
@@ -657,7 +653,7 @@ what `EventJoinPanel` offers (see "Who can join, requests and the waitlist"), an
 arriving reads as that card opening; the two badge pills when set; title,
 organizer link, then when / how long / where), then a two-column body — main
 column: About (only if `about` is non-empty), a four-cell fact strip
-(`EventFacts`, degrading gracefully per-cell rather than disappearing), the run
+(`EventFacts`, degrading gracefully per-cell rather than disappearing, followed by `EventCalendarLinks`: an "Add to Google Calendar" link and a `.ics` download built in the browser by `utils/calendarLinks.ts`, hidden for a cancelled, draft or already-ended event, PG-19), the run
 sheet (`EventAgenda`, only if `agenda` is non-empty), venue-or-joining
 (`EventLocationPanel`, which itself renders nothing if there's genuinely no
 address/platform to show), and what to bring (only if `bringAlong` is
@@ -842,7 +838,7 @@ Past.
 
 Pure helpers have colocated Vitest tests, run with `pnpm test:unit` from
 `apps/web` (see [testing.md](./testing.md)): `formatEventFacts.test.ts`,
-`getFormattedDate.test.ts`, `eventMode.test.ts`, `eventTags.test.ts`, `eventTimezone.test.ts` (combining and
+`calendarLinks.test.ts`, `eventMode.test.ts`, `eventTags.test.ts`, `eventTimezone.test.ts` (combining and
 reading wall-clock times in a zone, daylight saving, the viewer note),
 `richText.test.ts` and `RichText.test.ts` (the parser and the rendered markup),
 `constants/eventTypes.test.ts`,

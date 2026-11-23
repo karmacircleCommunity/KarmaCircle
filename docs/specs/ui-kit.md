@@ -56,7 +56,7 @@ Props, `align` semantics, `asideDecor`, the 900px drop, and the panel geometry: 
 The one shared card skeleton and what each of the three surfaces adds to it, plus the standardised hover: [design-system/09-components-feature.md#one-card-three-surfaces](./design-system/09-components-feature.md#one-card-three-surfaces).
 
 - `OrganizationCard` - see also [organizations.md](./organizations.md).
-- `EventCard`, `EventsMarqueeCards` - see also [events.md](./events.md). (`EventSlider`/`FeaturedEventCard`/`FeaturedEventImage` were deleted in the August 2026 events-directory rewrite.)
+- `EventCard` - see also [events.md](./events.md). (`EventSlider`/`FeaturedEventCard`/`FeaturedEventImage` were deleted in the August 2026 events-directory rewrite.)
 
 All card components are exported from [apps/web/src/components/index.ts](../../apps/web/src/components/index.ts); prefer the barrel.
 

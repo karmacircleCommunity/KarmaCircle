@@ -85,10 +85,9 @@ export interface UseEventResult {
 }
 
 /**
- * Shape a real event record is expected to have, per `EventsMarqueeCards.jsx`
- * (the one component in this feature that actually reads an `event` prop)
- * and `useEvent.js`'s `EventFormState`. Response shape is unverified from
- * this repo (see SPEC.md) — loose by design, open index signature.
+ * A loose shape for an event record, with an open index signature. Only the
+ * organizations feature still uses it (`OrganizationEventsList`'s hosted-event
+ * rows); the events feature itself works from `ApiEvent` and `DisplayEvent`.
  */
 export interface EventRecord {
   _id?: string;

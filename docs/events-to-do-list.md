@@ -210,10 +210,11 @@ Not built: postponed events, and a draft that skips the required fields (a draft
 Fix: add a status (draft, published, cancelled, postponed), let organizers save a draft, and make public lists show only published events.
 
 ### PG-19 No add to calendar
-Status: open. Priority: P2.
+Status: done (2026-11-23). Priority: P2.
 A search of the web code found no calendar export.
 Luma, Eventbrite and Meetup all offer one.
 Fix: add an `.ics` download and an "Add to Google Calendar" link on the detail page and in the confirmation email.
+Done: both links are on the detail page under "The details" (`EventCalendarLinks`, built in the browser, no extra request). The confirmation email part is not built, because the app sends no event emails.
 
 ## 2. Code health (dead code and structure)
 
@@ -240,10 +241,11 @@ Result: `services/Events.ts` (and the now-empty `services/` folder) is deleted, 
 The write calls live in `services/KarmaCircleApi.ts` and the reads use `useSWR` with `eventEndpoints`.
 
 ### CH-4 `EventsMarqueeCards.tsx` and `getFormattedDate.ts`
-Status: needs decision. Priority: P3.
+Status: done (2026-11-23). Priority: P3.
 Neither is rendered by a live route.
 `getFormattedDate.ts` exists only for the marquee.
 Decide to wire the marquee to live data or delete both.
+Done: Tamal chose to delete both, together with `getFormattedDate.test.ts`.
 
 ### CH-6 Directory search runs in the browser
 Status: done (2026-11-04). Priority: P2.
@@ -317,10 +319,10 @@ Playwright was not run, so no browser result is recorded.
 ### T-8 Helper bugs found by the new unit tests
 Status: open. Priority: P3.
 `formatDuration` in `formatEventFacts.ts` returns "NaN days" when either date cannot be read.
-`getFormattedDate` returns "NaNth undefined" for a missing or invalid date, and is only used by the unused marquee card (see CH-4).
+`getFormattedDate` returned "NaNth undefined" for a bad date; it was deleted with the marquee card (CH-4), so that part is gone.
 `fundedPercent` has no lower clamp, so a negative raised amount gives a negative percent, and a NaN goal or raised value gives NaN.
 `isEventPast` treats an unreadable date as not past, which the tests record as current behavior.
-Two of these are recorded as `it.todo` in the test files.
+One of these is still recorded as an `it.todo` in the test files.
 Fix: decide the fallback for an unreadable date, then change the helpers and the tests together.
 
 ### T-9 The existing responsive spec posts events the API now rejects
@@ -598,3 +600,5 @@ Update them in the same change.
 - 2026-11-19: DB-1 (code) and S-4: event covers are uploaded to object storage and the event keeps a link; JSON body limit is 1 MB. API tests `uploads.test.ts` (17) and `cover-migration.test.ts` (7); the API suite passed 24 suites and 450 tests, and the web unit suite 241 tests and 2 todo. Production setup and the one-time migration are Tamal's to do.
 - 2026-11-19: decided that a cancelled event stays up with a Cancelled label (decision 2), and that cover images get the long-term fix (decision 6).
 - 2026-11-23: DB-6 (unique user names in the database), S-2 (shared sign-in rate limit in MongoDB) and O-5 (`/health` answers 503 when the database is down; no error-tracking service added). API tests `rate-limit-store.test.ts` (4), `health.test.ts` (2) and a uniqueness test in `users.test.ts`; the API suite passed 26 suites and 457 tests.
+- 2026-11-23: PG-19, add to calendar (Google Calendar link and `.ics` download on the event page). Web unit tests `calendarLinks.test.ts` (6); the web unit suite passed 247 tests and 2 todo. Not looked at in a browser yet, so UI-1 and UI-2 still cover it.
+- 2026-11-23: CH-4, `EventsMarqueeCards.tsx`, `getFormattedDate.ts` and its test deleted (no route used them); the web unit suite passed 241 tests and 1 todo.
