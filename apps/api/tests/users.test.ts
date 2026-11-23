@@ -1,4 +1,5 @@
 import request from "supertest";
+import { User } from "../src/modules/users/user.model";
 import { buildTestApp } from "./helpers/test-app";
 
 const app = buildTestApp();
@@ -95,6 +96,17 @@ describe("Users", () => {
         .set("Cookie", cookie);
       expect(after.body.user.config.hasCompletedProfile).toBe(true);
       expect(after.body.user.description).toBe("A".repeat(120));
+    });
+  });
+
+  describe("userName uniqueness (DB-6)", () => {
+    it("lets the database refuse a second user with the same userName", async () => {
+      await User.init();
+      await User.create({ userName: "same", email: "a@example.com", password: "x" });
+
+      await expect(
+        User.create({ userName: "same", email: "b@example.com", password: "x" }),
+      ).rejects.toMatchObject({ code: 11000 });
     });
   });
 });

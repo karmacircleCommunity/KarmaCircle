@@ -6,6 +6,7 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import pinoHttp from "pino-http";
 import swaggerUi from "swagger-ui-express";
+import { isDatabaseConnected } from "./config/database";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { clearResetOutbox, getLastResetUrl } from "./config/mailer";
@@ -93,11 +94,13 @@ export function createApp(): Express {
     res.send("HELLO FROM API");
   });
 
+  // Reports the real database state. A down database answers 503, so a free
+  // uptime monitor pointed at this URL alerts without any extra service (O-5).
   app.get("/health", (_req, res) => {
-    res.json({
-      status: "ok",
-      mongo:
-        mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    const connected = isDatabaseConnected();
+    res.status(connected ? 200 : 503).json({
+      status: connected ? "ok" : "unavailable",
+      mongo: connected ? "connected" : "disconnected",
     });
   });
 

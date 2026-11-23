@@ -1,6 +1,7 @@
 import rateLimit from "express-rate-limit";
 import { env } from "../config/env";
 import { STATUS_CODE } from "../constants/http-status";
+import { MongoRateLimitStore } from "./mongo-rate-limit-store";
 
 /**
  * Real rate limiting only makes sense against real traffic. Skipping it in
@@ -21,9 +22,15 @@ export const apiLimiter = rateLimit({
   message: { message: "Too many requests, please try again later." },
 });
 
+// Sign-in, sign-up and password reset count in MongoDB so every server shares
+// one count (S-2). The general limiter above stays in memory: it is a loose
+// cap, and a database write on every request is not worth it. If the database
+// cannot be reached, requests pass rather than fail.
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
+  store: new MongoRateLimitStore(),
+  passOnStoreError: true,
   standardHeaders: true,
   legacyHeaders: false,
   statusCode: STATUS_CODE.TOO_MANY_REQUESTS,

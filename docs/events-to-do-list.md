@@ -444,10 +444,11 @@ Mongoose builds missing indexes on connect but never drops old ones, so the old 
 They are harmless, only extra write cost, and not worth a risky production change by themselves.
 
 ### DB-6 Username uniqueness is not enforced by the database
-Status: open. Priority: P2.
+Status: done (2026-11-23). Priority: P2.
 The user name has a plain index, not a unique one, so a race can create duplicates.
 Events rely on the organization handle derived from it.
 Fix: make it unique after cleaning existing data.
+Done: the field is `unique: true`. Not checked: whether production already holds two users with the same name; if it does, MongoDB cannot build the index and the app keeps running without it, so look at the logs for an index error after the next deploy.
 
 ## 7. Backend security
 
@@ -458,10 +459,11 @@ Result: the logger redacts the `Cookie` and `Authorization` request headers and 
 Logs written before this fix may still hold session tokens; sessions can be revoked by bumping the token version if that matters.
 
 ### S-2 Rate limits do not work across servers
-Status: open. Priority: P1.
+Status: done (2026-11-23). Priority: P1.
 The limiter keeps its counts in memory on each server instance.
 On Vercel, many instances run at once and each starts at zero, so the limit is easy to bypass.
 Fix: use a shared store such as Redis or a database-backed counter, at least for sign-in and password reset.
+Done: a small MongoDB-backed store (`mongo-rate-limit-store.ts`) for the auth limiter only. The general 300-per-15-minutes limiter stays in memory on purpose, and if the database cannot be reached the request is let through.
 
 ### S-3 Known vulnerable packages
 Status: partly done (2026-11-19). Priority: P1.
@@ -506,9 +508,10 @@ CH-6 is done, so the events directory now loads 12 at a time and the API list is
 Add a hard maximum page size everywhere, which exists for events at 100.
 
 ### O-5 No monitoring of errors
-Status: open. Priority: P2.
+Status: done for the health check (2026-11-23); error tracking left out on purpose. Priority: P2.
 Errors are logged but there is no alerting or error tracking.
 Add error tracking and a health check that reports real database status to an uptime monitor.
+Done in part: the health check part only. Unhandled errors are still only logged (Vercel keeps them, readable under runtime logs); no error-tracking service was added, on purpose. To get alerts, point a free uptime monitor at `https://api.karmacircle.org/health`.
 
 ## 9. Docs and diagrams
 
@@ -594,3 +597,4 @@ Update them in the same change.
 - 2026-11-19: API tests `logger.test.ts` (4), `database-gate.test.ts` (3) and `event-indexes.test.ts` (5); the API suite passed 22 suites and 430 tests.
 - 2026-11-19: DB-1 (code) and S-4: event covers are uploaded to object storage and the event keeps a link; JSON body limit is 1 MB. API tests `uploads.test.ts` (17) and `cover-migration.test.ts` (7); the API suite passed 24 suites and 450 tests, and the web unit suite 241 tests and 2 todo. Production setup and the one-time migration are Tamal's to do.
 - 2026-11-19: decided that a cancelled event stays up with a Cancelled label (decision 2), and that cover images get the long-term fix (decision 6).
+- 2026-11-23: DB-6 (unique user names in the database), S-2 (shared sign-in rate limit in MongoDB) and O-5 (`/health` answers 503 when the database is down; no error-tracking service added). API tests `rate-limit-store.test.ts` (4), `health.test.ts` (2) and a uniqueness test in `users.test.ts`; the API suite passed 26 suites and 457 tests.

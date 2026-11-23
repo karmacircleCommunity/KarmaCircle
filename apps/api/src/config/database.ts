@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 import { env } from "./env";
 import { logger } from "./logger";
 
+/** True while the Mongoose connection is open. Read by `GET /health`. */
+export function isDatabaseConnected(): boolean {
+  return mongoose.connection.readyState === 1;
+}
+
 export async function connectToMongo(): Promise<void> {
   try {
     await mongoose.connect(env.MONGO_URI);

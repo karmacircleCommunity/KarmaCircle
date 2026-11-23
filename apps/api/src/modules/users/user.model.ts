@@ -55,14 +55,13 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>(
   {
     userType: { type: String, index: true },
-    // Not `unique: true` — userName uniqueness is still only enforced at the
-    // application layer (generateUniqueUsername in user.service.ts), which
-    // has a real check-then-write race window. A plain index here only
-    // speeds up lookups; it does not close that race. See known-issues.md.
+    // Unique in the database (DB-6), so two signups racing for the same name
+    // cannot both succeed. generateUniqueUsername still picks a free name first;
+    // if the race is lost anyway, the error handler turns Mongo's 11000 into a 409.
     userName: {
       type: String,
       required: true,
-      index: true,
+      unique: true,
     },
     name: { type: String },
     email: {

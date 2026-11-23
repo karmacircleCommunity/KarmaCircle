@@ -149,6 +149,11 @@ No `trust proxy` behind Vercel meant `req.ip` was the proxy address, so all clie
 One attacker could burn `authLimiter`'s 20 attempts for everyone, and per-IP limits did nothing.
 Now `app.set("trust proxy", 1)`.
 
+### Medium: rate limit counted per server (`rate-limit.ts`)
+The limiter kept its counts in each server's memory, and Vercel runs many servers at once, so every one started from zero and the sign-in limit was easy to get around.
+The auth limiter (sign-in, sign-up, password reset) now counts in MongoDB through `mongo-rate-limit-store.ts`, so all servers share one count.
+The general limiter stays in memory on purpose, and a database error lets the request through.
+
 ### Medium: payment verification race (`payment.service.ts`)
 `verifySponsorshipPayment` read the order, then set it to paid, then incremented the organization total, non-atomically.
 Two concurrent verify calls with a valid signature both passed the status check and both credited the organization.
