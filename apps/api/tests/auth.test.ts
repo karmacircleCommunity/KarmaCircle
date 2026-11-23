@@ -6,9 +6,12 @@ const app = buildTestApp();
 
 jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  sendOrganizationSetupReminder: jest.fn().mockResolvedValue(true),
 }));
 
 const sendPasswordResetEmail = mailer.sendPasswordResetEmail as jest.Mock;
+const sendOrganizationSetupReminder =
+  mailer.sendOrganizationSetupReminder as jest.Mock;
 
 /**
  * requestPasswordReset only ever hands the raw token to the mocked mailer
@@ -34,13 +37,15 @@ describe("Auth", () => {
   });
 
   it("ignores privileged fields smuggled into the signup body", async () => {
-    const res = await request(app).post("/auth/signup").send({
-      ...credentials,
-      name: "Jane",
-      tokenVersion: 999,
-      resetPasswordToken: "preset",
-      config: { hasCompletedProfile: true },
-    });
+    const res = await request(app)
+      .post("/auth/signup")
+      .send({
+        ...credentials,
+        name: "Jane",
+        tokenVersion: 999,
+        resetPasswordToken: "preset",
+        config: { hasCompletedProfile: true },
+      });
 
     expect(res.status).toBe(201);
     const { User } = await import("../src/modules/users/user.model");
@@ -49,6 +54,47 @@ describe("Auth", () => {
     expect(saved?.tokenVersion).toBe(0);
     expect(saved?.resetPasswordToken).toBeUndefined();
     expect(saved?.config?.hasCompletedProfile).toBe(false);
+  });
+
+  describe("setup reminder email", () => {
+    beforeEach(() => sendOrganizationSetupReminder.mockClear());
+
+    it("is sent when an organization signs up", async () => {
+      const res = await request(app).post("/auth/signup").send({
+        email: "org@example.com",
+        password: "hunter2",
+        name: "Helping Hands",
+        userType: "organization",
+      });
+
+      expect(res.status).toBe(201);
+      expect(sendOrganizationSetupReminder).toHaveBeenCalledTimes(1);
+      expect(sendOrganizationSetupReminder).toHaveBeenCalledWith(
+        "org@example.com",
+        "Helping Hands",
+      );
+    });
+
+    it("is not sent when an individual signs up", async () => {
+      const res = await request(app).post("/auth/signup").send(credentials);
+
+      expect(res.status).toBe(201);
+      expect(sendOrganizationSetupReminder).not.toHaveBeenCalled();
+    });
+
+    it("never undoes the sign-up when the email fails", async () => {
+      sendOrganizationSetupReminder.mockRejectedValueOnce(new Error("down"));
+
+      const res = await request(app).post("/auth/signup").send({
+        email: "org2@example.com",
+        password: "hunter2",
+        name: "Helping Hands",
+        userType: "organization",
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.headers["set-cookie"]?.[0]).toMatch(/^Token=/);
+    });
   });
 
   it("rejects a duplicate signup with 409", async () => {
@@ -397,7 +443,9 @@ describe("Auth", () => {
         name: "Helping Hands",
         userType: "organization",
       };
-      const signupRes = await request(app).post("/auth/signup").send(organization);
+      const signupRes = await request(app)
+        .post("/auth/signup")
+        .send(organization);
       expect(signupRes.status).toBe(201);
 
       // The signup created a draft organization record alongside the

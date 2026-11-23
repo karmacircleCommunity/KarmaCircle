@@ -86,6 +86,50 @@ export async function sendPasswordResetEmail(
   }
 }
 
+/**
+ * Tells a brand-new organization its profile is still a draft (November 2026).
+ * Organizations can host events straight away, so this is the nudge instead of
+ * a gate: finish the details so the public page works and people can find it.
+ * Best effort and production only, like the event emails.
+ */
+export async function sendOrganizationSetupReminder(
+  to: string,
+  organizationName: string,
+): Promise<boolean> {
+  if (env.NODE_ENV !== "production") return false;
+
+  const setupUrl = `${env.ORIGIN_URL.replace(/\/$/, "")}/organization/setup`;
+  const safeName = escapeHtml(organizationName || "there");
+
+  const client = getResendClient();
+
+  const { error } = await client.emails.send({
+    from: env.RESEND_FROM_EMAIL || DEFAULT_FROM,
+    to,
+    subject: "Finish your KarmaCircle organization details",
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; color: #282828;">
+        <h2>Welcome to KarmaCircle</h2>
+        <p>Hi ${safeName},</p>
+        <p>You can host events right away. Your organization page is still a draft, though: until you add your details, people cannot open it, and some things may look incomplete.</p>
+        <p><a href="${setupUrl}" style="display:inline-block;padding:12px 20px;background:#a8623e;color:#fff;border-radius:8px;text-decoration:none;">Add your details</a></p>
+        <p>It takes a few minutes, and you can skip questions and come back.</p>
+        <p>KarmaCircle</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger.error({ error }, "Failed to send organization setup reminder");
+    throw new AppError(
+      STATUS_CODE.INTERNAL_SERVER_ERROR,
+      "Failed to send the setup reminder.",
+    );
+  }
+
+  return true;
+}
+
 /** Whether the runtime knows `zone`, so a bad stored value never breaks an email. */
 function isUsableZone(zone: string): boolean {
   try {

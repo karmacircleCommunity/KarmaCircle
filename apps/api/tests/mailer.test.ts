@@ -13,6 +13,7 @@ import {
   getLastResetUrl,
   sendEventJoinConfirmation,
   sendEventJoinOrganizerNotice,
+  sendOrganizationSetupReminder,
   sendPasswordResetEmail,
 } from "../src/config/mailer";
 import type { IEvent } from "../src/modules/events/event.model";
@@ -96,6 +97,37 @@ describe("mailer environment guard", () => {
     expect(message.html).toContain("4 of 10 places taken");
     expect(message.html).toContain("/organization/events/big-drive/attendees");
     expect(message.html).not.toContain("@example.com</");
+  });
+
+  it("suppresses the organization setup reminder outside production", async () => {
+    const sent = await sendOrganizationSetupReminder(
+      "org@example.test",
+      "Helping Hands",
+    );
+
+    expect(sent).toBe(false);
+    expect(mockResend).not.toHaveBeenCalled();
+  });
+
+  it("sends the organization setup reminder in production, escaped, with the setup link", async () => {
+    env.NODE_ENV = "production";
+    mockSend.mockClear();
+
+    const sent = await sendOrganizationSetupReminder(
+      "org@example.com",
+      "Helping <Hands>",
+    );
+
+    expect(sent).toBe(true);
+    const message = mockSend.mock.calls[0][0] as {
+      to: string;
+      subject: string;
+      html: string;
+    };
+    expect(message.to).toBe("org@example.com");
+    expect(message.subject).toContain("Finish your KarmaCircle organization");
+    expect(message.html).toContain("Helping &lt;Hands&gt;");
+    expect(message.html).toContain("/organization/setup");
   });
 
   it("writes the join confirmation time in the event's own timezone when it has one", async () => {

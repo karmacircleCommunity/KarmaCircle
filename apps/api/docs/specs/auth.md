@@ -25,6 +25,8 @@ All of that is gone: `Token` is `httpOnly` on both paths, and the three readable
 
 `authService.signup`: reject with `409 USER_ALREADY_EXISTS` if `email` is already taken (`userService.findByEmail`) → `bcrypt.hash(password, 10)` → `userService.generateUniqueUsername(email)` (see [users.md](./users.md)) → save → respond `201` with `{ message: SIGNUP_SUCCESS, user: <sanitized> }` and a `Token` cookie (`httpOnly`, 30-day expiry, `SameSite=Lax`, `Secure` off localhost, scoped to `env.ORIGIN_DOMAIN` when that is set).
 
+**Organization sign-ups also get one email** (November 2026): `authController.signup` calls `sendOrganizationSetupReminder` ([config/mailer.ts](../../src/config/mailer.ts)) when `userType` is `organization`, telling them they can host events now and that their public page stays a draft until they add their details, with a link to `/organization/setup`. Production only (elsewhere the mailer returns `false` and sends nothing), best effort (a failed email is logged and never undoes the sign-up), and one-off: there is no scheduler, so nothing is resent. Individuals get no such email, and neither does an organization created through Google sign-in, which does not go through this handler's organization path. Covered in `tests/auth.test.ts` and `tests/mailer.test.ts`.
+
 ## `POST /auth/signin`
 
 `authLimiter` → `validate(signinSchema)` → `authController.signin`. `signinSchema` is the same shape minus `.passthrough()`. `authService.signin`: `404`-shaped as `401 INVALID_CREDENTIALS` (not `404`) if the email isn't found — an existing-email check doesn't leak which part was wrong, both "no such user" and "wrong password" return the identical `401 INVALID_CREDENTIALS`. Same `Token` cookie/response shape as signup, `200` instead of `201`.

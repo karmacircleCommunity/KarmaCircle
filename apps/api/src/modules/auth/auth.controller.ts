@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { env } from "../../config/env";
+import { logger } from "../../config/logger";
+import { sendOrganizationSetupReminder } from "../../config/mailer";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AuthenticatedRequest } from "../../middleware/auth";
 import { IUser } from "../users/user.model";
@@ -20,7 +22,22 @@ import {
 } from "./auth.validation";
 
 export async function signup(req: Request, res: Response) {
-  const { token, user } = await authService.signup(req.body as SignupInput);
+  const input = req.body as SignupInput;
+  const { token, user } = await authService.signup(input);
+
+  // A new organization can host events straight away, so this email is the
+  // nudge to finish its details. Best effort: a failed email never undoes the
+  // sign-up.
+  if (input.userType === "organization") {
+    try {
+      await sendOrganizationSetupReminder(
+        input.email,
+        typeof input.name === "string" ? input.name : "",
+      );
+    } catch (error) {
+      logger.error({ error }, "Organization signed up but reminder failed");
+    }
+  }
 
   res
     .status(STATUS_CODE.CREATED)
