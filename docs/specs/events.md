@@ -273,10 +273,10 @@ case-insensitive scan on the API side, fine at today's scale.
 had none:** no cover photo → an accent-gradient block with a calendar mark (same
 derivation as `OrganizationCard`'s no-cover fallback); no `organizerHandle` (an
 individual host, per `event.model.ts`) → the organizer name renders as plain
-text instead of a link; no capacity data → the "N going / spots left" rule at
-the bottom is omitted entirely rather than showing invented numbers (see
-[known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built)
-— real capacity tracking is future scope, not built).
+text instead of a link; an event with no capacity → the "N going / spots left" rule at
+the bottom is omitted entirely rather than showing invented numbers (capacity
+is optional and real since PG-5, see
+[known-issues.md](./known-issues.md#events--attendee-capacity-built-november-2026-pg-5)).
 
 **September 2026:** two badge pills — "Govt" (`event.isGovernmentSponsored`) and
 the access label ("Approval required" or "Invite only", `event.access`) — render top-right on the cover, in the slot
@@ -297,7 +297,7 @@ directory's Upcoming/Past filtering, search, type filter and responsive layout,
 plus an organization publishing an in-person event from the full-page form.
 `e2e/events/attendee-journey.spec.ts` (detail page, joining, "You are going", My
 Events, invite-only, past event), `e2e/events/event-access.spec.ts` (approval,
-waitlist and invitations; written, not run yet), `e2e/events/online-event-publishing.spec.ts`
+waitlist and invitations), `e2e/events/online-event-publishing.spec.ts`
 (online platform and meeting link) and `e2e/events/event-management.spec.ts`
 (edit and cancel, below), `e2e/events/event-attendees.spec.ts` (leave,
 capacity, attendee list) and `e2e/events/event-details.spec.ts` (optional details),
@@ -711,13 +711,12 @@ the model for a free event rather than set to zero — almost every event here i
 a nonprofit drive — so the free case says "Free to attend / Nonprofit event.
 Nothing to pay, ever." in words.
 
-**Attendee capacity is deliberately not tracked.** `going`/`spotsLeft` stay
-`undefined` on every live event — same "nothing invented" rule the directory
-card follows. `EventFacts`'s "Attendance" cell and `EventJoinPanel`'s
-Going/Spots-left row are omitted when the event has no capacity data. See
-[known-issues.md](./known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built)
-for what real RSVP/capacity tracking would need — flagged as future scope, not
-scheduled.
+**Attendee capacity is optional (PG-5).** `going`/`spotsLeft` are set only for
+an event with a capacity, and stay `undefined` otherwise — same "nothing
+invented" rule the directory card follows. `EventFacts`'s "Attendance" cell and
+`EventJoinPanel`'s Going/Spots-left row show "No limit" or are omitted when the
+event has no capacity. See
+[known-issues.md](./known-issues.md#events--attendee-capacity-built-november-2026-pg-5).
 
 **Cancelled event (November 2026, PG-2).** `toDisplayEventDetail.ts` sets
 `DisplayEvent.cancelled` from `status`. `EventHero` shows a red "Cancelled" badge

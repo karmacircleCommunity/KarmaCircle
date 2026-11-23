@@ -7,6 +7,7 @@ import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
 import { FiCalendar, FiMapPin, FiVideo } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { REGISTRATION_STATUS_LABELS } from "@features/events/constants/eventAccess";
 import type { ApiEventList } from "@features/events/types";
 import { describeWhere } from "@features/events/utils/eventMode";
 import { formatEventDate } from "@features/events/utils/formatEventFacts";
@@ -156,7 +157,10 @@ const MyEvents = () => {
                       aria-hidden
                       className="size-1.5 rounded-full bg-brand"
                     />{" "}
-                    You&apos;re going
+                    {event.registrationStatus &&
+                    event.registrationStatus !== "going"
+                      ? REGISTRATION_STATUS_LABELS[event.registrationStatus]
+                      : "You're going"}
                   </span>
                 </Link>
               </li>

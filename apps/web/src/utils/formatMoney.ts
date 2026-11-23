@@ -17,7 +17,11 @@ export const formatMoney = (amount: number, currency: string) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-/** Raised as a whole percentage of goal, clamped so an over-funded drive
- *  cannot push the bar past its track. */
-export const fundedPercent = (raised: number, goal: number) =>
-  goal <= 0 ? 0 : Math.min(100, Math.round((raised / goal) * 100));
+/** Raised as a whole percentage of goal, clamped to 0-100 so an over-funded
+ *  drive cannot push the bar past its track and a negative or unreadable
+ *  amount cannot pull it below empty. */
+export const fundedPercent = (raised: number, goal: number) => {
+  if (!(goal > 0)) return 0;
+  const percent = Math.round((raised / goal) * 100);
+  return Number.isNaN(percent) ? 0 : Math.min(100, Math.max(0, percent));
+};

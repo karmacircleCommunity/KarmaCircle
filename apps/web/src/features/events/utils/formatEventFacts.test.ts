@@ -153,9 +153,12 @@ describe("formatDuration", () => {
     ).toBe("1 hour");
   });
 
-  // Real bug, reported rather than fixed: an unparseable date makes every
-  // arithmetic step NaN and the helper returns "NaN days".
-  it.todo("returns a safe fallback instead of 'NaN days' for invalid dates");
+  it("returns a plain fallback instead of 'NaN days' for an unreadable date", () => {
+    expect(formatDuration("not-a-date", "2026-09-12T10:00:00Z")).toBe(
+      "Duration unknown",
+    );
+    expect(formatDuration("2026-09-12T10:00:00Z", "")).toBe("Duration unknown");
+  });
 });
 
 describe("mapsUrl", () => {
@@ -218,7 +221,7 @@ describe("isEventPast", () => {
     expect(isEventPast("2026-09-12T17:00:00-05:00")).toBe(false);
   });
 
-  it("treats an invalid date as not past (current behavior)", () => {
+  it("treats an invalid date as not past (decided, not a bug)", () => {
     expect(isEventPast("not-a-date")).toBe(false);
   });
 });

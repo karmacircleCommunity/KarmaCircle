@@ -78,4 +78,13 @@ describe("fundedPercent", () => {
   it("handles fractional amounts", () => {
     expect(fundedPercent(0.5, 2)).toBe(25);
   });
+
+  it("returns 0 for a negative raised amount instead of a negative percent", () => {
+    expect(fundedPercent(-500, 1000)).toBe(0);
+  });
+
+  it("returns 0 when the goal or the raised amount is not a number", () => {
+    expect(fundedPercent(500, NaN)).toBe(0);
+    expect(fundedPercent(NaN, 1000)).toBe(0);
+  });
 });

@@ -45,7 +45,10 @@ interface Attendee {
 }
 
 /** Signs a new attendee up in an isolated browser context at desktop width. */
-async function openAttendee(browser: Browser, stamp: number): Promise<Attendee> {
+async function openAttendee(
+  browser: Browser,
+  stamp: number,
+): Promise<Attendee> {
   const context = await browser.newContext({ viewport: DESKTOP });
   const page = await context.newPage();
   await signUpIndividual(page, stamp);
@@ -89,9 +92,7 @@ test("an attendee finds an event, joins it, sees 'You are going' and finds it in
     const going = attendee.getByRole("button", { name: "You are going" });
     await expect(going).toBeVisible();
     await expect(going).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      attendee.getByText(/registered for this event/),
-    ).toBeVisible();
+    await expect(attendee.getByText(/registered for this event/)).toBeVisible();
     await expect(
       attendee.getByRole("button", { name: "Join this event" }),
     ).toHaveCount(0);
@@ -111,10 +112,9 @@ test("an attendee finds an event, joins it, sees 'You are going' and finds it in
     await expect(
       attendee.getByRole("heading", { level: 1, name: "My events" }),
     ).toBeVisible();
-    await expect(attendee.getByRole("tab", { name: "Upcoming" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    await expect(
+      attendee.getByRole("tab", { name: "Upcoming" }),
+    ).toHaveAttribute("aria-selected", "true");
     const entry = attendee.getByRole("link", { name: new RegExp(name) });
     await expect(entry).toBeVisible();
     await expect(entry).toContainText(`Hosted by ${organizer.name}`);
@@ -193,7 +193,9 @@ test("an invite-only event shows the ask-the-organizer state and refuses a join"
       attendee.getByText("Invite only", { exact: true }).first(),
     ).toBeVisible();
     await expect(
-      attendee.getByText(/This event is invite-only. Only people the organizer invited/),
+      attendee.getByText(
+        /This event is invite-only. Only people the organizer invited/,
+      ),
     ).toBeVisible();
     await expect(
       attendee.getByRole("button", { name: "Join this event" }),
@@ -252,7 +254,9 @@ test("a completed event shows the past state with no Join action and refuses a j
     await expect(attendee.getByText("Free to attend")).toHaveCount(0);
 
     // Share stays available after the event, as the panel's own docs promise.
-    await expect(attendee.getByRole("button", { name: "Share", exact: true })).toBeVisible();
+    await expect(
+      attendee.getByRole("button", { name: "Share", exact: true }),
+    ).toBeVisible();
 
     // The API refuses a join once the event has started.
     const response = await attendee.request.post(

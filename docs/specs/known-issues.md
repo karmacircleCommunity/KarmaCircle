@@ -93,9 +93,6 @@ Also built in November 2026: an event has a **timezone** (PG-11): the form reads
 
 ## Events - open issues (November 2026)
 
-- **`formatDuration` returns "NaN days"** (`features/events/utils/formatEventFacts.ts`) when either date cannot be read. Recorded as an `it.todo` in `formatEventFacts.test.ts`.
-- **`fundedPercent` (`src/utils/formatMoney.ts`) has no lower clamp.** A negative raised amount gives a negative percent, and a NaN goal or raised value returns NaN. Not asserted in tests.
-- **`isEventPast` treats an unreadable date as not past** (a NaN comparison is false). Asserted as current behavior in `formatEventFacts.test.ts`.
 - **`formatEventDate`'s JSDoc example does not match its output.** It says "Sat 12 Sep · 9:00 pm", but only the first ", " is replaced, so en-US yields "Sat · Sep 12, 9:00 PM". The format is locale-dependent by design.
 - **The create form shows only "Validation failed" for server-side rule failures.** Field-level messages (`response.data.errors`) from the API are not surfaced; the browser mirrors the API rules, so this mostly matters if the two drift. The edit form (November 2026) does surface the API's first field error in its toast.
 - **Events Playwright specs: fixed and run (2026-11-16).** `events-responsive.spec.ts` now creates future events that end after they start and moves the past one with the E2E-only backdate route, and `attendee-journey.spec.ts`, `online-event-publishing.spec.ts` and the new `event-management.spec.ts` (edit and cancel) were run for the first time. All 15 events specs pass on Chromium, Firefox and WebKit (45 of 45). Two specs needed their hosted-list link anchored (`^<name>`) because each row's "Edit <name>" link also contains the event name.

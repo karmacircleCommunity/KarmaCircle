@@ -23,7 +23,7 @@ stored account type and returns `403` for individual hosts.
 Upcoming/Past filtering, city search, mobile/desktop overflow, and publishing an
 in-person event through the full-page form. `attendee-journey.spec.ts` (detail
 page, join, My Events, invite-only, past event), `event-access.spec.ts`
-(approval, waitlist and invitations; written, not run yet),
+(approval, waitlist and invitations),
 `online-event-publishing.spec.ts` (online platform and meeting link) and
 `event-management.spec.ts` (edit and cancel) were added in November 2026. All 15
 specs passed on Chromium, Firefox and WebKit on 2026-11-16 (45 of 45), after
@@ -446,10 +446,10 @@ a later render cannot replace it with an empty or stale error object.
 
 - **`EventCard.tsx`** — renders from its `event: EventCardEvent` prop. It shows
   a cover image or fallback, a date badge, event name and summary, and event
-  location or online details. Live records have no cause or capacity fields, so
-  the card does not invent a cause label or "going / spots left" count (see
-  [known-issues.md](../../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built),
-  future scope). **The date is split across the two surfaces on purpose** -
+  location or online details. Live records have no cause field, and only an event with a
+  capacity has a "going / spots left" count (PG-5, see
+  [known-issues.md](../../../../../docs/specs/known-issues.md#events--attendee-capacity-built-november-2026-pg-5)),
+  so the card does not invent a cause label or a count. **The date is split across the two surfaces on purpose** -
   `formatEventBadge` on the cover ("12 SEP"), `formatEventTime` in the meta row
   ("Sat · 9:00 pm"). Both used to call `formatEventDate`, so every card printed
   the same day number twice. The meta block carries `mb-4` rather than leaning
@@ -592,10 +592,11 @@ changing together.
   `../../` paths. Only same-folder `./` imports remain, in `types/`. Keep it that
   way when adding files. Generic helpers with no event knowledge (money, counts)
   belong in shared `apps/web/src/utils/`, not in `features/events/utils/`.
-- **Unit-tested helpers with open bugs (November 2026):** `formatDuration`
-  returns "NaN days" for an unreadable date, and `fundedPercent` (shared `@utils/formatMoney`) has no lower
-  clamp and returns NaN for NaN input. See `known-issues.md` and the events
-  to-do list (T-8).
+- **Unreadable dates and amounts in helpers (November 2026, T-8):**
+  `formatDuration` returns "Duration unknown" for a date it cannot read, and
+  `fundedPercent` (shared `@utils/formatMoney`) clamps to 0-100 and returns 0 for
+  a negative or NaN value. `isEventPast` deliberately treats an unreadable date
+  as not past; the unit tests record that as a decision, not a bug.
 - **Format example is en-GB, output is en-US:** the JSDoc on `formatEventDate`
   shows "Sat 12 Sep · 9:00 pm", but only the first ", " is replaced, so en-US
   actually yields "Sat · Sep 12, 9:00 PM". The format is locale-dependent by
@@ -646,12 +647,10 @@ changing together.
   directory, event detail page, organization profile's hosted-event section, and
   My Events page already render live event data. Check the relevant feature spec
   before adding another surface.
-- **"Add RSVP / attendee capacity"** → deliberately not built yet, see
-  [known-issues.md](../../../../../docs/specs/known-issues.md#events--rsvp-and-attendee-capacity-future-scope-deliberately-not-built)
-  for what it would need (a `capacity` field, a write endpoint, an attendee
-  collection). A materially bigger piece of work than the trust/detail fields
-  added in September 2026 — don't fold it into a smaller-scoped change without
-  calling that out.
+- **"Add RSVP / attendee capacity"** → already built (November 2026, PG-5 and
+  PG-3): an optional `capacity` on the event, an atomic join that refuses when
+  full, a leave route, and the attendee list. See
+  [known-issues.md](../../../../../docs/specs/known-issues.md#events--attendee-capacity-built-november-2026-pg-5).
 - **"Let organizers set the government-sponsored flag themselves"** → don't —
   that's the one field deliberately kept server/seed-only, mirroring
   `Organization.verified`, precisely so it can't be self-declared. If a real

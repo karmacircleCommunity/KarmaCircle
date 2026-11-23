@@ -195,8 +195,9 @@ on ports 3001 and 5051, so it does not touch a running `pnpm dev` session.
 
 ## Who can join and the waitlist
 
-`event-access.spec.ts` (5 tests, 2026-11-19, **not run yet**: it waits for Tamal's
-go-ahead to run UI tests, so treat it as written but unverified). Organizations are
+`event-access.spec.ts` (5 tests, 2026-11-19; first run 2026-11-23, after which
+three stale expectations were corrected and all 5 pass on Chromium, Firefox and
+WebKit). Organizations are
 signed up and their profile published through the UI, events are published through
 the API with `access`, and each attendee has their own browser context.
 

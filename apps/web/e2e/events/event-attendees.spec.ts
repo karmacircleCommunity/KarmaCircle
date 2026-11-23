@@ -85,7 +85,10 @@ test("an attendee can leave an event, give the spot back and join again", async 
     const status = await attendee.request.get(
       `${E2E_API_URL}/events/${uid}/registration`,
     );
-    expect(await status.json()).toEqual({ joined: false });
+    expect(await status.json()).toMatchObject({
+      joined: false,
+      status: "none",
+    });
 
     // My Events no longer lists it.
     await attendee.goto("/events/mine");
@@ -247,9 +250,7 @@ test("the API refuses a capacity below the people already registered", async ({
   await page.getByLabel("Maximum attendees (optional)").fill("1");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(
-    page.getByText(
-      "Capacity cannot be lower than the 2 people already registered.",
-    ),
+    page.getByText("Capacity cannot be lower than the 2 people already going."),
   ).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/organization/events/${uid}/edit$`));
 });

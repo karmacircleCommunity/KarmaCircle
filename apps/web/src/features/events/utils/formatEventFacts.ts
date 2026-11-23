@@ -73,12 +73,13 @@ export const formatEventTime = (startsAt: string, timezone?: string) => {
  * "1 day 7 hours" is not how anyone describes a weekend build.
  */
 export const formatDuration = (startsAt: string, endsAt: string) => {
-  const minutes = Math.max(
-    0,
-    Math.round(
-      (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000,
-    ),
-  );
+  const rawMinutes =
+    (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000;
+
+  // An unreadable date must not leak "NaN days" onto the page.
+  if (Number.isNaN(rawMinutes)) return "Duration unknown";
+
+  const minutes = Math.max(0, Math.round(rawMinutes));
 
   if (minutes < 60) return `${minutes} minutes`;
 

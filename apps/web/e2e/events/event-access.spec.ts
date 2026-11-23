@@ -150,7 +150,9 @@ test("a full event offers the waitlist, and the organizer moves the person up", 
     await second.page
       .getByRole("button", { name: "Join the waitlist" })
       .click();
-    await expect(second.page.getByText("On the waitlist")).toBeVisible();
+    await expect(
+      second.page.getByText("On the waitlist", { exact: true }),
+    ).toBeVisible();
 
     await page.goto(`/organization/events/${uid}/attendees`);
     await page.getByRole("tab", { name: /Waitlist/ }).click();

@@ -22,250 +22,19 @@ Priority is P1 (fix first), P2 (soon), P3 (later).
 
 Sections:
 
-1. Product gaps (things users cannot do yet)
-2. Code health (dead code and structure)
-3. Testing
-4. UI audit
-5. Backend API validation
-6. Database (MongoDB)
-7. Backend security
-8. Backend scalability and operations
-9. Docs and diagrams
-10. Decisions needed from Tamal
-11. Done
+1. Testing
+2. UI audit
+3. Database (MongoDB)
+4. Backend security
+5. Backend scalability and operations
+6. Docs and diagrams
+7. Decisions needed from Tamal
+8. Done
 
-## 1. Product gaps (things users cannot do yet)
+On 2026-11-23 Tamal had the sections for product gaps (PG items), code health (CH items) and backend API validation (V items) deleted, because every item in them was done.
+Their IDs now survive only in the Decisions and Done sections, and the specs hold the detail.
 
-### PG-1 Edit an event
-Status: done (2026-11-16). Priority: P1.
-Organizers cannot change an event after it is published.
-A typo in the title, date or place can only be fixed by editing the database by hand.
-The API has no update route, and the frontend has no edit page.
-Fix: add an authenticated update route that only the owning organization can call, reuse the create validation, and add an edit mode to the full-page form.
-Result: `PATCH /events/:uid` and an Edit link on every row of `/organization/events` that has not ended and is not cancelled, opening the shared form at `/organization/events/:eventId/edit`.
-Only the hosting organization can edit (`403` for anyone else), and an event is editable until it ends and never after it is cancelled (`409`).
-The body is any subset of the create fields and shares the create rules, except that a start time left alone may already be in the past, so an event in progress can fix a typo.
-The page address cannot change, because registrations point at it, so sending `uid` is a `400`.
-Switching between Online and In person drops the other mode's fields.
-The form sends only what changed, so a cover image is not re-sent unless a new one was picked.
-Not built: telling the people who joined (not planned), and editing the long-form detail fields, which the create form cannot set either (PG-7).
-
-### PG-2 Cancel or delete an event
-Status: done (2026-11-16), cancel only. Priority: P1.
-There is no way to cancel or remove an event.
-Decide first whether "cancel" keeps the event visible with a cancelled badge, or removes it.
-People who already registered need to be told, which links to the email work in PG-6.
-Result: `POST /events/:uid/cancel` and a "Cancel event" button on the same rows, behind a confirmation dialog.
-Decided while Tamal was away and confirmed by him on 2026-11-19: a cancelled event stays public with a "Cancelled" badge on the card, the detail page and My Events, and there is no delete and no reinstate.
-It adds an `Event.status` (`published` or `cancelled`) and `cancelledAt`; an event saved before the field existed reads as published.
-New joins are refused with `409`, and existing registrations are kept.
-Only the hosting organization can cancel, and only before the event ends.
-Not built: emailing the people who joined (not planned), reinstating, and deleting.
-
-### PG-3 Leave an event (undo a registration)
-Status: done (2026-11-16). Priority: P2.
-An attendee who joined cannot un-join.
-There is no leave route and no button.
-The registration table already has a unique rule per person and event, so a delete route is simple.
-Result: `DELETE /events/:uid/registration` and a "Leave event" link under "You are going" on the event page, behind a confirmation dialog ("Stay registered" or "Leave event").
-It gives the spot back (PG-5), refreshes the page, and removes the event from My Events.
-It is allowed until the event starts (`409` after), and on a cancelled event, where the link reads "Remove my registration".
-Not built: telling the organizer that someone left.
-
-### PG-4 Invite-only events do not work end to end
-Status: done (2026-11-19), with a small web side. Priority: P1.
-The invite-only flag was only a label: the API refused every join with a 403 and nothing existed to invite or approve anyone.
-Decided with Tamal on 2026-11-18 together with PG-14, built on 2026-11-19: one registration state machine instead of a flag.
-Result: an event has one of three access levels, set in the "Who can join" dropdown of the create and edit forms.
-**Open** (anyone joins), **Approval required** (anyone asks, the organizer approves or declines on the attendee page's Requests tab) and **Invite only** (only invited emails can join, still listed in the directory with a label).
-An invited email skips approval on any level and can join a full event.
-The organizer invites by email from the attendee page (up to 50 at a time, 200 per event), the invitee must sign in with that exact email, and in production the invitation email links to the event.
-A declined person cannot ask again until the organizer approves them.
-An approved person gets the join confirmation email in production.
-The old `inviteOnly` flag is retired: an old event with it set reads as Approval required, with no migration.
-The directory filter has "Open to all", "Approval required" and "Invite only".
-Not built: an "Invited" tab in My Events (the API has `GET /events/invitations` for it), a note box on the request (the API takes up to 300 characters), and any email for a decline or for the organizer on a new request.
-Inviting someone who already asked is skipped as already registered; the organizer approves them from the Requests tab instead.
-
-### PG-5 Capacity and spots left
-Status: done (2026-11-16). Priority: P2.
-An organizer cannot set a maximum number of attendees, and the page cannot show spots left.
-Registrations are stored separately and nothing totals them per event for the public.
-This needs a capacity field on the event and an atomic check when joining so two people cannot take the last spot together.
-Result: an optional "Maximum attendees" (1 to 100000) on the create and edit forms, stored as `capacity` with a `registrationCount` kept by atomic increments.
-A full event refuses the join with `409 "This event is full."`, and eight people racing for two spots get exactly two (tested).
-The card, the facts strip, the join panel and the mobile bar show going and spots left ("1 spot left", "Full") only for an event with a capacity, and "No limit" otherwise.
-Setting a capacity on edit recounts the registrations, and cannot go below the people already registered.
-Not built: a waitlist (PG-14).
-
-### PG-6 Organizer attendee list and check-in
-Status: done (2026-11-16). Priority: P2.
-Organizers see only a registration count on the dashboard.
-There is no attendee list, no check-in on the day, and no notification to the organizer when someone joins.
-This is already drawn as "proposed" in the Miro data-flow frame.
-Result: an "Attendees" link on every row of Your events opens `/organization/events/:eventId/attendees`: totals (registered of capacity, checked in), a search by name or email, a check-in toggle per person, "Download CSV", and 50 people at a time.
-Only the hosting organization can read it (`403` for anyone else), and the CSV neutralizes cells that a spreadsheet would run as a formula.
-A cancelled event keeps its list but has no check-in.
-In production the organization owner also gets an email for each new registration (the attendee's name and the running total, never their email).
-Not built: a digest or opt-out for those emails, check-in by QR code, and attendance numbers on the dashboard.
-The Miro data-flow frame still shows the roster as proposed (see D-1).
-
-### PG-7 The create form cannot collect the rich details
-Status: done (2026-11-16), except the fundraiser. Priority: P1.
-The detail page can show about text, agenda, what to bring, directions, link delivery, join requirements, cost, fundraiser, languages, minimum age and contact email.
-The create form and the create API accept none of these.
-Only the demo-data script can fill them, so real events look thinner than the design.
-Fix: extend the Zod create schema and the form in small groups, starting with about text, contact email and cost.
-The government-sponsored badge must stay server-only.
-Result: the create and edit API accept, and a new "More about the event" section of the form collects, a full write-up, contact email, minimum age, a fee with currency and a note (empty means free, zero is rejected), what to bring, languages, an agenda editor, and "Getting there" for in-person events or the link notes for online ones.
-Every field is optional, hidden from the event page when empty, validated on both sides with the same limits, and can be cleared again on edit.
-Only the chosen mode's notes are kept.
-The government-backed badge stays server-only.
-Not done: `fundraiser`: events do not take money (decided 2026-11-19), so it stays unset.
-
-### PG-8 Contribute button does nothing
-Status: done (2026-11-16). Priority: P3.
-The Contribute button on the detail page only shows a "coming soon" message.
-Decide whether it links to the existing organization donation flow.
-Result (decided while building it, easy to change): it links to the hosting organization's existing Support flow.
-Contribute goes to the organization's profile with `?support=1`, which opens the Razorpay "Support" dialog straight away when that organization has direct support on, and just shows the profile when it does not.
-The helper line now says the money goes to the organization through its Support page, not to this event alone.
-An event from an individual host (no organization link) shows no button, and the "coming soon" toast is gone.
-The panel's raised figure is not fed by any payment and a fundraiser cannot be set through the API; that stays as it is (decided 2026-11-19).
-
-### Added 2026-11-16: gaps found by comparing with other event platforms
-
-These come from a review of Devfolio, HackQuest, DoraHacks, Devpost, Unstop, Luma, Eventbrite, Meetup, Galaxy Digital, Better Impact, Zeffy and Givebutter.
-Their feature lists come from their own help pages and marketing, so confirm a detail before copying it.
-PG-1 to PG-8 above already cover edit, cancel, leave, invite-only, capacity, attendee list, rich details and the Contribute button.
-The items below are new.
-
-### PG-9 No event type, category or tags
-Status: done (2026-11-16). Priority: P2.
-A hackathon, a workshop, a clean-up drive and a fundraiser all look the same.
-Discovery cannot filter by kind of event, and the detail page cannot change its layout by kind.
-Fix: add a required event type and optional tags to the model, the create form, the card and the directory filter.
-Result: seven kinds (Volunteering drive, Fundraiser, Workshop or training, Awareness campaign, Meetup or networking, Cultural or community event, Other) and up to eight tags per event.
-The create and edit forms require a kind and take tags; the card shows the kind, the event page shows a kind badge and `#tag` chips, the directory has a third "Filter by kind" dropdown, and the directory search finds an event by its tags.
-The kind is required by the form but optional in the API, so older events and API clients keep working; a legacy event must be given a kind before the edit form saves.
-There is no Hackathon kind: hackathons are out of scope (decided 2026-11-19).
-The local demo events now carry kinds in the seed script.
-
-### PG-10 No Hybrid mode
-Status: done (2026-11-16). Priority: P2.
-An event is Online or Offline only.
-An event that has a venue and a live stream cannot be described.
-Fix: add a third mode that requires both the place and the meeting link.
-Luma offers In-Person, Online and Hybrid.
-Result: a third "Hybrid" format ("A place and a live stream") that requires the full venue and the platform and meeting link, keeps both sets of notes, and shows "Hybrid · City, Country" on cards and lists.
-The event page shows both a venue card and a joining card under "Where it is and how to join", and the directory format filter has a Hybrid option.
-Switching a Hybrid event to In person or Online drops the side that no longer applies.
-
-### PG-11 No timezone on events
-Status: done (2026-11-16). Priority: P2.
-The form has no timezone field, and the code has no timezone handling.
-A time is shown in each viewer's own browser timezone, so an event in one city can show the wrong clock time to someone elsewhere.
-The agenda labels are plain wall-clock text for the same reason.
-Fix: store the event's timezone, show times in it, and optionally show the viewer's local time beside it.
-Result: events have an optional `timezone` (an IANA name such as `Asia/Kolkata`, checked against the runtime's own database; abbreviations like `IST` are refused).
-The form has a Timezone picker (defaulting to the browser's) and reads its date and time pickers in that zone, so an organizer in London can set 10:00 in Tokyo and the stored start is 01:00 UTC; editing reads the times back in the event's zone, and changing only the zone moves the real moment.
-Cards, the event page, the join panel, My Events, Your events and the organization's events list show the event's own clock with the zone named, the hero and the panel add the viewer's own time when it differs, and the join confirmation email uses the event's zone.
-Older events have no timezone and keep showing in each viewer's own zone; the browser's zone is pinned onto one only when something else is saved.
-Not built: a search box in the picker, the viewer note on cards and lists, and a timezone on the demo seed events.
-
-### PG-12 Description is short and plain text
-Status: done (2026-11-16). Priority: P2.
-The create rule is 20 to 200 characters of plain text.
-Devfolio's About accepts Markdown and Luma accepts formatted text.
-Fix: decide a longer limit and a safe formatted-text format, and make sure it is sanitized before it is shown.
-This pairs with PG-7, which adds the long-form about text.
-Result (decided while building it): the short description stays plain text, 20 to 200 characters, because it is the card summary; the full write-up from PG-7 is where the longer formatted text lives.
-The write-up now takes up to 4000 characters per paragraph (was 2000) and a small safe format: bold, italic, http and https links, bullet and numbered lists and line breaks.
-It is parsed into data and rendered as React elements, never HTML, so organizer text cannot inject markup (tested with a script tag, an image tag and a `javascript:` link), and the form shows a live preview.
-Not supported on purpose: headings, images, tables, code and nesting.
-
-### PG-14 No waitlist and no approval step
-Status: done (2026-11-19), with a small web side. Priority: P2.
-Built together with PG-4, see there for the access levels.
-Result: a registration has a status: going (holds a spot), pending (asked to join), waitlisted, declined.
-A row with no status reads as going.
-A full event with the waitlist on (the default, switched off with "Allow a waitlist when full" in the form, which appears once a maximum is set) sends a new joiner to the waitlist, shown as "On the waitlist" with a "Leave the waitlist" link.
-With it off, a full event just says "Event is full" and the API answers 409.
-On an Approval required event that is full, a new request goes to the waitlist; otherwise it is pending, shown as "Request sent" with "Withdraw my request".
-Promotion is manual: the organizer clicks "Move up" or Approve, and nobody moves up on their own when a spot opens.
-Approving or moving someone up on a full event goes past the capacity (Full is a soft limit, and the page shows "Full", never a count past the cap).
-My Events labels a request, a waitlist spot or a decline on the card, and Your events shows "N waiting" on the Attendees link.
-
-### PG-15 No draft, unpublish or event status
-Status: done (2026-11-16), except postponed. Priority: P1.
-The event model has no status field.
-An event goes live the moment it is submitted, and cannot be hidden, cancelled or postponed.
-PG-1 and PG-2 both need this.
-Partly done 2026-11-16: the model now has `status` with `published` and `cancelled` (PG-2).
-Result (2026-11-16): `status` also has `draft`.
-"Save as draft" on the create form keeps an event visible only to its own organization: it is not in the directory, the public profile or the dashboard, answers as not found by address to everyone else (including other organizations), and cannot be joined.
-A draft is edited at the same edit page ("Edit your draft"), and Publish (from Your events or the edit form) makes it public if it still passes the create rules (a stale start is refused).
-A published event can be taken back to a draft with "Unpublish" only while nobody has registered, otherwise the message says to cancel instead; a draft can be deleted for good, and a published event never can.
-Not built: postponed events, and a draft that skips the required fields (a draft is held to the full rules).
-Fix: add a status (draft, published, cancelled, postponed), let organizers save a draft, and make public lists show only published events.
-
-### PG-19 No add to calendar
-Status: done (2026-11-23). Priority: P2.
-A search of the web code found no calendar export.
-Luma, Eventbrite and Meetup all offer one.
-Fix: add an `.ics` download and an "Add to Google Calendar" link on the detail page and in the confirmation email.
-Done: both links are on the detail page under "The details" (`EventCalendarLinks`, built in the browser, no extra request). The confirmation email part is not built, because the app sends no event emails.
-
-## 2. Code health (dead code and structure)
-
-### CH-1 Delete the retired `CreateEvent.tsx`
-Status: done (2026-11-04). Priority: P1.
-`apps/web/src/features/events/components/CreateEvent.tsx` is 509 lines and not mounted anywhere.
-It looks like an event form but saves to the user profile route, and several address fields are bound to the wrong keys.
-It exists only as a trap.
-Fix: delete it together with the `CreateEventCredentials` type, then update the events specs and the Miro "retired" note.
-Result: the file and the `CreateEventCredentials` type are deleted, and the events specs are updated.
-The Miro "retired" note for `CreateEvent.tsx` still needs updating (see D-1).
-
-### CH-2 Delete the empty `HostedEvents.tsx`
-Status: done (2026-11-04). Priority: P1.
-The file is 0 bytes and nothing imports it.
-Result: deleted.
-
-### CH-3 Remove or wire `services/Events.ts`
-Status: done (2026-11-04). Priority: P2.
-The feature-level service is not used by any routed page.
-All live calls go through `services/KarmaCircleApi.ts`.
-Remove it, or move the live calls into it, so there is one place for event API calls.
-Result: `services/Events.ts` (and the now-empty `services/` folder) is deleted, together with `eventEndpoints.all`, which only it used.
-The write calls live in `services/KarmaCircleApi.ts` and the reads use `useSWR` with `eventEndpoints`.
-
-### CH-4 `EventsMarqueeCards.tsx` and `getFormattedDate.ts`
-Status: done (2026-11-23). Priority: P3.
-Neither is rendered by a live route.
-`getFormattedDate.ts` exists only for the marquee.
-Decide to wire the marquee to live data or delete both.
-Done: Tamal chose to delete both, together with `getFormattedDate.test.ts`.
-
-### CH-6 Directory search runs in the browser
-Status: done (2026-11-04). Priority: P2.
-`/events` fetches up to 100 events and filters them in the browser.
-Past 100 events, extra events silently never appear.
-Fix: move search and the upcoming or past split to the API with real pagination.
-Result: `GET /events` now takes `search`, `period`, `mode` and `inviteOnly`, sorts by start time with the id as tiebreaker, and the directory loads 12 events at a time with a "Load more events" button.
-The directory still has no text index, so search is an unindexed scan on name, city and host name.
-That is fine at today's scale and should become an index or prefix search if the collection grows.
-
-### CH-7 Duplicate-address race on create
-Status: done (2026-11-04). Priority: P2.
-Create checks whether the page address exists and then saves.
-Two organizers submitting the same address at the same moment can both pass the check.
-The database already has a unique index, so the fix is to rely on it and turn error code 11000 into a friendly 409 for this route.
-Also listed in the API known issues.
-Result: create keeps the friendly pre-check, and now also turns error code 11000 on save into the same `409`.
-The entry is removed from the API known issues.
-
-## 3. Testing
+## 1. Testing
 
 ### T-1 API tests missing for join rules
 Status: done (2026-11-04). Priority: P1.
@@ -317,13 +86,11 @@ Result, 2026-11-04: `npx --no-install jest` in `apps/api` passed 10 suites of 10
 Playwright was not run, so no browser result is recorded.
 
 ### T-8 Helper bugs found by the new unit tests
-Status: open. Priority: P3.
-`formatDuration` in `formatEventFacts.ts` returns "NaN days" when either date cannot be read.
-`getFormattedDate` returned "NaNth undefined" for a bad date; it was deleted with the marquee card (CH-4), so that part is gone.
-`fundedPercent` has no lower clamp, so a negative raised amount gives a negative percent, and a NaN goal or raised value gives NaN.
-`isEventPast` treats an unreadable date as not past, which the tests record as current behavior.
-One of these is still recorded as an `it.todo` in the test files.
-Fix: decide the fallback for an unreadable date, then change the helpers and the tests together.
+Status: done (2026-11-23). Priority: P3.
+`formatDuration` returned "NaN days" for an unreadable date, and `fundedPercent` could go negative or NaN.
+Result: `formatDuration` now returns "Duration unknown", and `fundedPercent` is clamped to 0-100 and returns 0 for a negative or NaN value.
+Decided: `isEventPast` keeps treating an unreadable date as not past, and the test now says so.
+The `it.todo` became real tests; the unit suite passes 244 of 244.
 
 ### T-9 The existing responsive spec posts events the API now rejects
 Status: done (2026-11-16). Priority: P1.
@@ -334,14 +101,18 @@ Result: the spec now creates every event in the future with an end two hours aft
 All four of its tests pass on Chromium, Firefox and WebKit.
 
 ### T-10 Two browser tests time out when all three browsers run at once
-Status: open. Priority: P3.
-A run of the whole events folder on Chromium, Firefox and WebKit together (2026-11-16) passed 76 of 78.
-The two failures were the WebKit "a full event refuses the next person until someone leaves" test (three sign-ups and a second context, 25 seconds) and the Firefox "default platform is saved as a Zoom meeting" test.
-Both pass when run alone, and all 26 tests pass on each single browser (52 seconds on WebKit), so the cause looks like CPU load from three browsers plus the dev server, with the 10 second expect timeout too tight.
-Not confirmed: the failing assertion was not captured, because the run that would have shown it was stopped.
-Fix: rerun the three-browser folder once with the output saved, then either raise the expect timeout for the sign-up heavy specs or cap workers for this folder.
+Status: done (2026-11-23), not reproduced. Priority: P3.
+A three-browser run on 2026-11-16 passed 76 of 78, with two timeouts that looked like CPU load.
+On 2026-11-23 the whole events folder (50 tests, 150 results) was run on Chromium, Firefox and WebKit with the output saved.
+Neither of the two earlier tests failed.
+Thirteen other results failed, and none of them was a timeout:
+- A real bug: My Events showed "You're going" on every card, even for a pending request, a waitlist place or a declined request. It now shows the person's own standing (Requested, Waitlisted, Not approved).
+- Three stale test expectations in the first run of `event-access.spec.ts` and `event-attendees.spec.ts` (the registration status reply now has `status` and `invited`, the capacity message now says "already going", and "On the waitlist" also matched a toast).
+- Two one-off Chromium failures (a page load aborted, and a sign-up field slow to appear) that did not come back on the rerun, so they look like load, as the original item guessed.
+Rerun after the fixes: both files pass on all three browsers (33 of 33), and every other spec had already passed.
+No timeout or worker change was made, because nothing needed it.
 
-## 4. UI audit
+## 2. UI audit
 
 Status of the whole section: not yet audited visually.
 No pages were opened in a browser during the audit, because UI testing needs Tamal's go-ahead.
@@ -372,65 +143,20 @@ Status: open. Priority: P2.
 The form reads the image as a base64 string up to 5 MB.
 Check the preview, the slow-network behavior, and what is shown when the image is very tall or very small.
 
-## 5. Backend API validation
-
-### V-1 End time is never checked on the server
-Status: done (2026-11-04). Priority: P1.
-Only the browser checks that the end is after the start.
-A direct call to the API can create an event that ends before it starts.
-Fix: add the check to the create schema.
-Result: the create schema rejects an end time equal to or before the start time (`400`, path `endTime`).
-The browser check is now strict too.
-
-### V-2 Past start dates are accepted
-Status: done (2026-11-04), decided: not allowed. Priority: P2.
-The API accepts an event that starts in the past.
-Decide whether that is allowed, for example to log a past drive, and enforce it either way.
-Result: decided with Tamal's owner decision that past start dates are not allowed.
-The create schema rejects a start time in the past (`400`, path `startTime`) and the browser form checks it as well.
-
-### V-3 Name and description length only checked in the browser
-Status: done (2026-11-04). Priority: P1.
-The browser requires name 10 to 80 characters and description 20 to 200.
-The API only requires not empty, so one call can store a huge description.
-Fix: mirror the limits in the Zod schema.
-Result: the schema now enforces name 10 to 80 and description 20 to 200 characters, with the same wording as the browser.
-
-### V-4 Cover image is not really validated
-Status: done (2026-11-04). Priority: P1.
-The API only requires a non-empty string and relies on the global 10 MB body limit.
-Fix: accept only an image data URL of a known type with a size cap, or an https link, and reject anything else.
-See also DB-1 and S-4 for why this matters.
-Result: the cover image must be an https link (up to 2048 characters) or a base64 data URL of PNG, JPEG, WebP or GIF that decodes to 5 MiB or less.
-The browser picker accepts only the same four types.
-This does not fix DB-1 or S-4: images are still stored inside the event document.
-
-### V-5 Reserved page addresses
-Status: done (2026-11-04). Priority: P2.
-An event whose address is `mine` would clash with the `/events/mine` page, and similar words can clash with future routes.
-Fix: reject a small list of reserved words in the address rule on both sides.
-Result: `mine`, `new`, `create`, `edit`, `admin` and `api` are rejected by the API and by the create form, from one constant per app.
-
-### V-6 Free-text fields have no length limits
-Status: done (2026-11-04). Priority: P2.
-City, state, country, address, platform and the meeting link have no maximum length.
-Add sensible maximums.
-Result: city, state and country are capped at 100, address at 200, platform at 60 and the meeting link at 2048 characters.
-`mapIframe` is still an unbounded optional string.
-
-## 6. Database (MongoDB)
+## 3. Database (MongoDB)
 
 ### DB-1 Cover images are stored inside the event document
-Status: built (2026-11-19), waiting on the production setup below. Priority: P1.
+Status: done (2026-11-23). Priority: P1.
 The browser sent the image as a text string and it was saved in the event record, so the public list returned every cover image in every response.
 Decided with Tamal on 2026-11-19: the long-term fix, real object storage.
 Result: the cover is uploaded as soon as it is chosen, straight from the browser to Vercel Blob with a short-lived token from the API (`POST /uploads/event-covers`), and the event keeps only the https link.
 The API now refuses a base64 cover and the JSON body limit dropped from 10 MB to 1 MB (this also closes S-4).
 Local development and the test suites need nothing: with no Blob token the API writes uploads to `apps/api/.uploads` and serves them itself.
 `scripts/migrate-event-covers.ts` moves existing data-URL covers to Blob (`--dry-run` to look, `--confirm` to do it).
-Still to do by Tamal, because they are in his Vercel account: (1) create a PUBLIC Blob store, (2) add its `BLOB_READ_WRITE_TOKEN` to the `karmacircle-api` and `karmacircle-api-dev` projects, (3) deploy, (4) run the migration against production once.
-Until the token is set, a production API answers `503` to an upload, so organizers cannot publish a new cover.
-Not verified in a browser: the Playwright specs that upload a cover ran only against the code, not on a real run.
+Checked 2026-11-23 through the Vercel connection: both `karmacircle-api` and `karmacircle-api-dev` already have their own Blob store with `BLOB_READ_WRITE_TOKEN` and `BLOB_STORE_ID` set (added 2026-11-19, so every deploy since includes them), and the upload route answers `401` when signed out in production, so it is deployed.
+The migration is not needed: production has no events yet, and the dev site's 23 events hold no inline images.
+Verified live on 2026-11-23: both Blob stores are set to Public in the Vercel dashboard, and picking a cover on the production create form uploaded it to the production store (the form then held the `https://...public.blob.vercel-storage.com/event-covers/...png` link, which answers `200 image/png` with the exact file size).
+The form was not saved, so no test event exists.
 
 ### DB-2 The event list has no fixed order
 Status: done (2026-11-19). Priority: P1.
@@ -452,7 +178,7 @@ Events rely on the organization handle derived from it.
 Fix: make it unique after cleaning existing data.
 Done: the field is `unique: true`. Not checked: whether production already holds two users with the same name; if it does, MongoDB cannot build the index and the app keeps running without it, so look at the logs for an index error after the next deploy.
 
-## 7. Backend security
+## 4. Backend security
 
 ### S-1 Session cookie is written to the logs
 Status: done (2026-11-19). Priority: P1.
@@ -497,7 +223,7 @@ Status: done (already fixed, found stale on 2026-11-19). Priority: P1.
 This entry was out of date: `POST /product/cart/add` is behind `requireAuth` and only ever changes the signed-in user's own cart (see `apps/api/docs/specs/known-issues.md`).
 Still open elsewhere in the products module and not events code: `POST /product/addproduct` has no sign-in check, and the cart accepts product ids that do not exist.
 
-## 8. Backend scalability and operations
+## 5. Backend scalability and operations
 
 ### O-1 A failed first database connection is remembered
 Status: done (2026-11-19). Priority: P1.
@@ -515,34 +241,39 @@ Errors are logged but there is no alerting or error tracking.
 Add error tracking and a health check that reports real database status to an uptime monitor.
 Done in part: the health check part only. Unhandled errors are still only logged (Vercel keeps them, readable under runtime logs); no error-tracking service was added, on purpose. To get alerts, point a free uptime monitor at `https://api.karmacircle.org/health`.
 
-## 9. Docs and diagrams
+## 6. Docs and diagrams
 
 ### D-1 Keep the Miro board in step
-Status: open. Priority: P3.
+Status: done for this pass (2026-11-23); it is ongoing, so the rule stays. Priority: P3.
 The Miro "Claude Dashboard" board has three Events frames: inputs, data flow, and discover, join and follow up.
-When any item above ships, update the matching frame, for example the proposed roster box after PG-6.
-Pending from 2026-11-16: the roster box is still drawn as "proposed" although the attendee page now exists, and the discover and join frame has no leave, full or cancelled state (see `docs/specs/events.md` and `docs/specs/user-flows.md` for the new flow).
-Pending from 2026-11-04: the "retired" note for `CreateEvent.tsx` (CH-1) now describes a deleted file, and the directory data flow (CH-6) is now server-side search with paging.
+When any item above ships, update the matching frame.
+2026-11-23 pass (Miro reconnected as the board owner, so the earlier permission block is gone):
+- Inputs: the table now lists cover as an uploaded link, the access level, waitlist and maximum attendees, Hybrid mode, and the optional details section; the retired `CreateEvent.tsx` boxes became "Draft or publish".
+- Data flow: the cover step says it uploads to storage on pick, and the attendee roster box is drawn as built.
+- Discover and join: invite-only and approval are real states, the join step can request or waitlist, the saved registration can be going, pending or waitlisted, cancelled events show no Join, and a Leave event box was added.
+Left as is: the roster box still has a dashed border (the Miro tool could not clear it), and the data-flow frame has no draft branch.
 
 ### D-2 Keep specs in step
-Status: open. Priority: P2.
+Status: done for this pass (2026-11-23); it is ongoing, so the rule stays. Priority: P2.
 Every item here changes at least one of: `apps/web/src/features/events/SPEC.md`, `docs/specs/events.md`, `apps/api/docs/specs/events.md`, `apps/api/docs/specs/api-contract.md`, and the known-issues files.
 Update them in the same change.
+2026-11-23 pass: every events route and every web API call appears in the specs, and every events Playwright spec is in its README. Fixed: four statements that still said attendee capacity was "future scope, not built" (and their broken links), and the API known-issues line that listed invite and approval, the waitlist, indexes and cover storage as open. Added the shared sign-in limiter to the API architecture spec.
 
-## 10. Decisions needed from Tamal
+## 7. Decisions needed from Tamal
 
 1. Decided 2026-11-18 and built 2026-11-19: invite-only is a private-style event for invited emails, next to an Approval required level (PG-4).
 2. Decided 2026-11-16 and confirmed by Tamal 2026-11-19: a cancelled event stays up with a Cancelled label (PG-2).
 3. Decided 2026-11-04: past start dates are not allowed (V-2).
-4. Marquee cards: wire to live data or delete (CH-4). Postponed by Tamal on 2026-11-19; do not act on it until he brings it back.
+4. Decided 2026-11-23: marquee cards and `getFormattedDate.ts` are deleted (CH-4).
 5. Decided 2026-11-19: anonymous donations stay as they are (S-6).
-6. Decided 2026-11-19: cover images move to real object storage, the long-term fix (DB-1). Built; the Blob store and token still need setting up in Vercel.
+6. Decided 2026-11-19: cover images move to real object storage, the long-term fix (DB-1). Built and verified live on production.
 7. Decided 2026-11-18 and built 2026-11-19: waitlist and approval share one registration state machine with invite-only; manual promotion (PG-14 and PG-4).
 8. Decided 2026-11-19: hackathons are out of scope.
 9. Decided 2026-11-19: volunteering roles and shifts are not an event feature.
 10. Decided 2026-11-19: events do not take money through tickets or donations.
+11. Open, raised by Tamal 2026-11-23: an event cannot be saved (as a draft or as an edit) until every required detail is filled in, and he thinks it should not be that strict. Today the API holds a draft and the merged result of an edit to the full create rules, so the name, address, description, cover image, mode, dates and the fields the mode needs (venue or meeting link) must all exist, and the form also requires a kind. Not yet decided which saves should be allowed with less (drafts, edits, or both) or which details stay required to publish. Research and ask before changing anything.
 
-## 11. Done
+## 8. Done
 
 - 2026-11-04: events folder imports now use the `@features/events/...` and `@utils/...` aliases instead of `../../` paths.
 - 2026-11-04: `formatMoney` and `fundedPercent` moved to the shared `apps/web/src/utils/formatMoney.ts`.
@@ -593,7 +324,7 @@ Update them in the same change.
 - 2026-11-19: PG-4 and PG-14, access levels (open, approval required, invite only), registration statuses, the waitlist, approve and decline, email invitations, and the web side (form dropdown, labels, join states, Requests, Waitlist and Declined tabs, invite box, My Events pills); the retired `inviteOnly` flag reads as approval.
 - 2026-11-19: API test `events-access.test.ts` (30); the API suite passed 19 suites and 418 tests.
 - 2026-11-19: web unit tests for `joinView` and `parseInviteEmails` plus the access cases in the mapper and change builder; the web unit suite passed 235 tests and 2 todo.
-- 2026-11-19: Playwright `event-access.spec.ts` (5) written but **not run**, and the older specs were updated for `access`; run the events folder once Tamal allows UI tests.
+- 2026-11-19: Playwright `event-access.spec.ts` (5) written, and the older specs were updated for `access`; first run 2026-11-23 (see T-10).
 - 2026-11-19: S-6 decided (anonymous donations stay), and the decisions on hackathons, volunteering shifts and event payments recorded as out of scope.
 - 2026-11-19: S-1 (cookie and set-cookie redacted from logs), O-1 (failed database connection is retried), DB-2 and DB-3 (event list indexes, checked by query-plan tests), S-3 (safe dependency updates in both lockfiles, zod 4 skipped), S-7 (found already fixed).
 - 2026-11-19: API tests `logger.test.ts` (4), `database-gate.test.ts` (3) and `event-indexes.test.ts` (5); the API suite passed 22 suites and 430 tests.
@@ -602,3 +333,6 @@ Update them in the same change.
 - 2026-11-23: DB-6 (unique user names in the database), S-2 (shared sign-in rate limit in MongoDB) and O-5 (`/health` answers 503 when the database is down; no error-tracking service added). API tests `rate-limit-store.test.ts` (4), `health.test.ts` (2) and a uniqueness test in `users.test.ts`; the API suite passed 26 suites and 457 tests.
 - 2026-11-23: PG-19, add to calendar (Google Calendar link and `.ics` download on the event page). Web unit tests `calendarLinks.test.ts` (6); the web unit suite passed 247 tests and 2 todo. Not looked at in a browser yet, so UI-1 and UI-2 still cover it.
 - 2026-11-23: CH-4, `EventsMarqueeCards.tsx`, `getFormattedDate.ts` and its test deleted (no route used them); the web unit suite passed 241 tests and 1 todo.
+- 2026-11-23: T-8, the helper bugs fixed and the `it.todo` turned into tests.
+- 2026-11-23: T-10, the whole events folder run on three browsers (150 results); a My Events label bug fixed (a request, waitlist place or decline no longer reads "You're going") and three stale test expectations corrected; all pass.
+- 2026-11-23: DB-1 verified live: Blob stores are public and a real cover upload on production landed in the store.
