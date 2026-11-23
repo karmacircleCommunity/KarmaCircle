@@ -39,9 +39,8 @@ import type { ApiEvent, ApiEventList } from "@features/events/types";
  * `/event/create`, a path no route has ever matched, so the menu item was
  * a 404.
  *
- * Behind `OrganizationSetupGate`: a draft organization gets told what is
- * still missing and a link that resumes setup, because an account that
- * nobody can find has nothing to host events for yet.
+ * Behind `OrganizationSetupGate` with `requireLive={false}`: any organization
+ * account can host events, even one whose public profile is still a draft.
  *
  * This is a live host list. It fetches `GET /events?host={handle}` — the filter runs
  * server-side, so nothing is hidden on page two. Live records carry no
@@ -69,7 +68,7 @@ const YourEvents = () => {
   const [busy, setBusy] = useState(false);
   const [publishingUid, setPublishingUid] = useState<string | null>(null);
 
-  const hostKey = organization?.isLive
+  const hostKey = organization
     ? eventEndpoints.byHost(organization.handle)
     : null;
   const { data, isLoading, mutate } = useSWR<ApiEventList>(hostKey, fetcher);
@@ -118,10 +117,7 @@ const YourEvents = () => {
   };
 
   return (
-    <OrganizationSetupGate
-      title="Your events open up once your profile is live"
-      description="Events are how people meet your organization, and right now nobody can find it — your profile is still a draft. Finish the details and you can start hosting."
-    >
+    <OrganizationSetupGate requireLive={false}>
       <Navbar />
 
       <div className="mx-auto max-w-4xl px-9 pt-10 pb-20 sm:px-10 lg:px-12 lg:pt-14">

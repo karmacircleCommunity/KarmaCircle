@@ -192,10 +192,7 @@ const EventAttendees = () => {
   };
 
   return (
-    <OrganizationSetupGate
-      title="Attendees open up once your profile is live"
-      description="Finish your organization profile, then you can see who is coming to your events."
-    >
+    <OrganizationSetupGate requireLive={false}>
       <Navbar />
       <main className="mx-auto min-h-[60vh] max-w-4xl px-9 pt-10 pb-20 sm:px-10 lg:px-12 lg:pt-14">
         <Link

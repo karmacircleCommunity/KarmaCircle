@@ -328,7 +328,7 @@ flowchart TD
 ## Organizations - directory, profile, and admin surfaces
 
 See [organizations.md](./organizations.md) and [dashboard.md](./dashboard.md).
-`OrganizationSetupGate` is the one mechanism behind both `/dashboard` and `/organization/events` - it is not a route guard, it wraps page content.
+`OrganizationSetupGate` wraps page content (it is not a route guard). `/dashboard` uses it to require a finished profile; the events pages (`/organization/events`, `/organization/events/new`, the edit and attendee pages) pass `requireLive={false}`, so any organization account can use them, even with a draft profile.
 
 ```mermaid
 flowchart TD

@@ -1,6 +1,6 @@
 # Organization Dashboard
 
-Routed at `/dashboard` and protected by `OrganizationSetupGate` for organization accounts.
+Routed at `/dashboard` and protected by `OrganizationSetupGate` for organization accounts (this one still requires a finished profile; the events pages do not).
 The page reads `GET /organizations/dashboard` and refreshes the aggregate data every minute.
 
 ## Dashboard content

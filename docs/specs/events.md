@@ -345,10 +345,12 @@ events" points and where organization owners find and manage hosted events. Its
 
 Two things make it different from the `/events` directory above it:
 
-- **It is behind `OrganizationSetupGate`**
-  ([organizations.md](./organizations.md#the-setup-flow--organizationsetup)) — a
-  draft organization is told what is still missing and handed a link that
-  resumes setup, rather than shown an events page it cannot yet use.
+- **It is behind `OrganizationSetupGate` with `requireLive={false}`**
+  ([organizations.md](./organizations.md#the-setup-flow--organizationsetup)) —
+  any organization account can use it, even one whose public profile is still a
+  draft (November 2026: a new organization needs nothing beyond its account to
+  host an event). Individual and signed-out visitors still see "This page is
+  for organizations". The dashboard keeps its finished-profile gate.
 - **It renders live records, not the fixture.** It fetches
   `GET /events?host={handle}`, a filter added to the API in the same change, so
   filtering happens server-side and nothing is hidden on page two.
@@ -539,7 +541,7 @@ stored event for the `PATCH` body.
 
 [apps/web/src/features/events/pages/EventAttendees.tsx](../../apps/web/src/features/events/pages/EventAttendees.tsx),
 routed at `/organization/events/:eventId/attendees` behind `RequireSignIn` and
-`OrganizationSetupGate`. It reads `GET /events/:uid/attendees` with
+`OrganizationSetupGate` (`requireLive={false}`, so a draft organization can open it). It reads `GET /events/:uid/attendees` with
 `useSWRInfinite` (50 per page, a search debounced by 300 ms), shows the totals as
 two cards ("Registered" with "of N" when there is a capacity, and "Checked in"),
 and one row per person with their name, email, when they registered, and a

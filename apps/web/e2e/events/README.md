@@ -8,7 +8,9 @@ It creates test events through the isolated E2E API and does not depend on
 seeded demo records.
 
 The organizer creation route is `/organization/events/new`. It requires a
-signed-in organization whose public profile is live. The publishing test also
+signed-in organization account; a finished public profile is not needed
+(`event-fresh-organization.spec.ts` covers a brand-new draft organization).
+The publishing test also
 verifies the description prompt and character count, rejects a meeting address
 without HTTP or HTTPS, then checks the published detail page and hosted-events
 list.
@@ -224,3 +226,11 @@ The full-event refusal test in `event-attendees.spec.ts` now creates its event w
 
 Since 2026-11-19 an event keeps only the https link of its cover. The specs that pick a cover with `setInputFiles` on `#coverImage` now go through the real upload: the form asks `POST /uploads/event-covers`, the e2e API has no Blob token so it answers with the local driver, the browser `PUT`s the file to a signed URL on the API, and the form keeps the returned link (files go to a temp folder, see `apps/api/tests/e2e/env.setup.ts`). `createEvent` in `event-helpers.ts` posts a plain https cover link instead of a data URL, because the API now refuses data URLs.
 These specs have **not been run** since that change (UI tests wait for Tamal's go-ahead), so treat the upload path in them as written but unverified.
+
+## A brand-new organization
+
+`event-fresh-organization.spec.ts` (1 test, 2026-11-23). The only events spec that does
+not call `publishOrganizationProfile`: it signs an organization up and leaves its
+profile as a draft, then checks that `/organization/events/new` opens the form (no
+"finish your profile" panel), that an event can be published, that Your events lists
+it, and that the attendee page opens.

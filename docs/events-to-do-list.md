@@ -271,7 +271,8 @@ Update them in the same change.
 8. Decided 2026-11-19: hackathons are out of scope.
 9. Decided 2026-11-19: volunteering roles and shifts are not an event feature.
 10. Decided 2026-11-19: events do not take money through tickets or donations.
-11. Open, raised by Tamal 2026-11-23: an event cannot be saved (as a draft or as an edit) until every required detail is filled in, and he thinks it should not be that strict. Today the API holds a draft and the merged result of an edit to the full create rules, so the name, address, description, cover image, mode, dates and the fields the mode needs (venue or meeting link) must all exist, and the form also requires a kind. Not yet decided which saves should be allowed with less (drafts, edits, or both) or which details stay required to publish. Research and ask before changing anything.
+11. Decided and built 2026-11-23: a brand-new organization needs nothing beyond its account to host events. What Tamal meant was the "Finish your organization profile before publishing events" gate, not the event fields. The create, edit, Your events and attendee pages now pass `requireLive={false}` to `OrganizationSetupGate`, and Your events no longer waits for the profile to be live. The event form's own required fields are unchanged. The dashboard still needs a finished profile.
+12. Open: an email nudge to organizations that have not finished their profile ("update your details, things may be missing"). Tamal suggested it; not built. Also, the organizer link on an event page leads to a "Not found" page until the profile is live (see known issues).
 
 ## 8. Done
 
@@ -336,3 +337,4 @@ Update them in the same change.
 - 2026-11-23: T-8, the helper bugs fixed and the `it.todo` turned into tests.
 - 2026-11-23: T-10, the whole events folder run on three browsers (150 results); a My Events label bug fixed (a request, waitlist place or decline no longer reads "You're going") and three stale test expectations corrected; all pass.
 - 2026-11-23: DB-1 verified live: Blob stores are public and a real cover upload on production landed in the store.
+- 2026-11-23: decision 11, a draft organization can now create and edit events, see Your events and open the attendee list; new Playwright spec `event-fresh-organization.spec.ts` (3 browsers pass).

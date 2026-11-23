@@ -17,6 +17,10 @@ import { resumeSetupPath } from "../utils/organizationSetupForm";
  * gets told what is missing, which step it is on, and a link that resumes
  * exactly where it stopped.
  *
+ * Pages that only need an organization account (the events pages) pass
+ * `requireLive={false}`: the account-type check stays, the finished-profile
+ * check is skipped.
+ *
  * Deliberately a page, not a modal. The modal this replaced
  * (`onboarding-profile/components/ProfileCompletion.tsx`) covered the
  * dashboard with no working way to dismiss it — its close handler was
@@ -24,18 +28,30 @@ import { resumeSetupPath } from "../utils/organizationSetupForm";
  * that made setup feel mandatory.
  */
 type OrganizationSetupGateProps = {
-  /** What the account was trying to reach, e.g. "Your events". */
-  title: string;
-  /** One line on why this page needs a finished profile. */
-  description: string;
   children: ReactNode;
-};
+} & (
+  | {
+      /** Default. The page needs a finished profile. */
+      requireLive?: true;
+      /** What the account was trying to reach, e.g. "Your dashboard". */
+      title: string;
+      /** One line on why this page needs a finished profile. */
+      description: string;
+    }
+  | {
+      /**
+       * The page only needs an organization account, not a finished profile.
+       * The events pages use this: a brand-new organization can host events
+       * with the details it already has (November 2026).
+       */
+      requireLive: false;
+      title?: never;
+      description?: never;
+    }
+);
 
-const OrganizationSetupGate = ({
-  title,
-  description,
-  children,
-}: OrganizationSetupGateProps) => {
+const OrganizationSetupGate = (props: OrganizationSetupGateProps) => {
+  const { children } = props;
   const { organization, isOrganization, isLoading } = useMyOrganization();
 
   // Nothing to gate on yet — don't flash the panel at an organization whose
@@ -62,9 +78,11 @@ const OrganizationSetupGate = ({
     );
   }
 
-  if (!organization || organization.isLive) {
+  if (props.requireLive === false || !organization || organization.isLive) {
     return <>{children}</>;
   }
+
+  const { title, description } = props;
 
   const missing = organization.missingFields;
 

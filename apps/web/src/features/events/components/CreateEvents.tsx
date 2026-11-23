@@ -417,14 +417,7 @@ export const EventForm = ({
   };
 
   return (
-    <OrganizationSetupGate
-      title={isEdit ? "Edit an event" : "Publish an event"}
-      description={
-        isEdit
-          ? "Finish your organization profile before editing events."
-          : "Finish your organization profile before publishing events to the community."
-      }
-    >
+    <OrganizationSetupGate requireLive={false}>
       <Navbar />
       <main
         className={`min-h-[70vh] bg-surface px-5 py-8 sm:px-9 sm:py-12 lg:px-12 ${isEdit && !isDraftEdit && isDirty ? "pb-24" : ""}`}

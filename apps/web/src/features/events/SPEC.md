@@ -14,9 +14,11 @@ November 2026 along with the empty `HostedEvents.tsx` and the unused
 `Events.tsx` renders its creation link for Redux `isLoggedIn` organization
 accounts. It does not inspect the HTTP-only `Token` cookie from browser
 JavaScript. `YourEvents.tsx` is an organization-only workspace behind
-`OrganizationSetupGate`; its create link opens `/organization/events/new`. That
-full-page route requires sign-in and uses `OrganizationSetupGate` to require a
-live organization profile. Personal accounts and signed-out visitors can browse
+`OrganizationSetupGate` (`requireLive={false}`); its create link opens
+`/organization/events/new`. That full-page route requires sign-in and uses the
+same gate: it needs an organization account but not a finished profile, so a
+brand-new organization can publish straight away (November 2026). Personal
+accounts and signed-out visitors can browse
 events but cannot open either creation entry point. The API also checks the
 stored account type and returns `403` for individual hosts.
 `e2e/events/events-responsive.spec.ts` covers live directory cards,
