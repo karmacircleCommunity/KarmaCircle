@@ -8,6 +8,7 @@ Playwright specs for `apps/web/src/features/landing-home/`. See [docs/specs/land
 |---|---|
 | [hero.spec.ts](./hero.spec.ts) | The one thing about `Landing.tsx`'s hero that actually branches on data: the CTA button reads Redux's `isLoggedIn` to choose "Sign up Today !" → `/auth/signup` vs. "Explore our organizations" → `/organizations` |
 | [sections.spec.ts](./sections.spec.ts) | `Home.tsx`'s page structure (hero + `HowItWorks`/`DrivesRail`/`OpenSource` all present and in order), and `Footer.tsx`'s newsletter form |
+| [navbar-menus.spec.ts](./navbar-menus.spec.ts) | The shared navbar's signed-in menus by keyboard: the desktop Profile dropdown and the small-screen dialog open, reach every entry including Logout, and close (Escape, outside press, focus leaving) |
 
 Basic navbar link navigation (Organizations, Events) is covered by [../smoke.spec.ts](../smoke.spec.ts), not duplicated here.
 

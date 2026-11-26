@@ -115,10 +115,14 @@ const DirectoryToolbar = <
   tertiaryFilter,
 }: DirectoryToolbarProps<T, U, V>) => (
   <div className="mt-8 lg:mt-10">
-    {/* Search + filter dropdown + primary action. One row from `sm` up; on
-        a phone each drops onto its own line rather than squeezing down. */}
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-      <div className="group flex flex-1 items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)]">
+    {/* Search + filter dropdowns + primary action. On a phone each drops
+        onto its own line rather than squeezing down. From `sm` up they share
+        one row only while they fit: the controls move below the search as one
+        group, and wrap inside that group if they are still too wide. A single
+        non-wrapping row pushed `/events`' button off a tablet screen. The
+        search keeps a minimum width so a long filter label cannot crush it. */}
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+      <div className="group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1">
         <FiSearch
           aria-hidden="true"
           className="size-4.5 shrink-0 text-ink/35 transition-colors duration-200 group-focus-within:text-brand"
@@ -187,32 +191,34 @@ const DirectoryToolbar = <
         </button>
       </div>
 
-      <FilterDropdown
-        label={filterLabel}
-        options={options}
-        active={active}
-        onSelect={onSelect}
-      />
-
-      {secondaryFilter && (
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <FilterDropdown
-          label={secondaryFilter.filterLabel}
-          options={secondaryFilter.options}
-          active={secondaryFilter.active}
-          onSelect={secondaryFilter.onSelect}
+          label={filterLabel}
+          options={options}
+          active={active}
+          onSelect={onSelect}
         />
-      )}
 
-      {tertiaryFilter && (
-        <FilterDropdown
-          label={tertiaryFilter.filterLabel}
-          options={tertiaryFilter.options}
-          active={tertiaryFilter.active}
-          onSelect={tertiaryFilter.onSelect}
-        />
-      )}
+        {secondaryFilter && (
+          <FilterDropdown
+            label={secondaryFilter.filterLabel}
+            options={secondaryFilter.options}
+            active={secondaryFilter.active}
+            onSelect={secondaryFilter.onSelect}
+          />
+        )}
 
-      {action}
+        {tertiaryFilter && (
+          <FilterDropdown
+            label={tertiaryFilter.filterLabel}
+            options={tertiaryFilter.options}
+            active={tertiaryFilter.active}
+            onSelect={tertiaryFilter.onSelect}
+          />
+        )}
+
+        {action}
+      </div>
     </div>
 
     {/* Live result count. Used to sit beside a row of always-visible

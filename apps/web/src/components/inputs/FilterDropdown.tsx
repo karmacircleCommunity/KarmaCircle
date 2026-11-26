@@ -18,6 +18,9 @@ interface FilterDropdownProps<T extends string> {
   dataCy?: string;
 }
 
+/** The panel's `w-56`, plus the least room to leave at the screen's left edge. */
+const PANEL_SPACE_PX = 224 + 16;
+
 /**
  * A single-select taxonomy picker that opens a small listbox panel instead
  * of drawing every option on screen at once — see
@@ -36,6 +39,17 @@ const FilterDropdown = <T extends string>({
   const wrapper = useRef<HTMLDivElement | null>(null);
 
   const [open, setOpen] = useState(false);
+  const [alignStart, setAlignStart] = useState(false);
+
+  const toggle = () => {
+    // Measured as the panel opens: a trigger near the left edge (the first
+    // one on a wrapped toolbar row) has no room for a right-aligned panel.
+    if (!open && wrapper.current) {
+      const { right } = wrapper.current.getBoundingClientRect();
+      setAlignStart(right < PANEL_SPACE_PX);
+    }
+    setOpen((value) => !value);
+  };
 
   // Same reasoning as `Combobox`: close on an outside press rather than on
   // blur, so a panel doesn't vanish just because focus briefly left the
@@ -64,7 +78,7 @@ const FilterDropdown = <T extends string>({
         aria-expanded={open}
         aria-controls={listId}
         aria-label={`${label}: ${active}`}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggle}
         onKeyDown={(event) => {
           if (event.key === "Escape" && open) {
             event.stopPropagation();
@@ -92,12 +106,12 @@ const FilterDropdown = <T extends string>({
           role="listbox"
           aria-label={label}
           data-cy={dataCy ? `${dataCy}-options` : undefined}
-          // `right-0`, not `left-0`: this trigger sits mid-row, between the
-          // search field and the primary action, so a left-anchored panel
+          // `right-0` by default: this trigger usually sits mid-row, between
+          // the search field and the primary action, so a left-anchored panel
           // risks overlapping or outgrowing the action button beside it on
-          // narrow widths — anchoring to the trigger's own right edge keeps
-          // it clear regardless of where in the row the trigger lands.
-          className="absolute top-full right-0 z-30 mt-2 max-h-72 w-56 list-none overflow-y-auto overscroll-contain rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in"
+          // narrow widths. `left-0` only when the right-anchored panel would
+          // leave the screen (see `toggle`).
+          className={`absolute top-full z-30 mt-2 max-h-72 w-56 list-none overflow-y-auto overscroll-contain rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in ${alignStart ? "left-0" : "right-0"}`}
         >
           {options.map((option) => {
             const selected = option === active;

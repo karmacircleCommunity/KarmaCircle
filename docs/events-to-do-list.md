@@ -339,3 +339,4 @@ Update them in the same change.
 - 2026-11-23: DB-1 verified live: Blob stores are public and a real cover upload on production landed in the store.
 - 2026-11-23: decision 11, a draft organization can now create and edit events, see Your events and open the attendee list; new Playwright spec `event-fresh-organization.spec.ts` (3 browsers pass).
 - 2026-11-23: decision 12, the finish-your-details email on organization sign-up; API tests added, the API suite passed 26 suites and 462 tests.
+- 2026-11-26: UI-1 and UI-2 partly done: the events list and one event page were reviewed in a browser at 320 to 2560px, and the tablet toolbar cut-off, the false "not found" on a failed load and the navbar menus were fixed. The create form and My Events are still not reviewed; open findings are in `docs/specs/known-issues.md`.

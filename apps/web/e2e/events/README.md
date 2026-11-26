@@ -1,8 +1,12 @@
 # Events E2E coverage
 
 `events-responsive.spec.ts` covers the public `/events` directory's live event
-cards, Upcoming/Past filter, city search, mobile/desktop overflow, and the
+cards, Upcoming/Past filter, city search, mobile/desktop overflow, that every
+toolbar control and filter panel stays on screen from 640 to 1024px, and the
 organization's full-page event publishing flow.
+
+`event-details.spec.ts` also covers a failed event load: it shows a retry, not
+"not found", while an unknown event still shows "not found".
 
 It creates test events through the isolated E2E API and does not depend on
 seeded demo records.

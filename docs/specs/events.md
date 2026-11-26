@@ -202,6 +202,8 @@ the shared `DirectoryToolbar` (search, an Upcoming/Past `FilterDropdown` plus a
 second invite/mode `FilterDropdown` via its `secondaryFilter` prop, live result
 count, primary button), one flat grid of `<EventCard />` with an empty state,
 and `<Footer />`.
+Between 640px and the width where search, filters and button fit one line, the
+filters and button sit below the search (November 2026).
 
 **Live data, September 2026.** `GET /events` (`eventEndpoints.directory({ period, search, mode, type, access,
 page, limit })`, 12 per page) via `useSWRInfinite`, with `keepPreviousData` and
@@ -635,8 +637,13 @@ state instead of a detail page.
 fetches `GET /events?uid={id}` — reusing the backend's existing single-event
 branch rather than adding a dedicated route — and
 `utils/toDisplayEventDetail.ts` maps the result onto the `{ event, detail }`
-shape this page renders, the same loading/not-found/view three-way branch
-`OrganizationProfile.tsx` already uses. The old fixture files
+shape this page renders.
+The page has four states (November 2026): loading; not found, only when the API
+answers 404 or 400; a load error with "Try again" for a network failure or any
+other status; and the view.
+A failed background refresh keeps the event that is already on screen.
+Until then every failure showed "not found".
+The old fixture files
 (`constants/eventDirectory.ts`/`eventDetails.ts`) and their placeholder cover
 photos are deleted.
 

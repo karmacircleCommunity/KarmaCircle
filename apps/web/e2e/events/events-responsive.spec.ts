@@ -194,6 +194,51 @@ test("the directory renders both an upcoming and a past event, filterable by tim
   );
 });
 
+test("the toolbar keeps every control on screen between phone and desktop widths", async ({
+  page,
+}) => {
+  // A signed-in organization sees the widest toolbar: three filters and
+  // "Create an event".
+  await signUpOrganization(page, Date.now() + Math.floor(Math.random() * 1e6));
+  await page.goto("/events");
+
+  const controls = [
+    page.getByRole("searchbox", { name: "Search events" }),
+    page.getByRole("button", { name: "Filter by time" }),
+    page.getByRole("button", { name: "Filter by type" }),
+    page.getByRole("button", { name: "Filter by kind" }),
+    page.getByRole("link", { name: "Create an event" }),
+  ];
+
+  // `body` hides horizontal overflow, so a control that does not fit is cut
+  // off rather than scrollable: measure each one against the screen.
+  for (const width of [640, 700, 768, 834, 900, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const control of controls) {
+      await expect(async () => {
+        const box = await control.boundingBox();
+        expect(box, `a control is missing at ${width}px`).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+      }).toPass();
+    }
+
+    // A filter's panel opens on screen wherever its trigger wrapped to.
+    for (const label of ["Filter by time", "Filter by kind"]) {
+      await page.getByRole("button", { name: label }).click();
+      const panel = page.getByRole("listbox", { name: label });
+      await expect(async () => {
+        const box = await panel.boundingBox();
+        expect(box, `${label} panel at ${width}px`).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+      }).toPass();
+      await page.getByRole("button", { name: label }).press("Escape");
+      await expect(panel).toHaveCount(0);
+    }
+  }
+});
+
 test("search narrows the directory by city", async ({ page }) => {
   const stamp = Date.now() + Math.floor(Math.random() * 1_000_000);
   await signUpOrganization(page, stamp);

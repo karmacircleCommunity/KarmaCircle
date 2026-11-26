@@ -352,3 +352,33 @@ test("the write-up supports bold, italic, links and lists, shows a preview, and 
     ),
   ).toBeUndefined();
 });
+
+test("a failed load says so and can be retried, instead of saying the event does not exist", async ({
+  page,
+}) => {
+  const stamp = uniqueStamp();
+  const uid = `evt-e2e-load-error-${stamp}`;
+  const name = `Load Retry ${stamp}`;
+  await signUpOrganization(page, stamp);
+  await createEvent(page, { uid, name });
+
+  let apiReachable = false;
+  await page.route(
+    (url) => url.pathname === "/events" && url.searchParams.get("uid") === uid,
+    (route) => (apiReachable ? route.continue() : route.abort()),
+  );
+
+  await page.goto(`/events/${uid}`);
+  await expect(
+    page.getByRole("heading", { name: "Could not load this event" }),
+  ).toBeVisible();
+  await expect(page.getByText(/No event at/)).toHaveCount(0);
+
+  apiReachable = true;
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+
+  // An event the API does not know is still reported as not found.
+  await page.goto(`/events/evt-e2e-missing-${stamp}`);
+  await expect(page.getByText(/No event at/)).toBeVisible();
+});

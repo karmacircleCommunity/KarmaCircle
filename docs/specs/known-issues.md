@@ -97,7 +97,23 @@ Also built in November 2026: an event has a **timezone** (PG-11): the form reads
 - **`formatEventDate`'s JSDoc example does not match its output.** It says "Sat 12 Sep · 9:00 pm", but only the first ", " is replaced, so en-US yields "Sat · Sep 12, 9:00 PM". The format is locale-dependent by design.
 - **The create form shows only "Validation failed" for server-side rule failures.** Field-level messages (`response.data.errors`) from the API are not surfaced; the browser mirrors the API rules, so this mostly matters if the two drift. The edit form (November 2026) does surface the API's first field error in its toast.
 - **Events Playwright specs: fixed and run (2026-11-16).** `events-responsive.spec.ts` now creates future events that end after they start and moves the past one with the E2E-only backdate route, and `attendee-journey.spec.ts`, `online-event-publishing.spec.ts` and the new `event-management.spec.ts` (edit and cancel) were run for the first time. All 15 events specs pass on Chromium, Firefox and WebKit (45 of 45). Two specs needed their hosted-list link anchored (`^<name>`) because each row's "Edit <name>" link also contains the event name.
-- **Lint warnings (19, 0 errors) as of 2026-11-04:** 11 `tailwindcss/classnames-order` in `src/components/Navbar.tsx` (line 455), 6 Playwright conditional-in-test warnings in `e2e/events/events-responsive.spec.ts`, and 2 in `e2e/organizations/organizations-responsive.spec.ts`.
+- **Lint warnings (2, 0 errors) as of 2026-11-26:** both in `e2e/organizations/organizations-responsive.spec.ts` (conditional logic in a test).
+- **Occasional Playwright failures in full-suite runs (2026-11-26).** Across two full runs, these failed once and passed when repeated on their own: the "You are going" check in `event-access.spec.ts` and `event-attendees.spec.ts` (Firefox), the type-filter test in `events-responsive.spec.ts` (Firefox), and `organization-setup.spec.ts` (WebKit, where `getByText("Guwahati").first()` matched a hidden element). Cause not established.
+
+## Landing and events visual review - open items (2026-11-26)
+
+Found in a browser review at 320, 375, 768, 1440 and 2560px, signed in as an organization.
+The tablet toolbar cut-off, the false "not found" on a failed event load and both navbar menus were fixed the same day.
+Still open:
+
+- **Event card titles are cut to one line** at every width.
+- **Small grey text misses 4.5:1 contrast** on all three pages (about 2.7:1 to 4.2:1), much of it at 10px.
+- **`/events` on a phone** stacks each filter on its own line, truncates the search hint, and one filter is labelled only "All".
+- **Loading states are one line of text** on the list and event pages; the failed list shows "0 events" above its error; the empty state is centered on a phone.
+- **Times are written two ways** on the event page ("9:00" and "9:00 AM").
+- **The floating join bar is see-through** around 640-768px.
+- **Smaller:** small tap targets (avatar 30px, "All events" 23px, host name on cards 15px, footer links 16px); the footer email field has no label; the event page tab title is generic; the landing page and events list have no `<main>`; the landing open-source card sits closer to the screen edge than other sections at 320px; hero wording differs between phone and desktop.
+- **`OrganizationProfile.tsx` shows "not found" for any load failure**, the pattern the event page had (seen in code, not reproduced).
 
 ## Validation that doesn't actually block submission
 

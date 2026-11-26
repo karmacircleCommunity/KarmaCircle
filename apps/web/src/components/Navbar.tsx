@@ -1,5 +1,5 @@
 import profileImage from "@assets/pictures/Navbar/profilePlaceholderImage.png";
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useId, useRef, useState } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { RxCaretDown, RxCross2 } from "react-icons/rx";
@@ -97,11 +97,57 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
     ?.trim()
     .split(/\s+/)[0];
 
+  // The small-screen menu is a modal `<dialog>`, so the browser supplies the
+  // focus trap, the Escape key, the inert page behind it and the return of
+  // focus to the trigger. Every way out calls `close()` (which returns the
+  // focus) and updates the state in the same step: the dialog's `close` event
+  // arrives later, and a reopen pressed before it would be undone by it.
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
+  const menuRef = useRef<HTMLDialogElement>(null);
 
-  const toggleNavbar = () => {
-    setIsNavbarOpen(!isNavbarOpen);
+  useEffect(() => {
+    const menu = menuRef.current;
+    if (isNavbarOpen && menu && !menu.open) menu.showModal();
+  }, [isNavbarOpen]);
+
+  const closeNavbar = () => {
+    menuRef.current?.close();
+    setIsNavbarOpen(false);
   };
+
+  // The desktop account dropdown is a disclosure: a button that shows a list
+  // of ordinary links. It closes on Escape, on a press outside, when focus
+  // moves on, and when one of its entries is chosen.
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const profileTriggerRef = useRef<HTMLButtonElement>(null);
+  const profileMenuId = useId();
+
+  const closeProfile = () => setIsProfileOpen(false);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!profileRef.current?.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (profileRef.current?.contains(document.activeElement)) {
+        profileTriggerRef.current?.focus();
+      }
+      setIsProfileOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isProfileOpen]);
 
   async function handleLogout() {
     const data = await Logout();
@@ -116,9 +162,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
       navigate("/");
       dispatch(resetUserData());
       localStorage.clear();
-      document
-        .querySelector(".nav_dropdown")
-        ?.classList.remove("nav_dropdown_visible");
+      closeProfile();
     } else {
       // @ts-expect-error — see above.
       showErrorToast(data?.message);
@@ -131,7 +175,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
     // edge to edge while the link row still lines up with every other
     // page's own `max-w-6xl` content (see layout-navigation.md).
     //
-    // `.nav_dropdown` no longer anchors to this div's own `relative`
+    // The account dropdown no longer anchors to this div's own `relative`
     // (October 2026) — it's now positioned off a tighter `relative`
     // wrapper around the "Profile" trigger itself, right where that
     // trigger renders below, so the panel tracks the trigger directly
@@ -252,20 +296,40 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
             // and positioning it `right-0` makes "flush under the
             // trigger" true at every width, nav padding included, with no
             // magic number to keep in sync.
-            <div className="relative">
-              <p
-                onClick={() => {
-                  document
-                    .querySelector(".nav_dropdown")
-                    ?.classList.toggle("nav_dropdown_visible");
-                }}
-                className="group m-0 ml-8 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-normal text-ink/65 no-underline transition-colors duration-200 hover:text-brand-secondary"
+            <div
+              ref={profileRef}
+              className="relative"
+              onBlur={(event) => {
+                // No `relatedTarget` means a press that moved focus nowhere
+                // (Safari does not focus a clicked link); the outside-press
+                // listener above covers closing in that case.
+                if (
+                  event.relatedTarget &&
+                  !event.currentTarget.contains(event.relatedTarget)
+                ) {
+                  closeProfile();
+                }
+              }}
+            >
+              <button
+                ref={profileTriggerRef}
+                type="button"
+                aria-expanded={isProfileOpen}
+                aria-controls={profileMenuId}
+                onClick={() => setIsProfileOpen((open) => !open)}
+                className="group m-0 ml-8 flex cursor-pointer items-center justify-center border-none bg-transparent p-0 font-outfit text-body-lg leading-none font-normal text-ink/65 transition-colors duration-200 hover:text-brand-secondary"
               >
                 Profile{" "}
-                <RxCaretDown className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none" />
-              </p>
+                <RxCaretDown
+                  aria-hidden="true"
+                  className="size-6.25 transition-transform duration-300 ease-out group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
+                />
+              </button>
 
-              <div className="nav_dropdown absolute top-full right-0 z-10 mt-2 hidden w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] transition-all duration-1000 ease-in-out">
+              <div
+                id={profileMenuId}
+                className={`absolute top-full right-0 z-100 mt-2 w-50 flex-col justify-center rounded-md bg-white shadow-[0px_0px_1.17px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_8.191px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent),0px_0px_28.084px_0px_color-mix(in_srgb,var(--color-brand)_12.5%,transparent)] ${isProfileOpen ? "flex" : "hidden"}`}
+              >
                 <div className="flex flex-col justify-center">
                   <span className="mb-1.25 p-2.5 font-outfit text-base">
                     Hello{greetingName ? `, ${greetingName}` : ""}
@@ -278,6 +342,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                   {isDraft && organization && (
                     <Link
                       to={resumeSetupPath(organization.missingFields)}
+                      onClick={closeProfile}
                       data-cy="nav-finish-setup"
                       className="flex items-center justify-between gap-2 rounded-5px p-2.5 font-outfit text-base leading-none font-medium text-brand no-underline hover:bg-brand/8"
                     >
@@ -291,6 +356,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                         ? "/user/setup"
                         : `/dashboard`
                     }
+                    onClick={closeProfile}
                     className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
                   >
                     {user?.userType === "individual"
@@ -300,6 +366,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                   {user?.userType === "individual" ? (
                     <Link
                       to="/events/mine"
+                      onClick={closeProfile}
                       className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
                     >
                       My Events
@@ -308,6 +375,7 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                   {user?.userType === "organization" ? (
                     <Link
                       to={"/organization/events"}
+                      onClick={closeProfile}
                       className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
                     >
                       Your Events
@@ -320,15 +388,15 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
                     aria-orientation="horizontal"
                     className="h-px w-full bg-black/5"
                   ></div>
-                  {/* @ts-expect-error — pre-existing: no `to` prop passed, unlike every other `<Link>` in the app; preserved as-is for a types-only pass. */}
-                  <Link
+                  <button
+                    type="button"
                     onClick={() => {
                       handleLogout();
                     }}
-                    className="flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary no-underline hover:bg-black/[3.5%]"
+                    className="flex w-full cursor-pointer justify-between rounded-5px border-none bg-transparent p-2.5 text-left font-outfit text-base leading-none font-normal text-brand-secondary hover:bg-black/[3.5%]"
                   >
                     Logout
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -386,142 +454,133 @@ const Navbar = forwardRef<HTMLElement, NavbarProps>(function Navbar(
               `max-[899px]` — matching the number in both variants is the
               correct pairing in v4's range syntax, not an off-by-one
               itself. */}
-        {!isNavbarOpen &&
-          (isLoggedIn ? (
+        <button
+          type="button"
+          aria-label={isLoggedIn ? "Open account menu" : "Open menu"}
+          aria-haspopup="dialog"
+          aria-expanded={isNavbarOpen}
+          className="hidden cursor-pointer rounded-full border-none bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[900px]:block"
+          onClick={() => setIsNavbarOpen(true)}
+        >
+          {isLoggedIn ? (
             <img
               src={(user?.profileImage as string | undefined) || profileImage}
               alt=""
-              role="button"
-              tabIndex={0}
-              aria-label="Open account menu"
-              aria-haspopup="true"
-              aria-expanded={isNavbarOpen}
-              className="hidden size-7.5 cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[900px]:block"
-              onClick={() => {
-                toggleNavbar();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  toggleNavbar();
-                }
-              }}
+              className="block size-7.5 rounded-full"
             />
           ) : (
             <GiHamburgerMenu
-              role="button"
-              tabIndex={0}
-              aria-label="Open menu"
-              aria-haspopup="true"
-              aria-expanded={isNavbarOpen}
-              className="hidden size-7.5 cursor-pointer text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[900px]:block"
-              onClick={() => {
-                toggleNavbar();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  toggleNavbar();
-                }
-              }}
+              aria-hidden="true"
+              className="block size-7.5 text-heading"
             />
-          ))}
+          )}
+        </button>
 
         {isNavbarOpen && (
-          <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/[0.867] transition-all duration-300 ease-in-out">
-            <div className="absolute top-[20%] flex w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in">
-              <RxCross2
-                role="button"
-                tabIndex={0}
-                aria-label="Close menu"
-                className="absolute top-2.5 right-2.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                onClick={() => {
-                  toggleNavbar();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    toggleNavbar();
-                  }
-                }}
-              />
+          <dialog
+            ref={menuRef}
+            aria-label="Menu"
+            onCancel={closeNavbar}
+            onClose={() => setIsNavbarOpen(false)}
+            className="top-[20%] bottom-auto mx-auto my-0 w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl border-none bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] backdrop:bg-black/[0.867] open:flex motion-safe:animate-pop-in"
+          >
+            <button
+              type="button"
+              aria-label="Close menu"
+              className="absolute top-2.5 right-2.5 flex cursor-pointer border-none bg-transparent p-0 text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              onClick={closeNavbar}
+            >
+              <RxCross2 aria-hidden="true" />
+            </button>
 
-              {Links.map((item) => {
-                const isActive = isPrimarySectionActive(item.link);
-                return (
+            {Links.map((item) => {
+              const isActive = isPrimarySectionActive(item.link);
+              return (
+                <Link
+                  key={item.link}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`relative m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none no-underline transition-colors duration-200 after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 motion-safe:active:scale-97 ${isActive ? "font-medium text-brand-secondary after:origin-left after:scale-x-100" : "font-normal text-ink hover:text-brand hover:after:origin-left hover:after:scale-x-100"}`}
+                  to={item.link}
+                  onClick={closeNavbar}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+
+            {isLoggedIn ? (
+              <>
+                {isDraft && organization && (
+                  <div>
+                    <Link
+                      className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-brand no-underline"
+                      to={resumeSetupPath(organization.missingFields)}
+                      onClick={closeNavbar}
+                    >
+                      Finish setting up
+                    </Link>
+                  </div>
+                )}
+                <div>
                   <Link
-                    key={item.link}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`relative m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none no-underline transition-colors duration-200 motion-safe:active:scale-97 after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:transition-transform after:duration-300 ${isActive ? "font-medium text-brand-secondary after:origin-left after:scale-x-100" : "font-normal text-ink hover:text-brand hover:after:origin-left hover:after:scale-x-100"}`}
-                    to={item.link}
+                    className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
+                    to={
+                      user?.userType === "individual"
+                        ? "/user/setup"
+                        : "/dashboard"
+                    }
+                    onClick={closeNavbar}
                   >
-                    {item.name}
+                    {user?.userType === "individual"
+                      ? "Edit profile"
+                      : "Dashboard"}
                   </Link>
-                );
-              })}
-
-              {isLoggedIn ? (
-                <>
-                  {isDraft && organization && (
-                    <div>
-                      <Link
-                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-brand no-underline"
-                        to={resumeSetupPath(organization.missingFields)}
-                        onClick={() => setIsNavbarOpen(false)}
-                      >
-                        Finish setting up
-                      </Link>
-                    </div>
-                  )}
+                </div>
+                {user?.userType === "individual" && (
                   <div>
                     <Link
                       className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                      to={
-                        user?.userType === "individual"
-                          ? "/user/setup"
-                          : "/dashboard"
-                      }
-                      onClick={() => setIsNavbarOpen(false)}
+                      to="/events/mine"
+                      onClick={closeNavbar}
                     >
-                      {user?.userType === "individual"
-                        ? "Edit profile"
-                        : "Dashboard"}
+                      My Events
                     </Link>
                   </div>
-                  {user?.userType === "individual" && (
-                    <div>
-                      <Link
-                        className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                        to="/events/mine"
-                        onClick={() => setIsNavbarOpen(false)}
-                      >
-                        My Events
-                      </Link>
-                    </div>
-                  )}
+                )}
+                {user?.userType === "organization" && (
                   <div>
-                    <p
+                    <Link
                       className="m-0 flex cursor-pointer items-center justify-center font-outfit text-body-lg leading-none font-medium text-black no-underline"
-                      onClick={() => {
-                        handleLogout();
-                        setIsNavbarOpen(false);
-                      }}
+                      to="/organization/events"
+                      onClick={closeNavbar}
                     >
-                      Logout
-                    </p>
+                      Your Events
+                    </Link>
                   </div>
-                </>
-              ) : (
-                <Button
-                  to={"/auth/signup"}
-                  className="flex w-auto items-center gap-1.25 px-4 py-2 font-outfit text-body-lg no-underline"
-                >
-                  <span>Sign Up</span>
-                  <FaChevronRight />
-                </Button>
-              )}
-            </div>
-          </div>
+                )}
+                <div>
+                  <button
+                    type="button"
+                    className="m-0 flex cursor-pointer items-center justify-center border-none bg-transparent p-0 font-outfit text-body-lg leading-none font-medium text-black"
+                    onClick={() => {
+                      closeNavbar();
+                      handleLogout();
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : (
+              <Button
+                to={"/auth/signup"}
+                className="flex w-auto items-center gap-1.25 px-4 py-2 font-outfit text-body-lg no-underline"
+              >
+                <span>Sign Up</span>
+                <FaChevronRight />
+              </Button>
+            )}
+          </dialog>
         )}
       </div>
     </nav>

@@ -125,33 +125,37 @@ group z-10 flex items-center gap-2 no-underline
 
 ### Desktop (`min-[900px]`, i.e. ≥ 900px — pure CSS, not a `windowWidth` state; see [layout-navigation.md](../layout-navigation.md))
 
-- Link row: `z-1 flex items-center gap-7` (28px).
+- Link row: `z-1 flex items-center gap-10` (40px).
 - Link: `relative font-outfit text-body-lg leading-none font-normal text-ink/65 ... hover:text-brand-secondary`, with the directional underline (`after:-bottom-1.5 after:h-px after:w-full after:origin-right after:scale-x-0 after:bg-brand after:duration-300 hover:after:origin-left hover:after:scale-x-100`).
-- No active-route underline. That is an app-internal-tab pattern, not a marketing-nav one.
+- The active section keeps its underline and `text-brand-secondary`, with `aria-current="page"`.
 - Logged out: `Button to="/auth/signup"` with `rounded-5px px-5 py-2 font-outfit text-base`, the triple brand glow on hover, `motion-safe:hover:-translate-y-0.5`.
-- Logged in: a `Profile` text row with `RxCaretDown` at `size-6.25` (25px) that toggles `.nav_dropdown_visible` **via `classList`, not React state**.
+- Logged in: a `Profile` `<button>` (bare: `border-none bg-transparent p-0`) with `RxCaretDown` at `size-6.25` (25px) that opens the account dropdown from React state (November 2026, supersedes a clickable `<p>` that toggled `.nav_dropdown_visible` via `classList` and could not be reached by keyboard).
 
 ### Account dropdown
 
 ```
-nav_dropdown absolute top-full right-0 z-10 mt-2 hidden w-50 flex-col justify-center
-rounded-md bg-white shadow-[...color-mix(...12.5%...)] transition-all duration-1000 ease-in-out
+absolute top-full right-0 z-100 mt-2 w-50 flex-col justify-center
+rounded-md bg-white shadow-[...color-mix(...12.5%...)]
++ `flex` while open, `hidden` while closed
 ```
+A disclosure, not an ARIA menu: the trigger carries `aria-expanded` and `aria-controls`, and the panel holds ordinary links plus a Logout `<button>`.
+It closes on Escape (focus returns to the trigger if it was inside), on a press outside, when keyboard focus moves out of it, and when an entry is chosen.
+
 Positioned off a `relative` wrapper around the "Profile" trigger itself (October 2026 — supersedes a fixed `top-10 right-17.75` anchored to the whole nav row's own `relative`). That fixed offset was calibrated for one specific nav padding and drifted out from under the trigger at other widths — confirmed live, the panel's right edge landing tens of pixels inside the trigger's own right edge rather than flush with it. `top-full right-0 mt-2` tracks the trigger exactly at every width instead, nav padding included, with no magic number to keep in sync. `w-50` = 200px, radius 6px. The `.nav_dropdown_visible` class (below) no longer carries its own `top` override for the same reason — `top-full` already does that job correctly.
 Rows: `flex justify-between rounded-5px p-2.5 font-outfit text-base leading-none font-normal text-brand-secondary hover:bg-black/[3.5%]`.
 Separators: `h-px w-full bg-black/5`, `role="separator"` (October 2026 — was the drifted `bg-[#e2e5e883]`; see [02-color.md](./02-color.md)).
 Draft-organization row is `text-brand`, `font-medium`, `hover:bg-brand/8`, with a trailing `size-1.5` brand dot, `data-cy="nav-finish-setup"`.
 
-Label rule: the mobile sheet always says **"Dashboard"** because it always points at `/dashboard`.
-The desktop dropdown's **"Your Profile"** is a distinctly named link to `/user/:handle`.
-The two used to share the ambiguous label "Profile" for individual accounts.
+Label rule: both menus show **"Edit profile"** (to `/user/setup`) for individual accounts and **"Dashboard"** (to `/dashboard`) for organizations.
 
 ### Mobile (`max-[900px]`, i.e. < 900px)
 
-- Trigger: logged out `GiHamburgerMenu` at `size-7.5` (30px) `text-heading`; logged in the avatar at `size-7.5 rounded-full` with `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`, `role="button"`, `tabIndex=0`, Enter/Space handled. Both are `max-[900px]:block` (October 2026 — was `max-[899px]:block`, which Tailwind v4 compiles to the *exclusive* `width < 899px` and left a real 1px gap at exactly 899px where neither this trigger nor the desktop link row rendered; `max-[900px]` pairs with the link row's `min-[900px]` with zero gap and zero overlap — see `Navbar.tsx`'s own comment).
-- Scrim: `fixed inset-0 z-20 bg-black/[0.867]`.
-- Sheet: `absolute top-[20%] w-[80vw] flex-wrap gap-7.5 rounded-xl bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] motion-safe:animate-pop-in`.
-- Close: `RxCross2` at `top-2.5 right-2.5`.
+- Trigger: one `<button>` (November 2026, supersedes `role="button"` on the icon and avatar) holding `GiHamburgerMenu` at `size-7.5` (30px) `text-heading` when logged out, or the avatar at `size-7.5 rounded-full` when logged in. `aria-label` is `Open menu` or `Open account menu`, with `aria-haspopup="dialog"` and `aria-expanded`. `rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[900px]:block` (`max-[900px]`, not `max-[899px]`: Tailwind v4 compiles an arbitrary `max-[Npx]` to the exclusive `width < Npx`, so only the matching number pairs with `min-[900px]` without a 1px gap). It stays mounted while the menu is open, so focus has somewhere to return to.
+- Container: a native modal `<dialog aria-label="Menu">` opened with `showModal()` (November 2026, supersedes a plain `div` overlay that ignored Escape and let focus reach the page behind). The browser supplies the focus trap, Escape and the return of focus.
+- Scrim: `backdrop:bg-black/[0.867]`.
+- Sheet (the dialog itself): `top-[20%] bottom-auto mx-auto my-0 w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl border-none bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] open:flex motion-safe:animate-pop-in`.
+- Close: a `<button aria-label="Close menu">` holding `RxCross2` at `top-2.5 right-2.5`.
+- Entries: Organizations, Events, then when logged in `Finish setting up` (draft organization only), `Dashboard` or `Edit profile`, `My Events` (individual) or `Your Events` (organization, added November 2026 to match the desktop dropdown), and a Logout `<button>`.
 
 ---
 
@@ -300,8 +304,8 @@ The component owns presentation only.
 
 Root: `mt-8 lg:mt-10`.
 
-Row 1, `flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4`:
-- Field: `group flex flex-1 items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)]`. Flat at rest — `--color-surface-muted` is the design system's own documented "input/panel background" token (see [01-tokens.md](./01-tokens.md#color-tokens)), so this needs no shadow to read as a control surface, and a field that was seen as looking odd is a field that gains one shadow only when it actually has a reason to (focus), not permanently. **Exception to the radius decision table's "Form input → `rounded-lg`"**: this is an explore/filter field, not a data-entry form, and pairs with the pill-shaped [`FilterDropdown`](#filterdropdown) trigger beside it — see [06-radius-elevation.md](./06-radius-elevation.md#radius) for the note.
+Row 1, `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`. It holds two items, the field and a controls group (`flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`) with the filter dropdowns and the action. From `sm` up they share one line while they fit; otherwise the whole group drops below the field, and wraps inside itself if it is still too wide (November 2026: the old non-wrapping row cut `/events`' action off between 640px and about 900px).
+- Field: `group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1`. `sm:min-w-72` (288px) stops long filter labels crushing it. Flat at rest - `--color-surface-muted` is the design system's own documented "input/panel background" token (see [01-tokens.md](./01-tokens.md#color-tokens)), so this needs no shadow to read as a control surface, and a field that was seen as looking odd is a field that gains one shadow only when it actually has a reason to (focus), not permanently. **Exception to the radius decision table's "Form input → `rounded-lg`"**: this is an explore/filter field, not a data-entry form, and pairs with the pill-shaped [`FilterDropdown`](#filterdropdown) trigger beside it - see [06-radius-elevation.md](./06-radius-elevation.md#radius) for the note.
 - `FiSearch` at `size-4.5` (18px), `text-ink/35`, `group-focus-within:text-brand`.
 - The field itself: either the plain `<input type="text" role="searchbox">` or `<Combobox>` — see `suggestions` above. The raw `<input>` (no `suggestions`) is a direct child of this flex row, so `min-w-0 flex-1 truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35` works as written. The `<Combobox>` case is `w-full` instead of `min-w-0 flex-1`: `Combobox` wraps the `<input>` in its own `relative min-w-0 flex-1` div (see [`Combobox`](#combobox) below), so *that* wrapper is the actual flex item — `flex-1`/`min-w-0` on the `<input>` itself are inert, and the `<input>` needs `w-full` to fill that wrapper rather than falling back to its browser-default ~20ch intrinsic width, which `truncate` was then clipping well short of the pill's real width (fixed September 2026, fourth pass). The raw `<input>` is deliberately not `type="search"` — that draws browser-native chrome on top of this component's own icon/clear button (Chrome/Safari's magnifier styling, and specifically a native clear "×" in Firefox that `::-webkit-search-cancel-button` never reaches), which read as a stray, half-hidden second control popping in and out. `truncate` (September 2026, third pass) is load-bearing, not cosmetic: the pill's `px-5` leaves less room than the old borderless field had, and a placeholder like `"Search by event, organizer or city"` was hard-clipping mid-word on real mobile widths with no ellipsis — a genuine visual bug the two prior passes introduced and missed, not a style preference.
 - Clear button: always mounted (not conditionally rendered) so it fades rather than pops into existence — `opacity-0 pointer-events-none` plus `aria-hidden`/`tabIndex={-1}` while `query` is empty, `size-6 rounded-full text-ink/40 hover:text-brand transition-[opacity,color] duration-200` with `FiX` at `size-4`, `aria-label="Clear search"`.
@@ -428,6 +432,8 @@ Clicking the trigger toggles a `role="listbox"` panel of `role="option"` rows, o
 Trigger: `flex items-center gap-1.5 rounded-full border px-3.5 py-2 font-outfit text-sm` — `FiFilter` (`size-3`) then `active`'s text then `FiChevronDown` (`size-3.5`, rotates 180° open). Open: `border-brand/45 bg-white text-brand-secondary`. Closed: `border-brand-secondary/15 bg-transparent text-ink/55 hover:border-brand/35 hover:text-brand-secondary` — the same rest/hover pair the old chips used, so the one surviving control still reads as part of the same family.
 
 Panel: `absolute top-full right-0 mt-2 w-56 max-h-72 overflow-y-auto rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in` — lifted verbatim from `Combobox`'s own listbox (see [Panel geometry](#panel-geometry) below) rather than invented fresh, so the two dropdowns in the same toolbar look like one design decision. `right-0`, not `left-0` or `inset-x-0`: the trigger sits mid-row between the search field and `action`, not flush against either edge, so anchoring the panel to the trigger's own right edge is the one option that can't spill into a neighboring control on a narrow `sm:flex-row` width.
+
+The panel is right-aligned to its trigger (`right-0`). When the trigger sits too close to the screen's left edge for that (its right edge under 240px, for example the first filter on a wrapped toolbar line), it is left-aligned (`left-0`) instead, measured as it opens (November 2026).
 
 Option rows: `flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left font-outfit text-body`. Selected: `bg-brand/8 font-medium text-brand` plus a trailing `FiCheck`. Rest: `text-ink/80 hover:bg-surface-muted`.
 

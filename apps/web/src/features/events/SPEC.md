@@ -195,9 +195,12 @@ Routed at `/events/:eventId` (`app/routes/routesConfig.tsx`), where `:eventId`
 is a real event's `uid`.
 
 **Live data, September 2026.**
-`useSWR<ApiEvent>(eventId ? eventEndpoints.byUid(eventId) : null, fetcher)` —
-the same conditional-key / loading / error-or-missing / view four-way branch
-`OrganizationProfile.tsx` already uses for its own single-record fetch.
+`useSWR<ApiEvent>(eventId ? eventEndpoints.byUid(eventId) : null, fetcher)`.
+It branches in this order (November 2026): not found (`EventNotFound`) when there
+is no id or the API answers 404 or 400; the view whenever there is data, so a
+failed background refresh keeps the event on screen; `EventLoadError`, with
+"Try again", for any other failure; otherwise loading. Before this every error
+was shown as "not found". `OrganizationProfile.tsx` still does that.
 `eventEndpoints.byUid(uid)` hits `GET /events?uid={uid}`, reusing the backend's
 existing single-event branch (`event.controller.ts#listEvents`) rather than
 adding a dedicated `GET /events/:uid` route. `utils/toDisplayEventDetail.ts`

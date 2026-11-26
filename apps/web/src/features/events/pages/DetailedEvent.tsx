@@ -16,6 +16,7 @@ import {
   showSuccessToast,
   showWarningToast,
 } from "@utils/Toasts";
+import { STATUSCODE } from "@statics/Constants";
 import RichText from "@features/events/components/RichText";
 import ConfirmDialog from "@features/events/components/ConfirmDialog";
 import EventAgenda from "@features/events/components/detail/EventAgenda";
@@ -106,18 +107,79 @@ const LEAVE_COPY: Partial<
   },
 };
 
+/**
+ * Whether the API said there is no such event for this visitor: a 404 for an
+ * unknown event or someone else's draft, a 400 for an id it cannot read. A
+ * network failure, a timeout, a rate limit or a server error says nothing
+ * about whether the event exists.
+ */
+const isMissingEvent = (error: unknown) => {
+  const status = (error as { response?: { status?: number } } | undefined)
+    ?.response?.status;
+  return status === STATUSCODE.NOT_FOUND || status === STATUSCODE.BAD_REQUEST;
+};
+
 const DetailedEvent = () => {
   const { eventId } = useParams();
-  const { data, error, isLoading } = useSWR<ApiEvent>(
+  const { data, error, isValidating, mutate } = useSWR<ApiEvent>(
     eventId ? eventEndpoints.byUid(eventId) : null,
     fetcher,
   );
 
-  if (isLoading) return <DetailedEventLoading />;
-  if (error || !data) return <EventNotFound eventId={eventId} />;
+  if (!eventId || isMissingEvent(error))
+    return <EventNotFound eventId={eventId} />;
+  // Checked before `error`: a failed refresh must not take away an event that
+  // is already on screen.
+  if (data) return <DetailedEventView {...toDisplayEventDetail(data)} />;
+  if (error)
+    return (
+      <EventLoadError retrying={isValidating} onRetry={() => void mutate()} />
+    );
 
-  return <DetailedEventView {...toDisplayEventDetail(data)} />;
+  return <DetailedEventLoading />;
 };
+
+const EventLoadError = ({
+  retrying,
+  onRetry,
+}: {
+  retrying: boolean;
+  onRetry: () => void;
+}) => (
+  <>
+    <Navbar />
+    <div className="mx-auto max-w-6xl px-9 py-24 sm:px-10 lg:px-12">
+      <div
+        role="alert"
+        className="rounded-2xl border border-red-200 bg-red-50 px-8 py-12"
+      >
+        <h1 className="m-0 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
+          Could not load this event
+        </h1>
+        <p className="mt-2 font-poppins text-body leading-6 text-ink/70">
+          Check your connection and try again.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <button
+            type="button"
+            disabled={retrying}
+            onClick={onRetry}
+            className="min-h-11 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-97"
+          >
+            {retrying ? "Trying again" : "Try again"}
+          </button>
+          <Link
+            to="/events"
+            className="inline-flex min-h-11 items-center gap-2 font-poppins text-body font-medium text-brand-secondary no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <FiArrowLeft aria-hidden="true" /> Back to events
+          </Link>
+        </div>
+      </div>
+    </div>
+    <Footer />
+  </>
+);
 
 const DetailedEventLoading = () => (
   <>
