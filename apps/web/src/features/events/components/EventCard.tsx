@@ -28,9 +28,13 @@ import type { EventCardProps } from "@features/events/types";
  * One event in the `/events` directory.
  *
  * The same card as `organizations/OrganizationCard.tsx` and
- * `landing-home/DrivesRail.tsx` - cover photo, a label riding on it, a
- * one-line title, a two-line summary on a fixed box - plus the thing an
- * event card needs and those don't: the date.
+ * `landing-home/DrivesRail.tsx` - cover photo, a label riding on it, a title,
+ * a two-line summary on a fixed box - plus the thing an event card needs and
+ * those don't: the date.
+ *
+ * **The title runs to two lines (November 2026).** Event names are long enough
+ * that one truncated line hid what the event was at every width. From `sm` up
+ * the box is always two lines tall, so cards in a row stay level.
  *
  * September 2026 — wired to real `GET /events` records
  * (`utils/toDisplayEvent.ts`), which is why `cause`, `going`/`spotsLeft`
@@ -205,10 +209,10 @@ const EventCard = ({ event }: EventCardProps) => {
       </div>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <h2 className="m-0 font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:text-lg">
+        <h2 className="m-0 font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:min-h-[2lh] sm:text-lg">
           <Link
             to={`/events/${event.id}`}
-            className="block truncate text-inherit no-underline transition-colors duration-200 group-hover:text-brand after:absolute after:inset-0 after:content-['']"
+            className="line-clamp-2 break-words text-inherit no-underline transition-colors duration-200 group-hover:text-brand after:absolute after:inset-0 after:content-['']"
           >
             {event.title}
           </Link>
@@ -216,12 +220,12 @@ const EventCard = ({ event }: EventCardProps) => {
         {event.organizerUserName ? (
           <Link
             to={`/organization/${event.organizerUserName}`}
-            className="relative z-1 mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/55 uppercase no-underline transition-colors duration-200 hover:text-brand"
+            className="relative z-1 mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/65 uppercase no-underline transition-colors duration-200 hover:text-brand"
           >
             {event.organizer}
           </Link>
         ) : (
-          <span className="mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/55 uppercase">
+          <span className="mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/65 uppercase">
             {event.organizer}
           </span>
         )}
@@ -245,7 +249,7 @@ const EventCard = ({ event }: EventCardProps) => {
             when there's no stat row beneath it (a live event has no
             capacity) so the card doesn't end in a stray gap. */}
         <div
-          className={`flex flex-col gap-3 font-poppins text-caption tracking-wide text-ink/55 ${hasCapacity ? "mb-4" : "mt-auto mb-0.5"}`}
+          className={`flex flex-col gap-3 font-poppins text-caption tracking-wide text-ink/65 ${hasCapacity ? "mb-4" : "mt-auto mb-0.5"}`}
         >
           <span className="inline-flex items-center gap-1.5">
             <FiClock aria-hidden="true" className="size-3.5 shrink-0" />
@@ -273,8 +277,8 @@ const EventCard = ({ event }: EventCardProps) => {
             <p
               className={`m-0 rounded-full px-2.5 py-1 font-poppins text-caption tracking-wide ${
                 full
-                  ? "bg-brand-secondary/8 text-ink/50"
-                  : "bg-brand/10 text-brand"
+                  ? "bg-brand-secondary/8 text-ink/70"
+                  : "bg-brand/10 text-brand-hover"
               }`}
             >
               {full ? "Full" : formatSpotsLeft(event.spotsLeft!)}

@@ -10,6 +10,7 @@ import { eventEndpoints } from "@services/ApiEndpoints";
 import fetcher from "@utils/Fetcher";
 import { EVENT_TYPE_OPTIONS } from "@features/events/constants/eventTypes";
 import EventCard from "@features/events/components/EventCard";
+import EventCardSkeleton from "@features/events/components/EventCardSkeleton";
 import { toDisplayEvent } from "@features/events/utils/toDisplayEvent";
 import type { ApiEventList } from "@features/events/types";
 import { Link } from "react-router-dom";
@@ -28,8 +29,9 @@ const TIME_FILTERS: TimeFilter[] = ["Upcoming", "Past"];
  * "invite only" can't be combined here; that tradeoff was a deliberate
  * choice over building a multi-select variant for a short list.
  */
+const ALL_FORMATS = "All formats";
 type TypeFilter =
-  | "All"
+  | typeof ALL_FORMATS
   | "Open to all"
   | "Approval required"
   | "Invite only"
@@ -37,7 +39,7 @@ type TypeFilter =
   | "Offline"
   | "Hybrid";
 const TYPE_FILTERS: TypeFilter[] = [
-  "All",
+  ALL_FORMATS,
   "Open to all",
   "Approval required",
   "Invite only",
@@ -132,7 +134,7 @@ const Events = () => {
   const canCreateEvent = isLoggedIn && user.userType === "organization";
   const [query, setQuery] = useState("");
   const [when, setWhen] = useState<TimeFilter>("Upcoming");
-  const [type, setType] = useState<TypeFilter>("All");
+  const [type, setType] = useState<TypeFilter>(ALL_FORMATS);
   const [kind, setKind] = useState<string>(ALL_KINDS);
 
   // The box updates on every keystroke; the API only hears about it once
@@ -184,9 +186,12 @@ const Events = () => {
 
   const total = data?.[0]?.pagination.total ?? 0;
   const hasMore = results.length < total;
+  const loadFailed = Boolean(error) && results.length === 0;
   const isLoadingMore =
     size > 1 && data !== undefined && typeof data[size - 1] === "undefined";
-  const hasFilters = Boolean(query || type !== "All" || kind !== ALL_KINDS);
+  const hasFilters = Boolean(
+    query || type !== ALL_FORMATS || kind !== ALL_KINDS,
+  );
 
   // Scoped to the grid so the reveal never reaches the page chrome above
   // it, and re-run on filter changes so cards revealed by a new filter
@@ -212,7 +217,7 @@ const Events = () => {
         <DirectoryToolbar
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search by event, organizer or city"
+          searchPlaceholder="Search events"
           searchLabel="Search events"
           options={TIME_FILTERS}
           active={when}
@@ -231,14 +236,20 @@ const Events = () => {
             filterLabel: "Filter by kind",
           }}
           summary={
-            <>
-              {isLoading && !data
-                ? "Loading events"
-                : `${total} ${total === 1 ? "event" : "events"}`}
-              {when === "Past" && total > 0 && " · past"}
-              {type !== "All" && total > 0 && ` · ${type.toLowerCase()}`}
-              {kind !== ALL_KINDS && total > 0 && ` · ${kind.toLowerCase()}`}
-            </>
+            // Nothing to count after a failed first load: "0 events" above the
+            // error would say the directory is empty.
+            loadFailed ? undefined : (
+              <>
+                {isLoading && !data
+                  ? "Loading events"
+                  : `${total} ${total === 1 ? "event" : "events"}`}
+                {when === "Past" && total > 0 && " · past"}
+                {type !== ALL_FORMATS &&
+                  total > 0 &&
+                  ` · ${type.toLowerCase()}`}
+                {kind !== ALL_KINDS && total > 0 && ` · ${kind.toLowerCase()}`}
+              </>
+            )
           }
           action={
             canCreateEvent ? (
@@ -258,28 +269,33 @@ const Events = () => {
       </div>
 
       <div className="mx-auto max-w-6xl px-9 pb-20 sm:px-10 lg:px-12">
-        {error && results.length === 0 ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-8 py-12">
+        {loadFailed ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-error/25 bg-error/5 px-8 py-12"
+          >
             <h2 className="font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
               Could not load events
             </h2>
-            <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
+            <p className="mt-2 font-poppins text-body leading-6 text-ink/70">
               Please try again.
             </p>
             <button
               type="button"
               onClick={() => void mutate()}
-              className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
+              className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 hover:text-brand-hover motion-safe:active:scale-97"
             >
               Try again
             </button>
           </div>
         ) : results.length === 0 && isLoading ? (
-          <p className="font-poppins text-body text-ink/55" role="status">
-            Loading events
-          </p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <EventCardSkeleton key={index} />
+            ))}
+          </div>
         ) : results.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-brand-secondary/15 bg-white/60 px-8 py-16 text-center">
+          <div className="rounded-2xl border border-dashed border-brand-secondary/15 bg-white/60 px-8 py-10 sm:py-16 sm:text-center">
             <h2 className="font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
               {hasFilters
                 ? "Nothing matches that yet"
@@ -287,7 +303,7 @@ const Events = () => {
                   ? "No upcoming events yet"
                   : "No past events yet"}
             </h2>
-            <p className="mx-auto mt-2 max-w-sm font-poppins text-body leading-6 text-ink/65">
+            <p className="mt-2 max-w-sm font-poppins text-body leading-6 text-ink/65 sm:mx-auto">
               {hasFilters
                 ? "Try a broader search, or clear the filters to see every event in the circle."
                 : when === "Upcoming"
@@ -300,10 +316,10 @@ const Events = () => {
                 onClick={() => {
                   setQuery("");
                   setSearch("");
-                  setType("All");
+                  setType(ALL_FORMATS);
                   setKind(ALL_KINDS);
                 }}
-                className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
+                className="mt-6 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 hover:text-brand-hover motion-safe:active:scale-97"
               >
                 Reset filters
               </button>
@@ -321,7 +337,7 @@ const Events = () => {
         )}
 
         {error && results.length > 0 && (
-          <p className="mt-8 font-poppins text-sm text-red-700" role="status">
+          <p className="mt-8 font-poppins text-sm text-error" role="status">
             Could not load more events. Try again below.
           </p>
         )}
@@ -331,7 +347,7 @@ const Events = () => {
               type="button"
               disabled={isLoadingMore}
               onClick={() => (error ? void mutate() : void setSize(size + 1))}
-              className="cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-97"
+              className="cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 hover:text-brand-hover disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-97"
             >
               {isLoadingMore
                 ? "Loading more events"

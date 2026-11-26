@@ -239,6 +239,85 @@ test("the toolbar keeps every control on screen between phone and desktop widths
   }
 });
 
+test("a phone shares lines between filters and shows a long event name in full", async ({
+  page,
+}) => {
+  const stamp = Date.now() + Math.floor(Math.random() * 1e6);
+  await signUpOrganization(page, stamp);
+  const name = `Flood Preparedness Volunteer Training ${stamp}`;
+  await createEvent(page, {
+    uid: `evt-e2e-long-name-${stamp}`,
+    name,
+    description: "A long-named regression-test event.",
+    mode: "Offline",
+    startDate: new Date(Date.now() + 7 * DAY_MS),
+  });
+
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.goto("/events");
+    await searchDirectory(page, String(stamp));
+
+    const title = page.getByRole("link", { name });
+    await expect(title).toBeVisible();
+    // Two lines hold the whole name, give or take a long stamp on 320px.
+    const lines = await title.evaluate(
+      (link) =>
+        link.getBoundingClientRect().height /
+        parseFloat(getComputedStyle(link).lineHeight),
+    );
+    expect(Math.round(lines)).toBe(2);
+
+    const filterTops = new Set<number>();
+    for (const label of [
+      "Filter by time",
+      "Filter by type",
+      "Filter by kind",
+    ]) {
+      const trigger = page.getByRole("button", { name: label });
+      filterTops.add(Math.round((await trigger.boundingBox())!.y));
+
+      await trigger.click();
+      const panel = page.getByRole("listbox", { name: label });
+      await expect(async () => {
+        const box = await panel.boundingBox();
+        expect(box, `${label} panel at ${width}px`).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+      }).toPass();
+      await trigger.press("Escape");
+      await expect(panel).toHaveCount(0);
+    }
+    expect(filterTops.size, `filter lines at ${width}px`).toBeLessThan(3);
+  }
+});
+
+test("the directory holds its shape while loading and never counts a failed load", async ({
+  page,
+}) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    (url) => url.pathname === "/events" && url.searchParams.has("period"),
+    async (route) => {
+      await held;
+      await route.abort();
+    },
+  );
+
+  await page.goto("/events");
+  await expect(page.getByTestId("event-card-skeleton")).toHaveCount(6);
+  await expect(page.getByText("Loading events")).toBeVisible();
+
+  release();
+  await expect(
+    page.getByRole("heading", { name: "Could not load events" }),
+  ).toBeVisible();
+  await expect(page.getByText("0 events")).toHaveCount(0);
+});
+
 test("search narrows the directory by city", async ({ page }) => {
   const stamp = Date.now() + Math.floor(Math.random() * 1_000_000);
   await signUpOrganization(page, stamp);

@@ -165,12 +165,12 @@ A hollow aesthetic panel wants depth behind the words, not more words.
 ## Status pill
 
 ```jsx
-<p className="m-0 rounded-full bg-brand/10 px-2.5 py-1 font-poppins text-caption tracking-wide text-brand">
+<p className="m-0 rounded-full bg-brand/10 px-2.5 py-1 font-poppins text-caption tracking-wide text-brand-hover">
   {n} spots left
 </p>
 ```
 
-Neutral/exhausted state: `bg-brand-secondary/8 text-ink/50`.
+Neutral/exhausted state: `bg-brand-secondary/8 text-ink/70`.
 Semantic states: `bg-success/10 text-success`, `bg-error/10 text-error`, `bg-warning/10 text-warning`.
 
 ---

@@ -89,7 +89,7 @@ const DriveCard = ({
       <h3 className="truncate font-outfit text-body-lg leading-snug font-semibold tracking-tight text-brand-secondary sm:text-lg">
         {drive.title}
       </h3>
-      <p className="mt-1 truncate font-poppins text-caption tracking-wide text-ink/55 uppercase">
+      <p className="mt-1 truncate font-poppins text-caption tracking-wide text-ink/65 uppercase">
         {drive.organizer}
       </p>
       {/* Two lines maximum. Every card is then the same height whatever the
@@ -98,7 +98,7 @@ const DriveCard = ({
         {drive.summary}
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-poppins text-caption text-ink/55">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-poppins text-caption text-ink/65">
         <span className="inline-flex items-center gap-1.5">
           <FiMapPin aria-hidden="true" className="size-3.5" />
           {drive.location}
@@ -127,11 +127,11 @@ const DriveCard = ({
       <div className="mt-2.5 flex items-baseline justify-between gap-3">
         <p className="font-outfit text-body font-semibold text-brand-secondary">
           {drive.raised}
-          <span className="ml-1.5 font-poppins text-caption font-normal text-ink/50">
+          <span className="ml-1.5 font-poppins text-caption font-normal text-ink/65">
             of {drive.goal}
           </span>
         </p>
-        <p className="shrink-0 font-poppins text-caption text-ink/50">
+        <p className="shrink-0 font-poppins text-caption text-ink/65">
           {drive.supporters} supporters
         </p>
       </div>
@@ -281,7 +281,7 @@ const DrivesRail = () => {
       <div className="mx-auto max-w-6xl px-9 lg:px-12">
         <span
           data-reveal
-          className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] text-brand uppercase"
+          className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] text-brand-hover uppercase"
         >
           The circle, in motion
         </span>

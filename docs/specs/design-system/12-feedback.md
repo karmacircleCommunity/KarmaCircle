@@ -92,6 +92,7 @@ Relying on source order alone is not safe here; see [04-spacing-layout.md](./04-
 | Page / section | `<Loading />` — 64px, `border-4`, `border-brand!`, `border-r-transparent`, `animate-spin`, `role="status"` + `sr-only` text |
 | Button | `Button`'s `isLoading` prop — a `react-spinners` `ClipLoader`, `color="#000000"`, `size={25}`, replacing children |
 | Card grid, first load (September 2026) | `OrganizationCardSkeleton` × 6, box-matched to `OrganizationCard` so the grid doesn't reflow, shimmering via `--animate-shimmer` (see [07-motion.md](./07-motion.md#the-loop-bar)). Renders only for the *true* first load (`isLoading && !data`) — this also fixed a real bug, where that condition being unguarded meant the empty state ("No organizations here yet") could flash for a frame before real data arrived, since `results.length === 0` is also true while nothing has loaded yet |
+| Events (November 2026) | `EventCardSkeleton` × 6 on `/events` and `DetailedEventSkeleton` (`role="status"`) on the event page, shaped like what replaces them so the footer doesn't jump. All skeletons share `SHIMMER` from `components/skeleton/shimmer.ts` |
 | Card grid, revalidating (September 2026) | No skeleton — `keepPreviousData` keeps the previous cards on screen, dimmed to `opacity-50` and `pointer-events-none` for `duration-300` via `useSWR`'s `isValidating`, so a filter/search change reads as a soft crossfade rather than an instant pop. See `Organizations.tsx` |
 | Global flag | A Zustand `isLoading` boolean, the app's one piece of ephemeral global UI state |
 | `.loader` in `index.css` | A 30px conic-gradient + radial-mask spinner, `animation: l13 1s infinite linear`. Legacy; prefer `<Loading />` |
@@ -120,4 +121,5 @@ Compare against `STATUSCODE` from [statics/Constants.ts](../../../apps/web/src/s
 ## Empty and error states
 
 `/events` and `/organizations` render a filtered-to-nothing state through the toolbar's `summary` count plus a page-level empty block.
+The empty and error blocks are left-aligned on a phone (`sm:text-center` for the empty one), use the status tokens (`border-error/25 bg-error/5`) and carry `role="alert"` when something failed.
 `Error404.tsx` is the reference for a full-page terminal state: eyebrow, heading, lead, and a single pill `Button` (`rounded-full px-6 py-3 font-poppins text-body`).

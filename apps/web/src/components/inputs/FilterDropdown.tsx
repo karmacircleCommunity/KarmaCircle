@@ -18,8 +18,9 @@ interface FilterDropdownProps<T extends string> {
   dataCy?: string;
 }
 
-/** The panel's `w-56`, plus the least room to leave at the screen's left edge. */
-const PANEL_SPACE_PX = 224 + 16;
+/** The panel's `w-56`, and the least room to leave at either screen edge. */
+const PANEL_WIDTH_PX = 224;
+const PANEL_EDGE_PX = 16;
 
 /**
  * A single-select taxonomy picker that opens a small listbox panel instead
@@ -39,14 +40,22 @@ const FilterDropdown = <T extends string>({
   const wrapper = useRef<HTMLDivElement | null>(null);
 
   const [open, setOpen] = useState(false);
-  const [alignStart, setAlignStart] = useState(false);
+  // The panel's left edge, relative to the trigger.
+  const [panelLeft, setPanelLeft] = useState(0);
 
   const toggle = () => {
-    // Measured as the panel opens: a trigger near the left edge (the first
-    // one on a wrapped toolbar row) has no room for a right-aligned panel.
+    // Measured as the panel opens. It lines up with the trigger's right edge,
+    // or with its left edge when that would cross the screen's edge, then
+    // slides as far as it must to stay on screen: a wrapped toolbar can put the
+    // trigger anywhere across a phone.
     if (!open && wrapper.current) {
-      const { right } = wrapper.current.getBoundingClientRect();
-      setAlignStart(right < PANEL_SPACE_PX);
+      const { left, right } = wrapper.current.getBoundingClientRect();
+      const furthest =
+        document.documentElement.clientWidth - PANEL_EDGE_PX - PANEL_WIDTH_PX;
+      const endAligned = right - PANEL_WIDTH_PX;
+      const preferred = endAligned >= PANEL_EDGE_PX ? endAligned : left;
+      const onScreen = Math.max(PANEL_EDGE_PX, Math.min(preferred, furthest));
+      setPanelLeft(onScreen - left);
     }
     setOpen((value) => !value);
   };
@@ -89,10 +98,11 @@ const FilterDropdown = <T extends string>({
         className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 font-outfit text-sm whitespace-nowrap transition-colors duration-200 ${
           open
             ? "border-brand/45 bg-white text-brand-secondary"
-            : "border-brand-secondary/15 bg-transparent text-ink/55 hover:border-brand/35 hover:text-brand-secondary"
+            : "border-brand-secondary/15 bg-transparent text-ink/65 hover:border-brand/35 hover:text-brand-secondary"
         }`}
       >
-        <FiFilter aria-hidden="true" className="size-3" />
+        {/* Dropped on a phone, where its width costs a toolbar line. */}
+        <FiFilter aria-hidden="true" className="hidden size-3 sm:block" />
         {active}
         <FiChevronDown
           aria-hidden="true"
@@ -106,12 +116,8 @@ const FilterDropdown = <T extends string>({
           role="listbox"
           aria-label={label}
           data-cy={dataCy ? `${dataCy}-options` : undefined}
-          // `right-0` by default: this trigger usually sits mid-row, between
-          // the search field and the primary action, so a left-anchored panel
-          // risks overlapping or outgrowing the action button beside it on
-          // narrow widths. `left-0` only when the right-anchored panel would
-          // leave the screen (see `toggle`).
-          className={`absolute top-full z-30 mt-2 max-h-72 w-56 list-none overflow-y-auto overscroll-contain rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in ${alignStart ? "left-0" : "right-0"}`}
+          className="absolute top-full z-30 mt-2 max-h-72 w-56 list-none overflow-y-auto overscroll-contain rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in"
+          style={{ left: panelLeft }}
         >
           {options.map((option) => {
             const selected = option === active;
@@ -125,7 +131,7 @@ const FilterDropdown = <T extends string>({
                   data-cy={dataCy ? `${dataCy}-option-${option}` : undefined}
                   className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border-none px-3 py-2.5 text-left font-outfit text-body transition-colors ${
                     selected
-                      ? "bg-brand/8 font-medium text-brand"
+                      ? "bg-brand/8 font-medium text-brand-hover"
                       : "bg-transparent text-ink/80 hover:bg-surface-muted"
                   }`}
                 >

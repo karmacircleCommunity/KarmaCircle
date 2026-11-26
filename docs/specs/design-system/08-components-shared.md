@@ -175,7 +175,7 @@ sm:gap-8 sm:py-12 lg:flex-row lg:items-center lg:px-12 lg:py-16
 ```
 - Heading: `font-outfit text-2xl leading-tight font-semibold text-white sm:text-3xl`.
 - Lead: `mt-3 font-poppins text-sm text-white/55 sm:text-body-lg`.
-- Input: `w-full min-w-0 rounded-10px border border-white/15 bg-white/5 px-5 py-3 font-outfit text-sm text-white outline-none placeholder:text-white/35 focus:border-brand sm:w-72 sm:text-body-lg`.
+- Input: `w-full min-w-0 rounded-10px border border-white/15 bg-white/5 px-5 py-3 font-outfit text-sm text-white outline-none placeholder:text-white/50 focus:border-brand sm:w-72 sm:text-body-lg`.
 - Button: `shrink-0 gap-2 rounded-10px border-none px-6 py-3 font-outfit text-sm font-medium whitespace-nowrap sm:text-body-lg`, with `FiArrowRight`.
 - **No newsletter endpoint exists** in `KarmaCircleApi.ts` or `apps/api`. `handleSubscribe` fires a success toast reading "Thanks for the interest, newsletter signups are coming soon!" and clears the field. Nothing is silently swallowed and nothing claims an email was captured.
 
@@ -188,7 +188,7 @@ sm:gap-10 sm:py-12 lg:flex-row lg:justify-between lg:px-12 lg:py-16
 - Wordmark: 6px dot (`size-2` here is 8px; the footer uses `size-2` too) plus `font-outfit text-lg leading-none font-medium tracking-tight text-white sm:text-xl`.
 - Tagline: `font-poppins text-xs text-white/50 sm:text-body`.
 - Social icons: `size-[1.1rem] text-white/60 hover:text-brand`, `target="_blank" rel="noopener noreferrer"`, `aria-label` from config.
-- Column heading: `font-outfit text-caption font-medium tracking-[0.12em] text-white/40 uppercase`.
+- Column heading: `font-outfit text-caption font-medium tracking-[0.12em] text-white/50 uppercase`.
 - Column link: `font-poppins text-xs text-white/55 no-underline transition-colors hover:text-white sm:text-body`.
 - Column group: `flex flex-wrap gap-x-16 gap-y-8 border-t border-white/5 pt-8 sm:gap-y-10 lg:border-none lg:pt-0`.
 
@@ -197,7 +197,7 @@ sm:gap-10 sm:py-12 lg:flex-row lg:justify-between lg:px-12 lg:py-16
 ```
 border-t border-white/10 px-9 py-8 sm:py-10 lg:p-12
 ```
-`mx-auto max-w-6xl text-center font-poppins text-caption text-white/35`, year from `new Date().getFullYear()`.
+`mx-auto max-w-6xl text-center font-poppins text-caption text-white/50`, year from `new Date().getFullYear()`.
 
 ### Parallax
 
@@ -290,11 +290,11 @@ The component owns presentation only.
 
 ### `tertiaryFilter`, a third independent `FilterDropdown` (November 2026)
 
-`/events` added "Filter by kind" (PG-9) as a third dropdown through an optional `tertiaryFilter` prop with the same shape as `secondaryFilter` (`options`, `active`, `onSelect`, `filterLabel`; a third generic type parameter keeps the option unions apart). It is drawn after the secondary one and before `action`. Below `sm` the dropdowns wrap one per row like the others, so three of them make the controls block taller on a phone (375px: search, then Upcoming, All and All kinds on separate rows, then the button); this is the point the note below says to revisit the multi-facet panel (pattern 1) if a fourth dimension appears.
+`/events` added "Filter by kind" (PG-9) as a third dropdown through an optional `tertiaryFilter` prop with the same shape as `secondaryFilter` (`options`, `active`, `onSelect`, `filterLabel`; a third generic type parameter keeps the option unions apart). It is drawn after the secondary one and before `action`. Below `sm` the dropdowns share wrapped lines (375px: search, then two lines of filters, then the button); revisit the multi-facet panel (pattern 1) in the note below if a fourth dimension appears.
 
 ### `secondaryFilter`, a second independent `FilterDropdown`
 
-`{ options: readonly U[], active: U, onSelect, filterLabel }` - same shape as the primary `options`/`active`/`onSelect`/`filterLabel`, but its own generic `U`, since the two taxonomies are unrelated string unions. Omitted by `/organizations` (one filterable dimension: cause). `/events` passes one for its `TypeFilter` (`All`/`Invite only`/`Open to all`/`Online`/`Offline`, over `event.model.ts`'s `inviteOnly`/`mode` fields) alongside the primary Upcoming/Past filter - see [events.md](../events.md). Rendered as a second `FilterDropdown` immediately after the first, before `action`; each stays independently single-select, so the two facets can't combine into one choice, only sit side by side.
+`{ options: readonly U[], active: U, onSelect, filterLabel }` - same shape as the primary `options`/`active`/`onSelect`/`filterLabel`, but its own generic `U`, since the two taxonomies are unrelated string unions. Omitted by `/organizations` (one filterable dimension: cause). `/events` passes one for its `TypeFilter` (`All formats`/`Open to all`/`Approval required`/`Invite only`/`Online`/`Offline`/`Hybrid`, over `event.model.ts`'s `access`/`mode` fields) alongside the primary Upcoming/Past filter - see [events.md](../events.md). Rendered as a second `FilterDropdown` immediately after the first, before `action`; each stays independently single-select, so the two facets can't combine into one choice, only sit side by side.
 
 ### `suggestions`, the opt-in live-suggestions dropdown
 
@@ -304,15 +304,15 @@ The component owns presentation only.
 
 Root: `mt-8 lg:mt-10`.
 
-Row 1, `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`. It holds two items, the field and a controls group (`flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`) with the filter dropdowns and the action. From `sm` up they share one line while they fit; otherwise the whole group drops below the field, and wraps inside itself if it is still too wide (November 2026: the old non-wrapping row cut `/events`' action off between 640px and about 900px).
+Row 1, `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`. It holds two items, the field and a controls group (`flex flex-wrap items-center gap-x-2 gap-y-3 sm:gap-x-3`) with the filter dropdowns and the action, which sits in a `flex w-full flex-col sm:w-auto` wrapper so it takes its own full line on a phone. Below `sm` the filters share wrapped lines (November 2026, supersedes one filter per line). From `sm` up they share one line while they fit; otherwise the whole group drops below the field, and wraps inside itself if it is still too wide (November 2026: the old non-wrapping row cut `/events`' action off between 640px and about 900px).
 - Field: `group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1`. `sm:min-w-72` (288px) stops long filter labels crushing it. Flat at rest - `--color-surface-muted` is the design system's own documented "input/panel background" token (see [01-tokens.md](./01-tokens.md#color-tokens)), so this needs no shadow to read as a control surface, and a field that was seen as looking odd is a field that gains one shadow only when it actually has a reason to (focus), not permanently. **Exception to the radius decision table's "Form input → `rounded-lg`"**: this is an explore/filter field, not a data-entry form, and pairs with the pill-shaped [`FilterDropdown`](#filterdropdown) trigger beside it - see [06-radius-elevation.md](./06-radius-elevation.md#radius) for the note.
-- `FiSearch` at `size-4.5` (18px), `text-ink/35`, `group-focus-within:text-brand`.
-- The field itself: either the plain `<input type="text" role="searchbox">` or `<Combobox>` — see `suggestions` above. The raw `<input>` (no `suggestions`) is a direct child of this flex row, so `min-w-0 flex-1 truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35` works as written. The `<Combobox>` case is `w-full` instead of `min-w-0 flex-1`: `Combobox` wraps the `<input>` in its own `relative min-w-0 flex-1` div (see [`Combobox`](#combobox) below), so *that* wrapper is the actual flex item — `flex-1`/`min-w-0` on the `<input>` itself are inert, and the `<input>` needs `w-full` to fill that wrapper rather than falling back to its browser-default ~20ch intrinsic width, which `truncate` was then clipping well short of the pill's real width (fixed September 2026, fourth pass). The raw `<input>` is deliberately not `type="search"` — that draws browser-native chrome on top of this component's own icon/clear button (Chrome/Safari's magnifier styling, and specifically a native clear "×" in Firefox that `::-webkit-search-cancel-button` never reaches), which read as a stray, half-hidden second control popping in and out. `truncate` (September 2026, third pass) is load-bearing, not cosmetic: the pill's `px-5` leaves less room than the old borderless field had, and a placeholder like `"Search by event, organizer or city"` was hard-clipping mid-word on real mobile widths with no ellipsis — a genuine visual bug the two prior passes introduced and missed, not a style preference.
-- Clear button: always mounted (not conditionally rendered) so it fades rather than pops into existence — `opacity-0 pointer-events-none` plus `aria-hidden`/`tabIndex={-1}` while `query` is empty, `size-6 rounded-full text-ink/40 hover:text-brand transition-[opacity,color] duration-200` with `FiX` at `size-4`, `aria-label="Clear search"`.
+- `FiSearch` at `size-4.5` (18px), `text-ink/50` (decorative), `group-focus-within:text-brand`.
+- The field itself: either the plain `<input type="text" role="searchbox">` or `<Combobox>` - see `suggestions` above. The raw `<input>` (no `suggestions`) is a direct child of this flex row, so `min-w-0 flex-1 truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/65` works as written. The `<Combobox>` case is `w-full` instead of `min-w-0 flex-1`: `Combobox` wraps the `<input>` in its own `relative min-w-0 flex-1` div (see [`Combobox`](#combobox) below), so *that* wrapper is the actual flex item - `flex-1`/`min-w-0` on the `<input>` itself are inert, and the `<input>` needs `w-full` to fill that wrapper rather than falling back to its browser-default ~20ch intrinsic width, which `truncate` was then clipping well short of the pill's real width (fixed September 2026, fourth pass). The raw `<input>` is deliberately not `type="search"` - that draws browser-native chrome on top of this component's own icon/clear button (Chrome/Safari's magnifier styling, and specifically a native clear "×" in Firefox that `::-webkit-search-cancel-button` never reaches), which read as a stray, half-hidden second control popping in and out. `truncate` (September 2026, third pass) is load-bearing, not cosmetic: the pill's `px-5` leaves less room than the old borderless field had, and a placeholder like `"Search by event, organizer or city"` was hard-clipping mid-word on real mobile widths with no ellipsis - a genuine visual bug the two prior passes introduced and missed, not a style preference.
+- Clear button: always mounted (not conditionally rendered) so it fades rather than pops into existence - `opacity-0 pointer-events-none` plus `aria-hidden`/`tabIndex={-1}` while `query` is empty, `size-6 rounded-full text-ink/65 hover:text-brand transition-[opacity,color] duration-200` with `FiX` at `size-4`, `aria-label="Clear search"`.
 - [`FilterDropdown`](#filterdropdown) — the taxonomy picker, in this row rather than its own line (moved here September 2026, fourth pass; a plain always-visible chip row before that, replaced by the dropdown entirely September 2026, fifth pass — see both below).
 - `action` slot.
 
-Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/45 uppercase`, `aria-live="polite"`. Its own line now — it used to sit beside the chip row (`sm:gap-6` between them); with the taxonomy moved into `FilterDropdown`'s own panel, the count is this second row's only remaining content.
+Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/65 uppercase`, `aria-live="polite"`. Its own line now - it used to sit beside the chip row (`sm:gap-6` between them); with the taxonomy moved into `FilterDropdown`'s own panel, the count is this second row's only remaining content. A page passes no `summary` when its first load failed, so no count sits above the error.
 
 ### Why it changed (September 2026, five passes)
 
@@ -429,13 +429,13 @@ Clicking the trigger toggles a `role="listbox"` panel of `role="option"` rows, o
 
 ### Geometry
 
-Trigger: `flex items-center gap-1.5 rounded-full border px-3.5 py-2 font-outfit text-sm` — `FiFilter` (`size-3`) then `active`'s text then `FiChevronDown` (`size-3.5`, rotates 180° open). Open: `border-brand/45 bg-white text-brand-secondary`. Closed: `border-brand-secondary/15 bg-transparent text-ink/55 hover:border-brand/35 hover:text-brand-secondary` — the same rest/hover pair the old chips used, so the one surviving control still reads as part of the same family.
+Trigger: `flex items-center gap-1.5 rounded-full border px-3.5 py-2 font-outfit text-sm` - `FiFilter` (`size-3`, hidden below `sm`) then `active`'s text then `FiChevronDown` (`size-3.5`, rotates 180° open). Open: `border-brand/45 bg-white text-brand-secondary`. Closed: `border-brand-secondary/15 bg-transparent text-ink/65 hover:border-brand/35 hover:text-brand-secondary` - the same rest/hover pair the old chips used, so the one surviving control still reads as part of the same family.
 
-Panel: `absolute top-full right-0 mt-2 w-56 max-h-72 overflow-y-auto rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in` — lifted verbatim from `Combobox`'s own listbox (see [Panel geometry](#panel-geometry) below) rather than invented fresh, so the two dropdowns in the same toolbar look like one design decision. `right-0`, not `left-0` or `inset-x-0`: the trigger sits mid-row between the search field and `action`, not flush against either edge, so anchoring the panel to the trigger's own right edge is the one option that can't spill into a neighboring control on a narrow `sm:flex-row` width.
+Panel: `absolute top-full mt-2 w-56 max-h-72 overflow-y-auto rounded-xl border border-brand-secondary/15 bg-white p-1 shadow-[0_16px_36px_-20px_rgba(56,44,36,0.45)] motion-safe:animate-pop-in` - lifted verbatim from `Combobox`'s own listbox (see [Panel geometry](#panel-geometry) below) rather than invented fresh, so the two dropdowns in the same toolbar look like one design decision.
 
-The panel is right-aligned to its trigger (`right-0`). When the trigger sits too close to the screen's left edge for that (its right edge under 240px, for example the first filter on a wrapped toolbar line), it is left-aligned (`left-0`) instead, measured as it opens (November 2026).
+Horizontally it is placed by an inline `left`, measured as it opens: it lines up with the trigger's right edge, or with its left edge when that would cross the screen's edge, then slides as far as needed to stay 16px inside both screen edges (November 2026, supersedes a fixed `right-0`, which left the screen when a wrapped toolbar put the trigger near the left edge).
 
-Option rows: `flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left font-outfit text-body`. Selected: `bg-brand/8 font-medium text-brand` plus a trailing `FiCheck`. Rest: `text-ink/80 hover:bg-surface-muted`.
+Option rows: `flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left font-outfit text-body`. Selected: `bg-brand/8 font-medium text-brand-hover` plus a trailing `FiCheck`. Rest: `text-ink/80 hover:bg-surface-muted`.
 
 ---
 

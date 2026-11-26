@@ -20,6 +20,7 @@ import { STATUSCODE } from "@statics/Constants";
 import RichText from "@features/events/components/RichText";
 import ConfirmDialog from "@features/events/components/ConfirmDialog";
 import EventAgenda from "@features/events/components/detail/EventAgenda";
+import DetailedEventSkeleton from "@features/events/components/detail/DetailedEventSkeleton";
 import EventCalendarLinks from "@features/events/components/detail/EventCalendarLinks";
 import EventFacts from "@features/events/components/detail/EventFacts";
 import EventFundraiserPanel from "@features/events/components/detail/EventFundraiserPanel";
@@ -151,7 +152,7 @@ const EventLoadError = ({
     <div className="mx-auto max-w-6xl px-9 py-24 sm:px-10 lg:px-12">
       <div
         role="alert"
-        className="rounded-2xl border border-red-200 bg-red-50 px-8 py-12"
+        className="rounded-2xl border border-error/25 bg-error/5 px-8 py-12"
       >
         <h1 className="m-0 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
           Could not load this event
@@ -164,7 +165,7 @@ const EventLoadError = ({
             type="button"
             disabled={retrying}
             onClick={onRetry}
-            className="min-h-11 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-97"
+            className="min-h-11 cursor-pointer rounded-full border border-brand/35 bg-transparent px-6 py-2.5 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 hover:text-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60 motion-safe:active:scale-97"
           >
             {retrying ? "Trying again" : "Try again"}
           </button>
@@ -184,9 +185,7 @@ const EventLoadError = ({
 const DetailedEventLoading = () => (
   <>
     <Navbar />
-    <div className="mx-auto max-w-6xl px-9 py-24 sm:px-10 lg:px-12">
-      <p className="font-poppins text-body text-ink/55">Loading event…</p>
-    </div>
+    <DetailedEventSkeleton />
     <Footer />
   </>
 );
@@ -195,7 +194,7 @@ const EventNotFound = ({ eventId }: { eventId?: string }) => (
   <>
     <Navbar />
     <div className="mx-auto flex max-w-2xl flex-col items-start px-9 py-24 sm:px-10 lg:px-12">
-      <span className="rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] text-brand uppercase">
+      <span className="rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] text-brand-hover uppercase">
         Not found
       </span>
       <h1 className="mt-6 font-outfit text-[2rem] leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">

@@ -107,7 +107,8 @@ test("an organization publishes an event with every optional detail and the even
   await expect(facts).toContainText("Snacks and gloves");
   await expect(facts).toContainText("English");
   await expect(facts).toContainText("12+");
-  await expect(page.locator("#schedule")).toContainText("9:00 am");
+  // Typed "9:00 am", shown in the browser's own clock style (en-US here).
+  await expect(page.locator("#schedule")).toContainText("9:00 AM");
   await expect(page.locator("#schedule")).toContainText("Welcome and briefing");
   await expect(page.locator("#schedule")).toContainText("At the gate");
   await expect(page.locator("#schedule")).toContainText("Beach clean-up");

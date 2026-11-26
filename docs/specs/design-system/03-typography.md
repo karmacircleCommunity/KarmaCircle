@@ -157,7 +157,7 @@ mt-2 line-clamp-2 min-h-11 font-poppins text-body leading-[1.375rem] text-ink/70
 Meta row:
 
 ```
-font-poppins text-caption tracking-wide text-ink/55
+font-poppins text-caption tracking-wide text-ink/65
 ```
 
 Form label:

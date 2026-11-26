@@ -203,7 +203,11 @@ second invite/mode `FilterDropdown` via its `secondaryFilter` prop, live result
 count, primary button), one flat grid of `<EventCard />` with an empty state,
 and `<Footer />`.
 Between 640px and the width where search, filters and button fit one line, the
-filters and button sit below the search (November 2026).
+filters and button sit below the search; on a phone the filters share wrapped
+lines (November 2026).
+Card titles run to two lines.
+The first load shows card skeletons, a failed first load shows an alert with "Try
+again" and no result count, and the empty state is left-aligned on a phone.
 
 **Live data, September 2026.** `GET /events` (`eventEndpoints.directory({ period, search, mode, type, access,
 page, limit })`, 12 per page) via `useSWRInfinite`, with `keepPreviousData` and
@@ -226,7 +230,7 @@ an event has a date and an organization doesn't:
   happening soon" is also just the more useful question for an events page to
   answer than a cause split ever was.
 - **A second filter dropdown** (`TypeFilter` -
-  `"All" | "Open to all" | "Approval required" | "Invite only" | "Online" | "Offline" | "Hybrid"`,
+  `"All formats" | "Open to all" | "Approval required" | "Invite only" | "Online" | "Offline" | "Hybrid"`,
   September 2026, access levels November 2026) narrows by two real `Event`
   fields, `access` and `mode`.
   It's one flat single-select list, not two independently-combinable dropdowns
@@ -642,6 +646,9 @@ The page has four states (November 2026): loading; not found, only when the API
 answers 404 or 400; a load error with "Try again" for a network failure or any
 other status; and the view.
 A failed background refresh keeps the event that is already on screen.
+Loading is a skeleton in the page's shape.
+Agenda times typed as a clock time are shown in the visitor's clock style, like
+the times in the hero (`formatAgendaTime`); other text is shown as typed.
 Until then every failure showed "not found".
 The old fixture files
 (`constants/eventDirectory.ts`/`eventDetails.ts`) and their placeholder cover
@@ -679,8 +686,8 @@ About/Details/Agenda/Location/Bring-along — on a long event page that's most o
 the scroll. Below `lg`,
 [EventMobileActionBar](../../apps/web/src/features/events/components/detail/EventMobileActionBar.tsx)
 mirrors just the primary action — cost (or "Free"), spots-left when tracked, and
-the one Join/Ask button — in a floating "liquid glass" capsule fixed near the
-bottom of the viewport (heavy `backdrop-blur`/`backdrop-saturate`, translucent,
+the one Join/Ask button - in a floating solid capsule fixed near the
+bottom of the viewport (translucent "liquid glass" until November 2026,
 inset from the screen edges by the same margin as `EventHero`/`EventJoinPanel`
 above it, opaque button on top), matching the pattern mobile
 ticketing/registration apps (Meetup, Finimize, Shopee) use for the same problem.

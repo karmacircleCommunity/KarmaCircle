@@ -32,7 +32,7 @@ const EventFundraiserPanel = ({
       data-reveal
       className="rounded-2xl border border-brand-secondary/8 bg-white p-6 sm:p-7"
     >
-      <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/50 uppercase">
+      <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/65 uppercase">
         <FiHeart aria-hidden="true" className="size-3.5 text-brand" />
         Raising for this event
       </p>
@@ -58,11 +58,11 @@ const EventFundraiserPanel = ({
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="m-0 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
           {formatMoney(fundraiser.raised, fundraiser.currency)}
-          <span className="ml-1.5 font-poppins text-caption font-normal text-ink/50">
+          <span className="ml-1.5 font-poppins text-caption font-normal text-ink/65">
             of {formatMoney(fundraiser.goal, fundraiser.currency)}
           </span>
         </p>
-        <p className="m-0 font-poppins text-caption text-ink/55">
+        <p className="m-0 font-poppins text-caption text-ink/65">
           {percent}% funded • {fundraiser.supporters} supporters
         </p>
       </div>
@@ -76,7 +76,7 @@ const EventFundraiserPanel = ({
         </Button>
       )}
 
-      <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/45">
+      <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/65">
         {organizerUserName
           ? `Contributions go to ${organizer ?? "the organization"} through its Support page, not to this event alone. KarmaCircle takes no cut.`
           : "KarmaCircle takes no cut. Every unit goes to the organizer running this event."}

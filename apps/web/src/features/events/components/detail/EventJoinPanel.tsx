@@ -106,7 +106,7 @@ const EventJoinPanel = ({
     >
       {event.draft ? (
         <>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand uppercase">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand-hover uppercase">
             <FiEdit3 aria-hidden="true" className="size-3.5" />
             Draft
           </div>
@@ -135,7 +135,7 @@ const EventJoinPanel = ({
         </>
       ) : past ? (
         <>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-ink/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-ink/60 uppercase">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-ink/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-ink/70 uppercase">
             <FiCheckCircle aria-hidden="true" className="size-3.5" />
             Completed
           </div>
@@ -154,14 +154,14 @@ const EventJoinPanel = ({
               ? formatMoney(detail.cost.amount, detail.cost.currency)
               : "Free to attend"}
           </p>
-          <p className="mt-1.5 font-poppins text-body leading-6 text-ink/60">
+          <p className="mt-1.5 font-poppins text-body leading-6 text-ink/65">
             {detail.cost?.note ?? "Nonprofit event. Nothing to pay, ever."}
           </p>
 
           {hasCapacity && (
             <dl className="mt-5 flex items-baseline justify-between gap-4 border-t border-border-subtle pt-5">
               <div>
-                <dt className="font-poppins text-caption tracking-wide text-ink/50 uppercase">
+                <dt className="font-poppins text-caption tracking-wide text-ink/65 uppercase">
                   Going
                 </dt>
                 <dd className="m-0 mt-1 font-outfit text-body-lg font-semibold text-brand-secondary">
@@ -169,12 +169,12 @@ const EventJoinPanel = ({
                 </dd>
               </div>
               <div className="text-right">
-                <dt className="font-poppins text-caption tracking-wide text-ink/50 uppercase">
+                <dt className="font-poppins text-caption tracking-wide text-ink/65 uppercase">
                   Spots left
                 </dt>
                 <dd
                   className={`m-0 mt-1 font-outfit text-body-lg font-semibold ${
-                    spotsLeft === 0 ? "text-ink/50" : "text-brand"
+                    spotsLeft === 0 ? "text-ink/65" : "text-brand"
                   }`}
                 >
                   {spotsLeft === 0 ? "None" : spotsLeft}
@@ -202,11 +202,11 @@ const EventJoinPanel = ({
             </div>
           ) : kind === "pending" || kind === "waitlisted" ? (
             <>
-              <div className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-brand/35 bg-brand/8 px-6 py-3 font-poppins text-body font-medium text-brand">
+              <div className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-brand/35 bg-brand/8 px-6 py-3 font-poppins text-body font-medium text-brand-hover">
                 <FiClock aria-hidden="true" />
                 {kind === "pending" ? "Request sent" : "On the waitlist"}
               </div>
-              <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
+              <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/65">
                 {kind === "pending"
                   ? "The organizer will approve or decline your request. The answer shows here, and My Events lists the event meanwhile."
                   : "This event is full. The organizer moves people up when a spot opens, and it shows here when they do."}
@@ -225,7 +225,7 @@ const EventJoinPanel = ({
               aria-pressed={kind === "going"}
               className={`mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-3 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
                 kind === "going"
-                  ? "border border-brand/35 bg-brand/8 text-brand"
+                  ? "border border-brand/35 bg-brand/8 text-brand-hover"
                   : "border-none bg-brand text-white shadow-[0_10px_26px_-14px_var(--color-brand)] hover:bg-brand-hover"
               }`}
             >
@@ -253,13 +253,13 @@ const EventJoinPanel = ({
           )}
 
           {registrationCheckFailed && kind !== "going" && (
-            <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
+            <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/65">
               Could not verify your registration. Try again before joining.
             </p>
           )}
 
           {kind === "going" && (
-            <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/55">
+            <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/65">
               You&apos;re registered for this event. Your registration is saved
               to your account.
             </p>
@@ -271,7 +271,7 @@ const EventJoinPanel = ({
         <button
           type="button"
           onClick={onRequestLeave}
-          className="mt-4 cursor-pointer border-none bg-transparent p-0 font-poppins text-body font-medium text-ink/60 underline underline-offset-4 transition-colors hover:text-error"
+          className="mt-4 cursor-pointer border-none bg-transparent p-0 font-poppins text-body font-medium text-ink/65 underline underline-offset-4 transition-colors hover:text-error"
         >
           {leave}
         </button>
@@ -295,7 +295,7 @@ const EventJoinPanel = ({
         )}
       </div>
 
-      <p className="m-0 mt-5 border-t border-border-subtle pt-4 font-poppins text-caption leading-5 text-ink/50">
+      <p className="m-0 mt-5 border-t border-border-subtle pt-4 font-poppins text-caption leading-5 text-ink/65">
         {cancelled ? "Was due" : past ? "Took place" : "Starts"}{" "}
         {formatEventDate(event.startsAt, event.timezone)}
         {viewerNote && <> ({viewerNote} your time)</>}

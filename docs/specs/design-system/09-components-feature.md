@@ -26,7 +26,7 @@ motion-safe:hover:-translate-y-1
 2. **Scrim**: `absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent`, `aria-hidden`.
 3. **Label riding on the photo**: `absolute bottom-2.5 left-4 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm`.
 4. **Body**: `flex flex-1 flex-col p-4 sm:p-5`.
-5. **Title**, one line, `truncate`: `font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:text-lg`.
+5. **Title**, one line, `truncate` (`EventCard` instead runs to two lines, `line-clamp-2 break-words`, and holds `sm:min-h-[2lh]` so a row stays level, November 2026): `font-outfit text-body-lg leading-tight font-semibold tracking-tight text-brand-secondary sm:text-lg`.
 6. **Summary**, two lines on a fixed box so every card in a row is the same height whatever the copy does: `mt-2 line-clamp-2 min-h-11 font-poppins text-body leading-[1.375rem] text-ink/70`. `min-h-11` = **44px**.
 7. **Bottom rule**: `mt-auto ... border-t border-border-subtle pt-3.5 font-outfit`.
 
@@ -69,12 +69,12 @@ That keeps one accessible name for the destination and leaves the organizer link
 Additions over the shared skeleton:
 
 - **Date badge**, top-left on the photo so it costs no vertical space: `absolute top-3 left-3 rounded-full bg-white/92 px-3 py-1 font-outfit text-caption font-semibold tracking-widest text-brand-secondary uppercase backdrop-blur-sm`.
-- **Organizer link**: `relative z-1 mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/55 uppercase hover:text-brand`.
-- **Meta stack**: `flex flex-col gap-3 font-poppins text-caption tracking-wide text-ink/55`, plus `mb-4` when the card has capacity data (`going`/`spotsLeft`) or `mt-auto mb-0.5` when it doesn't. `FiClock` + weekday/time; `FiVideo` + `Online · {platform}` or `FiMapPin` + `{city}, {country}`. Icons `size-3.5 shrink-0`.
+- **Organizer link**: `relative z-1 mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/65 uppercase hover:text-brand`.
+- **Meta stack**: `flex flex-col gap-3 font-poppins text-caption tracking-wide text-ink/65`, plus `mb-4` when the card has capacity data (`going`/`spotsLeft`) or `mt-auto mb-0.5` when it doesn't. `FiClock` + weekday/time; `FiVideo` + `Online · {platform}` or `FiMapPin` + `{city}, {country}`. Icons `size-3.5 shrink-0`.
   The explicit `mb-4` is load-bearing on a capacity card: without it, the `mt-auto` on the stat row below resolves to zero and the rule would sit directly on the location line. A live-API event has no capacity data yet (`event.model.ts`), so those cards skip the stat row and pull the meta stack itself down to the bottom with `mt-auto mb-0.5` instead.
   The gap above this block is **not** an `mt-*` on the block itself — it's `mb-6` on the summary `<p>` right above it. A flex item's `mt-*` here would sit on the same element as the no-capacity branch's `mt-auto`, and Tailwind's cascade order (not the class string's order) decides which `mt-*` utility wins; `mt-auto` won every time, so an `mt-6`/`mt-4`/`mt-3` here was a silent no-op on any card without a stat row. Put the gap on the previous sibling's `mb-*` instead — flex-item margins don't collapse with a sibling's, so it's a safe, guaranteed minimum regardless of which branch runs.
   September 2026: bumped the gap from `mt-2.5` (10px) to `mb-6` (24px, after the `mt-*`/`mt-auto` conflict above was found) and the line gap from `gap-1.5` to `gap-3` — the tighter spacing read as cramped once real cover photos and longer descriptions landed. The icon was also swapped from `FiCalendar` to `FiClock`, since the cover badge above already carries a calendar glyph for the date; reusing it here read as the same fact printed twice.
-- **Bottom rule**: `mt-auto flex items-center justify-between gap-3 border-t border-border-subtle pt-3.5 font-outfit`. Left `m-0 text-body font-semibold text-brand-secondary` reading `{going} going`. Right a pill, `m-0 rounded-full px-2.5 py-1 font-poppins text-caption tracking-wide`, either `bg-brand/10 text-brand` with `{spotsLeft} spots left`, or `bg-brand-secondary/8 text-ink/50` reading **"Full"**. "Full" rather than "0 spots left"; a zero reads as a data bug.
+- **Bottom rule**: `mt-auto flex items-center justify-between gap-3 border-t border-border-subtle pt-3.5 font-outfit`. Left `m-0 text-body font-semibold text-brand-secondary` reading `{going} going`. Right a pill, `m-0 rounded-full px-2.5 py-1 font-poppins text-caption tracking-wide`, either `bg-brand/10 text-brand-hover` with `{spotsLeft} spots left`, or `bg-brand-secondary/8 text-ink/70` reading **"Full"**. "Full" rather than "0 spots left"; a zero reads as a data bug.
 
 **The date is split in two on purpose**: the cover badge carries the day ("12 SEP"), the meta row carries only weekday and time ("Sat · 9:00 pm").
 Both used to print the full date, so every card said "12" twice.

@@ -80,7 +80,7 @@ const EventHero = ({ event }: EventHeroProps) => {
     <header className="mx-auto max-w-6xl px-9 pt-8 sm:px-10 lg:px-12 lg:pt-12">
       <Link
         to="/events"
-        className="inline-flex items-center gap-2 font-poppins text-body text-ink/60 no-underline transition-colors duration-200 hover:text-brand"
+        className="inline-flex items-center gap-2 font-poppins text-body text-ink/65 no-underline transition-colors duration-200 hover:text-brand"
       >
         <FiArrowLeft aria-hidden="true" className="size-4" />
         All events
@@ -127,7 +127,7 @@ const EventHero = ({ event }: EventHeroProps) => {
                 </span>
               )}
               {event.draft && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand uppercase">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand-hover uppercase">
                   <FiEdit3 aria-hidden="true" className="size-3.5" />
                   Draft
                 </span>
@@ -145,7 +145,7 @@ const EventHero = ({ event }: EventHeroProps) => {
                 </span>
               )}
               {event.isGovernmentSponsored && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand uppercase">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/5 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand-hover uppercase">
                   <FiShield aria-hidden="true" className="size-3.5" />
                   Government-backed
                 </span>
@@ -163,7 +163,7 @@ const EventHero = ({ event }: EventHeroProps) => {
             {event.title}
           </h1>
 
-          <p className="mt-3 font-poppins text-body text-ink/60 sm:text-body-lg">
+          <p className="mt-3 font-poppins text-body text-ink/65 sm:text-body-lg">
             Hosted by{" "}
             {event.organizerUserName ? (
               <Link
@@ -207,7 +207,7 @@ const EventHero = ({ event }: EventHeroProps) => {
                 />
                 {label}
                 {note && (
-                  <span className="text-ink/50"> ({note} your time)</span>
+                  <span className="text-ink/65"> ({note} your time)</span>
                 )}
               </li>
             ))}

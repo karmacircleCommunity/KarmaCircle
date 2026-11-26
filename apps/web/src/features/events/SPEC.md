@@ -163,7 +163,7 @@ real divergences: the primary filter dropdown is **Upcoming/Past**, not a cause
 taxonomy - a live event has no cause field to filter by, and "what's happening
 soon" is the more useful question here anyway - and a second dropdown
 (`secondaryFilter`, September 2026) filters by `TypeFilter`
-(`All`/`Open to all`/`Approval required`/`Invite only`/`Online`/`Offline`/`Hybrid`),
+(`All formats`/`Open to all`/`Approval required`/`Invite only`/`Online`/`Offline`/`Hybrid`),
 a flat single-select list over the two real `access`/`mode` fields rather than combinable
 checkboxes. Both directories still render the same `DirectoryToolbar` component,
 so its search/count/button chrome cannot drift between them again; this page
@@ -188,6 +188,14 @@ accounts and navigates to `/organization/events/new`. After successful creation,
 the new event opens at `/events/:uid` and the current organization's host event
 cache is revalidated; the public directory refetches when `/events` is next
 opened.
+
+**Reading states and small rules (November 2026).** A card title runs to two
+lines. The first load shows six `EventCardSkeleton`s under a "Loading events"
+summary; a failed first load shows an alert with "Try again" and no count; the
+empty state is left-aligned on a phone. The event page loads into
+`DetailedEventSkeleton`. Agenda times are free text, so `formatAgendaTime`
+rewrites an unambiguous clock time ("9:00 am", "18:45") in the visitor's clock
+style, matching the hero, and shows anything else as typed.
 
 ## `DetailedEvent.tsx` — the page a card opens
 
@@ -274,10 +282,11 @@ fallback, treating a dismissed sheet (`AbortError`) as a non-event.
 narrow screen "can I go, and what does it cost" comes before the reading. One
 rendered instance either way; never a duplicated panel with duplicated state.
 
-**Below `lg`, the join CTA also lives in a floating "liquid glass" bottom
-capsule (September 2026, `EventMobileActionBar`)**, so it's reachable regardless
+**Below `lg`, the join CTA also lives in a floating bottom capsule
+(September 2026, `EventMobileActionBar`)**, so it's reachable regardless
 of scroll position, not just at the top of the page.
-`backdrop-blur-2xl backdrop-saturate-150` over a translucent white, inset the
+Solid white since November 2026 (it was translucent "liquid glass", which let the
+page text show through), inset the
 same `px-9` margin as `EventHero`/`EventJoinPanel` above it rather than flush
 with the screen edges. It shares the same `joined` state and `onToggleJoin`
 callback as `EventJoinPanel` — one state, mirrored in two places, not two

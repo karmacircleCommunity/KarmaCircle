@@ -118,10 +118,9 @@ Both have tokens (`error`, `warning`). See [14-drift-register.md](./14-drift-reg
 | Expression | Meaning | Typical use |
 | --- | --- | --- |
 | `text-ink/70` | body copy, softened | card summaries |
-| `text-ink/65` | nav links at rest | `Navbar` |
-| `text-ink/55` | meta rows, inactive filters | cards, `DirectoryToolbar` |
-| `text-ink/45`, `/40`, `/35`, `/25` | counts, placeholders, icons, separators | `DirectoryToolbar`, `Combobox` |
-| `text-white/90 /70 /65 /60 /55 /50 /40 /35` | the full dark-panel and footer text ramp | `Footer`, `SplitPanelLayout`, `AuthLayout` |
+| `text-ink/65` | **the floor for text** on light surfaces: nav links, meta rows, captions, counts, placeholders, inactive filters | `Navbar`, cards, `DirectoryToolbar` |
+| `text-ink/50` and fainter | icons and separators only, never text (older surfaces such as `Combobox` still have faint text) | decorative search icon |
+| `text-white/90 /70 /65 /60 /55 /50` | the dark-panel and footer text ramp; `/50` is the floor for text | `Footer`, `SplitPanelLayout`, `AuthLayout` |
 | `border-brand-secondary/8` | the card border | all three cards |
 | `border-brand-secondary/15` | inactive filter-chip border at rest, `Combobox` panel border | `DirectoryToolbar`, `Combobox` |
 | `border-brand/55`, `/45`, `/35`, `/20` | focus, hover, eyebrow borders | toolbar, cards, eyebrow. The search field itself is `border-transparent` at rest (a flat `bg-surface-muted` fill, no border needed) and only gains `border-brand/45` on `focus-within`. |
@@ -132,6 +131,18 @@ Both have tokens (`error`, `warning`). See [14-drift-register.md](./14-drift-reg
 | `bg-black/[0.867]` | mobile nav scrim | `Navbar` |
 | `bg-white/92` | event date badge over a photo | `EventCard` |
 | `from-black/55` | photo scrim under a label | `OrganizationCard`, `EventCard` |
+
+## Text contrast floor (November 2026)
+
+Text must reach 4.5:1 (3:1 for large text), including captions and placeholders.
+
+- On white, surface, warm and muted grounds, `text-ink/65` measures 4.7 to 4.9:1; `/55` measures only 3.5:1.
+- On a darker fill (`bg-ink/5`, `bg-brand-secondary/8`) use `text-ink/70`.
+- `text-brand` passes on white (4.69:1) and surface (4.58:1) but not on a brand tint or `surface-warm` (4.0 to 4.4:1). Small text there uses `text-brand-hover` (5.3:1 or better), including the hover state of an outline button.
+- On `surface-dark`, `text-white/50` measures 5.3:1; `/40` measures 3.8:1.
+
+This is applied to the landing page, `/events`, the event page, the navbar and the footer.
+Other screens have not been swept.
 
 ## Semantic color usage rules
 

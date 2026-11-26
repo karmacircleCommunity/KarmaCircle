@@ -2,7 +2,9 @@
 
 `events-responsive.spec.ts` covers the public `/events` directory's live event
 cards, Upcoming/Past filter, city search, mobile/desktop overflow, that every
-toolbar control and filter panel stays on screen from 640 to 1024px, and the
+toolbar control and filter panel stays on screen from 640 to 1024px, that a phone
+shares lines between filters and shows a long name on two lines, that the list
+shows skeletons while loading and no count after a failed load, and the
 organization's full-page event publishing flow.
 
 `event-details.spec.ts` also covers a failed event load: it shows a retry, not

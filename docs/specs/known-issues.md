@@ -103,17 +103,12 @@ Also built in November 2026: an event has a **timezone** (PG-11): the form reads
 ## Landing and events visual review - open items (2026-11-26)
 
 Found in a browser review at 320, 375, 768, 1440 and 2560px, signed in as an organization.
-The tablet toolbar cut-off, the false "not found" on a failed event load and both navbar menus were fixed the same day.
+Fixed the same day: the tablet toolbar cut-off, the false "not found" on a failed event load, both navbar menus, one-line event titles, faint grey text on the three pages, the phone filter stacking, bare loading and error states, two time styles and the see-through join bar.
 Still open:
 
-- **Event card titles are cut to one line** at every width.
-- **Small grey text misses 4.5:1 contrast** on all three pages (about 2.7:1 to 4.2:1), much of it at 10px.
-- **`/events` on a phone** stacks each filter on its own line, truncates the search hint, and one filter is labelled only "All".
-- **Loading states are one line of text** on the list and event pages; the failed list shows "0 events" above its error; the empty state is centered on a phone.
-- **Times are written two ways** on the event page ("9:00" and "9:00 AM").
-- **The floating join bar is see-through** around 640-768px.
 - **Smaller:** small tap targets (avatar 30px, "All events" 23px, host name on cards 15px, footer links 16px); the footer email field has no label; the event page tab title is generic; the landing page and events list have no `<main>`; the landing open-source card sits closer to the screen edge than other sections at 320px; hero wording differs between phone and desktop.
 - **`OrganizationProfile.tsx` shows "not found" for any load failure**, the pattern the event page had (seen in code, not reproduced).
+- **Other screens still use faint text** (`text-ink/55` and below): the contrast floor in `design-system/02-color.md` was applied only to the landing page, the events list, the event page, the navbar and the footer.
 
 ## Validation that doesn't actually block submission
 

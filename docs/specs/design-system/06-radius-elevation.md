@@ -102,15 +102,18 @@ Set once through the CSS variable, not per-toast:
 
 This is the correct, rethemeable form. Copy this shape.
 
-### Liquid glass (September 2026) — now `EventMobileActionBar` only
+### Liquid glass (September 2026) - SUPERSEDED, no surface carries it
+
+November 2026: `EventMobileActionBar`, the last user of this recipe, is now solid (`border border-brand-secondary/10 bg-white` plus the warm elevation shadow), because text scrolling underneath showed through and competed with its price and button.
+The recipe and its history are kept below so it is not tried again unawares.
 
 ```
 bg-white/55 border border-white/50 backdrop-blur-2xl backdrop-saturate-150
 shadow-[0_20px_45px_-18px_color-mix(in_srgb,var(--color-brand-secondary)_50%,transparent),inset_0_1px_0_0_rgba(255,255,255,0.65)]
 ```
 
-`EventMobileActionBar` (the event page's floating mobile join capsule) is
-the one surface still carrying this. `backdrop-blur` alone flattens and
+`EventMobileActionBar` (the event page's floating mobile join capsule) was
+the last surface to carry this. `backdrop-blur` alone flattens and
 grays out whatever scrolls underneath it; the paired `backdrop-saturate-150`
 is what keeps that see-through content looking like glass rather than
 frosted paper — never ship one without the other. It's a small floating

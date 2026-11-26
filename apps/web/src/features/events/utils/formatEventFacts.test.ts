@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  formatAgendaTime,
   formatDuration,
   formatEventBadge,
   formatEventDate,
@@ -75,6 +76,36 @@ describe("formatEventTime", () => {
 
   it("does not throw on an invalid date", () => {
     expect(plain(formatEventTime("nope"))).toBe("Invalid Date · Invalid Date");
+  });
+});
+
+describe("formatAgendaTime", () => {
+  it("writes a typed am or pm time like the rest of the page", () => {
+    expect(plain(formatAgendaTime("9:00 am"))).toBe("9:00 AM");
+    expect(plain(formatAgendaTime("7.30PM"))).toBe("7:30 PM");
+    expect(plain(formatAgendaTime(" 7 p.m. "))).toBe("7:00 PM");
+  });
+
+  it("reads 12 am as midnight and 12 pm as noon", () => {
+    expect(plain(formatAgendaTime("12:15 am"))).toBe("12:15 AM");
+    expect(plain(formatAgendaTime("12 pm"))).toBe("12:00 PM");
+  });
+
+  it("restyles a two-digit 24-hour time", () => {
+    expect(plain(formatAgendaTime("09:00"))).toBe("9:00 AM");
+    expect(plain(formatAgendaTime("18:45"))).toBe("6:45 PM");
+  });
+
+  it("shows anything ambiguous or free-form as written", () => {
+    for (const typed of [
+      "9:00",
+      "13 pm",
+      "25:00",
+      "After lunch",
+      "9:00 am - 10:00 am",
+    ]) {
+      expect(formatAgendaTime(typed)).toBe(typed);
+    }
   });
 });
 

@@ -29,7 +29,7 @@ const JoiningCard = ({ event, detail }: EventLocationPanelProps) => {
       data-reveal
       className="rounded-2xl border border-brand-secondary/8 bg-white p-6 sm:p-7"
     >
-      <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/50 uppercase">
+      <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/65 uppercase">
         <FiVideo aria-hidden="true" className="size-3.5 text-brand" />
         {event.mode === "Hybrid" ? "Joining online" : "Joining"}
       </p>
@@ -79,7 +79,7 @@ const VenueCard = ({ event, detail }: EventLocationPanelProps) => {
       data-reveal
       className="rounded-2xl border border-brand-secondary/8 bg-white p-6 sm:p-7"
     >
-      <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/50 uppercase">
+      <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/65 uppercase">
         <FiMapPin aria-hidden="true" className="size-3.5 text-brand" />
         Venue
       </p>

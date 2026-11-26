@@ -84,14 +84,14 @@ const EventFacts = ({ event, detail }: EventFactsProps) => {
     >
       {facts.map(({ icon: Icon, label, value, note }) => (
         <div key={label} className="bg-white px-5 py-4">
-          <dt className="inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/50 uppercase">
+          <dt className="inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/65 uppercase">
             <Icon aria-hidden="true" className="size-3.5 text-brand" />
             {label}
           </dt>
           <dd className="m-0 mt-1.5 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
             {value}
           </dd>
-          <p className="mt-1 font-poppins text-caption leading-5 text-ink/55">
+          <p className="mt-1 font-poppins text-caption leading-5 text-ink/65">
             {note}
           </p>
         </div>

@@ -143,7 +143,7 @@ const Footer = () => {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Enter your email"
-            className="w-full min-w-0 rounded-10px border border-white/15 bg-white/5 px-5 py-3 font-outfit text-sm text-white transition-colors outline-none placeholder:text-white/35 focus:border-brand sm:w-72 sm:text-body-lg"
+            className="w-full min-w-0 rounded-10px border border-white/15 bg-white/5 px-5 py-3 font-outfit text-sm text-white transition-colors outline-none placeholder:text-white/50 focus:border-brand sm:w-72 sm:text-body-lg"
           />
           <Button
             type="submit"
@@ -197,7 +197,7 @@ const Footer = () => {
             divider would be redundant. */}
         <div className="flex flex-wrap gap-x-16 gap-y-8 border-t border-white/5 pt-8 sm:gap-y-10 lg:border-none lg:pt-0">
           <div className="flex flex-col gap-3.5">
-            <h3 className="font-outfit text-caption font-medium tracking-[0.12em] text-white/40 uppercase">
+            <h3 className="font-outfit text-caption font-medium tracking-[0.12em] text-white/50 uppercase">
               Quick Starts
             </h3>
             {footerLinks?.quickStarts?.map((item, index) => (
@@ -212,7 +212,7 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-col gap-3.5">
-            <h3 className="font-outfit text-caption font-medium tracking-[0.12em] text-white/40 uppercase">
+            <h3 className="font-outfit text-caption font-medium tracking-[0.12em] text-white/50 uppercase">
               Resources
             </h3>
             {footerLinks?.resources?.map((item, index) => {
@@ -239,7 +239,7 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-col gap-3.5">
-            <h3 className="font-outfit text-caption font-medium tracking-[0.12em] text-white/40 uppercase">
+            <h3 className="font-outfit text-caption font-medium tracking-[0.12em] text-white/50 uppercase">
               Policies
             </h3>
             {footerLinks?.policies?.map((item, index) => (
@@ -257,7 +257,7 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-white/10 px-9 py-8 sm:py-10 lg:p-12">
-        <p className="mx-auto max-w-6xl text-center font-poppins text-caption text-white/35">
+        <p className="mx-auto max-w-6xl text-center font-poppins text-caption text-white/50">
           © {new Date().getFullYear()} KarmaCircle. All rights reserved.
         </p>
       </div>

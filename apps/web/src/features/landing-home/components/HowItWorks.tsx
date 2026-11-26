@@ -76,7 +76,7 @@ const HowItWorks = () => {
           <div className="lg:sticky lg:top-28">
             <span
               data-reveal
-              className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] text-brand uppercase"
+              className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5 font-outfit text-caption font-medium tracking-[0.16em] text-brand-hover uppercase"
             >
               How it works
             </span>
@@ -103,7 +103,7 @@ const HowItWorks = () => {
               data-reveal
               className="mt-8 rounded-15px border border-border-subtle bg-white/70 p-5 sm:p-6"
             >
-              <p className="font-outfit text-caption font-medium tracking-[0.14em] text-ink/45 uppercase">
+              <p className="font-outfit text-caption font-medium tracking-[0.14em] text-ink/65 uppercase">
                 A real example
               </p>
               <p className="mt-3 font-poppins text-body leading-6 text-ink/75 sm:text-body-lg sm:leading-7">

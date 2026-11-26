@@ -1,3 +1,4 @@
+import { formatAgendaTime } from "@features/events/utils/formatEventFacts";
 import type { EventAgendaProps } from "@features/events/types";
 
 /**
@@ -5,9 +6,10 @@ import type { EventAgendaProps } from "@features/events/types";
  *
  * Same vocabulary as `OrganizationProfile.tsx`'s track record and
  * `HowItWorks`' playbook, so a timeline looks like a timeline everywhere in
- * the app. Times are pre-formatted strings, not timestamps: a schedule is
+ * the app. Times are the organizer's own strings, not timestamps: a schedule is
  * written in the event's own timezone, and converting "9:00 pm" into the
  * reader's would be actively wrong for anyone reading from elsewhere.
+ * `formatAgendaTime` only restyles a clock time to match the rest of the page.
  */
 const EventAgenda = ({ agenda }: EventAgendaProps) => (
   <ol className="relative m-0 list-none p-0">
@@ -26,7 +28,7 @@ const EventAgenda = ({ agenda }: EventAgendaProps) => (
           className="absolute top-1.5 left-0 size-3.5 rounded-full border-2 border-surface bg-brand"
         />
         <p className="m-0 font-outfit text-caption font-semibold tracking-[0.14em] text-brand uppercase">
-          {item.time}
+          {formatAgendaTime(item.time)}
         </p>
         <h3 className="mt-1.5 font-outfit text-body-lg font-semibold tracking-tight text-brand-secondary sm:text-lg">
           {item.title}

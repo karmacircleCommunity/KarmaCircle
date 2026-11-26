@@ -67,6 +67,35 @@ export const formatEventTime = (startsAt: string, timezone?: string) => {
 };
 
 /**
+ * An agenda row's time, written the way the page writes its other times.
+ *
+ * Agenda times are free text the organizer typed ("9:00 am", "After lunch"),
+ * so the page showed "9:00" in the hero and "9:00 AM" in the schedule. A value
+ * that is unambiguously a clock time (with am or pm, or two-digit 24-hour
+ * "09:00") is rewritten in the visitor's own clock style; the hour and minute
+ * stay exactly as typed, with no timezone conversion. Anything else, such as
+ * "9:00", a range or a phrase, is shown as written.
+ */
+export const formatAgendaTime = (time: string) => {
+  const typed = time.trim();
+  const twelve = /^(1[0-2]|0?[1-9])(?:[:.]([0-5]\d))?\s*([ap])\.?m\.?$/i.exec(
+    typed,
+  );
+  const full = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(typed);
+  if (!twelve && !full) return time;
+
+  const hour = twelve
+    ? (Number(twelve[1]) % 12) + (twelve[3].toLowerCase() === "p" ? 12 : 0)
+    : Number(full![1]);
+  const minute = Number((twelve ? twelve[2] : full![2]) ?? 0);
+
+  return new Date(Date.UTC(2000, 0, 1, hour, minute)).toLocaleTimeString(
+    undefined,
+    { hour: "numeric", minute: "2-digit", timeZone: "UTC" },
+  );
+};
+
+/**
  * "4 hours", "2 days" - how long the thing actually runs for.
  *
  * Rounds to the half hour below a day and to whole days above it, because

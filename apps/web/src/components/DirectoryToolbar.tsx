@@ -115,8 +115,10 @@ const DirectoryToolbar = <
   tertiaryFilter,
 }: DirectoryToolbarProps<T, U, V>) => (
   <div className="mt-8 lg:mt-10">
-    {/* Search + filter dropdowns + primary action. On a phone each drops
-        onto its own line rather than squeezing down. From `sm` up they share
+    {/* Search + filter dropdowns + primary action. On a phone the search and
+        the action take a line each, with the filters sharing wrapped lines
+        between them (one per line pushed the first result off the screen).
+        From `sm` up everything shares
         one row only while they fit: the controls move below the search as one
         group, and wrap inside that group if they are still too wide. A single
         non-wrapping row pushed `/events`' button off a tablet screen. The
@@ -125,7 +127,7 @@ const DirectoryToolbar = <
       <div className="group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1">
         <FiSearch
           aria-hidden="true"
-          className="size-4.5 shrink-0 text-ink/35 transition-colors duration-200 group-focus-within:text-brand"
+          className="size-4.5 shrink-0 text-ink/50 transition-colors duration-200 group-focus-within:text-brand"
         />
 
         {suggestions ? (
@@ -149,7 +151,7 @@ const DirectoryToolbar = <
               // The input needs to fill *that* wrapper, or it falls back to
               // its browser-default ~20ch intrinsic width and `truncate`
               // clips the placeholder well short of the pill's real width.
-              className="w-full truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35"
+              className="w-full truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/65"
             />
           </>
         ) : (
@@ -169,7 +171,7 @@ const DirectoryToolbar = <
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchLabel}
-            className="min-w-0 flex-1 truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/35"
+            className="min-w-0 flex-1 truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/65"
           />
         )}
 
@@ -183,7 +185,7 @@ const DirectoryToolbar = <
           aria-label="Clear search"
           aria-hidden={!query}
           tabIndex={query ? 0 : -1}
-          className={`flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-ink/40 transition-[opacity,color] duration-200 hover:text-brand ${
+          className={`flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-ink/65 transition-[opacity,color] duration-200 hover:text-brand ${
             query ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
@@ -191,7 +193,7 @@ const DirectoryToolbar = <
         </button>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-3 sm:gap-x-3">
         <FilterDropdown
           label={filterLabel}
           options={options}
@@ -217,7 +219,9 @@ const DirectoryToolbar = <
           />
         )}
 
-        {action}
+        {action && (
+          <div className="flex w-full flex-col sm:w-auto">{action}</div>
+        )}
       </div>
     </div>
 
@@ -229,7 +233,7 @@ const DirectoryToolbar = <
     {summary && (
       <p
         aria-live="polite"
-        className="mt-4 font-poppins text-caption tracking-wide text-ink/45 uppercase"
+        className="mt-4 font-poppins text-caption tracking-wide text-ink/65 uppercase"
       >
         {summary}
       </p>

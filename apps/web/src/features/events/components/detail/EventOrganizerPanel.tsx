@@ -21,7 +21,7 @@ const EventOrganizerPanel = ({ event }: EventOrganizerPanelProps) => (
     data-reveal
     className="rounded-2xl border border-brand-secondary/8 bg-white p-6 sm:p-7"
   >
-    <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/50 uppercase">
+    <p className="m-0 inline-flex items-center gap-2 font-poppins text-caption tracking-wide text-ink/65 uppercase">
       <FiUsers aria-hidden="true" className="size-3.5 text-brand" />
       Hosted by
     </p>
@@ -33,13 +33,13 @@ const EventOrganizerPanel = ({ event }: EventOrganizerPanelProps) => (
     {event.organizerUserName ? (
       <Link
         to={`/organization/${event.organizerUserName}`}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-brand/35 bg-transparent px-5 py-2.5 font-poppins text-body font-medium text-brand no-underline transition-colors duration-200 hover:bg-brand/8 motion-safe:active:scale-97"
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-brand/35 bg-transparent px-5 py-2.5 font-poppins text-body font-medium text-brand no-underline transition-colors duration-200 hover:bg-brand/8 hover:text-brand-hover motion-safe:active:scale-97"
       >
         Visit organization
         <FiArrowRight aria-hidden="true" className="size-4" />
       </Link>
     ) : (
-      <p className="mt-2 font-poppins text-caption leading-5 text-ink/50">
+      <p className="mt-2 font-poppins text-caption leading-5 text-ink/65">
         This event doesn&apos;t have an organization page on KarmaCircle yet.
       </p>
     )}

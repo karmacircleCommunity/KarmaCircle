@@ -46,22 +46,13 @@ import type { EventJoinPanelProps } from "@features/events/types";
  * bar ever sits at (`0.75rem` + a notched iPhone's `safe-area-inset-bottom`,
  * ~46px worst case), not tuned to that exact number.
  *
- * **Material.** A floating "liquid glass" capsule rather than an opaque bar
- * flush with the screen edges - `inset-x-9` lines its sides up with
- * `EventHero`/`EventJoinPanel`'s own edges above it (same page, same
- * margin, reads as a continuation of those cards rather than a new,
- * disagreeing one), and it sits a full `rounded-3xl` away from the bottom
- * edge too, matching `EventHero`'s own corner radius on this page. The
- * glass itself is a heavy `backdrop-blur` plus `backdrop-saturate` (blur
- * alone flattens and grays out whatever scrolls underneath; saturating it
- * back up is what keeps that see-through content looking like glass over
- * it rather than frosted paper) over a translucent tint, an `inset`
- * box-shadow for a bright top edge (light catching the rim), and a soft
- * `color-mix(in srgb, var(--color-brand-secondary) 50%, transparent)`
- * ambient shadow underneath for lift - the same warm-shadow vocabulary
- * `OrganizationCard`/`EventCard`'s hover state already uses, not a raw hex.
- * The button and pills inside stay fully opaque - the glass effect is the
- * surface they float on, not something they need to share.
+ * **Material.** A floating capsule rather than a bar flush with the screen
+ * edges: `inset-x-9` lines its sides up with `EventHero`/`EventJoinPanel`'s own
+ * edges above it, it sits a full `rounded-3xl` away from the bottom edge too,
+ * matching the hero's corner radius, and a soft warm shadow lifts it. It is
+ * **solid white** (November 2026). It was "liquid glass" (a translucent tint
+ * with a heavy backdrop blur) until the text scrolling underneath showed
+ * through it and competed with its own price and button.
  *
  * **Completed event (September 2026, `isEventPast`).** Cost/spots-left and
  * the Join button stop meaning anything once the event's `startsAt` has
@@ -102,7 +93,7 @@ const EventMobileActionBar = ({
   return (
     <div
       aria-hidden={hidden}
-      className={`fixed inset-x-9 z-10 flex items-center justify-between gap-4 rounded-3xl border border-white/50 bg-white/55 px-5 py-3.5 shadow-[0_20px_45px_-18px_color-mix(in_srgb,var(--color-brand-secondary)_50%,transparent),inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-2xl backdrop-saturate-150 transition-transform duration-300 ease-out lg:hidden ${
+      className={`fixed inset-x-9 z-10 flex items-center justify-between gap-4 rounded-3xl border border-brand-secondary/10 bg-white px-5 py-3.5 shadow-[0_20px_45px_-18px_color-mix(in_srgb,var(--color-brand-secondary)_50%,transparent)] transition-transform duration-300 ease-out lg:hidden ${
         hidden
           ? "pointer-events-none translate-y-[calc(100%+4rem)]"
           : "translate-y-0"
@@ -126,13 +117,13 @@ const EventMobileActionBar = ({
             (EventCard, EventFacts) treats as a data-bug-looking string to
             avoid. */}
         {over ? (
-          <p className="m-0 truncate font-poppins text-caption text-ink/55">
+          <p className="m-0 truncate font-poppins text-caption text-ink/65">
             Updates on the organizer&apos;s page
           </p>
         ) : (
           hasCapacity &&
           spotsLeft! > 0 && (
-            <p className="m-0 truncate font-poppins text-caption text-ink/55">
+            <p className="m-0 truncate font-poppins text-caption text-ink/65">
               {formatSpotsLeft(spotsLeft!)}
             </p>
           )
@@ -149,7 +140,7 @@ const EventMobileActionBar = ({
             Visit <FiArrowRight aria-hidden="true" className="size-4" />
           </Link>
         ) : (
-          <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/60">
+          <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/65">
             {cancelled ? "Closed" : "Ended"}
           </span>
         )
@@ -163,12 +154,12 @@ const EventMobileActionBar = ({
             <FiMail aria-hidden="true" className="size-4" /> Ask
           </a>
         ) : (
-          <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/60">
+          <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/65">
             Invite only
           </span>
         )
       ) : kind === "pending" || kind === "waitlisted" || kind === "declined" ? (
-        <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/60">
+        <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/65">
           {kind === "pending"
             ? "Requested"
             : kind === "waitlisted"
@@ -189,7 +180,7 @@ const EventMobileActionBar = ({
           tabIndex={hidden ? -1 : undefined}
           className={`inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
             kind === "going"
-              ? "border border-brand/35 bg-brand/8 text-brand"
+              ? "border border-brand/35 bg-brand/8 text-brand-hover"
               : "border-none bg-brand text-white shadow-[0_10px_26px_-14px_var(--color-brand)]"
           }`}
         >
