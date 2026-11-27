@@ -18,7 +18,7 @@ jobs:
   welcome:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: EddieHubCommunity/gh-action-community/src/welcome@8a3d837a9a0d90f22a0d42f5722cf3d10da477cd # main, pinned 2026-11-01
