@@ -20,6 +20,7 @@ There are exactly three looping animations in the app. A fourth must clear the s
 Both 2 and 3 are wired as `SplitPanelLayout`'s `asideDecor` from `SetupLayout.tsx`, sit behind the quote, and are anchored to the panel's corners well clear of the copy.
 
 **`--animate-shimmer` (September 2026, `OrganizationCardSkeleton`) loops too, and is deliberately not counted as a fourth.** The loop bar above is about *decoration* — an element with nothing to say that just keeps moving. A loading shimmer is the same category as `<Loading />`'s own `animate-spin`, which was never counted either (see [12-feedback.md](./12-feedback.md#loading): "loading indicators are not `motion-safe:`-gated. They are status, not decoration."). It clears its own, different bar instead: it exists only while a skeleton is actually mounted — typically well under a second, never indefinitely — and it never touches a real text node, only the placeholder blocks standing in for one.
+Since 2026-11-27 it also stops under reduced motion, and lives in `Skeleton.tsx`.
 
 ## Keyframes
 
@@ -91,8 +92,10 @@ All in `apps/web/src/hooks/`, exported from the `@hooks` barrel.
 
 The app's one scroll entrance.
 Everything tagged `data-reveal` inside `scope` fades and rises in, in source order, in batches, **once**.
+What is already on screen when it runs arrives at once; the rest waits until it scrolls to 88% of the viewport (2026-11-27, superseding one threshold for both, which left a blank where a loading placeholder had just been).
+When the dependencies change, only elements it has not handled yet are animated, so cards already on screen do not blink as a list grows.
 
-Two details that must survive any edit:
+Two details that must survive any edit, besides the "each element once" rule above:
 
 1. It queries `scope.current.querySelectorAll`, **not** `gsap.utils.toArray`, which searches the whole document. Every scope shares the one `data-reveal` attribute, so `toArray` would make each scope animate every other scope's elements.
 2. `once: true`. Replaying an entrance on every scroll-back reads as jitter and fights ScrollTrigger's refresh on resize.

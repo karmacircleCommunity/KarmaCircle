@@ -6,6 +6,7 @@ The marketing/logged-out-friendly home experience, routed at `/`.
 
 [apps/web/src/features/landing-home/pages/Home.tsx](../../apps/web/src/features/landing-home/pages/Home.tsx).
 Sets page `<title>`/meta via `<Helmet>`, scrolls to top on mount, and — if `Cookies.get("OAuthLoginInitiated")` is set — completes the Google OAuth flow by calling `successCallback()` and dispatching the result into Redux (see [authentication.md](./authentication.md)).
+After a success it also calls `takeReturnPath()` and, when a path was kept before leaving for Google (for example an event page), navigates there with history replaced ([authentication.md](./authentication.md#returning-after-sign-in)).
 Renders `<Landing />`, then the three marketing sections added in August 2026 — `<HowItWorks />`, `<DrivesRail />`, `<OpenSource />` — then `<Footer />`.
 Renders only the sections above — there used to be a fourth marketing section (`MilanInfoBanner`), but it was dead code (never mounted anywhere) and was deleted; see [known-issues.md](./known-issues.md).
 

@@ -21,7 +21,7 @@ export function useMyOrganization() {
   const isOrganization =
     user?.isLoggedIn === true && user?.userType === "organization";
 
-  const { data, isLoading, mutate } = useSWR<MyOrganization>(
+  const { data, error, isLoading, mutate } = useSWR<MyOrganization>(
     isOrganization ? organizationEndpoints.mine : null,
     fetcher,
   );
@@ -31,6 +31,8 @@ export function useMyOrganization() {
     isOrganization,
     /** True only while a request is actually in flight. */
     isLoading: isOrganization && isLoading,
+    /** The last request failed. */
+    error,
     /** A record exists and is still invisible to everyone else. */
     isDraft: Boolean(data && !data.isLive),
     mutate,

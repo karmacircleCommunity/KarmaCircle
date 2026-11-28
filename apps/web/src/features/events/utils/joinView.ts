@@ -1,7 +1,9 @@
 import type {
   ApiRegistration,
   DisplayEvent,
+  EventPhase,
   JoinView,
+  SignInPrompt,
 } from "@features/events/types";
 
 /**
@@ -19,6 +21,9 @@ import type {
  * - a full event offers the waitlist, or just says it is full when the
  *   organizer turned the waitlist off;
  * - otherwise the button joins (open) or asks to join (approval).
+ *
+ * `asks` is set for a request and for a waitlist spot, the two outcomes the
+ * organizer sees a note with.
  */
 export function joinView(
   event: Pick<DisplayEvent, "access" | "spotsLeft" | "waitlistEnabled">,
@@ -49,12 +54,18 @@ export function joinView(
           kind: "join",
           label: "Join the waitlist",
           shortLabel: "Waitlist",
+          asks: "waitlist",
         }
       : { kind: "full" };
   }
 
   return event.access === "approval"
-    ? { kind: "join", label: "Request to join", shortLabel: "Request" }
+    ? {
+        kind: "join",
+        label: "Request to join",
+        shortLabel: "Request",
+        asks: "request",
+      }
     : { kind: "join", label: "Join this event", shortLabel: "Join event" };
 }
 
@@ -69,4 +80,29 @@ export function leaveLabel(
   if (kind === "pending") return "Withdraw my request";
   if (kind === "waitlisted") return "Leave the waitlist";
   return undefined;
+}
+
+/**
+ * The question put beside a "Sign in" button for a signed-out viewer whom the
+ * page otherwise offers no way in: someone who may already hold a place once
+ * the event is running (their link and standing show only after sign-in), or
+ * someone who may hold an invitation to an event that is invite-only, or full
+ * with no waitlist (an invitation gets past the capacity). Everyone else is
+ * either signed in, has the Join button (which leads to sign-in itself), or
+ * has nothing left to do.
+ */
+export function signInPrompt({
+  signedIn,
+  cancelled,
+  phase,
+  kind,
+}: {
+  signedIn: boolean;
+  cancelled: boolean;
+  phase: EventPhase;
+  kind: JoinView["kind"];
+}): SignInPrompt | undefined {
+  if (signedIn || cancelled || phase === "ended") return undefined;
+  if (phase === "ongoing") return "Already joined?";
+  return kind === "invite-only" || kind === "full" ? "Invited?" : undefined;
 }

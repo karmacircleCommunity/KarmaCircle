@@ -1,6 +1,6 @@
 # State Management
 
-Three separate mechanisms hold state in this app, each for a different purpose.
+Three separate mechanisms hold state in this app, each for a different purpose, plus one narrow use of router state and `sessionStorage` (section 4).
 Redux `user.isLoggedIn` is the frontend's authentication-state source of truth.
 The backend cookie is validated at startup and by authenticated API calls; frontend code does not read the `Token` cookie.
 
@@ -19,7 +19,8 @@ The backend cookie is validated at startup and by authenticated API calls; front
 **Where it's written:**
 - [useAuth.ts](../../apps/web/src/features/authentication/hooks/useAuth.ts) — on successful sign-in/sign-up, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })`.
 - [Home.tsx](../../apps/web/src/features/landing-home/pages/Home.tsx) — after a Google OAuth redirect completes, dispatches `updateUserData(...)` then `toggleUserLogin()` (two separate dispatches, not one).
-- [Navbar.tsx](../../apps/web/src/components/Navbar.tsx) — on logout, dispatch `resetUserData()`.
+- [Navbar.tsx](../../apps/web/src/components/Navbar.tsx) - on a successful logout, navigates to `/`, dispatches `resetUserData()` and clears local storage.
+- [DetailedEvent.tsx](../../apps/web/src/features/events/pages/DetailedEvent.tsx) - dispatches `resetUserData()` when joining an event answers `401`, then sends the visitor to sign in.
 
 ## 2. Zustand (`useAuthStore`)
 
@@ -42,8 +43,26 @@ Cookies actually read in the frontend:
 
 The unrouted `UserProfile.tsx` prototype reads its owner identity from Redux; it does not read a cookie.
 
-`Navbar.tsx` clears local storage and dispatches `resetUserData()` on logout.
+`Navbar.tsx` clears local storage and dispatches `resetUserData()` on logout; dropping cached API responses is not its job (see section 5).
 The deleted sparse profile page no longer writes or clears a completion-bypass cookie.
+
+## 4. The sign-in return path
+
+A page that asks a visitor to sign in passes `returnTo` in router state to `/auth/signin`.
+Google sign-in leaves the site, so [returnPath.ts](../../apps/web/src/features/authentication/utils/returnPath.ts) also keeps it in `sessionStorage` under `karmacircle:auth-return-path`, for this tab only, until `Home.tsx` takes it.
+It is never written to Redux or `localStorage`, and it is checked to be a same-site, non-auth path each time it is read.
+See [authentication.md](./authentication.md#returning-after-sign-in).
+
+## 5. Cached responses and the signed-in identity
+
+Cached SWR responses belong to whoever fetched them: some hold what only that account may see, such as an event's meeting link.
+[viewerIdentity.ts](../../apps/web/src/app/store/viewerIdentity.ts) defines the identity (the signed-in account's email, or empty for a visitor) and `onViewerChange`, a store subscriber that runs synchronously inside the dispatch, before React renders for the new identity.
+[store.ts](../../apps/web/src/app/store/store.ts) wires it to SWR's `unload()`, so every cached response is dropped and the pages on screen fetch again.
+It is the one place that does this.
+It fires on sign-in and sign-up (`useAuth`), Google completion (`Home.tsx`), Navbar logout, a rejected session (`clearRejectedSession`), a `401` on joining an event, and one account replacing another.
+Edits to the same account (a new name, a refreshed profile) do not count.
+The edit form's `useEventSnapshot` keys its request on the same identity.
+The `swr` dependency is `^2.5.1` (it was `^2.2.5`).
 
 ## Authentication checks across routed UI
 
@@ -51,6 +70,7 @@ The deleted sparse profile page no longer writes or clears a completion-bypass c
 `Events.tsx` additionally checks `Cookies.get("Token")` before showing its organization-only create-event control.
 That cookie check can differ between email/password and Google OAuth because the Google OAuth token cookie is httpOnly.
 Backend routes remain responsible for enforcing authorization regardless of whether a frontend control is shown.
+`DetailedEvent.tsx` uses Redux `user.isLoggedIn` to send a signed-out Join press to sign-in and to drop a cached meeting link; the API decides who receives the link.
 
 Follow [AGENTS.md](../../AGENTS.md)'s current rule when adding a new auth-gated control; this section records the implementation as it exists today.
 
@@ -59,5 +79,6 @@ Follow [AGENTS.md](../../AGENTS.md)'s current rule when adding a new auth-gated 
 Persisted `isLoggedIn` remembers login; it does not prove the server cookie remains valid.
 `SessionBootstrap` verifies remembered login through `GET /user/profile` before mounting the app.
 A 401 from startup verification, a later shared-fetcher read, or `updateUserProfile()` resets the existing user slice through `clearRejectedSession()`.
+The event page's join is the one other path that resets it, as listed above.
 Network and 5xx errors do not clear login.
 The `Token` cookie is not used to determine persisted login state; authenticated API requests send it to the backend.

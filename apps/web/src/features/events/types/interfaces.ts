@@ -6,8 +6,10 @@ import type {
   EventFormErrors,
   EventStatus,
   EventType,
+  JoinAsk,
   JoinView,
   RegistrationStatus,
+  SignInPrompt,
   SubmitIntent,
 } from "./types";
 
@@ -75,13 +77,15 @@ export interface EventFormState extends EventDetailFormFields {
 }
 
 export interface UseEventResult {
-  validateEvent: () => EventFormErrors;
+  /** The form's problems for what is being attempted: a draft needs less. */
+  validateEvent: (intent?: SubmitIntent) => EventFormErrors;
+  /** Resolves with the fields the API refused, if it named any. */
   submitCallback: (
     event: EventFormState,
     onSuccess: () => void,
     errors: EventFormErrors,
     intent?: SubmitIntent,
-  ) => Promise<void>;
+  ) => Promise<EventFormErrors | undefined>;
 }
 
 /**
@@ -124,6 +128,8 @@ export interface EventCardEvent {
   country?: string;
   platform?: string;
   startsAt: string;
+  /** When it ends: what decides "Happening now" and "Completed". */
+  endsAt?: string;
   going?: number;
   spotsLeft?: number;
   /**
@@ -306,6 +312,9 @@ export interface EventJoinPanelProps extends DetailedEventRecord {
   checkingRegistration: boolean;
   registrationCheckFailed: boolean;
   onToggleJoin: () => void;
+  /** Set for a signed-out viewer who has no other way in (`signInPrompt`). */
+  signInPrompt?: SignInPrompt;
+  onSignIn: () => void;
 }
 
 /** The "Hosted by" sidebar card - just the organizer fields off
@@ -313,6 +322,29 @@ export interface EventJoinPanelProps extends DetailedEventRecord {
  *  `EventDetailContent` half has nothing this card needs). */
 export interface EventOrganizerPanelProps {
   event: DisplayEvent;
+}
+
+/** The stored event as the edit page holds it; see `useEventSnapshot`. */
+export interface EventSnapshot {
+  event?: ApiEvent;
+  /** When `event` arrived, to judge whether it had already ended then. */
+  loadedAt: number;
+  error?: unknown;
+  isLoading: boolean;
+  retry: () => void;
+  /** Puts in what the API stored after this page's own save. */
+  replace: (event: ApiEvent) => void;
+}
+
+/** The optional-note dialog shown before a request or a waitlist join. */
+export interface JoinNoteDialogProps {
+  asks: JoinAsk;
+  eventTitle: string;
+  busy: boolean;
+  /** Why the last attempt failed, shown inside the dialog. */
+  error?: string;
+  onSend: (note: string) => void;
+  onClose: () => void;
 }
 
 /**
@@ -324,7 +356,8 @@ export interface ApiEvent {
   _id: string;
   uid: string;
   name: string;
-  description: string;
+  /** A draft may not have one yet. */
+  description?: string;
   hostUsername: string;
   hostName: string;
   /** Set by the server from the host's own `Organization` record — absent
@@ -338,6 +371,8 @@ export interface ApiEvent {
   country?: string;
   mapIframe?: string;
   platform?: string;
+  /** Sent only to the hosting organization and to a signed-in person who is
+   *  going; left out of the response for everyone else. */
   platformLink?: string;
   startDate: string;
   endDate: string;

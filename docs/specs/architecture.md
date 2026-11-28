@@ -30,7 +30,7 @@ The route table lives in [apps/web/src/app/routes/routesConfig.tsx](../../apps/w
 | `/organization/setup` | `OrganizationSetup` | Organization owner setup and editing flow |
 | `/organization/:userName` | `OrganizationProfile` | Public organization profile. The parameter is named `userName` in the route, while links and API records use the organization handle |
 | `/dashboard` | `Dashboard` | Organization dashboard; setup gate handles incomplete or signed-out states |
-| `/organization/events` | `YourEvents` | Organization's hosted events; setup gate handles access state |
+| `/organization/events` | redirect | Old address; goes to `/events/mine?tab=hosting` |
 | `/events/mine` | `MyEvents` (wrapped in `RequireSignIn`) | Signed-in individual's registrations |
 | `/events` | `Events` | Live event directory |
 | `/events/:eventId` | `DetailedEvent` | Event detail; `eventId` is the event `uid` |

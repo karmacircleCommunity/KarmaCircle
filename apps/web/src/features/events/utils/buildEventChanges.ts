@@ -6,8 +6,81 @@ import {
 } from "@features/events/utils/eventTimezone";
 import { parseTags } from "@features/events/utils/eventTags";
 import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
-import { detailChanges } from "@features/events/utils/eventDetailFields";
-import type { ApiEvent, EventFormState } from "@features/events/types";
+import {
+  detailChanges,
+  detailPayloadForCreate,
+  omitDetailFields,
+} from "@features/events/utils/eventDetailFields";
+import type {
+  ApiEvent,
+  EventFormState,
+  SubmitIntent,
+} from "@features/events/types";
+
+/** A box holding nothing but spaces is an empty box. */
+const textValue = (value: string) => (value.trim() === "" ? "" : value);
+
+/**
+ * Fields a draft may be saved without. Left empty, they are left out of the
+ * create request altogether: an empty string is not "no value" to the API.
+ */
+const OMITTED_WHEN_EMPTY = [
+  "description",
+  "coverImage",
+  "eventType",
+  "address",
+  "city",
+  "state",
+  "country",
+  "platform",
+  "platformLink",
+] as const;
+
+/**
+ * The form as the body for `POST /events/create`. Only what was filled in is
+ * sent, only the chosen format's venue or joining fields go, and a draft says
+ * `status: "draft"`. The dates and times are the wall clock in the event's own
+ * timezone (PG-11), turned into real instants.
+ */
+export function buildCreatePayload(
+  form: EventFormState,
+  intent: SubmitIntent,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    ...omitDetailFields(form),
+    ...detailPayloadForCreate(form),
+    tags: parseTags(form.tags),
+    ...(intent === "draft" ? { status: "draft" } : {}),
+  };
+
+  for (const field of OMITTED_WHEN_EMPTY) {
+    if (textValue(form[field]) === "") delete body[field];
+  }
+  if (!hasVenue(form.mode)) {
+    for (const field of ["address", "city", "state", "country"]) {
+      delete body[field];
+    }
+  }
+  if (!hasOnlineAccess(form.mode)) {
+    delete body.platform;
+    delete body.platformLink;
+  }
+
+  if (form.capacity.trim() === "") delete body.capacity;
+  else body.capacity = Number(form.capacity);
+
+  const { startDate, startTime, endDate, endTime, timezone } = form;
+  if (startDate) body.startDate = startOfDayInZone(startDate, timezone);
+  if (endDate) body.endDate = startOfDayInZone(endDate, timezone);
+  if (startDate && startTime) {
+    body.startTime = combineInZone(startDate, startTime, timezone);
+  }
+  if (endDate && endTime) {
+    body.endTime = combineInZone(endDate, endTime, timezone);
+  }
+
+  return body;
+}
 
 /** The shape `PATCH /events/:uid` accepts: any subset of the editable fields. */
 export type EventChanges = Record<string, unknown>;
@@ -25,7 +98,10 @@ export type EventChanges = Record<string, unknown>;
  *
  * Location fields go together: if the mode or any field of the chosen mode
  * changed, all of that mode's fields are sent, because the API drops the other
- * mode's fields and requires the chosen mode's to be present.
+ * mode's fields and requires the chosen mode's to be present on a published
+ * event. A field a draft has never had (empty before and still empty) is left
+ * out. A description or location field that was emptied goes as `null`, which
+ * clears it (only a draft gets that far: the form refuses it otherwise).
  */
 export function buildEventChanges(
   form: EventFormState,
@@ -34,8 +110,9 @@ export function buildEventChanges(
   const changes: EventChanges = {};
 
   if (form.name !== original.name) changes.name = form.name;
-  if (form.description !== original.description) {
-    changes.description = form.description;
+  const description = textValue(form.description);
+  if (description !== (original.description ?? "")) {
+    changes.description = description || null;
   }
   if (form.access !== original.access) changes.access = form.access;
   if (form.waitlistEnabled !== (original.waitlistEnabled !== false)) {
@@ -74,11 +151,14 @@ export function buildEventChanges(
       : []),
   ];
   const locationChanged = locationFields.some(
-    (field) => form[field] !== (original[field] ?? ""),
+    (field) => textValue(form[field]) !== (original[field] ?? ""),
   );
   if (modeChanged) changes.mode = form.mode;
   if (modeChanged || locationChanged) {
-    for (const field of locationFields) changes[field] = form[field];
+    for (const field of locationFields) {
+      const next = textValue(form[field]);
+      if (next !== "" || original[field]) changes[field] = next || null;
+    }
   }
 
   // The pickers hold wall-clock digits; the event's timezone says whose clock.
@@ -111,9 +191,7 @@ export function buildEventChanges(
   // nothing.
   const storedZone = eventZone(original.timezone);
   if (
-    storedZone
-      ? form.timezone !== storedZone
-      : Object.keys(changes).length > 0
+    storedZone ? form.timezone !== storedZone : Object.keys(changes).length > 0
   ) {
     changes.timezone = form.timezone;
   }

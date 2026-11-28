@@ -15,7 +15,7 @@ Nothing in this folder does data fetching for its own content — it's a static 
 
 | File | Role | Live? |
 |---|---|---|
-| `pages/Home.tsx` | The `/` page — OAuth-completion effect + renders `Landing` + `Footer` | ✅ routed |
+| `pages/Home.tsx` | The `/` page - OAuth-completion effect (including the return to a kept path) + renders `Landing` + `Footer` | ✅ routed |
 | `components/Landing.tsx` | The actual hero section | ✅ rendered by `Home.tsx` |
 | `components/HeroScene.tsx` | Pure-CSS line-grid background for the hero (was three.js — see below), lazy-loaded | ✅ rendered by `Landing.tsx` |
 | `components/HowItWorks.tsx` | Four-step "how a drive happens" section, sticky-intro layout from `lg` | ✅ rendered by `Home.tsx` |
@@ -26,6 +26,9 @@ Nothing in this folder does data fetching for its own content — it's a static 
 ## `pages/Home.tsx`
 
 **`handleToken()`** — awaits `successCallback()` (`KarmaCircleApi.ts`, `GET /auth/login/success`, `withCredentials: true`). On `status === 200`: success toast, `dispatch(updateUserData(authData.data.user))` **then, as a second, separate dispatch**, `dispatch(toggleUserLogin())`. This is worth noting precisely because it's the one place in the app that sets `isLoggedIn` via `toggleUserLogin()` (a *flip*, not a *set*) rather than via `updateUserData({ ..., isLoggedIn: true })` (a merge) — see [state-management.md](../../../../../docs/specs/state-management.md). Because `toggleUserLogin` flips whatever `isLoggedIn` currently is, **this only produces the correct end state (`true`) if `isLoggedIn` was `false` going in** — which holds for the intended case (an anonymous visitor completing Google OAuth), but if `handleToken()` were ever called a second time for an already-logged-in session (e.g. the `OAuthLoginInitiated` cookie isn't cleared and somehow persists across a reload while already authenticated), this would flip `isLoggedIn` back to `false` instead of leaving it `true`. Not reachable through the current flow as far as this repo's code shows (nothing else in the frontend clears or re-checks `OAuthLoginInitiated`, and cookie-setting/clearing for it happens server-side, outside this repo), but worth knowing if you're debugging an "OAuth login appears to silently log the user back out" report.
+
+**Return path:** after those dispatches, `takeReturnPath()` (`features/authentication/utils/returnPath.ts`) reads and removes the path kept in `sessionStorage` before the Google redirect; if there is one, `navigate(returnTo, { replace: true })`.
+A failed completion leaves it unread.
 
 **On failure:** `showErrorToast(authData?.message)` — note this reads `.message` directly off `authData`, not `authData?.data?.message` like the success path and most other call sites in the app; `successCallback()`'s own catch block returns the raw caught error object (`err`, not `err.response`) on failure, so `authData` here could be an Axios error object (which does have a top-level `.message`, e.g. `"Network Error"`) rather than a structured API response — consistent with its own implementation, just an easy detail to get wrong if you copy this pattern elsewhere expecting the usual `response?.data?.message` shape.
 
@@ -97,6 +100,8 @@ Home.tsx mount
    │       │ status 200
    │       ▼
    │  dispatch(updateUserData(user)) → dispatch(toggleUserLogin())   [two separate dispatches]
+   │       ▼
+   │  takeReturnPath() → navigate(path, { replace: true }) when one was kept
    ▼
 renders <Landing /> (reads Redux isLoggedIn for its own CTA) + <Footer />
 ```

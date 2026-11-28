@@ -26,11 +26,11 @@ test("a new organization with a draft profile can open the form, publish and see
   ).toBeVisible();
   await expect(page.getByText("Draft — not visible yet")).toHaveCount(0);
 
-  // The API accepts the event, and Your events lists it.
+  // The API accepts the event, and the Hosting tab lists it.
   await createEvent(page, { uid, name });
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   await expect(
-    page.getByRole("heading", { level: 1, name: "Your events" }),
+    page.getByRole("heading", { level: 1, name: "My events" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: `Edit ${name}` })).toBeVisible();
 
@@ -38,6 +38,6 @@ test("a new organization with a draft profile can open the form, publish and see
   await page.goto(`/organization/events/${uid}/attendees`);
   await expect(page.getByText("Draft — not visible yet")).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Your events" }).first(),
+    page.getByRole("link", { name: "My events" }).first(),
   ).toBeVisible();
 });

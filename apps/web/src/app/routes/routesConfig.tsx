@@ -1,5 +1,6 @@
 import { lazy, useEffect } from "react";
 import type { JSX } from "react";
+import { Navigate } from "react-router-dom";
 import Home from "@features/landing-home/pages/Home";
 import {
   DetailedEvent,
@@ -13,11 +14,11 @@ import {
   EditEvent,
   EventAttendees,
   ProfileSetup,
-  YourEvents,
   MyEvents,
 } from "./route";
 import DonotRenderWhenLoggedIn from "@features/authentication/components/DonotRenderWhenLoggedIn";
 import RequireSignIn from "@features/authentication/components/RequireSignIn";
+import { hostingPath } from "@features/events/utils/myEvents";
 
 // One unified email-first flow (features/authentication/pages/Auth.tsx)
 // backs both routes below — which of "sign in"/"sign up" the visitor sees
@@ -87,10 +88,12 @@ const routesConfig: RouteConfigEntry[] = [
   { path: "/organizations", element: <Organizations /> },
   // Organization account setup stays separate from public directory profiles.
   { path: "/organization/setup", element: <OrganizationSetup /> },
-  // The organization's own events, behind `OrganizationSetupGate`. This is
-  // where the navbar's "Your events" points; it used to point at
-  // "/event/create", which no route has ever matched.
-  { path: "/organization/events", element: <YourEvents /> },
+  // The old "Your events" address. An organization's own events are now the
+  // Hosting view of My Events; saved links keep working.
+  {
+    path: "/organization/events",
+    element: <Navigate to={hostingPath()} replace />,
+  },
   {
     path: "/organization/events/new",
     element: (

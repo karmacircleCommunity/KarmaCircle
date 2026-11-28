@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { joinView, leaveLabel } from "@features/events/utils/joinView";
+import {
+  joinView,
+  leaveLabel,
+  signInPrompt,
+} from "@features/events/utils/joinView";
 import type { EventAccess } from "@features/events/types";
 
 const base = {
@@ -18,6 +22,23 @@ describe("joinView", () => {
       label: "Join this event",
       shortLabel: "Join event",
     });
+  });
+
+  it("asks for a note only before a request or a waitlist spot", () => {
+    expect(joinView(approval, none)).toMatchObject({ asks: "request" });
+    for (const level of [open, approval]) {
+      expect(joinView({ ...level, spotsLeft: 0 }, none)).toMatchObject({
+        asks: "waitlist",
+      });
+    }
+    // Direct joins stay one tap: open, and any accepted invitation.
+    expect(joinView(open, none)).not.toHaveProperty("asks");
+    expect(
+      joinView(
+        { ...approval, spotsLeft: 0 },
+        { status: "none", invited: true },
+      ),
+    ).not.toHaveProperty("asks");
   });
 
   it("offers a request on an approval event", () => {
@@ -104,5 +125,39 @@ describe("leaveLabel", () => {
     expect(leaveLabel("declined", false)).toBeUndefined();
     expect(leaveLabel("join", false)).toBeUndefined();
     expect(leaveLabel("invite-only", false)).toBeUndefined();
+  });
+});
+
+describe("signInPrompt", () => {
+  const visitor = {
+    signedIn: false,
+    cancelled: false,
+    phase: "upcoming" as const,
+    kind: "join" as const,
+  };
+
+  it("asks a visitor of a running event whether they already joined", () => {
+    for (const kind of ["join", "invite-only", "full"] as const) {
+      expect(signInPrompt({ ...visitor, phase: "ongoing", kind })).toBe(
+        "Already joined?",
+      );
+    }
+  });
+
+  it("asks whether they are invited where only an invitation gets in", () => {
+    for (const kind of ["invite-only", "full"] as const) {
+      expect(signInPrompt({ ...visitor, kind })).toBe("Invited?");
+    }
+  });
+
+  it("adds nothing beside a Join button", () => {
+    expect(signInPrompt(visitor)).toBeUndefined();
+  });
+
+  it("asks nobody who is signed in, or about an event that is over or off", () => {
+    const running = { ...visitor, phase: "ongoing" as const };
+    expect(signInPrompt({ ...running, signedIn: true })).toBeUndefined();
+    expect(signInPrompt({ ...running, cancelled: true })).toBeUndefined();
+    expect(signInPrompt({ ...visitor, phase: "ended" })).toBeUndefined();
   });
 });

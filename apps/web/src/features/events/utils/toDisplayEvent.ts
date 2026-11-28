@@ -46,18 +46,19 @@ export function toDisplayEvent(event: ApiEvent): EventCardEvent {
     title: event.name,
     organizer: event.hostName,
     organizerUserName: event.organizerHandle,
-    summary: event.description,
+    summary: event.description ?? "",
     cover: event.coverImage || undefined,
     coverAlt: event.coverImage ? `${event.name} cover photo` : undefined,
     mode: event.mode,
     city: event.city,
     country: event.country,
-    platform: event.platform,
+    platform: event.platform || undefined,
     // `startTime` carries the actual wall-clock instant; `startDate` is
     // equal to it in every seeded record today, but the model keeps them
     // as separate fields (event.model.ts), so this is the one that stays
     // correct if they're ever set independently.
     startsAt: event.startTime,
+    endsAt: event.endTime,
     isGovernmentSponsored: event.isGovernmentSponsored || undefined,
     access: event.access === "open" ? undefined : event.access,
     cancelled: event.status === "cancelled" || undefined,

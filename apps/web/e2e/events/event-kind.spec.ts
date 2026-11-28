@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
 import {
+  chooseFilter,
   chooseKind,
   createEvent,
   publishOrganizationProfile,
@@ -151,8 +152,7 @@ test("the directory filters by kind, finds a tag in the search, and the card nam
   await expect(page.getByText(`Gala Evening ${stamp}`)).toBeVisible();
   await expect(page.getByText(`First Aid Class ${stamp}`)).toBeVisible();
 
-  await page.getByRole("button", { name: "Filter by kind" }).click();
-  await page.getByRole("option", { name: "Fundraiser" }).click();
+  await chooseFilter(page, "Fundraiser");
   await expect(page.getByText(`Gala Evening ${stamp}`)).toBeVisible();
   await expect(page.getByText(`First Aid Class ${stamp}`)).toHaveCount(0);
   await expect(
@@ -160,7 +160,6 @@ test("the directory filters by kind, finds a tag in the search, and the card nam
   ).toBeVisible();
 
   // Both kinds are back when the filter is reset.
-  await page.getByRole("button", { name: "Filter by kind" }).click();
-  await page.getByRole("option", { name: "All kinds" }).click();
+  await chooseFilter(page, "All kinds");
   await expect(page.getByText(`First Aid Class ${stamp}`)).toBeVisible();
 });

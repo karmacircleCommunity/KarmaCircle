@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
-import { chooseKind } from "./event-helpers";
+import { chooseFilter, chooseKind } from "./event-helpers";
 
 /**
  * Responsive/behavior coverage for `/events` (September 2026 rewrite —
@@ -163,12 +163,8 @@ test("the directory renders both an upcoming and a past event, filterable by tim
   await expect(page.getByText(`Riverbank Cleanup ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Past Fundraiser ${stamp}`)).toHaveCount(0);
 
-  // The time filter is a dropdown (`FilterDropdown`), not a bare chip — its
-  // trigger always shows the current selection ("Upcoming" here) as its own
-  // accessible name prefix, so the click target is the "Filter by time"
-  // substring rather than the literal option text.
-  await page.getByRole("button", { name: "Filter by time" }).click();
-  await page.getByRole("option", { name: "Past" }).click();
+  // The time filter is a group inside the one "Filters" panel.
+  await chooseFilter(page, "Past");
   await expect(page.getByText(`Past Fundraiser ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Riverbank Cleanup ${stamp}`)).toHaveCount(0);
 
@@ -197,22 +193,21 @@ test("the directory renders both an upcoming and a past event, filterable by tim
 test("the toolbar keeps every control on screen between phone and desktop widths", async ({
   page,
 }) => {
-  // A signed-in organization sees the widest toolbar: three filters and
+  // A signed-in organization sees the widest toolbar: "Filters" and
   // "Create an event".
   await signUpOrganization(page, Date.now() + Math.floor(Math.random() * 1e6));
   await page.goto("/events");
 
+  const filters = page.getByRole("button", { name: /^Filters/ });
   const controls = [
     page.getByRole("searchbox", { name: "Search events" }),
-    page.getByRole("button", { name: "Filter by time" }),
-    page.getByRole("button", { name: "Filter by type" }),
-    page.getByRole("button", { name: "Filter by kind" }),
+    filters,
     page.getByRole("link", { name: "Create an event" }),
   ];
 
   // `body` hides horizontal overflow, so a control that does not fit is cut
   // off rather than scrollable: measure each one against the screen.
-  for (const width of [640, 700, 768, 834, 900, 1024]) {
+  for (const width of [640, 700, 768, 834, 900, 1024, 3840]) {
     await page.setViewportSize({ width, height: 900 });
     for (const control of controls) {
       await expect(async () => {
@@ -223,23 +218,79 @@ test("the toolbar keeps every control on screen between phone and desktop widths
       }).toPass();
     }
 
-    // A filter's panel opens on screen wherever its trigger wrapped to.
-    for (const label of ["Filter by time", "Filter by kind"]) {
-      await page.getByRole("button", { name: label }).click();
-      const panel = page.getByRole("listbox", { name: label });
-      await expect(async () => {
-        const box = await panel.boundingBox();
-        expect(box, `${label} panel at ${width}px`).not.toBeNull();
-        expect(box!.x).toBeGreaterThanOrEqual(0);
-        expect(box!.x + box!.width).toBeLessThanOrEqual(width);
-      }).toPass();
-      await page.getByRole("button", { name: label }).press("Escape");
-      await expect(panel).toHaveCount(0);
-    }
+    // The panel opens on screen wherever its button wrapped to.
+    await filters.click();
+    const panel = page.getByRole("dialog", { name: "Filters" });
+    await expect(async () => {
+      const box = await panel.boundingBox();
+      expect(box, `filter panel at ${width}px`).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    }).toPass();
+    await page.keyboard.press("Escape");
+    await expect(panel).toHaveCount(0);
+    await expect(filters).toBeFocused();
   }
 });
 
-test("a phone shares lines between filters and shows a long event name in full", async ({
+test("filters are fetched once, only when they are applied", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const requests: URL[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === "/events" && url.searchParams.has("period")) {
+      requests.push(url);
+    }
+  });
+  await page.goto("/events");
+  await expect(page.getByText("Loading events")).toHaveCount(0);
+
+  const filters = page.getByRole("button", { name: /^Filters/ });
+  await expect(filters).toHaveAccessibleName("Filters");
+  await filters.click();
+  const panel = page.getByRole("dialog", { name: "Filters" });
+  const before = requests.length;
+
+  const choose = async () => {
+    await panel.getByRole("radio", { name: "Past" }).check();
+    await panel.getByRole("radio", { name: "Online" }).check();
+    await panel.getByRole("radio", { name: "Fundraiser" }).check();
+  };
+
+  // Closing without applying throws the choices away.
+  await choose();
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(filters).toHaveAccessibleName("Filters");
+  await filters.click();
+  await expect(panel.getByRole("radio", { name: "Upcoming" })).toBeChecked();
+  expect(requests).toHaveLength(before);
+
+  await choose();
+  expect(requests).toHaveLength(before);
+  await panel.getByRole("button", { name: "Apply filters" }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(filters).toHaveAccessibleName("Filters, 3 active");
+  await expect.poll(() => requests.length).toBe(before + 1);
+  const applied = requests[before].searchParams;
+  expect(applied.get("period")).toBe("past");
+  expect(applied.get("mode")).toBe("Online");
+  expect(applied.get("type")).toBe("fundraiser");
+
+  // "Clear all" is a choice like any other: it waits to be applied.
+  await filters.click();
+  await panel.getByRole("button", { name: "Clear all" }).click();
+  for (const name of ["Upcoming", "All formats", "All kinds"]) {
+    await expect(panel.getByRole("radio", { name })).toBeChecked();
+  }
+  await expect(filters).toHaveAccessibleName("Filters, 3 active");
+  await panel.getByRole("button", { name: "Apply filters" }).click();
+  await expect(filters).toHaveAccessibleName("Filters");
+});
+
+test("a phone opens the filters as a bottom sheet and shows a long event name in full", async ({
   page,
 }) => {
   const stamp = Date.now() + Math.floor(Math.random() * 1e6);
@@ -268,27 +319,22 @@ test("a phone shares lines between filters and shows a long event name in full",
     );
     expect(Math.round(lines)).toBe(2);
 
-    const filterTops = new Set<number>();
-    for (const label of [
-      "Filter by time",
-      "Filter by type",
-      "Filter by kind",
-    ]) {
-      const trigger = page.getByRole("button", { name: label });
-      filterTops.add(Math.round((await trigger.boundingBox())!.y));
-
-      await trigger.click();
-      const panel = page.getByRole("listbox", { name: label });
-      await expect(async () => {
-        const box = await panel.boundingBox();
-        expect(box, `${label} panel at ${width}px`).not.toBeNull();
-        expect(box!.x).toBeGreaterThanOrEqual(0);
-        expect(box!.x + box!.width).toBeLessThanOrEqual(width);
-      }).toPass();
-      await trigger.press("Escape");
-      await expect(panel).toHaveCount(0);
-    }
-    expect(filterTops.size, `filter lines at ${width}px`).toBeLessThan(3);
+    const filters = page.getByRole("button", { name: /^Filters/ });
+    await filters.click();
+    const sheet = page.getByRole("dialog", { name: "Filters" });
+    // Full width, against the bottom edge.
+    await expect(async () => {
+      const box = await sheet.boundingBox();
+      expect(box, `filter sheet at ${width}px`).not.toBeNull();
+      expect(Math.round(box!.x)).toBe(0);
+      expect(Math.round(box!.width)).toBe(width);
+      expect(Math.round(box!.y + box!.height)).toBe(812);
+    }).toPass();
+    const apply = sheet.getByRole("button", { name: "Apply filters" });
+    await expect(apply).toBeInViewport();
+    await apply.click();
+    await expect(sheet).toHaveCount(0);
+    await expect(filters).toBeFocused();
   }
 });
 
@@ -382,15 +428,11 @@ test("the type filter narrows by who can join and by online/offline", async ({
   await expect(page.getByText(`Founders Preview ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Open Webinar ${stamp}`)).toBeVisible();
 
-  // Same dropdown pattern as "Filter by time" - the trigger's own text is
-  // the current selection ("All" by default).
-  await page.getByRole("button", { name: "Filter by type" }).click();
-  await page.getByRole("option", { name: "Invite only" }).click();
+  await chooseFilter(page, "Invite only");
   await expect(page.getByText(`Founders Preview ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Open Webinar ${stamp}`)).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Filter by type" }).click();
-  await page.getByRole("option", { name: "Online" }).click();
+  await chooseFilter(page, "Online");
   await expect(page.getByText(`Open Webinar ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Founders Preview ${stamp}`)).toHaveCount(0);
 });
@@ -473,7 +515,7 @@ test("an organization publishes an in-person event from the full-page form", asy
     page.getByRole("heading", { level: 1, name: eventName }),
   ).toBeVisible();
   await expect(page.getByText("Hosted by", { exact: true })).toBeVisible();
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   // Anchored: the row's "Edit <name>" link also contains the event name.
   await expect(
     page.getByRole("link", { name: new RegExp(`^${eventName}`) }),

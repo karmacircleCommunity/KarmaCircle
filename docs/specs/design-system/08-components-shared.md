@@ -99,8 +99,11 @@ max-[525px]:w-[89vw] max-[525px]:min-w-55 max-[525px]:text-center
   rounded-2xl` (the same 36px side margin as the `px-9` page padding), a
   `backdrop:bg-black/60` scrim, the safe answer focused first, Escape held while a
   request runs, and a `destructive` option for a `bg-error` confirm button. The
-  cancel-event dialog (`CancelEventDialog.tsx`) and the leave-event confirmation are
-  built on it. It lives in the events feature today; move it to `src/components/`
+  cancel-event dialog (`CancelEventDialog.tsx`), the leave-event confirmation, the
+  unpublish and delete-draft confirmations and the join note dialog (`JoinNoteDialog.tsx`) are
+  built on it.
+  In the join note dialog the note field is the first focusable control, so it takes the initial focus.
+  It lives in the events feature today; move it to `src/components/`
   when a feature outside events needs a confirmation.
 
 ---
@@ -155,7 +158,7 @@ Label rule: both menus show **"Edit profile"** (to `/user/setup`) for individual
 - Scrim: `backdrop:bg-black/[0.867]`.
 - Sheet (the dialog itself): `top-[20%] bottom-auto mx-auto my-0 w-[80vw] flex-wrap items-center justify-center gap-7.5 rounded-xl border-none bg-white p-4 pt-8 shadow-[1px_3px_80px_rgba(255,255,255,0.346)] open:flex motion-safe:animate-pop-in`.
 - Close: a `<button aria-label="Close menu">` holding `RxCross2` at `top-2.5 right-2.5`.
-- Entries: Organizations, Events, then when logged in `Finish setting up` (draft organization only), `Dashboard` or `Edit profile`, `My Events` (individual) or `Your Events` (organization, added November 2026 to match the desktop dropdown), and a Logout `<button>`.
+- Entries: Organizations, Events, then when logged in `Finish setting up` (draft organization only), `Dashboard` or `Edit profile`, `My Events` (every account since 2026-11-27, superseding `Your Events` for organizations), and a Logout `<button>`.
 
 ---
 
@@ -281,20 +284,18 @@ A hollow aesthetic panel wants **depth behind the words** (an `asideDecor` motif
 
 [components/DirectoryToolbar.tsx](../../../apps/web/src/components/DirectoryToolbar.tsx).
 The search + filter + count + primary-action chrome above `/events` and `/organizations`.
-Generic over the filter option type (`<T extends string, U extends string = string>`); each page passes its own taxonomy/taxonomies and owns its own filtering state and `useMemo`.
+Each page passes its own filter control and owns its own filtering state.
 The component owns presentation only.
 
 ### Props
 
-`query`, `onQueryChange`, `searchPlaceholder`, `searchLabel`, `options` (the primary taxonomy including the `"All"` pseudo-option), `active`, `onSelect`, `filterLabel` (rendered visually now, not just as an `aria-label` — see below), `summary` (a `ReactNode`, e.g. `12 events in Relief`), `action` (the page's single primary button), `suggestions?` (September 2026 - see below), `secondaryFilter?` (September 2026 - see below), `tertiaryFilter?` (November 2026 - see below).
+`query`, `onQueryChange`, `searchPlaceholder`, `searchLabel`, `filters` (a `ReactNode`), `summary` (a `ReactNode`, e.g. `12 events · past`), `action` (the page's single primary button), `suggestions?` (September 2026 - see below).
 
-### `tertiaryFilter`, a third independent `FilterDropdown` (November 2026)
+### `filters`, the page's filter control (2026-11-28)
 
-`/events` added "Filter by kind" (PG-9) as a third dropdown through an optional `tertiaryFilter` prop with the same shape as `secondaryFilter` (`options`, `active`, `onSelect`, `filterLabel`; a third generic type parameter keeps the option unions apart). It is drawn after the secondary one and before `action`. Below `sm` the dropdowns share wrapped lines (375px: search, then two lines of filters, then the button); revisit the multi-facet panel (pattern 1) in the note below if a fourth dimension appears.
-
-### `secondaryFilter`, a second independent `FilterDropdown`
-
-`{ options: readonly U[], active: U, onSelect, filterLabel }` - same shape as the primary `options`/`active`/`onSelect`/`filterLabel`, but its own generic `U`, since the two taxonomies are unrelated string unions. Omitted by `/organizations` (one filterable dimension: cause). `/events` passes one for its `TypeFilter` (`All formats`/`Open to all`/`Approval required`/`Invite only`/`Online`/`Offline`/`Hybrid`, over `event.model.ts`'s `access`/`mode` fields) alongside the primary Upcoming/Past filter - see [events.md](../events.md). Rendered as a second `FilterDropdown` immediately after the first, before `action`; each stays independently single-select, so the two facets can't combine into one choice, only sit side by side.
+`/organizations` passes one [`FilterDropdown`](#filterdropdown) (cause).
+`/events` passes one [`FilterMenu`](#filtermenu) holding all of its filters.
+This supersedes the `options`/`active`/`onSelect`/`filterLabel`, `secondaryFilter` (September 2026) and `tertiaryFilter` (November 2026) props, which drew up to three dropdowns side by side on `/events` and read as clutter.
 
 ### `suggestions`, the opt-in live-suggestions dropdown
 
@@ -304,12 +305,12 @@ The component owns presentation only.
 
 Root: `mt-8 lg:mt-10`.
 
-Row 1, `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`. It holds two items, the field and a controls group (`flex flex-wrap items-center gap-x-2 gap-y-3 sm:gap-x-3`) with the filter dropdowns and the action, which sits in a `flex w-full flex-col sm:w-auto` wrapper so it takes its own full line on a phone. Below `sm` the filters share wrapped lines (November 2026, supersedes one filter per line). From `sm` up they share one line while they fit; otherwise the whole group drops below the field, and wraps inside itself if it is still too wide (November 2026: the old non-wrapping row cut `/events`' action off between 640px and about 900px).
-- Field: `group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1`. `sm:min-w-72` (288px) stops long filter labels crushing it. Flat at rest - `--color-surface-muted` is the design system's own documented "input/panel background" token (see [01-tokens.md](./01-tokens.md#color-tokens)), so this needs no shadow to read as a control surface, and a field that was seen as looking odd is a field that gains one shadow only when it actually has a reason to (focus), not permanently. **Exception to the radius decision table's "Form input → `rounded-lg`"**: this is an explore/filter field, not a data-entry form, and pairs with the pill-shaped [`FilterDropdown`](#filterdropdown) trigger beside it - see [06-radius-elevation.md](./06-radius-elevation.md#radius) for the note.
+Row 1, `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`. It holds two items, the field and a controls group (`flex flex-wrap items-center gap-x-2 gap-y-3 sm:gap-x-3`) with the filter control and the action, which sits in a `flex w-full flex-col sm:w-auto` wrapper so it takes its own full line on a phone. From `sm` up they share one line while they fit; otherwise the whole group drops below the field, and wraps inside itself if it is still too wide (November 2026: the old non-wrapping row cut `/events`' action off between 640px and about 900px).
+- Field: `group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1`. `sm:min-w-72` (288px) stops the controls crushing it. Flat at rest - `--color-surface-muted` is the design system's own documented "input/panel background" token (see [01-tokens.md](./01-tokens.md#color-tokens)), so this needs no shadow to read as a control surface, and a field that was seen as looking odd is a field that gains one shadow only when it actually has a reason to (focus), not permanently. **Exception to the radius decision table's "Form input → `rounded-lg`"**: this is an explore/filter field, not a data-entry form, and pairs with the pill-shaped [`FilterDropdown`](#filterdropdown) trigger beside it - see [06-radius-elevation.md](./06-radius-elevation.md#radius) for the note.
 - `FiSearch` at `size-4.5` (18px), `text-ink/50` (decorative), `group-focus-within:text-brand`.
 - The field itself: either the plain `<input type="text" role="searchbox">` or `<Combobox>` - see `suggestions` above. The raw `<input>` (no `suggestions`) is a direct child of this flex row, so `min-w-0 flex-1 truncate border-none bg-transparent font-poppins text-body-lg text-ink outline-none placeholder:text-ink/65` works as written. The `<Combobox>` case is `w-full` instead of `min-w-0 flex-1`: `Combobox` wraps the `<input>` in its own `relative min-w-0 flex-1` div (see [`Combobox`](#combobox) below), so *that* wrapper is the actual flex item - `flex-1`/`min-w-0` on the `<input>` itself are inert, and the `<input>` needs `w-full` to fill that wrapper rather than falling back to its browser-default ~20ch intrinsic width, which `truncate` was then clipping well short of the pill's real width (fixed September 2026, fourth pass). The raw `<input>` is deliberately not `type="search"` - that draws browser-native chrome on top of this component's own icon/clear button (Chrome/Safari's magnifier styling, and specifically a native clear "×" in Firefox that `::-webkit-search-cancel-button` never reaches), which read as a stray, half-hidden second control popping in and out. `truncate` (September 2026, third pass) is load-bearing, not cosmetic: the pill's `px-5` leaves less room than the old borderless field had, and a placeholder like `"Search by event, organizer or city"` was hard-clipping mid-word on real mobile widths with no ellipsis - a genuine visual bug the two prior passes introduced and missed, not a style preference.
 - Clear button: always mounted (not conditionally rendered) so it fades rather than pops into existence - `opacity-0 pointer-events-none` plus `aria-hidden`/`tabIndex={-1}` while `query` is empty, `size-6 rounded-full text-ink/65 hover:text-brand transition-[opacity,color] duration-200` with `FiX` at `size-4`, `aria-label="Clear search"`.
-- [`FilterDropdown`](#filterdropdown) — the taxonomy picker, in this row rather than its own line (moved here September 2026, fourth pass; a plain always-visible chip row before that, replaced by the dropdown entirely September 2026, fifth pass — see both below).
+- [`FilterDropdown`](#filterdropdown) (or [`FilterMenu`](#filtermenu)), the filter control, in this row rather than its own line (moved here September 2026, fourth pass; a plain always-visible chip row before that, replaced by the dropdown entirely September 2026, fifth pass — see both below).
 - `action` slot.
 
 Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/65 uppercase`, `aria-live="polite"`. Its own line now - it used to sit beside the chip row (`sm:gap-6` between them); with the taxonomy moved into `FilterDropdown`'s own panel, the count is this second row's only remaining content. A page passes no `summary` when its first load failed, so no count sits above the error.
@@ -334,7 +335,9 @@ Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/65 upper
 
 `/organizations` and `/events` each had exactly one filterable dimension at the time (cause; Upcoming/Past), so pattern 2 is the fit — pattern 1 would add an unneeded panel-plus-apply step for a single choice. Replaced the always-visible chip row (and the trailing-edge fade and horizontal scroller it needed once a taxonomy like `/organizations`' ten causes stopped fitting on one line — both now moot, there's nothing left to scroll) with [`FilterDropdown`](#filterdropdown), reusing `Combobox`'s own listbox geometry (radius, border, shadow, `motion-safe:animate-pop-in`) so it reads as the same product rather than a third distinct control. The `FiFilter` + `filterLabel` caption the fourth pass relocated into Row 1 is now the dropdown's own trigger button instead of adjacent decoration — one control, not two.
 
-**Superseded in part, September 2026:** `/events` grew a second dimension (`TypeFilter`, over `access`/`mode`; `inviteOnly` became `access` in November 2026). Rather than switching that page to pattern 1's multi-facet panel, `DirectoryToolbar` gained a second, independent `secondaryFilter` slot (see `DirectoryToolbar`'s own Props above) - two pattern-2 dropdowns side by side, each still single-select. This holds only while a page has a small, fixed number of dimensions that don't need to combine through one "Apply"; a third dimension, or a need to filter by more than one facet at once (e.g. "online AND invite-only"), would be the point to revisit pattern 1 instead of adding a third dropdown.
+**Superseded in part, September 2026:** `/events` grew a second dimension (`TypeFilter`, over `access`/`mode`; `inviteOnly` became `access` in November 2026) and, in November 2026, a third (kind), each as its own dropdown.
+
+**Superseded 2026-11-28, direct feedback that three dropdowns were messy.** `/events` moved to pattern 1: one [`FilterMenu`](#filtermenu) button with an "Apply filters" step. Pattern 2 stays on `/organizations`, which still has one dimension.
 
 ---
 
@@ -342,7 +345,7 @@ Result count, `mt-4`, `font-poppins text-caption tracking-wide text-ink/65 upper
 
 [components/inputs/Dropdown.tsx](../../../apps/web/src/components/inputs/Dropdown.tsx), with its pure logic in [dropdownUtils.ts](../../../apps/web/src/components/inputs/dropdownUtils.ts) and tests in `dropdownUtils.test.ts`.
 The app's one single-select **form field**: use it wherever a native `<select>` would go.
-It is not `FilterDropdown` (a pill-shaped filter inside `DirectoryToolbar`) and not `Combobox` (a text field that suggests; whatever is typed stays the value).
+It is not `FilterDropdown` (a pill-shaped filter inside `DirectoryToolbar`), not `FilterMenu` (several filters behind one button) and not `Combobox` (a text field that suggests; whatever is typed stays the value).
 A `Dropdown` only ever holds one of its own options.
 
 ### Why it exists
@@ -436,6 +439,43 @@ Panel: `absolute top-full mt-2 w-56 max-h-72 overflow-y-auto rounded-xl border b
 Horizontally it is placed by an inline `left`, measured as it opens: it lines up with the trigger's right edge, or with its left edge when that would cross the screen's edge, then slides as far as needed to stay 16px inside both screen edges (November 2026, supersedes a fixed `right-0`, which left the screen when a wrapped toolbar put the trigger near the left edge).
 
 Option rows: `flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left font-outfit text-body`. Selected: `bg-brand/8 font-medium text-brand-hover` plus a trailing `FiCheck`. Rest: `text-ink/80 hover:bg-surface-muted`.
+
+---
+
+## `FilterMenu`
+
+[components/inputs/FilterMenu.tsx](../../../apps/web/src/components/inputs/FilterMenu.tsx) (2026-11-28).
+Every filter of a list behind one "Filters" button.
+Used by `/events`.
+
+### Props
+
+`groups: FilterGroup[]` (`legend`, `options`, `value`, `defaultValue`, `onChange`, `layout?`).
+`value` is the applied value.
+`layout` is `list` (default, one radio row per option) or `segmented` (a full-width switch, for two or three short options).
+
+### Behavior
+
+- The panel is a modal `<dialog>` (`showModal()`): a centered dialog from `sm` up, a bottom sheet below it. CSS alone switches between them.
+- Each group is single-select, a `fieldset` of native radios ([FilterGroupField.tsx](../../../apps/web/src/components/inputs/FilterGroupField.tsx)).
+- **A list grows into itself (2026-11-28).** Rules in [utils/filterOptions.ts](../../../apps/web/src/utils/filterOptions.ts), counting every option except the default "All ..." one: up to 9 are drawn whole; from 10 the first 8 show with "Show all N" / "Show less" (a single option is never hidden); above 15 a search box appears and searches every option. The selected option is always drawn. Order the options most used first. `segmented` groups are exempt.
+- **Choices are a draft (2026-11-28, superseding apply-on-pick).** Nothing changes behind the dialog until "Apply filters", which calls `onChange` for each changed group in one event, so a server-filtered list fetches once.
+- "Close filters", Escape and a backdrop press throw the draft away.
+- "Clear all" resets the draft to the defaults and also waits for "Apply filters". With nothing to clear it is `aria-disabled`, not `disabled`, so focus stays in the dialog.
+- The button shows how many applied groups are away from their `defaultValue`, in a badge and in its name ("Filters, 2 active").
+- While open, the page behind does not scroll, and `scrollbar-gutter: stable` keeps it from shifting sideways.
+- Closing returns focus to the button.
+
+### Geometry
+
+Button: `h-12 rounded-full border px-5 font-outfit text-body` with `FiFilter` (`size-4`), "Filters" and the `size-5 bg-brand` badge. Active: `border-brand/45 bg-white text-brand-secondary`.
+
+Glass surface: the `liquid-glass` utility in `src/styles/index.css` (2026-11-28, superseding a plain frosted `bg-white/70`): a `blur(28px) saturate(190%)` backdrop, a tinted gradient sheet (`--glass` 62%, 78% below 640px for contrast), light caught inside the edges, a 1.5px gradient rim and a two-part drop shadow. Solid white under `prefers-reduced-transparency`. Backdrop: `bg-brand-secondary/25` with a 2px blur, so colour still reaches the glass.
+It does not bend the page behind it. Researched 2026-11-28: bending a live page works only in Chromium (WebKit bug 245510); React libraries give Safari and Firefox frost, or need a copy of what is behind, so no dependency was added.
+
+Dialog: `w-[min(38rem,calc(100%-3rem))] rounded-3xl`, `max-h-[min(44rem,calc(100dvh-3rem))]`, `motion-safe:animate-pop-in`. Sheet: full width, `max-h-[85dvh] rounded-t-3xl`, `motion-safe:animate-rise-in`, `px-9` inside to match the page's phone padding, safe-area padding at the bottom. The middle scrolls; header and footer stay.
+
+Body: one column, two from `sm` up; a segmented group spans both. Rows are `rounded-lg min-h-11` (`min-h-10` from `sm`) with a `size-4` radio dot (`border-[5px] border-brand` when chosen); the chosen row is `bg-white/90` with a soft shadow. Pills are deliberately not used inside the panel.
 
 ---
 
@@ -549,3 +589,41 @@ p:  z-3 mx-auto mt-4 w-[70%] text-center font-poppins text-lg font-normal tracki
 Behavioral, no visual surface.
 `ComponentHelmet` sets per-page document title/meta.
 `SmoothScroll` is covered in [07-motion.md](./07-motion.md#smoothscrolltsx).
+
+---
+
+## Skeletons
+
+[components/skeleton/](../../../apps/web/src/components/skeleton/), exported from `@components` (2026-11-27, replacing a shared `SHIMMER` class string that every placeholder assembled itself).
+Every loading placeholder is built from these four, so they share one surface, one motion and one accessibility rule.
+
+| Component | Use | Props |
+| --- | --- | --- |
+| `Skeleton` | One block | `shape`: `pill` (default, lines, chips, circles), `box` (buttons, fields, tiles), `flush` (takes the container's corners, such as a cover); size it with `className` |
+| `SkeletonText` | A paragraph | `lines` (default 2, the last one short), `lineClassName` (height, default `h-3.5`), `className` |
+| `SkeletonCard` | The directory card: border, shadow, 16:9 cover, padded body | `children`, `testId` |
+| `SkeletonRegion` | A whole loading screen | `label` (spoken once), `className`, `children` |
+
+Rules:
+
+- **Match the real thing box for box.** Give each wrapper the height of the line of text it stands for, so nothing moves when content arrives, and change the placeholder in the same edit as the component.
+- **Announce once.** Blocks are `aria-hidden`. Use `SkeletonRegion`, or rely on a live status line the page already has (the directory's "Loading events").
+- **Feature placeholders live with their feature** (`EventCardSkeleton`, `DetailedEventSkeleton`, `OrganizationCardSkeleton`); only the building blocks are global.
+- The surface is warm, mixed from `--color-brand-secondary` (7% with a 13% sweep, replacing the cool `surface-muted` base that barely showed on the page), and the sweep stops under reduced motion.
+
+## `InfiniteScroll`
+
+[components/InfiniteScroll.tsx](../../../apps/web/src/components/InfiniteScroll.tsx) with [hooks/useInfiniteScroll.ts](../../../apps/web/src/hooks/useInfiniteScroll.ts) (2026-11-27).
+The end of a list that fetches its next page as the reader comes within 600px of it.
+
+Put it right after the list and pass `hasMore`, `loading`, `failed`, `itemCount`, `itemsName`, `onLoadMore`, `onRetry` and an optional `endMessage`.
+The list draws its own placeholders, because they have to sit in its grid.
+
+- It asks once per approach; a failure stops automatic requests until "Try again".
+- While that retry runs, the placeholders replace the error (`usePagedList` tracks it, because SWR keeps the old failure until a request succeeds).
+- It tells a screen reader "Loading more {itemsName}".
+- Helpers for paged answers are in [utils/pagedList.ts](../../../apps/web/src/utils/pagedList.ts): `hasMorePages` and `uniqueItems` (an item that moved between pages is shown once).
+- With `useSWRInfinite`, do not use `revalidateAll`: it refetches every page each time one is added.
+
+Used by `/events`.
+Everything below the list is only reachable once it has all loaded, so think before using it on a page whose footer matters and whose list is long.

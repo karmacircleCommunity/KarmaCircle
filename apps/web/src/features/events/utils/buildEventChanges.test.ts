@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
-import { buildEventChanges } from "./buildEventChanges";
+import { buildCreatePayload, buildEventChanges } from "./buildEventChanges";
 import { eventToFormState } from "./eventToFormState";
 import type { ApiEvent, EventFormState } from "@features/events/types";
 
@@ -334,5 +334,179 @@ describe("buildEventChanges timezone", () => {
       name: "Renamed clean-up drive",
       timezone: "UTC",
     });
+  });
+});
+
+/** A draft saved with nothing but its name, format and dates. */
+const bareDraft: ApiEvent = {
+  _id: "2",
+  uid: "bare-draft",
+  name: "Beach clean-up drive",
+  hostUsername: "seaside",
+  hostName: "Seaside Trust",
+  mode: "Offline",
+  timezone: "UTC",
+  startDate: "2030-05-01T00:00:00.000Z",
+  endDate: "2030-05-01T00:00:00.000Z",
+  startTime: "2030-05-01T09:30:00.000Z",
+  endTime: "2030-05-01T12:00:00.000Z",
+  isGovernmentSponsored: false,
+  access: "open",
+  status: "draft",
+};
+
+describe("buildEventChanges for drafts", () => {
+  it("sees no change in a draft that is missing almost everything", () => {
+    expect(buildEventChanges(eventToFormState(bareDraft), bareDraft)).toEqual(
+      {},
+    );
+  });
+
+  it("sends only the venue fields that have been filled in", () => {
+    expect(
+      buildEventChanges(edit(bareDraft, { city: "Pune" }), bareDraft),
+    ).toEqual({ city: "Pune" });
+  });
+
+  it("sends a description that is still short", () => {
+    expect(
+      buildEventChanges(edit(bareDraft, { description: "Soon" }), bareDraft),
+    ).toEqual({ description: "Soon" });
+  });
+
+  it("treats a box of spaces as empty", () => {
+    expect(
+      buildEventChanges(
+        edit(bareDraft, { description: "   ", city: "  " }),
+        bareDraft,
+      ),
+    ).toEqual({});
+  });
+
+  it("sends null to clear a description or a venue field that was saved", () => {
+    const saved: ApiEvent = {
+      ...bareDraft,
+      description: "Half written",
+      city: "Pune",
+    };
+    expect(
+      buildEventChanges(edit(saved, { description: "", city: "" }), saved),
+    ).toEqual({ description: null, city: null });
+  });
+
+  it("leaves an empty meeting link out when a draft changes format", () => {
+    expect(
+      buildEventChanges(
+        edit(bareDraft, { mode: "Online", platform: "Google Meet" }),
+        bareDraft,
+      ),
+    ).toEqual({ mode: "Online", platform: "Google Meet" });
+  });
+});
+
+describe("buildCreatePayload", () => {
+  /** The create form with only a name and dates typed. */
+  const bare: EventFormState = {
+    ...eventToFormState(bareDraft),
+    country: "India",
+  };
+
+  it("sends a draft with only what is there: no empty strings", () => {
+    const body = buildCreatePayload(bare, "draft");
+
+    expect(JSON.parse(JSON.stringify(body))).toEqual({
+      name: "Beach clean-up drive",
+      uid: "bare-draft",
+      mode: "Offline",
+      timezone: "UTC",
+      access: "open",
+      waitlistEnabled: true,
+      country: "India",
+      tags: [],
+      status: "draft",
+      startDate: "2030-05-01T00:00:00.000Z",
+      endDate: "2030-05-01T00:00:00.000Z",
+      startTime: "2030-05-01T09:30:00.000Z",
+      endTime: "2030-05-01T12:00:00.000Z",
+    });
+  });
+
+  it("drops fields holding only spaces", () => {
+    const body = buildCreatePayload(
+      { ...bare, description: "   ", city: " ", capacity: "  " },
+      "draft",
+    );
+    expect(body).not.toHaveProperty("description");
+    expect(body).not.toHaveProperty("city");
+    expect(body).not.toHaveProperty("capacity");
+  });
+
+  it("sends only the chosen format's venue or joining fields", () => {
+    const filled: EventFormState = {
+      ...bare,
+      city: "Pune",
+      state: "Maharashtra",
+      address: "Gate 2",
+      platform: "Google Meet",
+      platformLink: "https://meet.example.com/abc",
+    };
+
+    const offlineBody = buildCreatePayload(filled, "publish");
+    expect(offlineBody).toMatchObject({ city: "Pune", address: "Gate 2" });
+    expect(offlineBody).not.toHaveProperty("platform");
+    expect(offlineBody).not.toHaveProperty("platformLink");
+
+    const onlineBody = buildCreatePayload(
+      { ...filled, mode: "Online" },
+      "publish",
+    );
+    expect(onlineBody).toMatchObject({
+      platform: "Google Meet",
+      platformLink: "https://meet.example.com/abc",
+    });
+    for (const field of ["address", "city", "state", "country"]) {
+      expect(onlineBody).not.toHaveProperty(field);
+    }
+  });
+
+  it("sends a published event without a status, with typed numbers and lists", () => {
+    const body = buildCreatePayload(
+      {
+        ...bare,
+        description: "Join us to clean the beach together",
+        coverImage: "https://example.com/c.png",
+        eventType: "volunteering",
+        tags: "Beach, families",
+        capacity: "25",
+        contactEmail: "hello@example.com",
+      },
+      "publish",
+    );
+
+    expect(body).not.toHaveProperty("status");
+    expect(body).toMatchObject({
+      description: "Join us to clean the beach together",
+      coverImage: "https://example.com/c.png",
+      eventType: "volunteering",
+      tags: ["beach", "families"],
+      capacity: 25,
+      contactEmail: "hello@example.com",
+    });
+    // Form-only boxes never travel as typed.
+    expect(body).not.toHaveProperty("costAmount");
+    expect(body).not.toHaveProperty("about");
+  });
+
+  it("turns the wall clock into instants in the event's timezone", () => {
+    const body = buildCreatePayload(
+      { ...bare, timezone: "Asia/Kolkata" },
+      "draft",
+    );
+    expect((body.startTime as Date).toISOString()).toBe(
+      "2030-05-01T04:00:00.000Z",
+    );
+    expect((body.startDate as Date).toISOString()).toBe(
+      "2030-04-30T18:30:00.000Z",
+    );
   });
 });

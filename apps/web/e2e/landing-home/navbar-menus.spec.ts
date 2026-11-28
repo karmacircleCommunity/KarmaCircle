@@ -10,7 +10,7 @@ import { signUpOrganization, uniqueStamp } from "../events/event-helpers";
  * "Finish setting up".
  */
 
-const ORGANIZATION_LINKS = ["Finish setting up", "Dashboard", "Your Events"];
+const ORGANIZATION_LINKS = ["Finish setting up", "Dashboard", "My Events"];
 
 /** Safari tabs between form controls only; Option+Tab reaches links too. */
 const tabKey = (browserName: string) =>
@@ -116,10 +116,13 @@ test("the small-screen menu holds focus, closes on Escape and reaches every entr
     expect(stayedOffThePage).toBe(true);
   }
 
-  await menu.getByRole("link", { name: "Your Events" }).click();
-  await expect(page).toHaveURL(/\/organization\/events$/);
+  await menu.getByRole("link", { name: "My Events" }).click();
+  await expect(page).toHaveURL(/\/events\/mine$/);
   await expect(menu).toHaveCount(0);
 
+  // My Events needs a session, so logging out there leads to sign-in. Log out
+  // from a public page to check the menu that is left behind.
+  await page.goto("/events");
   await trigger.click();
   await logout.focus();
   await page.keyboard.press("Enter");

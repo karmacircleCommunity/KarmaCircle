@@ -38,3 +38,38 @@ export function describeWhere(event: {
   }
   return event.mode === "Hybrid" ? `Hybrid · ${place}` : place;
 }
+
+/** Whether there is anything to show about the venue. A draft may have none of
+ *  it yet, and an online event never does. */
+export function hasVenueContent(
+  event: {
+    mode: EventMode;
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  },
+  gettingThere?: string,
+): boolean {
+  return (
+    hasVenue(event.mode) &&
+    Boolean(
+      event.address ||
+      event.city ||
+      event.state ||
+      event.country ||
+      gettingThere,
+    )
+  );
+}
+
+/** Whether there is anything to show about joining remotely. */
+export function hasJoiningContent(
+  event: { mode: EventMode; platform?: string; platformLink?: string },
+  ...notes: (string | undefined)[]
+): boolean {
+  return (
+    hasOnlineAccess(event.mode) &&
+    [event.platform, event.platformLink, ...notes].some(Boolean)
+  );
+}

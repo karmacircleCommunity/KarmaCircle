@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 import Combobox, { type ComboboxOption } from "./inputs/Combobox";
-import FilterDropdown from "./inputs/FilterDropdown";
 
 interface SuggestionsConfig {
   /** The `Combobox`'s own id — must be unique per page. */
@@ -16,41 +15,14 @@ interface SuggestionsConfig {
   noun?: string;
 }
 
-/**
- * A second, independent `FilterDropdown` rendered right after the first -
- * for a page with more than one filterable dimension (e.g. `/events`'
- * Upcoming/Past time split plus an invite/mode taxonomy). Its own generic
- * `U`, not reused from the primary filter's `T`: the two taxonomies are
- * unrelated string unions.
- */
-interface SecondaryFilterConfig<U extends string> {
-  options: readonly U[];
-  active: U;
-  onSelect: (option: U) => void;
-  filterLabel: string;
-}
-
-interface DirectoryToolbarProps<
-  T extends string,
-  U extends string = string,
-  V extends string = string,
-> {
+interface DirectoryToolbarProps {
   query: string;
   onQueryChange: (value: string) => void;
   searchPlaceholder: string;
   searchLabel: string;
-  /** The filter taxonomy, `"All"` pseudo-option included. */
-  options: readonly T[];
-  active: T;
-  onSelect: (option: T) => void;
-  filterLabel: string;
-  /** A second, independent filter dropdown - omitted by `/organizations`
-   *  (one dimension: cause). `/events` passes one for its invite/mode
-   *  taxonomy, alongside the primary Upcoming/Past filter. */
-  secondaryFilter?: SecondaryFilterConfig<U>;
-  /** A third, independent filter dropdown (`/events` adds one for the kind
-   *  of event, PG-9), drawn after the secondary one. */
-  tertiaryFilter?: SecondaryFilterConfig<V>;
+  /** The page's filter control: one `FilterDropdown` for a single dimension,
+   *  or a `FilterMenu` for several. */
+  filters: ReactNode;
   /**
    * Live result count, e.g. `12 events in Relief`. Optional — omitted by
    * `/organizations` (September 2026, direct feedback that a bare count
@@ -72,8 +44,8 @@ interface DirectoryToolbarProps<
 }
 
 /**
- * The shared chrome above `/events` and `/organizations`: search, the cause
- * filter, a live result count, and the page's one primary button.
+ * The shared chrome above `/events` and `/organizations`: search, the page's
+ * filter control, a live result count, and the page's one primary button.
  *
  * Both directories used to inline their own copy of this block, which is
  * how they drifted into looking like two products. It lives here so a
@@ -81,48 +53,32 @@ interface DirectoryToolbarProps<
  *
  * **Pill toolbar (September 2026).** Field: a flat `surface-muted` pill at
  * rest (that token is the design system's own documented "input/panel
- * background" — see [01-tokens.md](../../../docs/specs/design-system/01-tokens.md)),
+ * background", see [01-tokens.md](../../../docs/specs/design-system/01-tokens.md)),
  * no shadow until it actually has focus, where it lifts to a white surface
- * with a brand border and one purposeful shadow. Filters: a dropdown
- * trigger in the search row, not a row of always-visible chips — see
- * [`FilterDropdown`](./inputs/FilterDropdown.tsx) and the research behind
- * that switch. `/organizations` passes one (cause); `/events` passes two,
- * `options`/`active`/`onSelect` for Upcoming/Past plus `secondaryFilter`
- * for its invite/mode taxonomy (September 2026) - both are still
- * single-select `FilterDropdown`s, just two independent ones rather than
- * a multi-facet panel, since the two questions ("when" and "what kind")
- * don't need to combine through one control. See
+ * with a brand border and one purposeful shadow. Filters: one control in the
+ * search row, passed as `filters`: `/organizations` passes a
+ * [`FilterDropdown`](./inputs/FilterDropdown.tsx) (cause), `/events` a
+ * [`FilterMenu`](./inputs/FilterMenu.tsx) holding all of its filters. See
  * [08-components-shared.md](../../../docs/specs/design-system/08-components-shared.md#directorytoolbar)
  * for the full rationale and exact classes.
  */
-const DirectoryToolbar = <
-  T extends string,
-  U extends string = string,
-  V extends string = string,
->({
+const DirectoryToolbar = ({
   query,
   onQueryChange,
   searchPlaceholder,
   searchLabel,
-  options,
-  active,
-  onSelect,
-  filterLabel,
+  filters,
   summary,
   action,
   suggestions,
-  secondaryFilter,
-  tertiaryFilter,
-}: DirectoryToolbarProps<T, U, V>) => (
+}: DirectoryToolbarProps) => (
   <div className="mt-8 lg:mt-10">
-    {/* Search + filter dropdowns + primary action. On a phone the search and
-        the action take a line each, with the filters sharing wrapped lines
-        between them (one per line pushed the first result off the screen).
-        From `sm` up everything shares
-        one row only while they fit: the controls move below the search as one
-        group, and wrap inside that group if they are still too wide. A single
-        non-wrapping row pushed `/events`' button off a tablet screen. The
-        search keeps a minimum width so a long filter label cannot crush it. */}
+    {/* Search + filter control + primary action. On a phone each takes its
+        own line. From `sm` up everything shares one row only while it fits:
+        the controls move below the search as one group, and wrap inside that
+        group if they are still too wide. A single non-wrapping row pushed
+        `/events`' button off a tablet screen. The search keeps a minimum
+        width so the controls cannot crush it. */}
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
       <div className="group flex items-center gap-3 rounded-full border border-transparent bg-surface-muted px-5 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-brand/45 focus-within:bg-white focus-within:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:min-w-72 sm:flex-1">
         <FiSearch
@@ -194,30 +150,7 @@ const DirectoryToolbar = <
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3 sm:gap-x-3">
-        <FilterDropdown
-          label={filterLabel}
-          options={options}
-          active={active}
-          onSelect={onSelect}
-        />
-
-        {secondaryFilter && (
-          <FilterDropdown
-            label={secondaryFilter.filterLabel}
-            options={secondaryFilter.options}
-            active={secondaryFilter.active}
-            onSelect={secondaryFilter.onSelect}
-          />
-        )}
-
-        {tertiaryFilter && (
-          <FilterDropdown
-            label={tertiaryFilter.filterLabel}
-            options={tertiaryFilter.options}
-            active={tertiaryFilter.active}
-            onSelect={tertiaryFilter.onSelect}
-          />
-        )}
+        {filters}
 
         {action && (
           <div className="flex w-full flex-col sm:w-auto">{action}</div>
@@ -226,8 +159,7 @@ const DirectoryToolbar = <
     </div>
 
     {/* Live result count. Used to sit beside a row of always-visible
-        chips; now that the taxonomy lives inside `FilterDropdown`'s own
-        panel, this is the row's only remaining content — and, on
+        chips; now that the taxonomy lives behind the filter control, this is the row's only remaining content — and, on
         `/organizations`, not rendered at all (see `summary`'s own doc
         comment above). */}
     {summary && (

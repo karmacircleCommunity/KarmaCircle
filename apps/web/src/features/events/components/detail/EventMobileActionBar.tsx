@@ -1,8 +1,15 @@
-import { FiArrowRight, FiCheck, FiMail, FiUserPlus } from "react-icons/fi";
-import { Link } from "react-router-dom";
 import {
+  FiArrowRight,
+  FiArrowUpRight,
+  FiCheck,
+  FiMail,
+  FiUserPlus,
+} from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { hasOnlineAccess } from "@features/events/utils/eventMode";
+import {
+  eventPhase,
   formatSpotsLeft,
-  isEventPast,
 } from "@features/events/utils/formatEventFacts";
 import { formatMoney } from "@utils/formatMoney";
 import type { EventJoinPanelProps } from "@features/events/types";
@@ -54,9 +61,16 @@ import type { EventJoinPanelProps } from "@features/events/types";
  * with a heavy backdrop blur) until the text scrolling underneath showed
  * through it and competed with its own price and button.
  *
- * **Completed event (September 2026, `isEventPast`).** Cost/spots-left and
- * the Join button stop meaning anything once the event's `startsAt` has
- * passed, so both sides of the bar swap: "Completed" plus a pointer to the
+ * **Happening now (`eventPhase`).** Between the start and the end the left side
+ * says "Happening now". Someone going gets a "Join online" link when they were
+ * sent one (shortened to "Join" on a narrow phone), or a "Going" pill;
+ * everyone else gets "Closed", because joining ended at the start. The two
+ * lines wrap here instead of truncating, since a 320px phone has no room for
+ * them on one.
+ *
+ * **Completed event (`eventPhase`, judged by the end time).** Cost/spots-left
+ * and the Join button stop meaning anything once the event has ended, so both
+ * sides of the bar swap: "Completed" plus a pointer to the
  * organizer's page on the left, and a "Visit" link straight to
  * `/organization/:handle` on the right (an "Ended" pill instead, for a
  * pre-existing record with no organizer link at all). This takes priority
@@ -76,19 +90,39 @@ const EventMobileActionBar = ({
   checkingRegistration,
   registrationCheckFailed,
   onToggleJoin,
+  signInPrompt,
+  onSignIn,
   hidden,
 }: EventJoinPanelProps & { hidden: boolean }) => {
   // A draft has nothing to join yet; its own panel on the page says so.
   if (event.draft) return null;
 
   const cancelled = event.cancelled;
-  const past = !cancelled && isEventPast(event.startsAt);
+  const phase = eventPhase(event.startsAt, event.endsAt);
+  const past = !cancelled && phase === "ended";
+  const live = !cancelled && phase === "ongoing";
   const over = cancelled || past;
   const hasCapacity =
     event.going !== undefined && event.spotsLeft !== undefined;
   // Counts come from the API and already include this attendee.
   const spotsLeft = hasCapacity ? event.spotsLeft : undefined;
   const kind = join.kind;
+  const joinLink =
+    kind === "going" && hasOnlineAccess(event.mode)
+      ? event.platformLink
+      : undefined;
+  // The question sits in the left column; the button carries it in its name.
+  const signInButton = signInPrompt && (
+    <button
+      type="button"
+      onClick={onSignIn}
+      aria-label={`${signInPrompt} Sign in`}
+      tabIndex={hidden ? -1 : undefined}
+      className="shrink-0 cursor-pointer rounded-full border-none bg-brand px-5 py-2.5 font-poppins text-body font-medium text-white shadow-[0_10px_26px_-14px_var(--color-brand)]"
+    >
+      Sign in
+    </button>
+  );
 
   return (
     <div
@@ -103,14 +137,18 @@ const EventMobileActionBar = ({
       }}
     >
       <div className="min-w-0">
-        <p className="m-0 truncate font-outfit text-body-lg font-semibold text-brand-secondary">
+        <p
+          className={`m-0 font-outfit font-semibold text-brand-secondary ${live ? "text-body leading-tight" : "truncate text-body-lg"}`}
+        >
           {cancelled
             ? "Cancelled"
             : past
               ? "Completed"
-              : detail.cost
-                ? formatMoney(detail.cost.amount, detail.cost.currency)
-                : "Free"}
+              : live
+                ? "Happening now"
+                : detail.cost
+                  ? formatMoney(detail.cost.amount, detail.cost.currency)
+                  : "Free"}
         </p>
         {/* Zero spots is said once, by the button below ("Full") - not
             repeated here as "0 spots left", which the rest of this feature
@@ -119,6 +157,19 @@ const EventMobileActionBar = ({
         {over ? (
           <p className="m-0 truncate font-poppins text-caption text-ink/65">
             Updates on the organizer&apos;s page
+          </p>
+        ) : live ? (
+          <p className="m-0 mt-0.5 font-poppins text-caption leading-4 text-ink/65">
+            {signInPrompt ??
+              (kind === "going"
+                ? "You are going"
+                : checkingRegistration || registrationCheckFailed
+                  ? "Registration unknown"
+                  : "Joining has closed")}
+          </p>
+        ) : signInPrompt ? (
+          <p className="m-0 truncate font-poppins text-caption text-ink/65">
+            {kind === "full" ? `Full · ${signInPrompt}` : signInPrompt}
           </p>
         ) : (
           hasCapacity &&
@@ -142,6 +193,40 @@ const EventMobileActionBar = ({
         ) : (
           <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/65">
             {cancelled ? "Closed" : "Ended"}
+          </span>
+        )
+      ) : signInButton ? (
+        signInButton
+      ) : live ? (
+        joinLink ? (
+          <a
+            href={joinLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabIndex={hidden ? -1 : undefined}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border-none bg-brand px-4 py-2.5 font-poppins text-body font-medium text-white no-underline shadow-[0_10px_26px_-14px_var(--color-brand)]"
+          >
+            <span>
+              Join<span className="max-430px:sr-only"> online</span>
+            </span>
+            <FiArrowUpRight aria-hidden="true" className="size-4" />
+          </a>
+        ) : registrationCheckFailed && kind !== "going" ? (
+          <button
+            type="button"
+            onClick={onToggleJoin}
+            tabIndex={hidden ? -1 : undefined}
+            className="shrink-0 cursor-pointer rounded-full border border-brand/35 bg-transparent px-4 py-2.5 font-poppins text-body font-medium text-brand-hover"
+          >
+            Retry<span className="max-430px:sr-only"> check</span>
+          </button>
+        ) : (
+          <span className="shrink-0 rounded-full bg-surface-warm px-4 py-2.5 font-poppins text-body font-medium text-ink/70">
+            {kind === "going"
+              ? "Going"
+              : checkingRegistration
+                ? "Checking…"
+                : "Closed"}
           </span>
         )
       ) : kind === "invite-only" && !checkingRegistration ? (
@@ -177,6 +262,9 @@ const EventMobileActionBar = ({
             checkingRegistration
           }
           aria-pressed={kind === "going"}
+          aria-haspopup={
+            join.kind === "join" && join.asks ? "dialog" : undefined
+          }
           tabIndex={hidden ? -1 : undefined}
           className={`inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
             kind === "going"

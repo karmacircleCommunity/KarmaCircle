@@ -54,7 +54,7 @@ record:
 | `components/setup/*` | `SetupIntro`, `SetupQuestion` (renders every question kind, including the new `"list"`/`"toggle"`), `SetupLocationFields`, `SetupLeadershipEditor` (new) | ✅ used by `OrganizationSetup.tsx` |
 | *(moved out, October 2026)* `SetupLayout`, `SetupAside` (+ `setupAsideQuotes.ts`), `SetupFieldLabel`, `SetupLocateButton`, `useLocateCity` | Now shared (`apps/web/src/components/setup/`, `apps/web/src/hooks/`) — `features/onboarding-profile`'s own `/user/setup` flow renders from these same files. Behavior unchanged, only the location; every import in this feature updated accordingly | ✅ still used here, by the shared path |
 | `components/OrganizationDraftNotice.tsx` | Dashboard reminder + way back in for an organization still in draft | ✅ mounted by `dashboard/pages/Dashboard.tsx` for organization accounts |
-| `components/OrganizationEventsList.tsx` | The profile's "Events hosted" section — upcoming/past groups off the raw `GET /events?host=` shape | ✅ new (September 2026), used by `OrganizationProfile.tsx` |
+| `components/OrganizationEventsList.tsx` | The profile's "Events hosted" section - upcoming/past groups (by end time, with a Drafts group for the owner) off the raw `GET /events?host=` shape | ✅ new (September 2026), used by `OrganizationProfile.tsx` |
 | `components/SponsorOrganizationModal.tsx` | The real "Support {org}" payment flow (amount → Razorpay Checkout → verify) | ✅ new (September 2026), used by `OrganizationProfile.tsx` |
 | `utils/toDisplayOrganization.ts` | Maps the API shape onto what the card and profile render | ✅ used by both public pages |
 | `utils/monogram.ts` | Initials for an organization (or a leader) with no image of its own | ✅ used by the card, the profile header, and the "Our team" section |
@@ -199,17 +199,17 @@ invented" rule — they render only when the record actually has the data:**
   monogram fallback, reusing `utils/monogram.ts`), name, title, bio.
 - **"Events hosted".** `OrganizationEventsList` fetches
   `useSWR(eventEndpoints.byHost(organization.userName), fetcher)` — the same
-  endpoint `YourEvents.tsx` already used for an organization's own dashboard
-  view — and splits the result into "Upcoming"/"Past events" groups by
-  `startTime` against now. Built against the *raw* `GET /events` shape
+  endpoint My events' Hosting view (`HostedEvents.tsx`) uses, for an organization's own dashboard
+  view - and groups the result with `utils/groupHostedEvents.ts`
+  (2026-11-26, superseding the split of "Upcoming" and "Past events" by `startTime` against now): a "Drafts" group first (the API sends drafts only to the owner; each is labelled "Draft" and has no time state), then "Upcoming" and "Past events" by whether the event has ended (`eventPhase`).
+  A row may carry one label beside its date: "Draft", "Cancelled" (cancelled events stay listed) or "Happening now".
+  "Most recently: {event}" skips drafts.
+  A row with no cover shows a calendar mark.
+  Built against the *raw* `GET /events` shape
   directly (a local `HostedEvent` type, extending the shared `EventRecord`),
   not `EventCard` — that component depends on fixture-only fields
   (`spotsLeft`, `organizer`) the real API doesn't return. Each row links to
-  `/events/:uid`, which today renders `DetailedEvent.tsx`'s fixture-only
-  lookup (`findEvent`) and will show that page's not-found state for a real
-  event uid until that page is wired to the real API — a pre-existing,
-  separately-tracked gap (see the frontend's own `events.md`), not something
-  this change fixes.
+  `/events/:uid`, the live event detail page.
 - **Sponsorship.** When `organization.sponsorship?.enabled`, the sidebar's
   dark card's button becomes "Support {name}" and opens
   `SponsorOrganizationModal.tsx` instead of the old (never-reachable —

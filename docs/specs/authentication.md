@@ -27,7 +27,8 @@ The `"signin"` step's "Forgot password?" is a real link to `/auth/forgot-passwor
 
 ## The `useAuth` hook
 
-[apps/web/src/features/authentication/hooks/useAuth.ts](../../apps/web/src/features/authentication/hooks/useAuth.ts) is the single entry point `Auth.tsx` calls for the final submit on both the `"signin"` and `"signup"` steps: `useAuth("signin")` or `useAuth("signup")`, selected by whichever step the flow is currently on.
+[apps/web/src/features/authentication/hooks/useAuth.ts](../../apps/web/src/features/authentication/hooks/useAuth.ts) is the single entry point `Auth.tsx` calls for the final submit on both the `"signin"` and `"signup"` steps: `useAuth("signin", returnTo)` or `useAuth("signup", returnTo)`, selected by whichever step the flow is currently on.
+`returnTo` is an already-checked path or `null` (see "Returning after sign-in").
 It returns `{ authenticateUser, loading }`.
 
 `authenticateUser(credentials, setErrors)` does, in order:
@@ -39,7 +40,8 @@ It returns `{ authenticateUser, loading }`.
    Either way, this client check happens before any network call is made.
 4. Sets `loading = true`, then calls `LoginUser(credentials)` or `RegisterUser({ ...credentials, userType: credentials.userType.value })` from `KarmaCircleApi.ts`. `userType` is only unwrapped from its `{value, label}` shape for sign-up.
 5. On `response.status` 200/201: shows a success toast, dispatches `updateUserData({ ...response.data.user, isLoggedIn: true })` to Redux, then clears `loading` and navigates.
-   The destination is `/` in every case **except a brand-new organization sign-up, which goes to `/organization/setup`** — its record exists but is in draft, so it is invisible everywhere else until the required details are filled.
+   `destinationAfterAuth(returnTo, isNewOrganization)` in `utils/returnPath.ts` decides: a brand-new organization always goes to `/organization/setup`, everyone else goes back to the `returnTo` page (history replaced) when there is one.
+   With no `returnTo` the destination is `/` in every case **except a brand-new organization sign-up, which goes to `/organization/setup`** - its record exists but is in draft, so it is invisible everywhere else until the required details are filled.
    The navigate used to sit behind a fixed 1000ms `setTimeout` (to let the toast breathe); a later fix moved it to fire in the same tick as the dispatch instead, reasoning that a synchronous navigate would change the route (and unmount `Auth`) before `DonotRenderWhenLoggedIn`'s guard — which fires `<Navigate to="/" />` the instant Redux `isLoggedIn` flips true — ever got a chance to re-evaluate. **That didn't hold**: same-tick ordering of a `dispatch()` and a `navigate()` call doesn't guarantee which one's resulting render (or, worse, which one's effect) commits last, and `<Navigate>` fires its own redirect from an unguarded `useEffect` regardless of source order — instrumenting `history.pushState` showed the guard's `navigate("/")` landing a couple of milliseconds *after* this one, silently overwriting it. Fixed at the guard instead (see below): `DonotRenderWhenLoggedIn` now only redirects based on the `isLoggedIn` value it saw at mount, so a login/signup succeeding while it's already mounted can no longer race this navigate — this call is once again just a plain, unguarded `navigate()`, no ordering trick required. The app-level Toaster keeps the success toast on screen across the navigation regardless.
 That page opens by *asking* whether the organization wants to do this now rather than by presenting the form: setting the profile up is optional, and "Maybe later" returns to `/` (see [organizations.md](./organizations.md)).
 6. Otherwise: shows an error toast with `response?.data?.message` and clears `loading`. On sign-up specifically, if that message is exactly the backend's `409 USER_ALREADY_EXISTS` text, also sets `errors.email` to it — see "the `"signup"` step reverting to `"email"`" above.
@@ -76,9 +78,25 @@ Two pages, both lazy-loaded and routed under `DonotRenderWhenLoggedIn` alongside
 
 Neither page touches Redux or sets a cookie — resetting a password only lets the visitor sign in normally afterward, it doesn't sign them in itself. See [apps/web/src/features/authentication/SPEC.md](../../apps/web/src/features/authentication/SPEC.md#pagesforgotpasswordtsx--reset-flow-step-1) for the full client-side detail, and [apps/api/docs/specs/auth.md](../../apps/api/docs/specs/auth.md) for the reset token's server-side lifetime, storage, and single-use behavior.
 
+## Returning after sign-in
+
+A page that needs a visitor to sign in first navigates to `/auth/signin` with `{ returnTo: "/path" }` in router state.
+Today the one caller is the event page's join button (see [events.md](./events.md#a-signed-out-visitor-presses-join)).
+`utils/returnPath.ts` owns the rules.
+`safeReturnPath` accepts only a path on this site: it refuses another origin, a protocol-relative address, a scheme, a backslash or control character, and any `/auth` page.
+`returnPathFromState` applies it to what `Auth.tsx` was opened with.
+
+- **Email sign-in or sign-up:** `useAuth` navigates through `destinationAfterAuth`: to the path with `replace`, so Back does not return to the form, except that a brand-new organization signing up goes to `/organization/setup` instead of the page.
+- **Google:** the redirect leaves the site and drops router state, so `handleGoogle` calls `rememberReturnPath`, which keeps the path in `sessionStorage` under `karmacircle:auth-return-path` (this tab only), or removes an older one when there is none.
+  `Home.tsx` calls `takeReturnPath` after a successful OAuth completion, which reads, removes and re-checks it.
+  Blocked storage just means ending on the home page.
+  A Google sign-up as an organization cannot be told from a sign-in at that point, so it returns to the event and does not reach `/organization/setup`.
+- **Forgot password:** the target is not carried to the reset pages, so a visitor who resets a password does not return to it (see [known-issues.md](./known-issues.md#events---open-points-2026-11-26)).
+
 ## Google OAuth
 
 `handleGoogle()`, rendered only on the `"email"` step (it's a parallel entry point, not something layered onto the password/name steps), calls `GoogleAuth()` (`KarmaCircleApi.ts`, `GET /auth/google`) and full-page-redirects (`window.location.href = response`) to the URL the backend returns.
+If no URL comes back it stops there (`GoogleAuth` has already alerted the visitor); otherwise it remembers any `returnTo` first.
 The backend is expected to redirect back to the frontend after auth and set an `OAuthLoginInitiated` cookie; [Home.tsx](../../apps/web/src/features/landing-home/pages/Home.tsx) checks for that cookie on mount and, if present, calls `successCallback()` (`GET /auth/login/success`) to fetch the now-authenticated user and dispatch `updateUserData(...)` + `toggleUserLogin()` into Redux.
 This means a Google sign-in only "completes" on the frontend if the user lands back on `/` — landing anywhere else after the OAuth redirect would skip this step.
 

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
-import { useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import useSWR, { useSWRConfig } from "swr";
 import { Footer, Navbar } from "@components";
 import Button from "@components/buttons/Button";
 import ComponentHelmet from "@components/ComponentHelmet";
 import { useSectionReveal } from "@hooks";
 import { eventEndpoints } from "@services/ApiEndpoints";
-import { selectUser } from "@app/store/slices/userSlice";
+import { resetUserData, selectUser } from "@app/store/slices/userSlice";
 import fetcher from "@utils/Fetcher";
 import { JoinEvent, LeaveEvent } from "@services/KarmaCircleApi";
 import {
@@ -19,6 +19,7 @@ import {
 import { STATUSCODE } from "@statics/Constants";
 import RichText from "@features/events/components/RichText";
 import ConfirmDialog from "@features/events/components/ConfirmDialog";
+import JoinNoteDialog from "@features/events/components/JoinNoteDialog";
 import EventAgenda from "@features/events/components/detail/EventAgenda";
 import DetailedEventSkeleton from "@features/events/components/detail/DetailedEventSkeleton";
 import EventCalendarLinks from "@features/events/components/detail/EventCalendarLinks";
@@ -30,14 +31,26 @@ import EventLocationPanel from "@features/events/components/detail/EventLocation
 import EventMobileActionBar from "@features/events/components/detail/EventMobileActionBar";
 import EventOrganizerPanel from "@features/events/components/detail/EventOrganizerPanel";
 import EventSection from "@features/events/components/detail/EventSection";
-import { joinView } from "@features/events/utils/joinView";
+import { isMissingEvent } from "@features/events/utils/editEvent";
+import {
+  hasJoiningContent,
+  hasOnlineAccess,
+  hasVenueContent,
+} from "@features/events/utils/eventMode";
+import { eventPhase } from "@features/events/utils/formatEventFacts";
+import { joinLinkNote } from "@features/events/utils/joinLinkNote";
+import { joinedMessage } from "@features/events/utils/joinedMessage";
+import { hostingPath } from "@features/events/utils/myEvents";
+import { joinView, signInPrompt } from "@features/events/utils/joinView";
 import { toDisplayEventDetail } from "@features/events/utils/toDisplayEventDetail";
 import type {
   ApiEvent,
   ApiRegistration,
   DetailedEventRecord,
+  JoinAsk,
   JoinView,
 } from "@features/events/types";
+import { useMyOrganization } from "@features/organizations/hooks/useMyOrganization";
 
 /**
  * The event detail page, routed at `/events/:eventId` - the page an
@@ -108,18 +121,6 @@ const LEAVE_COPY: Partial<
   },
 };
 
-/**
- * Whether the API said there is no such event for this visitor: a 404 for an
- * unknown event or someone else's draft, a 400 for an id it cannot read. A
- * network failure, a timeout, a rate limit or a server error says nothing
- * about whether the event exists.
- */
-const isMissingEvent = (error: unknown) => {
-  const status = (error as { response?: { status?: number } } | undefined)
-    ?.response?.status;
-  return status === STATUSCODE.NOT_FOUND || status === STATUSCODE.BAD_REQUEST;
-};
-
 const DetailedEvent = () => {
   const { eventId } = useParams();
   const { data, error, isValidating, mutate } = useSWR<ApiEvent>(
@@ -131,7 +132,15 @@ const DetailedEvent = () => {
     return <EventNotFound eventId={eventId} />;
   // Checked before `error`: a failed refresh must not take away an event that
   // is already on screen.
-  if (data) return <DetailedEventView {...toDisplayEventDetail(data)} />;
+  if (data) {
+    return (
+      <DetailedEventView
+        {...toDisplayEventDetail(data)}
+        hostUsername={data.hostUsername}
+        refreshing={isValidating}
+      />
+    );
+  }
   if (error)
     return (
       <EventLoadError retrying={isValidating} onRetry={() => void mutate()} />
@@ -215,9 +224,22 @@ const EventNotFound = ({ eventId }: { eventId?: string }) => (
   </>
 );
 
-const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
+const DetailedEventView = ({
+  event,
+  detail,
+  hostUsername,
+  refreshing,
+}: DetailedEventRecord & { hostUsername: string; refreshing: boolean }) => {
   const user = useSelector(selectUser);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { organization } = useMyOrganization();
   const [joining, setJoining] = useState(false);
+  /** Set while the optional-note dialog is open. */
+  const [asking, setAsking] = useState<JoinAsk>();
+  // Whether that dialog is still open when a request it started comes back.
+  const noteDialogOpen = useRef(false);
+  const [joinError, setJoinError] = useState<string>();
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const { mutate: mutateGlobal } = useSWRConfig();
@@ -234,6 +256,43 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
   const join = joinView(event, registration);
   const checkingRegistration = user.isLoggedIn && registrationLoading;
   const registrationCheckFailed = user.isLoggedIn && Boolean(registrationError);
+
+  const phase = eventPhase(event.startsAt, event.endsAt);
+  const prompt = signInPrompt({
+    signedIn: Boolean(user.isLoggedIn),
+    cancelled: event.cancelled,
+    phase,
+    kind: join.kind,
+  });
+
+  // A draft can only be opened by its own organization.
+  const isHost =
+    event.draft ||
+    Boolean(
+      organization &&
+      (organization.handle === event.organizerUserName ||
+        organization.handle === hostUsername),
+    );
+  const linkNote = hasOnlineAccess(event.mode)
+    ? joinLinkNote({
+        hasLink: Boolean(event.platformLink),
+        isHost,
+        going: join.kind === "going",
+        phase,
+        cancelled: event.cancelled,
+        refreshing,
+      })
+    : undefined;
+  // A draft may have no venue or meeting details yet; the section, and each
+  // half of its title, only appears for what there is to show.
+  const showVenue = hasVenueContent(event, detail.gettingThere);
+  const showJoining = hasJoiningContent(
+    event,
+    detail.linkDelivery,
+    detail.joinRequirements,
+    linkNote,
+  );
+
   const pageRef = useRef<HTMLDivElement>(null);
 
   useSectionReveal(pageRef);
@@ -254,18 +313,46 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
   const footerSentinelRef = useRef<HTMLDivElement>(null);
   const [nearFooter, setNearFooter] = useState(false);
 
-  const joinEvent = async () => {
+  /** To sign-in, and back to this event afterwards. */
+  const signIn = () =>
+    navigate("/auth/signin", { state: { returnTo: `/events/${event.id}` } });
+
+  const showNoteDialog = (ask: JoinAsk | undefined) => {
+    noteDialogOpen.current = ask !== undefined;
+    setAsking(ask);
+  };
+
+  // Fetched again after anything that changes who this viewer is to the event:
+  // going and spots left, and whether the meeting link is sent at all.
+  const refreshEvent = () => void mutateGlobal(eventEndpoints.byUid(event.id));
+
+  const joinEvent = () => {
+    if (!user.isLoggedIn) {
+      if (join.kind === "join") signIn();
+      return;
+    }
     if (joining) return;
     if (registrationCheckFailed) {
       void mutateRegistration();
       return;
     }
     if (join.kind !== "join") return;
+    if (join.asks) {
+      setJoinError(undefined);
+      showNoteDialog(join.asks);
+      return;
+    }
+    void submitJoin();
+  };
+
+  const submitJoin = async (note?: string) => {
     setJoining(true);
-    const response = await JoinEvent(event.id);
+    setJoinError(undefined);
+    const response = await JoinEvent(event.id, note);
     setJoining(false);
 
     if (response.ok) {
+      showNoteDialog(undefined);
       // What the person now is: going, or waiting on the organizer (PG-14).
       const status: ApiRegistration["status"] =
         response.data?.status ?? "going";
@@ -273,24 +360,31 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
         { joined: status === "going", status, invited: false },
         false,
       );
-      // Going / spots left come from the event record.
-      void mutateGlobal(eventEndpoints.byUid(event.id));
+      refreshEvent();
       if (status !== "going") {
         showSuccessToast(
           response.data?.message ?? "Your request was sent to the organizer.",
         );
-      } else if (response.data?.emailSent) {
-        showSuccessToast("You joined this event. Confirmation email sent.");
       } else {
-        showWarningToast(
-          "You joined this event, but confirmation email could not be sent.",
-        );
+        const { tone, text } = joinedMessage(response.data);
+        if (tone === "warning") showWarningToast(text);
+        else showSuccessToast(text);
       }
       return;
     }
-    showErrorToast(response.message || "Could not join this event.");
+    // The saved session is no longer accepted: this is a signed-out visitor.
+    if (response.status === STATUSCODE.UNAUTHORIZED) {
+      dispatch(resetUserData());
+      signIn();
+      return;
+    }
+    const message = response.message || "Could not join this event.";
+    // An open note dialog reports its own failure, keeping what was typed. A
+    // browser can close it regardless (a second Escape), so then it is a toast.
+    if (noteDialogOpen.current) setJoinError(message);
+    else showErrorToast(message);
     // A refused join (the event just filled up) means the counts shown are stale.
-    void mutateGlobal(eventEndpoints.byUid(event.id));
+    refreshEvent();
   };
 
   const leaveEvent = async () => {
@@ -307,12 +401,19 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
         { joined: false, status: "none", invited: false },
         { revalidate: true },
       );
-      void mutateGlobal(eventEndpoints.byUid(event.id));
+      // The meeting link goes with the place, without waiting for the refetch
+      // (which sends it again to a viewer who is still entitled to it).
+      void mutateGlobal<ApiEvent>(
+        eventEndpoints.byUid(event.id),
+        (current) => current && { ...current, platformLink: undefined },
+        { revalidate: true },
+      );
       showSuccessToast(LEAVE_COPY[join.kind]?.toast ?? "You left this event");
       return;
     }
     showErrorToast(result.message || "Could not leave this event.");
     void mutateRegistration();
+    refreshEvent();
   };
 
   useEffect(() => {
@@ -376,14 +477,14 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
       {event.draft && (
         <p
           role="status"
-          className="m-0 border-b border-brand/20 bg-brand/8 px-9 py-3 text-center font-poppins text-body text-brand-secondary sm:px-10"
+          className="m-0 border-b border-brand/20 bg-brand/8 px-9 py-3 font-poppins text-body text-brand-secondary sm:px-10 sm:text-center"
         >
           This is a draft. Only you can see this page.{" "}
           <Link
-            to="/organization/events"
+            to={hostingPath("Drafts")}
             className="font-medium text-brand underline underline-offset-4"
           >
-            Back to your events
+            Back to my events
           </Link>
         </p>
       )}
@@ -432,18 +533,24 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                 </EventSection>
               )}
 
-              <EventSection
-                title={
-                  event.mode === "Online"
-                    ? "How to join"
-                    : event.mode === "Hybrid"
+              {(showVenue || showJoining) && (
+                <EventSection
+                  title={
+                    showVenue && showJoining
                       ? "Where it is and how to join"
-                      : "Where it is"
-                }
-                id="location"
-              >
-                <EventLocationPanel event={event} detail={detail} />
-              </EventSection>
+                      : showJoining
+                        ? "How to join"
+                        : "Where it is"
+                  }
+                  id="location"
+                >
+                  <EventLocationPanel
+                    event={event}
+                    detail={detail}
+                    linkNote={linkNote}
+                  />
+                </EventSection>
+              )}
 
               {detail.bringAlong.length > 0 && (
                 <EventSection title="What to bring" id="bring">
@@ -479,6 +586,8 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
                   registrationCheckFailed={registrationCheckFailed}
                   onToggleJoin={joinEvent}
                   onRequestLeave={() => setConfirmingLeave(true)}
+                  signInPrompt={prompt}
+                  onSignIn={signIn}
                 />
               </div>
 
@@ -508,8 +617,23 @@ const DetailedEventView = ({ event, detail }: DetailedEventRecord) => {
         checkingRegistration={checkingRegistration}
         registrationCheckFailed={registrationCheckFailed}
         onToggleJoin={joinEvent}
+        signInPrompt={prompt}
+        onSignIn={signIn}
         hidden={joinPanelVisible || nearFooter}
       />
+
+      {asking && (
+        <JoinNoteDialog
+          asks={asking}
+          eventTitle={event.title}
+          busy={joining}
+          error={joinError}
+          onSend={(note) => void submitJoin(note)}
+          // Cancel is disabled and Escape held back while sending, so this
+          // also covers a browser that closes the dialog regardless.
+          onClose={() => showNoteDialog(undefined)}
+        />
+      )}
 
       {confirmingLeave && (
         <ConfirmDialog

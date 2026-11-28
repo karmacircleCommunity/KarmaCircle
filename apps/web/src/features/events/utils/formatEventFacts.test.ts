@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  eventPhase,
   formatAgendaTime,
   formatDuration,
   formatEventBadge,
   formatEventDate,
   formatEventTime,
   formatSpotsLeft,
-  isEventPast,
   mapsUrl,
 } from "./formatEventFacts";
 
@@ -218,42 +218,58 @@ describe("mapsUrl", () => {
   });
 });
 
-describe("isEventPast", () => {
+describe("eventPhase", () => {
+  const START = "2026-09-12T12:00:00Z";
+  const END = "2026-09-12T14:00:00Z";
+  const at = (instant: string) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(instant));
+  };
+
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("is true for a start time before now", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-12T12:00:00Z"));
-    expect(isEventPast("2026-09-12T11:59:59Z")).toBe(true);
-    expect(isEventPast("2025-01-01T00:00:00Z")).toBe(true);
+  it("is upcoming before the start, and at the exact start instant", () => {
+    at("2026-09-12T11:59:59Z");
+    expect(eventPhase(START, END)).toBe("upcoming");
+    at(START);
+    expect(eventPhase(START, END)).toBe("upcoming");
   });
 
-  it("is false for a start time after now", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-12T12:00:00Z"));
-    expect(isEventPast("2026-09-12T12:00:01Z")).toBe(false);
-    expect(isEventPast("2030-01-01T00:00:00Z")).toBe(false);
+  it("is ongoing from just after the start up to the end", () => {
+    at("2026-09-12T12:00:01Z");
+    expect(eventPhase(START, END)).toBe("ongoing");
+    at(END);
+    expect(eventPhase(START, END)).toBe("ongoing");
   });
 
-  it("is false at the exact start instant", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-12T12:00:00Z"));
-    expect(isEventPast("2026-09-12T12:00:00Z")).toBe(false);
+  it("is ended only once the end has passed", () => {
+    at("2026-09-12T14:00:01Z");
+    expect(eventPhase(START, END)).toBe("ended");
   });
 
   it("compares absolute instants, not wall-clock text", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-12T12:00:00Z"));
+    at("2026-09-12T12:00:00Z");
     // 17:00 in +05:30 is 11:30Z, which is already past.
-    expect(isEventPast("2026-09-12T17:00:00+05:30")).toBe(true);
+    expect(
+      eventPhase("2026-09-12T16:00:00+05:30", "2026-09-12T17:00:00+05:30"),
+    ).toBe("ended");
     // 17:00 in -05:00 is 22:00Z, which is still ahead.
-    expect(isEventPast("2026-09-12T17:00:00-05:00")).toBe(false);
+    expect(
+      eventPhase("2026-09-12T17:00:00-05:00", "2026-09-12T18:00:00-05:00"),
+    ).toBe("upcoming");
   });
 
-  it("treats an invalid date as not past (decided, not a bug)", () => {
-    expect(isEventPast("not-a-date")).toBe(false);
+  it("judges a record with no readable end by its start", () => {
+    at("2026-09-12T13:00:00Z");
+    expect(eventPhase(START)).toBe("ended");
+    expect(eventPhase(START, "not-a-date")).toBe("ended");
+    expect(eventPhase("2026-09-12T15:00:00Z", "")).toBe("upcoming");
+  });
+
+  it("treats unreadable times as upcoming (decided, not a bug)", () => {
+    expect(eventPhase("not-a-date")).toBe("upcoming");
   });
 });
 

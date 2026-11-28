@@ -31,6 +31,7 @@ Do not assume both are exercised by any given change.
 | `pages/ForgotPassword.tsx` | Step 1 of the reset flow — email field, calls `ForgotPassword()` (`KarmaCircleApi.ts`), always shows the same "check your inbox" confirmation regardless of whether the email had an account | ✅ yes — routed at `/auth/forgot-password` |
 | `pages/ResetPassword.tsx` | Step 2 of the reset flow, opened from the emailed link — reads the raw token from the `:token` route param, new-password + confirm-password fields, calls `ResetPassword()` (`KarmaCircleApi.ts`) | ✅ yes — routed at `/auth/reset-password/:token` |
 | `utils/validateEmail.ts` | The single email-format check (`validateEmail(email)`) shared by `Auth.tsx`, `useAuth.ts`, and `ForgotPassword.tsx` — wraps `emailRegex` from `static/Constants.ts` | ✅ yes |
+| `utils/returnPath.ts` | The way back after sign-in: `safeReturnPath`, `returnPathFromState`, `destinationAfterAuth` (a new organization still goes to setup), `rememberReturnPath`, `takeReturnPath` (unit tested in `returnPath.test.ts`) | ✅ yes, used by `Auth.tsx` and `landing-home`'s `Home.tsx` |
 | `utils/passwordStrength.ts` | `getPasswordStrength()` + `PASSWORD_STRENGTH_META`, the live password-strength meter logic — shared by `Auth.tsx`'s `"signup"` step and `ResetPassword.tsx` (extracted out of `Auth.tsx` when `ResetPassword.tsx` needed the identical meter, so the two can't drift) | ✅ yes |
 | `components/AuthFieldKit.tsx` | `inputClasses` (the shared text-input Tailwind class string) + `RequiredMark` (the label asterisk) — shared by all three live pages so their fields can't visually drift apart | ✅ yes |
 | `components/DonotRenderWhenLoggedIn.tsx` | Route-guard HOC wrapping `Auth`, `ForgotPassword`, and `ResetPassword` in `routesConfig.tsx` | ✅ yes |
@@ -40,7 +41,7 @@ Do not assume both are exercised by any given change.
 | `utils/PasswordToggle.ts` | Unused `password ⇄ text` input-type togglers | ❌ no (`Auth.tsx`/`ResetPassword.tsx` inline their own toggle logic instead) |
 | `types/index.ts` | `AuthType` enum, `Credentials`/`AuthErrors`/`ValidationError`/`SignupFormState`/`ForgotPasswordPayload`/`ResetPasswordPayload`/`ResetPasswordResponse` interfaces, etc. — see "Types" below | ✅ yes — imported by every other file in this folder |
 
-Five of the fourteen non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
+Five non-type files in this folder (`useValidation.ts`, `useFormLogic.ts`, `AuthButton.tsx`, `RenderErrorMessage.tsx`, `PasswordToggle.ts`) are not imported by anything that runs in the live app.
 Per [known-issues.md](../../../../../docs/specs/known-issues.md), treat these as **the design to converge toward**, not dead code to delete on sight, if you're ever asked to build out the fuller organization-signup flow (tagline, description, address, slug/username, iframe) — that flow doesn't exist in the live page at all today, and this scaffolding is the closest thing to a spec for it.
 
 ## Types
@@ -62,11 +63,13 @@ Default export, function component, no props (rendered directly by the router �
 - `showPassword` — boolean, toggles the password `<input>`'s `type` between `"password"`/`"text"` and swaps the `FaEye`/`FaEyeSlash` icon. Shared across the `"signin"`/`"signup"` steps' password fields (only one is ever mounted at a time, so one boolean is enough).
 - `checkingEmail` — boolean, drives the `"email"` step's Continue button loading state while `CheckEmailExists` is in flight. Kept separate from `useAuth`'s own `loading`, which only covers the final `"signin"`/`"signup"` submit.
 
-**The `useAuth` call:** `const authType = step === "signup" ? AuthType.SignUp : AuthType.SignIn; const { authenticateUser, loading } = useAuth(authType);` — called unconditionally on every render (same hook, same position), just with an argument that changes as `step` changes. This is what makes `useAuth`'s branching (password-strength gate vs. plain non-empty check, `LoginUser` vs. `RegisterUser`) automatically follow whichever step the flow is on, without the page needing two separate hook instances.
+**`returnTo`:** `returnPathFromState(location.state)`, set when a page sent the visitor here to sign in (the event page's join button), otherwise `null`.
 
-**Step `"email"`:** heading "Welcome to KarmaCircle"; a `role="tablist"` pair (Individual/Organization, `setUserType`) identical in markup to the old `SignUp.tsx` step 1's tabs; an email input; a Continue button (`disabled={!credentials.email || !isEmailFormatValid || checkingEmail}`, `isLoading={checkingEmail}`); an "or" divider; a "Continue with Google" button (`handleGoogle`, passes `credentials.userType?.value` the same way the old `SignUp.tsx` did). Google is rendered **only** on this step — it's a parallel entry point, not something that belongs layered onto a password or name field the visitor is already committed to.
+**The `useAuth` call:** `const authType = step === "signup" ? AuthType.SignUp : AuthType.SignIn; const { authenticateUser, loading } = useAuth(authType, returnTo);` - called unconditionally on every render (same hook, same position), just with an argument that changes as `step` changes. This is what makes `useAuth`'s branching (password-strength gate vs. plain non-empty check, `LoginUser` vs. `RegisterUser`) automatically follow whichever step the flow is on, without the page needing two separate hook instances.
 
-Submitting this step (`handleContinue`) runs, in order: `validateEmail()` (sets `errors.email` and stops on failure) → `CheckEmailExists(credentials.email)` (`KarmaCircleApi.ts`) with `checkingEmail` toggling around it → if `response.status === STATUSCODE.OK && response.data?.exists`, `setStep("signin")`; otherwise (including a failed/unreachable check — fails open, same reasoning the old `SignUp.tsx` step 1 used) `setStep("signup")`.
+**Step `"email"`:** heading "Welcome to KarmaCircle"; a `role="tablist"` pair (Individual/Organization, `setUserType`) identical in markup to the old `SignUp.tsx` step 1's tabs; an email input; a Continue button (`disabled={!credentials.email || !isEmailFormatValid || checkingEmail}`, `isLoading={checkingEmail}`); an "or" divider; a "Continue with Google" button (`handleGoogle`, passes `credentials.userType?.value` the same way the old `SignUp.tsx` did; it does nothing more when no URL comes back, and otherwise calls `rememberReturnPath(returnTo)` before redirecting). Google is rendered **only** on this step - it's a parallel entry point, not something that belongs layered onto a password or name field the visitor is already committed to.
+
+Submitting this step (`handleContinue`) runs, in order: `validateEmail()` (sets `errors.email` and stops on failure) → `CheckEmailExists(credentials.email)` (`KarmaCircleApi.ts`) with `checkingEmail` toggling around it → with a `200` and a boolean `exists`, `setStep("signin")` or `setStep("signup")`; a failed or malformed check shows an error toast and stays on `"email"`.
 
 **Step `"signin"`:** a Back button (`← Back`, `handleBack`) above the heading; heading "Enter your password"; the email input, `value={credentials.email}`, `disabled`; a password input (`autoComplete="current-password"`) with the show/hide eye icon and a "Forgot password?" `Link` to `/auth/forgot-password` (a real link now — see `pages/ForgotPassword.tsx` below; it used to be inert `<span>` text with no route to point at); a "Sign In" button (`disabled={loading || !credentials.password}`). No "Sign up instead" link — landing here already means the app determined this email has an account, so there's nothing to choose.
 
@@ -81,7 +84,7 @@ Submitting this step (`handleContinue`) runs, in order: `validateEmail()` (sets 
 ## `hooks/useAuth.ts` — the live validator + submit handler
 
 ```js
-export function useAuth(authType) // authType: "signin" | "signup"
+export function useAuth(authType, returnTo = null) // authType: "signin" | "signup"
   → { authenticateUser(credentials, setErrors), loading }
 ```
 
@@ -96,7 +99,7 @@ Unchanged by the unified-flow change except for who calls it and how `authType` 
 4. **Sets `loading = true`**, then calls exactly one of:
    - `LoginUser(credentials)` (`KarmaCircleApi.ts`, `POST /auth/signin`, `withCredentials: true`) when `authType === "signin"`.
    - `RegisterUser({ ...credentials, userType: credentials.userType.value })` (`KarmaCircleApi.ts`, `POST /auth/signup`, `withCredentials: true`) when `authType === "signup"` — `userType` is unwrapped from its `react-select` `{value, label}` shape into a bare string **only here**.
-5. **On `response.status === 200 || 201`:** `showSuccessToast(response?.data?.message)`, then `dispatch(updateUserData({ ...response.data.user, isLoggedIn: true }))`, then `setLoading(false)` and `navigate(isNewOrganization ? "/organization/setup" : "/")` — `isNewOrganization` being a signup whose `userType.value === UserType.Organization`. The navigate runs synchronously in the same tick as the dispatch: it previously sat behind a **fixed 1000ms `setTimeout`**, which let `DonotRenderWhenLoggedIn`'s `<Navigate to="/" />` (it fires as soon as `isLoggedIn` turns true) win the race and flash the home page for a second before the deferred org redirect landed. Navigating immediately unmounts `Auth` before the guard re-renders; the app-level Toaster preserves the success toast across the route change.
+5. **On `response.status === 200 || 201`:** `showSuccessToast(response?.data?.message)`, then `dispatch(updateUserData({ ...response.data.user, isLoggedIn: true }))`, then `setLoading(false)` and `navigate(...)` to whatever `destinationAfterAuth(returnTo, isNewOrganization)` returns (a brand-new organization to `/organization/setup`, otherwise `returnTo` with `replace`, otherwise `/`) - `isNewOrganization` being a signup whose `userType.value === UserType.Organization`. The navigate runs synchronously in the same tick as the dispatch: it previously sat behind a **fixed 1000ms `setTimeout`**, which let `DonotRenderWhenLoggedIn`'s `<Navigate to="/" />` (it fires as soon as `isLoggedIn` turns true) win the race and flash the home page for a second before the deferred org redirect landed. Navigating immediately unmounts `Auth` before the guard re-renders; the app-level Toaster preserves the success toast across the route change.
 6. **Otherwise:** `showErrorToast(response?.data?.message)`, `setLoading(false)`. Maps a Zod-shaped `response.data.errors` array's `email`/`password` entries onto `setErrors`, and on `authType === "signup"` specifically, maps an exact `USER_ALREADY_EXISTS` message onto `errors.email` too (this is what triggers `Auth.tsx`'s step-revert effect above).
 
 `useAuth` does not distinguish "email already exists" from "wrong password" from "server error" at the hook level — whatever `response?.data?.message` the backend sent is shown verbatim in the toast; there's no client-side mapping to friendlier copy.
@@ -176,7 +179,7 @@ Auth.tsx step "email"
         ▼
    exists? ──yes──► step "signin" (email locked in, password only)
         │
-        no / check failed (fail open)
+        no          (check failed: error toast, stay on "email")
         ▼
    step "signup" (email locked in, name + password)
         │
@@ -191,7 +194,7 @@ LoginUser(credentials) / RegisterUser({...credentials, userType: userType.value}
         │  POST /auth/signin or /auth/signup, withCredentials: true
         ▼
 response.status 200/201 ──► showSuccessToast → dispatch(updateUserData({...user, isLoggedIn:true}))
-                              → setLoading(false) + navigate(newOrg ? "/organization/setup" : "/")  [same tick, not deferred]
+                              → setLoading(false) + navigate(destinationAfterAuth(returnTo, newOrg))  [same tick, not deferred]
         │
         └── else ──► showErrorToast(response?.data?.message)
                        └── signup 409 USER_ALREADY_EXISTS → errors.email → step reverts to "email"
@@ -202,7 +205,7 @@ Google OAuth is a separate, parallel path that bypasses `useAuth.ts` entirely, r
 ```
 Auth.tsx step "email"  handleGoogle()
         ▼
-GoogleAuth(userType)  [KarmaCircleApi.ts, GET /auth/google]  →  window.location.href = <backend-provided URL>
+GoogleAuth(userType)  [KarmaCircleApi.ts, GET /auth/google]  →  rememberReturnPath(returnTo)  →  window.location.href = <backend-provided URL>
         │   (full page navigation — leaves the React app)
         ▼
 [user authenticates with Google on the backend's redirect target]
@@ -213,6 +216,9 @@ Home.tsx (features/landing-home) checks that cookie on mount
         │  if present: successCallback()  [KarmaCircleApi.ts, GET /auth/login/success]
         ▼
 dispatch(updateUserData(...)) + dispatch(toggleUserLogin())   ← two separate dispatches, done in Home.tsx, not here
+        ▼
+takeReturnPath() → navigate there (replace) if a path was kept
+        (a Google sign-up as an organization cannot be told from a sign-in here, so it also returns to the page, not to /organization/setup)
 ```
 
 Because completion of Google OAuth is handled by `Home.tsx` (a different feature) rather than anything in this folder, **a Google sign-in only "completes" on the frontend if the user's redirect lands back on `/`** — this feature has no way to finish the OAuth handshake on its own. See [landing-home/SPEC.md](../landing-home/SPEC.md) for the other half of this flow.
@@ -275,6 +281,7 @@ Each editable field still has a small local `RequiredMark` component (`<span cla
 
 ## Known issues specific to this feature (superset of known-issues.md's auth entries)
 
+- **The return target is lost through Forgot password:** the `"signin"` step's link passes only `email`, and neither reset page carries `returnTo`.
 - **Two validation systems, only one live** (see above) — don't assume a fix to `useValidation.ts` affects real sign-in/sign-up behavior; it doesn't, today.
 - **`useAuth.ts`'s email check still re-runs on the final `"signin"`/`"signup"` submit** (not just at the `"email"` step) — mostly a defensive re-check by the time a real user reaches it, since the `"email"` step has already validated format once.
 - **Offline feedback is generic, not field-specific** — step 1 of `authenticateUser` shows a connectivity toast (via `checkInternetConnection()`) but never a field-level `email`/`password` error.

@@ -3,6 +3,7 @@ import {
   FiCheckCircle,
   FiClock,
   FiMapPin,
+  FiRadio,
   FiShield,
   FiUserCheck,
   FiVideo,
@@ -17,10 +18,10 @@ import { eventTypeLabel } from "@features/events/constants/eventTypes";
 import { describeWhere } from "@features/events/utils/eventMode";
 import { ORGANIZATION_ACCENTS } from "@features/organizations/constants/organizationDisplay";
 import {
+  eventPhase,
   formatEventBadge,
   formatEventTime,
   formatSpotsLeft,
-  isEventPast,
 } from "@features/events/utils/formatEventFacts";
 import type { EventCardProps } from "@features/events/types";
 
@@ -64,12 +65,13 @@ import type { EventCardProps } from "@features/events/types";
  * lines, is also what made the block read as cramped/"weird" rather than
  * as two clearly separate facts — both loosened below.
  *
- * **"Completed" (September 2026, `isEventPast`).** A card whose `startsAt`
- * has passed gets a grayscale-tinted cover plus a "Completed" label in the
- * cover's bottom-left scrim - the one place a live event's own `cause`
- * would render if it had one, which it never does (see above). This is
- * cosmetic only; whether the card actually shows up here at all is decided
- * by `Events.tsx`'s Upcoming/Past filter, using the same `startsAt` cut.
+ * **"Completed" (`eventPhase`).** A card whose event has **ended** gets a
+ * grayscale-tinted cover plus a "Completed" label in the cover's bottom-left
+ * scrim - the one place a live event's own `cause` would render if it had
+ * one, which it never does (see above). Between the start and the end the
+ * same slot reads "Happening now" and the cover keeps its color. This is
+ * cosmetic only; whether the card shows up here at all is decided by the
+ * API's Upcoming/Past split, which also goes by the end time.
  *
  * **"Cancelled" (PG-2).** A cancelled event stays in the list, with the same
  * grayscale cover and the same bottom-left label slot, reading "Cancelled".
@@ -85,7 +87,9 @@ const EventCard = ({ event }: EventCardProps) => {
     ORGANIZATION_ACCENTS[(event.accent ?? 0) % ORGANIZATION_ACCENTS.length];
   const cancelled = Boolean(event.cancelled);
   const typeLabel = eventTypeLabel(event.eventType);
-  const past = !cancelled && isEventPast(event.startsAt);
+  const phase = eventPhase(event.startsAt, event.endsAt);
+  const past = !cancelled && phase === "ended";
+  const live = !cancelled && phase === "ongoing";
 
   return (
     <article
@@ -164,7 +168,7 @@ const EventCard = ({ event }: EventCardProps) => {
         {/* What kind of event it is (PG-9), in the same bottom-left slot. A
             cancelled or completed card shows that status instead, which is the
             more useful thing to know at a glance. */}
-        {typeLabel && !cancelled && !past && (
+        {typeLabel && !cancelled && !past && !live && (
           <>
             <div
               aria-hidden="true"
@@ -191,6 +195,18 @@ const EventCard = ({ event }: EventCardProps) => {
             <span className="absolute bottom-2.5 left-4 inline-flex items-center gap-1.5 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
               <FiXCircle aria-hidden="true" className="size-3" />
               Cancelled
+            </span>
+          </>
+        )}
+        {live && (
+          <>
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent"
+            />
+            <span className="absolute bottom-2.5 left-4 inline-flex items-center gap-1.5 font-outfit text-caption font-medium tracking-widest text-white uppercase drop-shadow-sm">
+              <FiRadio aria-hidden="true" className="size-3" />
+              Happening now
             </span>
           </>
         )}
@@ -230,6 +246,8 @@ const EventCard = ({ event }: EventCardProps) => {
           </span>
         )}
 
+        {/* A draft may have no description; the box keeps its height so
+            cards in a row stay level. */}
         <p className="mt-2 mb-6 line-clamp-2 min-h-11 font-poppins text-body leading-[1.375rem] text-ink/70">
           {event.summary}
         </p>

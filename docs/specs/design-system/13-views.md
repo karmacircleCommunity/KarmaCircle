@@ -14,11 +14,11 @@ All routes render inside `App.tsx`, which mounts `SmoothScroll`, `ScrollProgress
 | `/user/setup` | `ProfileSetup` (behind `RequireSignIn`) | Standard page | Navbar, Footer |
 | `/organizations` | `Organizations` | Standard page + `DirectoryToolbar` | Navbar, Footer |
 | `/organization/setup` | `OrganizationSetup` | `SetupLayout` -> `SplitPanelLayout` | No navbar, no footer |
-| `/organization/events` | `YourEvents` | Standard page, behind `OrganizationSetupGate` | Navbar, Footer |
+| `/organization/events` | redirect to `/events/mine?tab=hosting` | - | - |
 | `/organization/:userName` | `OrganizationProfile` | Standard page | Navbar, Footer |
 | `/dashboard` | `Dashboard` | Standard page | Navbar, Footer |
 | `/events` | `Events` | Standard page + `DirectoryToolbar` | Navbar, Footer |
-| `/events/mine` | `MyEvents` (behind `RequireSignIn`) | Standard page | Navbar, Footer |
+| `/events/mine` | `MyEvents` (behind `RequireSignIn`): Attending for everyone, plus Hosting for organizations | Standard page | Navbar, Footer |
 | `/events/:eventId` | `DetailedEvent` | Standard page | Navbar, Footer |
 | `*` | `Error404` | Standard page | Navbar, Footer |
 
@@ -28,8 +28,8 @@ All routes render inside `App.tsx`, which mounts `SmoothScroll`, `ScrollProgress
 - **`/brand` is a redirect, not a page.** The in-app design-system page (`features/brand-kit`) was deleted in September 2026 and split out into `karmacircleCommunity/karmacircle-brand`, deployed at `brand.karmacircle.org`, so its design and content can grow independently. Its tokens are a **manual, unenforced copy** of this app's `@theme` block.
 - **`/organization/setup` is declared before `/organization/:userName`** purely for readability. React Router already ranks a static segment above a dynamic one.
 - **The old `/user/:userName` page was removed.** Individuals edit their profile at `/user/setup`; the public `/organization/:userName` route remains a distinct organization profile.
-- **Navbar links follow account type.** Organization accounts get Dashboard and Your Events; individuals get Edit profile at `/user/setup` and My Events at `/events/mine`.
-- `/organization/events` is where the navbar's "Your events" points. It used to point at `/event/create`, which no route has ever matched.
+- **Navbar links follow account type.** Organization accounts get Dashboard and individuals get Edit profile at `/user/setup`; both get My Events at `/events/mine`.
+- `/organization/events` is the old "Your events" address and redirects to My Events' Hosting view.
 - The four auth routes are wrapped in `DonotRenderWhenLoggedIn`.
 - `:eventId` is an event's API `uid`, despite the route parameter's generic name.
 - `:token` on the reset route is the raw single-use token from the emailed link.

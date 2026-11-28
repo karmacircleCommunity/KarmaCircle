@@ -337,7 +337,12 @@ const EventDetailsSection = ({
           </div>
         )}
 
-        <fieldset className="m-0 min-w-0 border-0 p-0">
+        {/* Focusable so a failed save can bring the agenda's error into view. */}
+        <fieldset
+          id="agenda"
+          tabIndex={-1}
+          className="m-0 min-w-0 rounded-lg border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-error/25"
+        >
           <legend className="mb-1.5 font-outfit text-body font-medium text-ink/75">
             How the day runs
           </legend>

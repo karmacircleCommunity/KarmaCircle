@@ -133,12 +133,18 @@ Do not invent a fourth card design.
 <DirectoryToolbar
   query={query} onQueryChange={setQuery}
   searchPlaceholder="Search events" searchLabel="Search events"
-  options={CAUSES} active={cause} onSelect={setCause}
-  filterLabel="Filter by cause"
+  filters={
+    <FilterDropdown
+      label="Filter by cause"
+      options={CAUSES} active={cause} onSelect={setCause}
+    />
+  }
   summary={`${results.length} events in ${cause}`}
-  action={<Button to="/organization/events" className="...">Your dashboard</Button>}
+  action={<Button to="/dashboard" className="...">Your dashboard</Button>}
 />
 ```
+
+A list with more than one filter passes a [`FilterMenu`](./08-components-shared.md#filtermenu) as `filters`, never a row of dropdowns.
 
 Then scope `useSectionReveal` to the grid, keyed on `[results.length, cause]`.
 

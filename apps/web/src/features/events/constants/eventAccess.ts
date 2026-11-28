@@ -32,6 +32,10 @@ export const accessLabel = (access: EventAccess) =>
   EVENT_ACCESS_OPTIONS.find((option) => option.value === access)?.label ??
   "Open to everyone";
 
+/** Longest note a person can send with a request; mirrors
+ *  `REGISTRATION_NOTE_MAX_LENGTH` in the API's `event.constants.ts`. */
+export const JOIN_NOTE_MAX_LENGTH = 300;
+
 /** How a person's own standing reads on My Events and the attendee list. */
 export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
   going: "Going",

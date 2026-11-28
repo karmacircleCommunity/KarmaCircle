@@ -47,7 +47,11 @@ export type EventHeroProps = DetailedEventRecord;
 
 export type EventFactsProps = DetailedEventRecord;
 
-export type EventLocationPanelProps = DetailedEventRecord;
+export type EventLocationPanelProps = DetailedEventRecord & {
+  /** What the joining card says when the viewer has no meeting link, from
+   *  `utils/joinLinkNote.ts`. */
+  linkNote?: string;
+};
 
 export type EventCalendarLinksProps = DetailedEventRecord;
 
@@ -80,4 +84,32 @@ export type JoinView =
   /** Full, and the organizer turned the waitlist off. */
   | { kind: "full" }
   /** Pressing the button joins, asks to join, or joins the waitlist. */
-  | { kind: "join"; label: string; shortLabel: string };
+  | {
+      kind: "join";
+      label: string;
+      shortLabel: string;
+      /** Set when pressing makes a request or a waitlist spot rather than a
+       *  place: the button then asks for an optional note first. */
+      asks?: JoinAsk;
+    };
+
+/** The two joins that wait on the organizer, so a note can go with them. */
+export type JoinAsk = "request" | "waitlist";
+
+/** Where an event stands in time: not started, running, or over. */
+export type EventPhase = "upcoming" | "ongoing" | "ended";
+
+/** What a signed-out viewer is asked beside a "Sign in" button. */
+export type SignInPrompt = "Already joined?" | "Invited?";
+
+/** Why a stored event cannot be edited by the organization looking at it. */
+export type EditBlocker = "foreign" | "cancelled" | "ended" | "draft-expired";
+
+/** The two sides of My Events: events a person goes to, and ones they run. */
+export type MyEventsView = "attending" | "hosting";
+
+/** The lists under My Events' Attending view. */
+export type MyEventsTab = "Upcoming" | "Past" | "Invited";
+
+/** The lists under My Events' Hosting view. */
+export type HostingList = "Upcoming" | "Past" | "Drafts";

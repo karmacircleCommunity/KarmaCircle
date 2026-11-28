@@ -1,11 +1,14 @@
 # Events E2E coverage
 
 `events-responsive.spec.ts` covers the public `/events` directory's live event
-cards, Upcoming/Past filter, city search, mobile/desktop overflow, that every
-toolbar control and filter panel stays on screen from 640 to 1024px, that a phone
-shares lines between filters and shows a long name on two lines, that the list
-shows skeletons while loading and no count after a failed load, and the
-organization's full-page event publishing flow.
+cards, Upcoming/Past filter, city search, mobile/desktop overflow, that the
+search, "Filters" button, create button and filter dialog stay on screen from
+640 to 1024px and at 3840px, that filters are fetched once and only on "Apply
+filters" (closing discards the choices), that a phone opens them as a bottom
+sheet and shows a long name on two lines, that the list shows skeletons while
+loading and no count after a failed load, and the organization's full-page event publishing flow.
+
+`events-loading.spec.ts` (4 tests, 2026-11-27 and 2026-11-28): applying a filter keeps the old cards up until the answer arrives, scrolling to the end loads the next page with placeholders, no "Load more" button and no closing message, a failed page can be retried, and the event page shows placeholders until the event arrives.
 
 `event-details.spec.ts` also covers a failed event load: it shows a retry, not
 "not found", while an unknown event still shows "not found".
@@ -37,8 +40,9 @@ to match only the row's main link.
   Upcoming only), an invite-only event (label, no Join button, API join returns
   `403`, no registration left; the invited path is in `event-access.spec.ts`), a past event (completed state, Share still
   present, API join returns `409`), and a joined event moving from Upcoming to
-  Past after it is backdated. A signed-out visitor clicking Join is not covered
-  because the intended behavior is undecided.
+  Past after it is backdated. The signed-out Join click is covered by
+  `event-attendee-states.spec.ts` (superseding the note that the behavior was
+  undecided).
 - `online-event-publishing.spec.ts`: picks Google Meet, tries a missing link, a
   link with no scheme and an `ftp://` link (checking each error and that nothing
   was published), then publishes an https link and checks the "How to join"
@@ -49,7 +53,7 @@ to match only the row's main link.
   the real UI, publishing the organization profile, creating a future event
   through the API, backdating an event, opening My Events from the menu). It uses
   a data-URL cover image so no third-party host is hit. It is not a test file.
-  It also holds `dropdown`, `chooseOption` and `chooseKind` for the form's
+  It also holds `chooseFilter` for the directory's "Filters" dialog, and `dropdown`, `chooseOption` and `chooseKind` for the form's
   custom `Dropdown` lists (there is no native `<select>` to call `selectOption`
   on): `dropdown(page, "Timezone")` finds the trigger by its label and exposes
   the chosen value as its `data-value` attribute, and `chooseOption` opens it
@@ -63,8 +67,9 @@ seed future events through the API. Past events come from the E2E-only
 `POST /__test__/events/:uid/backdate` route
 ([`apps/api/tests/e2e/test-routes.ts`](../../../api/tests/e2e/test-routes.ts)),
 because the API refuses to create a past event or to join one that has started.
-The online-publishing tests keep the form's default start (one hour from now), as
-the in-person test does, so they can fail within an hour of local midnight.
+The online-publishing and in-person publishing tests keep the form's default
+start. Since 2026-11-26 that is a day and an hour from now, so the earlier risk of
+failing within an hour of local midnight is gone.
 
 ## `events-responsive.spec.ts` seeding (fixed)
 
@@ -76,11 +81,11 @@ hours after the start, and moves the past one with the E2E-only
 
 ## Editing and cancelling an event
 
-`event-management.spec.ts` (4 tests, November 2026). Each test signs its own
+`event-management.spec.ts` (4 tests, November 2026, plus 2 written 2026-11-26 that have **not been run**, below). Each test signs its own
 organization up through the UI, publishes the profile and an event through the API
 (`event-helpers.ts`), and uses unique names.
 
-- An organization opens Edit from "Your events": the page address is read-only,
+- An organization opens Edit from the Hosting tab of My events: the page address is read-only,
   the form starts as stored (name, "Who can join" set to Invite only), the change is saved, "Event
   updated" shows, the event page has the new name and no "Invite only" label, and
   the API record matches.
@@ -93,6 +98,9 @@ organization up through the UI, publishes the profile and an event through the A
   event was cancelled" instead of a form.
 - A second organization sees "You can only edit your own events" on the edit page,
   and the API returns `403` for its edit and cancel calls; the event is unchanged.
+- Not run: the edit form starts from a fresh copy, not the one the event page cached.
+  The meeting link of a draft is changed through the API after the event page loaded, the form is reached by links only (a full load would empty the cache), it shows the new link, and saving the name keeps that link.
+- Not run: an edit form that cannot load its event shows "Could not load this event" with no form, and "Try again" opens it once the request works.
 
 ## Leave, capacity and the attendee list
 
@@ -112,7 +120,7 @@ takes an optional `capacity`.
   "1 spot left", and emptying it returns to "No limit".
 - The API refuses a capacity below the number already registered (`409`, shown in
   the form).
-- The organizer opens "Attendees for <event>" from Your events, sees the totals
+- The organizer opens "Attendees for <event>" from the Hosting tab, sees the totals
   ("2 of 5"), both people, narrows by email, checks someone in, undoes it, checks
   in again, finds nobody for a bad search, and downloads the CSV (file name, both
   emails, the check-in, three lines).
@@ -149,7 +157,7 @@ publishes through the form now picks the required "Kind of event" first
   event this is") and refuses more than eight tags; the page shows the kind badge and
   the `#beach #clean-up` chips and the API stores them lower-cased and de-duplicated;
   the edit form opens with the stored kind, changes it, and clearing the tags
-  removes them; the directory's "Filter by kind" narrows to one kind and "All kinds"
+  removes them; the directory's "Kind" filter narrows to one kind and "All kinds"
   brings the rest back.
 - `event-drafts.spec.ts` (5 tests): Save as draft keeps the event out of the
   directory and its address for a visitor (a separate context with no cookies) while
@@ -228,15 +236,51 @@ the API with `access`, and each attendee has their own browser context.
 The full-event refusal test in `event-attendees.spec.ts` now creates its event with
 `waitlistEnabled: false`, because a full event takes a waitlist by default.
 
+`event-access.spec.ts` was changed on 2026-11-26: a request and a waitlist join
+now go through the note dialog ("Send request", "Join waitlist").
+That change has **not been run**.
+
+## Attendee states and draft minimum
+
+Both files were written on 2026-11-26 and have **not been run** (UI tests wait for Tamal's go-ahead), so nothing below is verified in a browser.
+
+`event-attendee-states.spec.ts`:
+
+- The meeting link shows to the host, not to a visitor or a person who has not joined, appears on joining and goes on leaving.
+- A running event reads "Happening now": a person going keeps "You are going" and a "Join online" link with no Leave control; someone else is told joining has closed and the API answers `409`; the event stays under Upcoming in the directory and on My Events.
+- A signed-out visitor who presses Join signs up and returns to the event; on a phone, the bottom bar sends them to sign in and back, with no note dialog first.
+- A request carries an optional note: the field takes focus and is capped at 300 characters, Escape sends nothing, and the organizer reads the note on the Requests tab.
+- The My Events Invited tab lists an invitation until it is accepted.
+- A draft with only a name and dates opens for its organization: a bare Hybrid draft says no meeting link has been added and offers no map link, and a bare In person draft has no location section.
+- A signed-out invitee of a full event with no waitlist sees a disabled "Event is full" and an "Invited? Sign in" button that goes to `/auth/signin`.
+- An organization's own profile labels a draft "Draft" in a "Drafts" group, gives it no "Happening now" even when its dates are running, and shows no "Most recently" link for it.
+
+`event-draft-minimum.spec.ts`:
+
+- A draft is saved with only a name and dates, reloads as saved, is refused by the form on Publish with nothing sent, and publishes once complete.
+- A draft may have a short description, but a bad meeting link is refused; emptying the description clears it.
+- Publish on My events says what is missing on the row and "Finish this event" opens the edit form, including for a draft whose only gap is its kind.
+
+Google sign-in's return path is not covered here because it needs a real Google account; `returnPath.test.ts` covers the helper.
+
 ## Cover uploads (DB-1)
 
 Since 2026-11-19 an event keeps only the https link of its cover. The specs that pick a cover with `setInputFiles` on `#coverImage` now go through the real upload: the form asks `POST /uploads/event-covers`, the e2e API has no Blob token so it answers with the local driver, the browser `PUT`s the file to a signed URL on the API, and the form keeps the returned link (files go to a temp folder, see `apps/api/tests/e2e/env.setup.ts`). `createEvent` in `event-helpers.ts` posts a plain https cover link instead of a data URL, because the API now refuses data URLs.
 These specs have **not been run** since that change (UI tests wait for Tamal's go-ahead), so treat the upload path in them as written but unverified.
+
+## My events tabs
+
+`my-events-tabs.spec.ts` (2 tests, written 2026-11-27, **not run**).
+
+- An organization that hosts and attends sees only its own events under Hosting (drafts under Drafts) and only the joined event under Attending, with no "Create event" there. The tab survives a reload and moves with the arrow keys.
+- At 320px wide the page with both tab rows does not scroll sideways.
+
+The other specs that opened `/organization/events` now open `/events/mine?tab=hosting` (`&show=drafts` for drafts); those edits are not run either.
 
 ## A brand-new organization
 
 `event-fresh-organization.spec.ts` (1 test, 2026-11-23). The only events spec that does
 not call `publishOrganizationProfile`: it signs an organization up and leaves its
 profile as a draft, then checks that `/organization/events/new` opens the form (no
-"finish your profile" panel), that an event can be published, that Your events lists
+"finish your profile" panel), that an event can be published, that the Hosting tab lists
 it, and that the attendee page opens.

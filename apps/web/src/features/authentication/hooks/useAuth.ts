@@ -9,9 +9,17 @@ import { LoginUser, RegisterUser } from "@services/KarmaCircleApi";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import { AuthType } from "../types";
 import type { Credentials, SetAuthErrors, UseAuthResult } from "../types";
+import { destinationAfterAuth } from "../utils/returnPath";
 import { validateEmail } from "../utils/validateEmail";
 
-export function useAuth(authType: AuthType): UseAuthResult {
+/**
+ * `returnTo` is an already-checked path on this site
+ * (`utils/returnPath.ts`) for a visitor who was sent here to sign in.
+ */
+export function useAuth(
+  authType: AuthType,
+  returnTo: string | null = null,
+): UseAuthResult {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
@@ -88,7 +96,8 @@ export function useAuth(authType: AuthType): UseAuthResult {
       // The success toast is rendered by the app-level Toaster and survives
       // the navigation, so it loses nothing either way.
       setLoading(false);
-      navigate(isNewOrganization ? "/organization/setup" : "/");
+      const { to, replace } = destinationAfterAuth(returnTo, isNewOrganization);
+      navigate(to, { replace });
     } else {
       showErrorToast(response?.data?.message);
 
@@ -98,8 +107,7 @@ export function useAuth(authType: AuthType): UseAuthResult {
       // this form actually renders, instead of only ever showing the
       // generic "Validation failed" toast.
       const fieldErrors = response?.data?.errors as
-        | Array<{ path: string; message: string }>
-        | undefined;
+        Array<{ path: string; message: string }> | undefined;
       if (Array.isArray(fieldErrors)) {
         setErrors((prev) => {
           const next = { ...prev };

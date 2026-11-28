@@ -5,6 +5,7 @@ import {
   FiClock,
   FiEdit3,
   FiMapPin,
+  FiRadio,
   FiShield,
   FiUserCheck,
   FiVideo,
@@ -17,9 +18,9 @@ import { eventTypeLabel } from "@features/events/constants/eventTypes";
 import { viewerTimeNote } from "@features/events/utils/eventTimezone";
 import { describeWhere } from "@features/events/utils/eventMode";
 import {
+  eventPhase,
   formatEventDate,
   formatDuration,
-  isEventPast,
 } from "@features/events/utils/formatEventFacts";
 import type { EventHeroProps } from "@features/events/types";
 
@@ -44,10 +45,11 @@ function accentFor(id: string): number {
  * matching `OrganizationProfile.tsx`'s header: at page width a 16:9 photo
  * would push everything below the fold.
  *
- * **"Completed" (September 2026, `isEventPast`)** joins the trust/access
- * badge row when the event's `startsAt` has passed - same definition
- * `EventCard`'s own pill and `EventJoinPanel`'s wrap-up copy use, so this
- * page never disagrees with the card that opened it.
+ * **"Happening now" and "Completed" (`eventPhase`)** join the trust/access
+ * badge row between the start and the end, and after the end - the same
+ * definition `EventCard`'s own label and `EventJoinPanel`'s copy use, so this
+ * page never disagrees with the card that opened it. A draft shows neither,
+ * whatever its dates.
  *
  * **"Cancelled" (PG-2)** is a badge in the same row and replaces "Completed":
  * a cancelled event never took place, whatever its date.
@@ -56,7 +58,10 @@ const EventHero = ({ event }: EventHeroProps) => {
   const online = event.mode === "Online";
   const cancelled = event.cancelled;
   const typeLabel = eventTypeLabel(event.eventType);
-  const past = !cancelled && isEventPast(event.startsAt);
+  const phase = eventPhase(event.startsAt, event.endsAt);
+  // A draft has not happened and is not about to, so it has no time state.
+  const past = !cancelled && !event.draft && phase === "ended";
+  const live = !cancelled && !event.draft && phase === "ongoing";
   const accent = ORGANIZATION_ACCENTS[accentFor(event.id)];
 
   const facts = [
@@ -118,6 +123,7 @@ const EventHero = ({ event }: EventHeroProps) => {
             event.draft ||
             cancelled ||
             past ||
+            live ||
             event.isGovernmentSponsored ||
             event.access !== "open") && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -136,6 +142,12 @@ const EventHero = ({ event }: EventHeroProps) => {
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-error/25 bg-error/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-error uppercase">
                   <FiXCircle aria-hidden="true" className="size-3.5" />
                   Cancelled
+                </span>
+              )}
+              {live && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand-hover uppercase">
+                  <FiRadio aria-hidden="true" className="size-3.5" />
+                  Happening now
                 </span>
               )}
               {past && (

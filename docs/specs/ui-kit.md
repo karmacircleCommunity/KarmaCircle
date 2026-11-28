@@ -47,6 +47,10 @@ Props, the ARIA surface, and the five behaviors that must survive a rebuild: [de
 
 The single-select taxonomy picker inside `DirectoryToolbar` (replaced its old always-visible chip row, September 2026 — Mobbin research behind the switch, props, and geometry): [design-system/08-components-shared.md#filterdropdown](./design-system/08-components-shared.md#filterdropdown).
 
+## `FilterMenu`
+
+Several filters behind one "Filters" button, a glass dialog on wide screens and a bottom sheet on phones, applied with one button: [design-system/08-components-shared.md#filtermenu](./design-system/08-components-shared.md#filtermenu).
+
 ## `SplitPanelLayout`
 
 Props, `align` semantics, `asideDecor`, the 900px drop, and the panel geometry: [design-system/08-components-shared.md#splitpanellayout](./design-system/08-components-shared.md#splitpanellayout).

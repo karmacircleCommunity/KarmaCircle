@@ -91,6 +91,10 @@ test("profile saves return home and saved answers survive reopening", async ({
     .locator('[data-cy="profile-description"]')
     .fill("Helping my community.");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
+  // A second press while the first question is still leaving is ignored.
+  await expect(
+    page.getByRole("heading", { name: "Where are you based?" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   const saved = page.waitForResponse(
     (response) =>

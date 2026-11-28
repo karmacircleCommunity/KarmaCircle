@@ -14,6 +14,7 @@ import {
   userEndpoints,
 } from "./ApiEndpoints";
 import type {
+  ApiEvent,
   ApiInviteResult,
   CoverUploadTicket,
 } from "@features/events/types";
@@ -299,16 +300,19 @@ const toEventWriteFailure = (error: unknown): EventWriteResult => {
   };
 };
 
-// edit event API: only the fields that changed need to be sent
+// edit event API: only the fields that changed need to be sent; a success
+// returns the event as it is now stored
 export const UpdateEvent = async (
   uid: string,
   changes: unknown,
-): Promise<EventWriteResult> => {
+): Promise<EventWriteResult & { event?: ApiEvent }> => {
   try {
-    const response = await Axios.patch(eventEndpoints.update(uid), changes, {
-      withCredentials: true,
-    });
-    return { ok: true, status: response.status };
+    const response = await Axios.patch<{ event?: ApiEvent }>(
+      eventEndpoints.update(uid),
+      changes,
+      { withCredentials: true },
+    );
+    return { ok: true, status: response.status, event: response.data?.event };
   } catch (error) {
     return toEventWriteFailure(error);
   }
@@ -499,11 +503,14 @@ export const FetchAttendeesCsv = async (
   }
 };
 
-export const JoinEvent = async (uid: string) => {
+// join, ask to join, or take a waitlist spot; the note goes with the last two
+export const JoinEvent = async (uid: string, note?: string) => {
   try {
-    const response = await Axios.post(eventEndpoints.join(uid), undefined, {
-      withCredentials: true,
-    });
+    const response = await Axios.post(
+      eventEndpoints.join(uid),
+      note ? { note } : undefined,
+      { withCredentials: true },
+    );
     return { ok: true as const, ...response };
   } catch (error) {
     const apiError = (error as AxiosError<{ message?: string }>).response;

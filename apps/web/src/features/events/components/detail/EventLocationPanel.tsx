@@ -1,5 +1,8 @@
 import { FiArrowUpRight, FiInfo, FiMapPin, FiVideo } from "react-icons/fi";
-import { hasOnlineAccess, hasVenue } from "@features/events/utils/eventMode";
+import {
+  hasJoiningContent,
+  hasVenueContent,
+} from "@features/events/utils/eventMode";
 import { mapsUrl } from "@features/events/utils/formatEventFacts";
 import type { EventLocationPanelProps } from "@features/events/types";
 
@@ -13,6 +16,14 @@ import type { EventLocationPanelProps } from "@features/events/types";
  * which. The map is a plain search link, not an embed: an iframe here would
  * mean a third-party script and a cookie banner for a single address.
  *
+ * **The meeting link is not public.** `platformLink` arrives only for the host
+ * and for a signed-in person who is going. Everyone else reads `linkNote`
+ * (`utils/joinLinkNote.ts`) instead, next to the organizer's own
+ * `linkDelivery` text when there is one.
+ *
+ * A draft may lack any of this, so each card renders only what exists: no
+ * empty card, no blank line and no "Open in maps" for an address nobody typed.
+ *
  * Reads flat fields straight off `DisplayEvent`/`EventDetailContent`
  * (`event.address`/`city`/`platform`/`platformLink`,
  * `detail.gettingThere`/`linkDelivery`/`joinRequirements`) rather than a
@@ -21,8 +32,17 @@ import type { EventLocationPanelProps } from "@features/events/types";
  * gain by reconstructing it in a mapping function just to destructure it
  * straight back out again here.
  */
-const JoiningCard = ({ event, detail }: EventLocationPanelProps) => {
-  if (!event.platform && !detail.linkDelivery) return null;
+const JoiningCard = ({ event, detail, linkNote }: EventLocationPanelProps) => {
+  if (
+    !hasJoiningContent(
+      event,
+      detail.linkDelivery,
+      detail.joinRequirements,
+      linkNote,
+    )
+  ) {
+    return null;
+  }
 
   return (
     <div
@@ -36,10 +56,16 @@ const JoiningCard = ({ event, detail }: EventLocationPanelProps) => {
       <h3 className="mt-2 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
         {event.platform ? `On ${event.platform}` : "Joining online"}
       </h3>
-      <p className="mt-3 font-poppins text-body leading-7 text-ink/75">
-        {detail.linkDelivery ??
-          "The organizer will share the join link closer to the date."}
-      </p>
+      {detail.linkDelivery && (
+        <p className="mt-3 font-poppins text-body leading-7 break-words text-ink/75">
+          {detail.linkDelivery}
+        </p>
+      )}
+      {linkNote && (
+        <p className="mt-3 font-poppins text-body leading-7 text-ink/75">
+          {linkNote}
+        </p>
+      )}
       {detail.joinRequirements && (
         <p className="mt-4 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
           <FiInfo
@@ -71,8 +97,11 @@ const VenueCard = ({ event, detail }: EventLocationPanelProps) => {
   const addressLines = [event.address, event.city, event.state, event.country]
     .filter(Boolean)
     .join(", ");
+  const region = [event.city, event.state, event.country]
+    .filter(Boolean)
+    .join(", ");
 
-  if (!addressLines) return null;
+  if (!hasVenueContent(event, detail.gettingThere)) return null;
 
   return (
     <div
@@ -84,12 +113,12 @@ const VenueCard = ({ event, detail }: EventLocationPanelProps) => {
         Venue
       </p>
 
-      <address className="mt-2 font-poppins text-body leading-7 text-ink/75 not-italic">
-        {event.address && <span className="block">{event.address}</span>}
-        <span className="block">
-          {[event.city, event.state, event.country].filter(Boolean).join(", ")}
-        </span>
-      </address>
+      {addressLines && (
+        <address className="mt-2 font-poppins text-body leading-7 break-words text-ink/75 not-italic">
+          {event.address && <span className="block">{event.address}</span>}
+          {region && <span className="block">{region}</span>}
+        </address>
+      )}
 
       {detail.gettingThere && (
         <p className="mt-4 flex gap-3 rounded-xl bg-surface-warm p-4 font-poppins text-body leading-6 text-ink/70">
@@ -101,28 +130,29 @@ const VenueCard = ({ event, detail }: EventLocationPanelProps) => {
         </p>
       )}
 
-      <a
-        href={mapsUrl(addressLines)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group mt-5 inline-flex items-center gap-2 rounded-full border border-brand-secondary/15 px-5 py-2.5 font-poppins text-body font-medium text-brand-secondary no-underline transition-colors duration-200 hover:border-brand/45 hover:text-brand"
-      >
-        Open in maps
-        <FiArrowUpRight
-          aria-hidden="true"
-          className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
-        />
-      </a>
+      {addressLines && (
+        <a
+          href={mapsUrl(addressLines)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group mt-5 inline-flex items-center gap-2 rounded-full border border-brand-secondary/15 px-5 py-2.5 font-poppins text-body font-medium text-brand-secondary no-underline transition-colors duration-200 hover:border-brand/45 hover:text-brand"
+        >
+          Open in maps
+          <FiArrowUpRight
+            aria-hidden="true"
+            className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+          />
+        </a>
+      )}
     </div>
   );
 };
 
-const EventLocationPanel = ({ event, detail }: EventLocationPanelProps) => (
+/** Both cards decide for themselves whether they have anything to show. */
+const EventLocationPanel = (props: EventLocationPanelProps) => (
   <div className="flex flex-col gap-5">
-    {hasVenue(event.mode) && <VenueCard event={event} detail={detail} />}
-    {hasOnlineAccess(event.mode) && (
-      <JoiningCard event={event} detail={detail} />
-    )}
+    <VenueCard {...props} />
+    <JoiningCard {...props} />
   </div>
 );
 

@@ -60,6 +60,10 @@ test("an approval event: the attendee asks, the organizer approves, the attendee
       attendee.getByText("Approval required", { exact: true }).first(),
     ).toBeVisible();
     await attendee.getByRole("button", { name: "Request to join" }).click();
+    await attendee
+      .getByRole("dialog")
+      .getByRole("button", { name: "Send request" })
+      .click();
     await expect(attendee.getByText("Request sent")).toBeVisible();
     await expect(
       attendee.getByRole("button", { name: "You are going" }),
@@ -100,6 +104,10 @@ test("a declined request cannot ask again, and the organizer can reverse it", as
   try {
     await attendee.goto(`/events/${uid}`);
     await attendee.getByRole("button", { name: "Request to join" }).click();
+    await attendee
+      .getByRole("dialog")
+      .getByRole("button", { name: "Send request" })
+      .click();
     await expect(attendee.getByText("Request sent")).toBeVisible();
 
     await page.goto(`/organization/events/${uid}/attendees`);
@@ -149,6 +157,10 @@ test("a full event offers the waitlist, and the organizer moves the person up", 
     await second.page.goto(`/events/${uid}`);
     await second.page
       .getByRole("button", { name: "Join the waitlist" })
+      .click();
+    await second.page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Join waitlist" })
       .click();
     await expect(
       second.page.getByText("On the waitlist", { exact: true }),

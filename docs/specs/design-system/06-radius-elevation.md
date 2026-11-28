@@ -181,6 +181,10 @@ style — don't read it as license to drop the shadow elsewhere too.
 
 Hairline dividers are `h-px w-full bg-...`, not `border`, inside the Navbar dropdown.
 
+## Liquid glass
+
+The `liquid-glass` utility (`src/styles/index.css`) carries its own inset highlights, rim and drop shadow. Do not add a `shadow-*`, `bg-*` or `border` utility beside it. Spec: [08-components-shared.md](./08-components-shared.md#filtermenu).
+
 ## Z-index ladder
 
 | Value | Occupant |
@@ -188,7 +192,7 @@ Hairline dividers are `h-px w-full bg-...`, not `border`, inside the Navbar drop
 | `z-999` | `ScrollProgress`, `BacktoTop` |
 | `z-99` | Navbar bar |
 | `z-50` | `Dropdown` panel (portaled to `document.body`, `position: fixed`) |
-| `z-30` | `Combobox` suggestion panel |
+| `z-30` | `Combobox` suggestion panel, `FilterDropdown` panel (`FilterMenu` is a modal `<dialog>` in the top layer and needs no value) |
 | `z-20` | `Modal` scrim, Navbar mobile sheet scrim |
 | `z-10` | Navbar logo, Navbar dropdown panel, `SplitPanelLayout` aside content, `EventMobileActionBar` (the event detail page's fixed mobile join bar — deliberately below the Navbar mobile sheet scrim's `z-20`, so an open hamburger menu covers it rather than floating above it) |
 | `z-3` | Navbar CTA, `Header` text, `Landing` hero copy |

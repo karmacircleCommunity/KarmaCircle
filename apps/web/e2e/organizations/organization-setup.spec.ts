@@ -222,10 +222,12 @@ test("an organization signs up, stays hidden, then appears once its profile is c
     ).toBeVisible();
 
     // The resume link now skips the step that is already done. Scoped to
-    // the heading role — "Your events" also appears in the navbar link
-    // ("Your Events") and, transiently, a "Loading your events…" line.
+    // the heading role — "My events" also appears in the navbar link
+    // ("My Events").
+    // The old address still works and opens the Hosting tab.
     await page.goto("/organization/events");
-    await expect(page.getByRole("heading", { name: "Your events" })).toBeVisible();
+    await expect(page).toHaveURL(/\/events\/mine\?tab=hosting$/);
+    await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
   });
 
   await test.step("coming back to edit", async () => {

@@ -2,6 +2,7 @@ import Cookies from "js-cookie";
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import Landing from "@features/landing-home/components/Landing";
 import HowItWorks from "@features/landing-home/components/HowItWorks";
 import DrivesRail from "@features/landing-home/components/DrivesRail";
@@ -9,6 +10,7 @@ import OpenSource from "@features/landing-home/components/OpenSource";
 import { Footer } from "@components";
 import { toggleUserLogin, updateUserData } from "@app/store/slices/userSlice";
 import { successCallback } from "@services/KarmaCircleApi";
+import { takeReturnPath } from "@features/authentication/utils/returnPath";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { OAuthSuccessResponse } from "../types";
 
@@ -19,6 +21,7 @@ import type { OAuthSuccessResponse } from "../types";
  */
 const Home = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const handleToken = async () => {
     const authData = (await successCallback()) as OAuthSuccessResponse;
 
@@ -26,6 +29,9 @@ const Home = () => {
       showSuccessToast(authData?.data?.message);
       dispatch(updateUserData(authData.data?.user));
       dispatch(toggleUserLogin());
+      // A visitor who chose Google from an event's Join button goes back to it.
+      const returnTo = takeReturnPath();
+      if (returnTo) navigate(returnTo, { replace: true });
     } else {
       showErrorToast(authData?.message);
     }

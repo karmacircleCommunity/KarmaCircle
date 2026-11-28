@@ -54,6 +54,36 @@ describe("toDisplayEvent", () => {
     expect(toDisplayEvent(baseEvent).startsAt).toBe(baseEvent.startTime);
   });
 
+  it("carries the end time, which decides whether the event is over", () => {
+    expect(toDisplayEvent(baseEvent).endsAt).toBe(baseEvent.endTime);
+    expect(toDisplayEventDetail(baseEvent).event.endsAt).toBe(
+      baseEvent.endTime,
+    );
+  });
+
+  it("maps a draft with no description, cover, venue or link", () => {
+    const draft: ApiEvent = {
+      ...baseEvent,
+      status: "draft",
+      mode: "Hybrid",
+      description: undefined,
+      platform: "",
+      platformLink: "",
+      linkDelivery: "",
+    };
+    const card = toDisplayEvent(draft);
+    const { event, detail } = toDisplayEventDetail(draft);
+
+    expect(card.summary).toBe("");
+    expect(card.cover).toBeUndefined();
+    expect(card.platform).toBeUndefined();
+    expect(event.summary).toBe("");
+    expect(event.cover).toBeUndefined();
+    expect(event.platform).toBeUndefined();
+    expect(event.platformLink).toBeUndefined();
+    expect(detail.linkDelivery).toBeUndefined();
+  });
+
   it("does not invent attendance or cause data", () => {
     const card = toDisplayEvent(baseEvent);
     expect(card.going).toBeUndefined();

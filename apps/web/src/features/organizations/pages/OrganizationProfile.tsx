@@ -185,7 +185,9 @@ const OrganizationProfileView = ({
   // has one regression for (see the note this replaced, and
   // Organizations.tsx's `useSectionReveal(gridRef, [results.length, ...])`).
   useSectionReveal(pageRef, [organization.userName, events.length]);
-  const mostRecentEvent = [...events].sort(
+  // A draft has not been hosted, so it is never the most recent event.
+  const publicEvents = events.filter((event) => event.status !== "draft");
+  const mostRecentEvent = publicEvents.sort(
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
   )[0];
 

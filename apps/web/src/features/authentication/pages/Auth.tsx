@@ -13,6 +13,10 @@ import {
   PASSWORD_STRENGTH_META,
   getPasswordStrength,
 } from "@features/authentication/utils/passwordStrength";
+import {
+  rememberReturnPath,
+  returnPathFromState,
+} from "@features/authentication/utils/returnPath";
 import { validateEmail } from "@features/authentication/utils/validateEmail";
 import { CheckEmailExists, GoogleAuth } from "@services/KarmaCircleApi";
 import { authTypeOptions, nameRegex, STATUSCODE } from "@statics/Constants";
@@ -48,6 +52,9 @@ const Auth = () => {
   const carriedEmail = (location.state as { email?: unknown } | null)?.email;
   const hasCarriedEmail =
     typeof carriedEmail === "string" && carriedEmail.length > 0;
+  // Set when a page asked the visitor to sign in first, for example the Join
+  // button on an event: signing in or up ends back on that page.
+  const returnTo = returnPathFromState(location.state);
 
   const [step, setStep] = useState<FlowStep>(
     hasCarriedEmail ? "signin" : "email",
@@ -71,7 +78,7 @@ const Auth = () => {
   // the hook with a value that changes across renders is fine — it's still
   // called unconditionally, in the same position, on every render.
   const authType = step === "signup" ? AuthType.SignUp : AuthType.SignIn;
-  const { authenticateUser, loading } = useAuth(authType);
+  const { authenticateUser, loading } = useAuth(authType, returnTo);
 
   const isIndividual = credentials.userType?.value === UserType.Individual;
   const isEmailFormatValid = validateEmail(credentials.email) === null;
@@ -128,6 +135,10 @@ const Auth = () => {
 
   const handleGoogle = async () => {
     const response = await GoogleAuth(credentials.userType?.value);
+    // `GoogleAuth` has already told the visitor when it has no address to give.
+    if (!response) return;
+    // Google returns to "/", so the way back is kept for the home page.
+    rememberReturnPath(returnTo);
     window.location.href = response;
   };
 

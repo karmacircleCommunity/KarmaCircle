@@ -1,4 +1,5 @@
 import { eventZone } from "@features/events/utils/eventTimezone";
+import type { EventPhase } from "@features/events/types";
 
 /**
  * Formatting for the dates, numbers and spans this feature renders -
@@ -126,23 +127,23 @@ export const mapsUrl = (query: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 
 /**
- * Whether an event counts as "completed" - used by `EventCard`'s
- * "Completed" pill and the detail page's join-panel swap
- * (`EventHero`/`EventJoinPanel`/`EventMobileActionBar`) to match the same
- * `startsAt` cut `Events.tsx` already sorts Upcoming/Past by (that page
- * pins its own `Date.now()` once per page load rather than calling this,
- * so a card doesn't hop tabs mid-scroll - see its own comment).
+ * Where an event stands in time, the one definition every surface shares
+ * (card, hero, join panel, mobile bar, calendar links, My Events and the
+ * organization profile): "ongoing" between the start and the end, "ended"
+ * only once the **end** has passed. The API splits `period=upcoming` from
+ * `past` the same way, and closes joining and leaving at the start.
  *
- * Deliberately `startsAt`, not `endsAt`, even on the detail page where
- * `endsAt` is available and would be the more literally correct signal
- * ("has this actually finished"). `EventCardEvent` (the directory card's
- * shape) doesn't carry `endsAt` at all, so using a stricter cut only on
- * the detail page would let a card sitting in the Past tab open into a
- * detail page that still offered to Join, or vice versa - one shared,
- * slightly looser definition beats two disagreeing correct ones.
+ * A record with no readable end is judged by its start alone, and one with no
+ * readable time at all counts as upcoming.
  */
-export const isEventPast = (startsAt: string) =>
-  new Date(startsAt).getTime() < Date.now();
+export const eventPhase = (startsAt: string, endsAt?: string): EventPhase => {
+  const now = Date.now();
+  const start = new Date(startsAt).getTime();
+  const end = new Date(endsAt ?? "").getTime();
+
+  if ((Number.isNaN(end) ? start : end) < now) return "ended";
+  return start < now ? "ongoing" : "upcoming";
+};
 
 /** "1 spot left" or "12 spots left" - the singular matters at the last place. */
 export const formatSpotsLeft = (spotsLeft: number) =>

@@ -38,7 +38,7 @@ async function readEvent(page: Page, uid: string) {
   }>;
 }
 
-test("an organization edits an event from Your events and sees the change on the event page", async ({
+test("an organization edits an event from My events and sees the change on the event page", async ({
   page,
 }) => {
   const stamp = uniqueStamp();
@@ -47,7 +47,7 @@ test("an organization edits an event from Your events and sees the change on the
   await signedInHost(page, stamp);
   await createEvent(page, { uid, name, access: "invite" });
 
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   await page.getByRole("link", { name: `Edit ${name}` }).click();
   await expect(page).toHaveURL(new RegExp(`/organization/events/${uid}/edit$`));
   await expect(
@@ -113,7 +113,7 @@ test("an organization cancels an event: the dialog can be dismissed, then confir
   await signedInHost(page, stamp);
   await createEvent(page, { uid, name });
 
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   const cancelButton = page.getByRole("button", {
     name: `Cancel event ${name}`,
   });
@@ -205,4 +205,76 @@ test("another organization cannot edit or cancel an event, in the page or throug
   const stored = await readEvent(page, uid);
   expect(stored.name).toBe(name);
   expect(stored.status ?? "published").toBe("published");
+});
+
+/** Matches the app's request for one event's record, and nothing else. */
+function isFetchOf(uid: string) {
+  return (url: URL) =>
+    url.pathname === "/events" && url.searchParams.get("uid") === uid;
+}
+
+/** A draft online event, whose page links straight back to My events. */
+async function seedOnlineDraft(page: Page, uid: string, name: string) {
+  await createEvent(page, { uid, name, mode: "Online", status: "draft" });
+}
+
+test("the edit form starts from a fresh copy, not the one the event page cached", async ({
+  page,
+}) => {
+  const stamp = uniqueStamp();
+  const uid = `evt-e2e-fresh-edit-${stamp}`;
+  const name = `Donor Call ${stamp}`;
+  const newLink = "https://meet.example.com/changed-since";
+  await signedInHost(page, stamp);
+  await seedOnlineDraft(page, uid, name);
+
+  // The event page fetches the event, and the app keeps that copy.
+  await page.goto(`/events/${uid}`);
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+
+  // The stored link then changes behind the app's back.
+  const changed = await page.request.patch(`${E2E_API_URL}/events/${uid}`, {
+    data: { platformLink: newLink },
+  });
+  expect(changed.ok(), await changed.text()).toBeTruthy();
+
+  // Reach the edit form by links only: a full load would empty the cache.
+  await page.getByRole("link", { name: "Back to my events" }).click();
+  await page.getByRole("link", { name: `Edit ${name}` }).click();
+  await openEditSection(page, "Date & place");
+  await expect(page.getByLabel("Meeting link")).toHaveValue(newLink);
+
+  await openEditSection(page, "Basics");
+  await page.locator("#name").fill(`${name} moved`);
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByText("Draft saved")).toBeVisible();
+
+  const response = await page.request.get(`${E2E_API_URL}/events?uid=${uid}`);
+  expect(await response.json()).toMatchObject({
+    name: `${name} moved`,
+    platformLink: newLink,
+  });
+});
+
+test("an edit form that cannot load its event offers another try", async ({
+  page,
+}) => {
+  const stamp = uniqueStamp();
+  const uid = `evt-e2e-edit-retry-${stamp}`;
+  const name = `Helpline Evening ${stamp}`;
+  await signedInHost(page, stamp);
+  await seedOnlineDraft(page, uid, name);
+  await page.goto("/events/mine?tab=hosting&show=drafts");
+
+  const oneEvent = isFetchOf(uid);
+  await page.route(oneEvent, (route) => route.abort());
+  await page.getByRole("link", { name: `Edit ${name}` }).click();
+  await expect(
+    page.getByRole("heading", { name: "Could not load this event" }),
+  ).toBeVisible();
+  await expect(page.locator("#name")).toHaveCount(0);
+
+  await page.unroute(oneEvent);
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.locator("#name")).toHaveValue(name);
 });

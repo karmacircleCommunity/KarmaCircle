@@ -69,6 +69,7 @@ That keeps one accessible name for the destination and leaves the organizer link
 Additions over the shared skeleton:
 
 - **Date badge**, top-left on the photo so it costs no vertical space: `absolute top-3 left-3 rounded-full bg-white/92 px-3 py-1 font-outfit text-caption font-semibold tracking-widest text-brand-secondary uppercase backdrop-blur-sm`.
+- **Status label**, in the shared bottom-left slot over the scrim, one of: "Cancelled" or "Completed" (both with a grayscale cover), "Happening now" (`FiRadio` at `size-3`, cover in colour; 2026-11-26), otherwise the kind of event.
 - **Organizer link**: `relative z-1 mt-1 block w-fit max-w-full truncate font-poppins text-caption tracking-wide text-ink/65 uppercase hover:text-brand`.
 - **Meta stack**: `flex flex-col gap-3 font-poppins text-caption tracking-wide text-ink/65`, plus `mb-4` when the card has capacity data (`going`/`spotsLeft`) or `mt-auto mb-0.5` when it doesn't. `FiClock` + weekday/time; `FiVideo` + `Online · {platform}` or `FiMapPin` + `{city}, {country}`. Icons `size-3.5 shrink-0`.
   The explicit `mb-4` is load-bearing on a capacity card: without it, the `mt-auto` on the stat row below resolves to zero and the rule would sit directly on the location line. A live-API event has no capacity data yet (`event.model.ts`), so those cards skip the stat row and pull the meta stack itself down to the bottom with `mt-auto mb-0.5` instead.

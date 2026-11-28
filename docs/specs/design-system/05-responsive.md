@@ -93,10 +93,11 @@ The `useGSAP` dependency array must be keyed on `windowWidth` state for the gate
 
 | Component | Below | Above |
 | --- | --- | --- |
+| `FilterMenu` | < 640px: modal bottom sheet, one column | >= 640px: centered modal dialog, two columns |
 | `Navbar` | < 900px: links hidden; hamburger (logged out) or avatar (logged in) at `max-[900px]:block`; full-screen sheet | >= 900px: inline links, dropdown |
 | `SplitPanelLayout` | < 900px: left panel not rendered at all; wordmark moves inline above the form | >= 900px: sticky 44% left panel, `top-0`, `h-screen` |
 | `Footer` | stacked, `px-9 py-10`, divider between brand and links, no parallax | `lg:flex-row`, `lg:px-12 lg:py-16`, parallax on |
-| `DirectoryToolbar` | search field, then the filters sharing wrapped lines, then the button full width; count on its own line | one line while everything fits, otherwise the filters and button move below the search as one wrapping group (November 2026); count on its own line |
+| `DirectoryToolbar` | search field, then the filter control, then the button full width; count on its own line | one line while everything fits, otherwise the filters and button move below the search as one wrapping group (November 2026); count on its own line |
 | Cards | `p-4`, `text-body-lg` title | `sm:p-5`, `sm:text-lg` title |
 | `Modal` | `max-[525px]:w-[89vw] min-w-55 text-center` | `w-[30vw] min-w-125` |
 | `BacktoTop` | `max-500px:` 32px at 24px inset | 40px at 30px inset |

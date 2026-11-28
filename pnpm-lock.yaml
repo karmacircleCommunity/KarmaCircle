@@ -277,7 +277,7 @@ importers:
         specifier: ^14.1.0
         version: 14.2.0
       swr:
-        specifier: ^2.2.5
+        specifier: ^2.5.1
         version: 2.5.1(react@19.2.8)
       vite-plugin-svgr:
         specifier: ^5.2.0

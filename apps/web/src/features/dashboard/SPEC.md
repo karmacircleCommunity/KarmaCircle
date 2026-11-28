@@ -15,7 +15,7 @@ The edit button opens `/organization/setup`, which is the owner-only organizatio
 The loaded page has seven core content areas arranged in six semantic `<section>` elements.
 The optional demo-data note is a transient state message, not a dashboard section or refinement item.
 The header identifies the organization, explains the dashboard's scope, and exposes `Edit organization profile` and `View hosted events`; both actions stack at mobile widths.
-`View hosted events` points to `/organization/events`, the organization's live hosted-event list.
+`View hosted events` points to `/events/mine?tab=hosting`, the Hosting view of My events.
 The organization overview card uses its border without an outer box shadow.
 See [docs/specs/dashboard.md](../../../../../docs/specs/dashboard.md#refinement-checklist) for the ten-area refinement checklist and design references.
 

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   MODE_LABELS,
   describeWhere,
+  hasJoiningContent,
   hasOnlineAccess,
   hasVenue,
+  hasVenueContent,
 } from "./eventMode";
 
 describe("hasVenue and hasOnlineAccess", () => {
@@ -55,5 +57,27 @@ describe("MODE_LABELS", () => {
       Online: "Online",
       Hybrid: "Hybrid",
     });
+  });
+});
+
+describe("hasVenueContent and hasJoiningContent", () => {
+  it("find nothing to show on a draft with no venue or meeting details", () => {
+    expect(hasVenueContent({ mode: "Hybrid" })).toBe(false);
+    expect(hasVenueContent({ mode: "Offline", city: "" }, "")).toBe(false);
+    expect(hasJoiningContent({ mode: "Hybrid" }, undefined, "")).toBe(false);
+  });
+
+  it("show a card for any one piece of it", () => {
+    expect(hasVenueContent({ mode: "Offline", city: "Goa" })).toBe(true);
+    expect(hasVenueContent({ mode: "Hybrid" }, "Use the side gate")).toBe(true);
+    expect(hasJoiningContent({ mode: "Online", platform: "Zoom" })).toBe(true);
+    expect(hasJoiningContent({ mode: "Online" }, "A note")).toBe(true);
+  });
+
+  it("never show the half a format does not have", () => {
+    expect(hasVenueContent({ mode: "Online", city: "Goa" })).toBe(false);
+    expect(hasJoiningContent({ mode: "Offline", platform: "Zoom" })).toBe(
+      false,
+    );
   });
 });

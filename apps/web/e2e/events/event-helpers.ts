@@ -23,6 +23,15 @@ const DAY_MS = 24 * HOUR_MS;
 export const TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lqUAAAAASUVORK5CYII=";
 
+/** Picks one value in the directory's "Filters" dialog and applies it. */
+export async function chooseFilter(page: Page, option: string) {
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  const panel = page.getByRole("dialog", { name: "Filters" });
+  await panel.getByRole("radio", { name: option, exact: true }).check();
+  await panel.getByRole("button", { name: "Apply filters" }).click();
+  await expect(panel).toHaveCount(0);
+}
+
 export function uniqueStamp(): number {
   return Date.now() + Math.floor(Math.random() * 1_000_000);
 }

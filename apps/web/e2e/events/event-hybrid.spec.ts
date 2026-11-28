@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
 import {
+  chooseFilter,
   chooseKind,
   createEvent,
   openEditSection,
@@ -193,8 +194,7 @@ test("the directory filters hybrid events apart from online and in-person ones",
   await expect(page.getByText(`Online Gathering ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Offline Gathering ${stamp}`)).toBeVisible();
 
-  await page.getByRole("button", { name: "Filter by type" }).click();
-  await page.getByRole("option", { name: "Hybrid" }).click();
+  await chooseFilter(page, "Hybrid");
   await expect(page.getByText(`Hybrid Gathering ${stamp}`)).toBeVisible();
   await expect(page.getByText(`Online Gathering ${stamp}`)).toHaveCount(0);
   await expect(page.getByText(`Offline Gathering ${stamp}`)).toHaveCount(0);

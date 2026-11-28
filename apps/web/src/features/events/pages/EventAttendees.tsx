@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FiArrowLeft,
   FiCheck,
@@ -7,9 +7,16 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { Link, useParams } from "react-router-dom";
-import useSWRInfinite from "swr/infinite";
 import { useSelector } from "react-redux";
-import { Footer, Navbar } from "@components";
+import {
+  Footer,
+  InfiniteScroll,
+  Navbar,
+  Skeleton,
+  SkeletonRegion,
+  SkeletonRows,
+} from "@components";
+import { usePagedList } from "@hooks";
 import { selectUser } from "@app/store/slices/userSlice";
 import OrganizationSetupGate from "@features/organizations/components/OrganizationSetupGate";
 import { eventEndpoints } from "@services/ApiEndpoints";
@@ -19,10 +26,10 @@ import {
   FetchAttendeesCsv,
   SetAttendeeCheckIn,
 } from "@services/KarmaCircleApi";
-import fetcher from "@utils/Fetcher";
 import { showErrorToast } from "@utils/Toasts";
 import EventInvitePanel from "@features/events/components/EventInvitePanel";
 import { formatEventDate } from "@features/events/utils/formatEventFacts";
+import { hostingPath } from "@features/events/utils/myEvents";
 import type {
   ApiAttendeeList,
   EventAttendee,
@@ -64,8 +71,8 @@ const PAGE_SIZE = 50;
  *
  * Shows who registered (name, email, when), the overall totals, and a check-in
  * toggle per person so the organizer can tick people off at the door. The list
- * pages 50 at a time with a search on name or email, and the whole list can be
- * downloaded as CSV. Only the hosting organization can read it: the API answers
+ * loads 50 at a time as the reader scrolls, with a search on name or email, and
+ * the whole list can be downloaded as CSV. Only the hosting organization can read it: the API answers
  * `403` to anyone else and this page says so. A cancelled event keeps its list
  * but has check-in, approvals and invitations turned off.
  *
@@ -91,38 +98,27 @@ const EventAttendees = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  const getKey = (pageIndex: number, previousPage: ApiAttendeeList | null) => {
-    if (
-      !eventId ||
-      !user.email ||
-      (previousPage && pageIndex >= previousPage.pagination.totalPages)
-    ) {
-      return null;
-    }
-    return [
-      eventEndpoints.attendees(eventId, {
-        page: pageIndex + 1,
-        limit: PAGE_SIZE,
-        search,
-        status: tab,
-      }),
-      user.email,
-    ] as const;
-  };
-
-  const { data, error, isLoading, isValidating, mutate, size, setSize } =
-    useSWRInfinite<ApiAttendeeList>(
-      getKey,
-      ([url]) => fetcher<ApiAttendeeList>(url),
-      { revalidateFirstPage: true, revalidateOnFocus: false },
-    );
-
-  const attendees = useMemo(
-    () => (data ?? []).flatMap((page) => page.data),
-    [data],
-  );
-  const first = data?.[0];
-  const hasMore = size < (first?.pagination.totalPages ?? 0);
+  const list = usePagedList<EventAttendee, ApiAttendeeList>({
+    getKey: (page) =>
+      eventId && user.email
+        ? ([
+            eventEndpoints.attendees(eventId, {
+              page,
+              limit: PAGE_SIZE,
+              search,
+              status: tab,
+            }),
+            user.email,
+          ] as const)
+        : null,
+    itemKey: (attendee) => attendee.id,
+    // The heading, totals and search box stay while another search or list
+    // loads; only the rows give way to placeholders.
+    config: { keepPreviousData: true, revalidateOnFocus: false },
+  });
+  const { items: attendees, error, isLoading, mutate } = list;
+  // Never another event's page, kept while this one loads.
+  const first = list.first?.event.uid === eventId ? list.first : undefined;
   const cancelled = first?.event.status === "cancelled";
   const waiting =
     (first?.summary.pending ?? 0) +
@@ -196,18 +192,25 @@ const EventAttendees = () => {
       <Navbar />
       <main className="mx-auto min-h-[60vh] max-w-4xl px-9 pt-10 pb-20 sm:px-10 lg:px-12 lg:pt-14">
         <Link
-          to="/organization/events"
+          to={hostingPath()}
           className="inline-flex items-center gap-2 font-outfit text-body font-medium text-ink/65 no-underline transition hover:text-brand"
         >
           <FiArrowLeft aria-hidden="true" />
-          Your events
+          My events
         </Link>
 
-        {isLoading ? (
-          <p className="mt-10 font-poppins text-body text-ink/55">
-            Loading attendees…
-          </p>
-        ) : error || !first ? (
+        {!first && isLoading ? (
+          <SkeletonRegion label="Loading attendees…" className="mt-7">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="mt-3 h-10 w-4/5 sm:w-3/5" />
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:max-w-md">
+              <Skeleton shape="box" className="h-22" />
+              <Skeleton shape="box" className="h-22" />
+            </div>
+            <Skeleton shape="box" className="mt-6 h-12" />
+            <SkeletonRows trailing="button" className="mt-6" />
+          </SkeletonRegion>
+        ) : !first ? (
           <div className="mt-10">
             <h1 className="m-0 font-outfit text-[2rem] leading-tight font-semibold tracking-tight text-brand-secondary sm:text-4xl">
               {status === 403
@@ -353,7 +356,11 @@ const EventAttendees = () => {
               </button>
             </div>
 
-            {attendees.length === 0 ? (
+            {isLoading ? (
+              <SkeletonRegion label="Loading attendees…" className="mt-6">
+                <SkeletonRows trailing="button" testId="attendee-skeleton" />
+              </SkeletonRegion>
+            ) : attendees.length === 0 ? (
               <div className="mt-8 rounded-2xl border border-dashed border-brand-secondary/15 bg-white/60 px-8 py-14 text-center">
                 <p className="m-0 font-outfit text-body-lg font-medium text-brand-secondary">
                   {search ? "Nobody matches that search" : EMPTY_COPY[tab][0]}
@@ -385,7 +392,7 @@ const EventAttendees = () => {
                           ` · Checked in ${formatEventDate(attendee.checkedInAt)}`}
                       </p>
                       {attendee.note && (
-                        <p className="mt-2 mb-0 rounded-lg bg-surface-warm px-3 py-2 font-poppins text-body leading-6 text-ink/70">
+                        <p className="mt-2 mb-0 rounded-lg bg-surface-warm px-3 py-2 font-poppins text-body leading-6 break-words whitespace-pre-line text-ink/70">
                           {attendee.note}
                         </p>
                       )}
@@ -454,17 +461,24 @@ const EventAttendees = () => {
               </ul>
             )}
 
-            {hasMore && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => void setSize(size + 1)}
-                  disabled={isValidating}
-                  className="min-h-12 cursor-pointer rounded-full border border-brand-secondary/15 bg-white px-6 font-outfit text-body font-medium text-brand-secondary transition hover:border-brand/45 disabled:cursor-wait disabled:opacity-60"
-                >
-                  {isValidating ? "Loading…" : "Load more attendees"}
-                </button>
-              </div>
+            {list.isLoadingMore && (
+              <SkeletonRows
+                count={Math.min(list.remaining, 3)}
+                trailing="button"
+                testId="attendee-skeleton"
+                className="mt-3"
+              />
+            )}
+            {!isLoading && (attendees.length > 0 || error) && (
+              <InfiniteScroll
+                {...list.scroll}
+                itemsName="attendees"
+                endMessage={
+                  list.loadedPages > 1
+                    ? `That's all ${list.total} people.`
+                    : undefined
+                }
+              />
             )}
           </>
         )}

@@ -5,6 +5,7 @@ import {
   hasCalendarTimes,
   icsFileName,
 } from "@features/events/utils/calendarLinks";
+import { eventPhase } from "@features/events/utils/formatEventFacts";
 import type { EventCalendarLinksProps } from "@features/events/types";
 
 const pill =
@@ -14,13 +15,17 @@ const pill =
  * "Add to calendar" (PG-19): a Google Calendar link and an `.ics` download.
  * Shown only for an event that has not ended and is neither cancelled nor a
  * draft, since a calendar entry for any of those would only mislead.
+ *
+ * An online entry carries the meeting link only when the viewer was sent one
+ * (the host, or someone going); otherwise it has no location, and the entry
+ * still points back to the event page.
  */
 const EventCalendarLinks = ({ event }: EventCalendarLinksProps) => {
   if (
     event.cancelled ||
     event.draft ||
     !hasCalendarTimes(event) ||
-    new Date(event.endsAt).getTime() < Date.now()
+    eventPhase(event.startsAt, event.endsAt) === "ended"
   ) {
     return null;
   }

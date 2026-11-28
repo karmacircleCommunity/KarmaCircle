@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_API_URL } from "../env";
 import {
+  chooseFilter,
   chooseKind,
   publishOrganizationProfile,
   signUpOrganization,
@@ -147,7 +148,7 @@ test("an organization publishes an online event with a platform and a meeting li
   });
 
   // And the organization finds it in its hosted-events list.
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   // Anchored: the row's "Edit <name>" link also contains the event name.
   await expect(
     page.getByRole("link", { name: new RegExp(`^${name}`) }),
@@ -187,10 +188,8 @@ test("an online event published with the default platform is saved as a Zoom mee
     .getByRole("searchbox", { name: "Search events" })
     .fill(String(stamp));
   await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
-  await page.getByRole("button", { name: "Filter by type" }).click();
-  await page.getByRole("option", { name: "Online" }).click();
+  await chooseFilter(page, "Online");
   await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
-  await page.getByRole("button", { name: "Filter by type" }).click();
-  await page.getByRole("option", { name: "Offline" }).click();
+  await chooseFilter(page, "Offline");
   await expect(page.getByRole("heading", { level: 2, name })).toHaveCount(0);
 });

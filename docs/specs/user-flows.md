@@ -39,11 +39,11 @@ flowchart TD
     orgs_dir["Organizations Directory - /organizations"]:::general
     org_profile["Organization Profile - /organization/:userName (organization handle)"]:::general
     org_dashboard["Dashboard - /dashboard"]:::general
-    org_events_admin["Your Events - /organization/events"]:::general
-    my_events["My Events - /events/mine, signed-in individual"]:::general
+    org_events_admin["My Events, Hosting - /events/mine?tab=hosting"]:::general
+    my_events["My Events, Attending - /events/mine, any signed-in account"]:::general
     org_gate{{"Live organization account?"}}:::decision
     gate_refuse["Gate refusal: browse organizations instead"]:::general
-    gate_pass["Dashboard / Your Events content"]:::general
+    gate_pass["Dashboard content"]:::general
     events_dir["Events Directory - /events"]:::general
     event_detail["Event Detail - /events/:eventId"]:::general
     create_access{{"Redux says signed in, organization account?"}}:::decision
@@ -118,8 +118,7 @@ flowchart TD
     h_nav_events["Link: Events"]:::general
     h_nav_signup["Link: Sign Up, shown when logged out"]:::general
     h_nav_dash["Link: Dashboard, organization accounts"]:::general
-    h_nav_yourevents["Link: Your Events, organization accounts - desktop menu"]:::general
-    h_nav_myevents["Link: My Events, signed-in individual - Profile menu"]:::general
+    h_nav_myevents["Link: My Events, any signed-in account - Profile menu"]:::general
     h_nav_finish["Link: Finish setting up, draft organizations"]:::general
     h_oauth["Google OAuth landing pad on mount"]:::general
     u_personal["Individual: navbar Edit profile - /user/setup"]:::general
@@ -138,7 +137,6 @@ flowchart TD
     h_navbar --> h_nav_events
     h_navbar --> h_nav_signup
     h_navbar --> h_nav_dash
-    h_navbar --> h_nav_yourevents
     h_navbar --> h_nav_myevents
     h_navbar --> h_nav_finish
     h_start --> h_oauth
@@ -309,6 +307,7 @@ flowchart TD
     a_individual_ok["Redirect to Home - /"]:::terminator
     a_org_setup["Redirect to Organization Setup - /organization/setup"]:::terminator
     a_signin_ok["Redirect to Home - /"]:::terminator
+    a_return["With a returnTo: back to that page instead"]:::terminator
 
     a_start --> a_email
     a_email --> a_google
@@ -320,6 +319,8 @@ flowchart TD
     a_signin --> a_forgot
     a_forgot --> a_reset
     a_signin --> a_signin_ok
+    a_signin -.->|"sent here by a page"| a_return
+    a_signup -.->|"sent here by a page"| a_return
     a_signup --> a_newtype
     a_newtype -->|"Individual"| a_individual_ok
     a_newtype -->|"Organization"| a_org_setup
@@ -328,7 +329,7 @@ flowchart TD
 ## Organizations - directory, profile, and admin surfaces
 
 See [organizations.md](./organizations.md) and [dashboard.md](./dashboard.md).
-`OrganizationSetupGate` wraps page content (it is not a route guard). `/dashboard` uses it to require a finished profile; the events pages (`/organization/events`, `/organization/events/new`, the edit and attendee pages) pass `requireLive={false}`, so any organization account can use them, even with a draft profile.
+`OrganizationSetupGate` wraps page content (it is not a route guard). `/dashboard` uses it to require a finished profile; the events pages (`/organization/events/new`, the edit and attendee pages) pass `requireLive={false}`, so any organization account can use them, even with a draft profile.
 
 ```mermaid
 flowchart TD
@@ -361,7 +362,7 @@ flowchart TD
     o_refuse["Gate refusal: this page is for organizations"]:::general
     o_checklist["Draft org: setup checklist + Finish setup link"]:::general
     o_dashboard_content["Dashboard: organization profile, followers/following, hosted events, registrations, paid support, profile views"]:::general
-    o_yourevents_content["Your Events content: this org's live events list"]:::general
+    o_yourevents_content["My Events, Hosting: this org's live events list"]:::general
 
     o_start --> o_taxonomy
     o_taxonomy --> o_search
@@ -394,9 +395,11 @@ flowchart TD
 
 See [events.md](./events.md) and [known-issues.md](./known-issues.md).
 The map below covers the current attendee and organizer paths, including event creation from both organization entry points (as a draft or published, in person, online or hybrid), editing, publishing, unpublishing or cancelling a hosted event, leaving an event, and the organizer's attendee list (November 2026).
-The organizer attendee roster and attendance counts are explicitly marked as proposed; no organizer endpoint or UI exposes registration totals today.
-Upcoming is the default directory filter and compares each event start time to the current time when the page opens.
-My Events is a signed-in individual page with Upcoming and Past periods, backed by the caller-scoped registration lookup.
+The organizer attendee list is built (`/organization/events/:eventId/attendees`).
+The API splits Upcoming from Past by each event's end time, so Upcoming includes running events (2026-11-26).
+My Events is one signed-in page.
+Its Attending view has Upcoming, Past and Invited lists, backed by the caller-scoped registration and invitation lookups.
+Organization accounts also get a Hosting view with Upcoming, Past and Drafts lists, backed by `GET /events?host`.
 
 ```mermaid
 flowchart TD
@@ -405,9 +408,9 @@ flowchart TD
     classDef terminator fill:#B3E65F,stroke:#6E9A24,color:#2F440B
 
     e_start(["Visitor opens Events"]):::terminator
-    e_fetch["GET /events, limit 100 - SWR fetch and revalidation"]:::general
-    e_search["Search - client-side"]:::general
-    e_time["Upcoming / Past filter - client-side"]:::general
+    e_fetch["GET /events, 12 per page with Load more"]:::general
+    e_search["Search - API param"]:::general
+    e_time["Upcoming / Past filter by end time - API param"]:::general
     e_type["Type filter: open, approval required, invite only, online, offline, hybrid - API params"]:::general
     e_grid["Grid of Event Cards"]:::general
     e_access{{"Redux says signed in, organization account?"}}:::decision
@@ -415,7 +418,7 @@ flowchart TD
     e_create_btn["Create event - Events directory or hosted workspace"]:::general
     e_form_route["Full-page form - /organization/events/new"]:::general
     e_form["Basics, schedule, location or meeting link, access and live preview"]:::general
-    e_validate{{"Required fields and selected mode valid?"}}:::decision
+    e_validate{{"Valid for the pressed button, draft or publish?"}}:::decision
     e_errors["Show field errors and keep form open"]:::general
     e_post_create["POST /events/create"]:::general
     e_backend{{"Backend: is the host an organization account?"}}:::decision
@@ -429,10 +432,11 @@ flowchart TD
     e_agenda["How the day runs - Agenda, if any"]:::general
     e_location["Where it is / How to join"]:::general
     e_bring["What to bring"]:::general
-    e_join["Join Panel - cost and Join action; capacity is not tracked"]:::general
+    e_join["Join Panel - cost, spots left for a capped event, and Join action"]:::general
     e_cancelled{{"Event cancelled?"}}:::decision
     e_cancelled_state["Cancelled state shown instead of Join; API join returns 409"]:::general
     e_timing{{"Event timing?"}}:::decision
+    e_live["Happening now - joining closed; a going person gets Join online when a link was sent"]:::general
     e_completed["Completed wrap-up shown instead of Join"]:::general
     e_manage["Attendees, and Edit, Publish or Delete draft, Unpublish or Cancel on each hosted event"]:::general
     e_draft["Save as draft - hidden from everyone but the organization"]:::general
@@ -440,7 +444,7 @@ flowchart TD
     e_unpublish["POST /events/:uid/unpublish - only while nobody has registered"]:::general
     e_attendees["Attendee page - /organization/events/:uid/attendees: totals, search, check-in, CSV, Requests / Waitlist / Declined tabs, invitations"]:::general
     e_full{{"Capacity set and full?"}}:::decision
-    e_full_state["Event is full - Join the waitlist, or Event is full when the waitlist is off (409)"]:::general
+    e_full_state["Event is full - Join the waitlist with an optional note, or Event is full when the waitlist is off (409)"]:::general
     e_leave["Leave event link and confirmation, until the event starts"]:::general
     e_leave_req["DELETE /events/:uid/registration - spot given back"]:::general
     e_edit_page["Edit form - /organization/events/:uid/edit, page address locked"]:::general
@@ -450,7 +454,9 @@ flowchart TD
     e_invite{{"Invite only, and not invited?"}}:::decision
     e_nojoin["Invite-only message, no button; only invited emails can join"]:::general
     e_auth{{"Signed in?"}}:::decision
-    e_signin["Sign in, then return to event"]:::general
+    e_signin["Press the button - sign in or sign up with returnTo, then return to event"]:::general
+    e_note["Optional note dialog before a request or waitlist spot"]:::general
+    e_mail_change["Emails: cancel, material edit, decline, new request"]:::general
     e_status["GET /events/:uid/registration"]:::general
     e_already{{"Already registered?"}}:::decision
     e_going["You're going - Join action hidden"]:::terminator
@@ -461,13 +467,13 @@ flowchart TD
     e_email_sent["Confirmation email with View Event Details link"]:::general
     e_email_failed["Registration remains saved; show email delivery status"]:::general
     e_my_events["My Events - /events/mine"]:::general
-    e_period{{"Upcoming or Past?"}}:::decision
+    e_period{{"Which tab?"}}:::decision
     e_upcoming["GET /events/mine?period=upcoming"]:::general
     e_past["GET /events/mine?period=past"]:::general
+    e_invited["GET /events/invitations"]:::general
     e_return["Open event details from email or My Events"]:::general
-    e_hosted["Your Events - /organization/events; GET /events?host"]:::general
+    e_hosted["My Events, Hosting - /events/mine?tab=hosting; GET /events?host"]:::general
     e_lists_refresh["Open event detail and refresh public and hosted event lists"]:::terminator
-    e_organizer_count["Proposed: organizer attendee list and count per hosted event"]:::terminator
     e_organizer["Organizer Panel - Hosted by, links to organization profile"]:::general
     e_fundraiser["Fundraiser Panel - shown only if the event has one"]:::general
     e_mobilebar["Mobile Action Bar - fixed bottom, hides near Join Panel or footer"]:::general
@@ -506,7 +512,7 @@ flowchart TD
     e_cancelled -->|"Yes"| e_cancelled_state
     e_cancelled -->|"No"| e_timing
     e_hosted --> e_manage
-    e_form --> e_draft
+    e_validate -->|"Yes, Save as draft"| e_draft
     e_draft --> e_manage
     e_manage -->|"Publish"| e_publish
     e_manage -->|"Unpublish"| e_unpublish
@@ -522,18 +528,24 @@ flowchart TD
     e_cancel_dialog --> e_cancel_post
     e_cancel_post --> e_hosted
     e_cancel_post --> e_cancelled_state
-    e_timing -->|"Past"| e_completed
+    e_timing -->|"Ended"| e_completed
+    e_timing -->|"Running"| e_live
     e_timing -->|"Upcoming"| e_invite
     e_invite -->|"Yes"| e_nojoin
     e_invite -->|"No"| e_auth
     e_auth -->|"No"| e_signin
-    e_signin --> e_status
+    e_signin --> e_detail_fetch
     e_auth -->|"Yes"| e_status
     e_status --> e_already
     e_already -->|"Yes"| e_going
     e_already -->|"No"| e_joinactive
     e_joinactive --> e_post
-    e_joinactive -.->|"approval event"| e_request
+    e_joinactive -.->|"approval event"| e_note
+    e_note -.-> e_request
+    e_request -.-> e_mail_change
+    e_cancel_post --> e_mail_change
+    e_patch -.->|"material change"| e_mail_change
+    e_attendees -.->|"decline"| e_mail_change
     e_post --> e_email
     e_email -->|"Yes"| e_email_sent
     e_email -->|"No"| e_email_failed
@@ -546,7 +558,7 @@ flowchart TD
     e_my_events --> e_period
     e_period -->|"Upcoming"| e_upcoming
     e_period -->|"Past"| e_past
-    e_hosted -.->|"Future organizer feature"| e_organizer_count
+    e_period -->|"Invited"| e_invited
     e_join --> e_organizer
     e_join --> e_fundraiser
     e_hero --> e_mobilebar

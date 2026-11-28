@@ -58,7 +58,7 @@ by both layers above.
 ```js
 userEndpoints:  details(userName), profile, update, report, completeProfile, updateProfile
 organizationEndpoints:  all, details(userName), createEvent, dashboard, mine, taxonomy, follow(handle), profileView(handle), byHandle(handle), directory({...})
-eventEndpoints: create, mine(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, type, access, page, limit })
+eventEndpoints: create, mine(), invitations(), byHost(handle), byUid(uid), join(uid), registration(uid), directory({ period, search, mode, type, access, page, limit })
 ```
 
 The attendee and invitation endpoints added in November 2026: `attendees(uid, { page, limit, search, status })`, `attendee(uid, id)`, `approveAttendee(uid, id)`, `declineAttendee(uid, id)`, `invites(uid)`, `invite(uid, inviteId)` and `attendeesExport(uid)`, and `coverUpload` (November 2026, `POST /uploads/event-covers`, used by `RequestCoverUpload`). The matching calls in `KarmaCircleApi.ts` are `ApproveAttendee`, `DeclineAttendee`, `InviteToEvent` and `RevokeInvite`.
@@ -112,26 +112,38 @@ Current routed SWR call sites (including `useSWRInfinite`):
 | `OrganizationSetup.tsx` and `useMyOrganization.ts` | `organizationEndpoints.mine` and taxonomy endpoint                                                  | Loads the signed-in organization's editable record and setup taxonomy              |
 | `Dashboard.tsx`                                    | `organizationEndpoints.dashboard`                                                                   | Loads the owner-only organization workspace and its dashboard data                 |
 | `Events.tsx`                                       | `eventEndpoints.directory()` via `useSWRInfinite`                                                   | Loads the public event directory a page at a time; search and filters are applied by the API, not in the browser |
-| `DetailedEvent.tsx`                                | `eventEndpoints.byUid()` and `eventEndpoints.registration()`; `eventEndpoints.join()` through `JoinEvent()`; `eventEndpoints.leave()` through `LeaveEvent()` | Loads public event details and, for a signed-in visitor, saved registration state; joins and leaves |
-| `YourEvents.tsx`                                   | `eventEndpoints.byHost()`; `eventEndpoints.cancel()` through `CancelEvent()`                         | Loads the signed-in organization's hosted events and cancels one on confirmation   |
+| `DetailedEvent.tsx`                                | `eventEndpoints.byUid()` and `eventEndpoints.registration()`; `eventEndpoints.join()` through `JoinEvent(uid, note?)`; `eventEndpoints.leave()` through `LeaveEvent()` | Loads public event details and, for a signed-in visitor, saved registration state; joins (with an optional note) and leaves |
+| `HostedEvents.tsx`                                 | `eventEndpoints.byHost()`; `CancelEvent()`, `PublishEvent()`, `UnpublishEvent()`, `DeleteDraft()` | Loads the signed-in organization's hosted events and manages them on My events' Hosting view |
 | `EventAttendees.tsx`                               | `eventEndpoints.attendees()` via `useSWRInfinite`; `eventEndpoints.attendee()` through `SetAttendeeCheckIn()`; `eventEndpoints.attendeesExport()` through `FetchAttendeesCsv()` | Loads the host's attendee list a page at a time, checks people in, downloads CSV |
-| `EditEvent.tsx`                                    | `eventEndpoints.byUid()`; `eventEndpoints.update()` through `UpdateEvent()` (via `useEvent.ts`)      | Loads one hosted event into the shared form and saves only the changed fields      |
-| `MyEvents.tsx`                                     | `eventEndpoints.mine()` via `useSWRInfinite`                                                        | Loads the signed-in individual's paginated attendee registrations                  |
+| `EditEvent.tsx`                                    | `eventEndpoints.byUid()` through `useEventSnapshot` (one fetch per visit, not `useSWR`); `eventEndpoints.update()` through `UpdateEvent()` (via `useEvent.ts`, which returns the stored event) | Loads one hosted event into the shared form and saves only the changed fields      |
+| `AttendingEvents.tsx`                              | `eventEndpoints.mine()` or `eventEndpoints.invitations()` via `useSWRInfinite`                      | Loads the signed-in account's registrations (Upcoming, Past) or invitations       |
 | `ProfileSetup.tsx`                                 | `userEndpoints.profile`                                                                             | Loads the signed-in individual's saved profile answers                             |
 
 `CreateEvents.tsx` is routed as a full page at `/organization/events/new` for
-signed-in organization accounts with a live profile. The public directory and
+signed-in organization accounts, with or without a live profile. The public directory and
 hosted-events workspace both link to that route. After `POST /events/create`
 succeeds, `useEvent.ts` revalidates the current organization's hosted-events key
-and the page opens the new event detail; the public directory refetches every
-loaded page when `/events` is reopened (`revalidateAll`). `POST /events/create`
+and the page opens the new event detail; the public directory refetches the
+pages it kept when `/events` is reopened. `POST /events/create`
 can now return `400` for the create rules (name and description length, end after
 start, start in the future, cover image type and size, reserved page address,
-maximum field lengths) and `409` for a taken page address, including when two
+maximum field lengths, and for publishing, the required fields) and `409` for a taken page address, including when two
 requests race for it. The
 event `uid` is the URL-safe ending of that KarmaCircle event page, not an
 external website URL. For online events, the API requires the meeting URL to use
 HTTP or HTTPS.
+
+**Drafts, meeting link and joining (2026-11-26).**
+`buildCreatePayload` leaves empty fields out of the create body, because an empty string is not "no value" to the API; an edit sends `null` to clear a draft's description or location field.
+`ApiEvent.description` is optional.
+On a refused create, edit or publish, `useEvent.ts` marks the form fields named in `errors: [{ path, message }]`, and `HostedEvents.tsx` shows the first publish error on the draft's row.
+`platformLink` is present only for the hosting organization and a signed-in person who is going, so event reads must send the cookie (the shared `fetcher` does) and must treat a missing link as normal.
+The join response's `emailFailed` is true only when a confirmation email was tried and did not go out; the event page warns on that alone (`utils/joinedMessage.ts`).
+`JoinEvent(uid, note?)` sends `{ note }` only when there is one, and returns `{ ok: false, status, message }` on failure; the event page treats `401` as signed out.
+`period=upcoming` and `past` are split by the API on the end time.
+The emails after a cancel, edit, decline or request are sent by the API and need no web call.
+An edit, publish, unpublish, cancel or draft delete that races another change answers `409 "This event just changed. Reload and try again."`, which the web shows like any other API message.
+`InviteToEvent` also gets `409 "This event has already started, so you can no longer invite people."` once the event has started, shown in a toast by `EventInvitePanel.tsx`.
 
 **Edit and cancel (November 2026).** `UpdateEvent(uid, changes)` (`PATCH
 /events/:uid`) and `CancelEvent(uid)` (`POST /events/:uid/cancel`) in
@@ -156,8 +168,9 @@ filters by kind and the API's search matches tags); and `status` may be `draft`
 (`DELETE /events/:uid`, the same URL as `UpdateEvent`) following the same
 non-throwing `{ ok, status, message, errors }` pattern. The create call sends
 `status: "draft"` for Save as draft. `GET /events` reads the cookie
-(`optionalAuth`), so `YourEvents.tsx`'s `byHost` call returns the host's own drafts
-while the same URL on the public profile returns none. `ApiEvent` also carries `capacity` and
+(`optionalAuth`), so `HostedEvents.tsx`'s `byHost` call returns the host's own drafts
+while the same URL returns none to anyone else
+(the public profile uses it too, so the owner sees their drafts there, in a labelled Drafts group). `ApiEvent` also carries `capacity` and
 `registrationCount` (only meaningful with a capacity) and the optional detail fields
 (`about`, `contactEmail`, `cost`, `bringAlong`, `languages`, `minimumAge`, `agenda`,
 `gettingThere`, `linkDelivery`, `joinRequirements`) that the create and edit calls

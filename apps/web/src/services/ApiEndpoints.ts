@@ -32,12 +32,14 @@ const organizationEndpoints = {
     search?: string;
     domain?: string;
     tag?: string;
+    page?: number;
     limit?: number;
   }) => {
     const query = new URLSearchParams();
     if (params.search) query.set("search", params.search);
     if (params.domain) query.set("domain", params.domain);
     if (params.tag) query.set("tag", params.tag);
+    if (params.page) query.set("page", String(params.page));
     query.set("limit", String(params.limit ?? 60));
     return `${API}/organizations?${query.toString()}`;
   },
@@ -62,9 +64,12 @@ const HOST_EVENTS_LIMIT = 100;
 const eventEndpoints = {
   create: `${API}/events/create`,
   mine: () => `${API}/events/mine`,
+  /** `GET` one page of upcoming events the signed-in person is invited to and
+   *  has not joined. */
+  invitations: () => `${API}/events/invitations`,
   /**
    * One host's own events, filtered server-side by `hostUsername` — the
-   * organization's "Your events" page. Filtering a fetched page in the
+   * Hosting view of My Events. Filtering a fetched page in the
    * browser instead would hide anything on page two.
    * Asks for the largest page the API allows. With no `period` the API lists
    * a host's events newest first, so a host with more than 100 events loses

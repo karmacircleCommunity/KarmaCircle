@@ -279,8 +279,8 @@ test("an organizer sees who joined, checks people in, searches and downloads the
     await second.context.close();
   }
 
-  // Found from Your events.
-  await page.goto("/organization/events");
+  // Found from the Hosting tab.
+  await page.goto("/events/mine?tab=hosting");
   await page.getByRole("link", { name: `Attendees for ${name}` }).click();
   await expect(page).toHaveURL(
     new RegExp(`/organization/events/${uid}/attendees$`),

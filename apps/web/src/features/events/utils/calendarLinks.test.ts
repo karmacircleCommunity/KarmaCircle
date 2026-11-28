@@ -98,6 +98,28 @@ describe("calendar links (PG-19)", () => {
     ).toBe(false);
   });
 
+  it("neither leaks nor breaks when the viewer was sent no meeting link", () => {
+    const withheld = {
+      ...event,
+      mode: "Online",
+      summary: "",
+      address: undefined,
+      city: undefined,
+      country: undefined,
+      platform: "Zoom Meeting",
+      platformLink: undefined,
+    } as DisplayEvent;
+    const ics = buildIcs(withheld, PAGE_URL, NOW);
+    const google = new URL(googleCalendarUrl(withheld, PAGE_URL));
+
+    expect(calendarLocation(withheld)).toBe("");
+    expect(calendarLocation({ ...withheld, mode: "Hybrid" })).toBe("");
+    expect(ics).not.toContain("LOCATION");
+    expect(ics).not.toContain("undefined");
+    expect(google.searchParams.has("location")).toBe(false);
+    expect(google.searchParams.get("details")).toBe(PAGE_URL);
+  });
+
   it("knows when a time cannot be read, and names the file after the event", () => {
     expect(hasCalendarTimes(event)).toBe(true);
     expect(hasCalendarTimes({ startsAt: "nope", endsAt: event.endsAt })).toBe(

@@ -559,3 +559,71 @@ input[type="number"] {
     background-color 9999s ease-in-out 0s,
     color 9999s ease-in-out 0s;
 }
+
+/* The app's liquid glass surface (the filter dialog). Layers, from the back:
+   a strong blur that keeps the colours behind it, a tinted sheet that is
+   clearer in the middle than at the edges, light caught inside the edges, and
+   a one pixel rim that is bright where light enters and leaves. It does not
+   bend the page behind it: only Chromium can do that to a live page. The
+   element must be positioned, for the rim. */
+@utility liquid-glass {
+  --glass: 62%;
+  background-image:
+    radial-gradient(
+      120% 80% at 0% 0%,
+      rgb(255 255 255 / 0.75),
+      transparent 55%
+    ),
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, white var(--glass), transparent),
+      color-mix(in srgb, white calc(var(--glass) - 14%), transparent) 50%,
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--color-brand) 16%, white) var(--glass),
+        transparent
+      )
+    );
+  -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.05);
+  backdrop-filter: blur(28px) saturate(190%) brightness(1.05);
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 0.95),
+    inset 0 -1px 1px rgb(255 255 255 / 0.6),
+    inset 0 0 28px rgb(255 255 255 / 0.45),
+    0 8px 24px -16px rgb(47 36 30 / 0.35),
+    0 36px 90px -36px rgb(47 36 30 / 0.6);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: 1.5px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      140deg,
+      white,
+      rgb(255 255 255 / 0.25) 30%,
+      color-mix(in srgb, var(--color-brand) 22%, transparent) 62%,
+      rgb(255 255 255 / 0.9)
+    );
+    mask:
+      linear-gradient(black 0 0) content-box,
+      linear-gradient(black 0 0);
+    mask-composite: exclude;
+  }
+
+  /* A phone sheet covers more of the page, so it holds text on a denser
+     sheet. */
+  @media (width < 40rem) {
+    --glass: 78%;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    background-image: none;
+    background-color: white;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

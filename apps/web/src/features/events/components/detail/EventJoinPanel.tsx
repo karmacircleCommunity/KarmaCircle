@@ -1,23 +1,109 @@
 import {
+  FiArrowUpRight,
   FiCheck,
   FiCheckCircle,
   FiClock,
   FiEdit3,
   FiMail,
+  FiRadio,
   FiShare2,
   FiUserCheck,
   FiUserPlus,
   FiXCircle,
 } from "react-icons/fi";
+import { hasOnlineAccess } from "@features/events/utils/eventMode";
 import { viewerTimeNote } from "@features/events/utils/eventTimezone";
 import { leaveLabel } from "@features/events/utils/joinView";
 import {
+  eventPhase,
   formatEventDate,
-  isEventPast,
 } from "@features/events/utils/formatEventFacts";
 import { formatMoney } from "@utils/formatMoney";
 import { showErrorToast, showSuccessToast } from "@utils/Toasts";
 import type { EventJoinPanelFullProps } from "@features/events/types";
+
+const outlineButton =
+  "mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-brand/35 bg-transparent px-6 py-3 font-poppins text-body font-medium text-brand transition-colors duration-200 hover:bg-brand/8 hover:text-brand-hover";
+
+/**
+ * The panel's body between an event's start and its end. Joining and leaving
+ * are closed, so the only things left to say are whether this person holds a
+ * place and, if the event is online and they do, how to get in.
+ */
+const HappeningNow = ({
+  going,
+  joinLink,
+  checkingRegistration,
+  registrationCheckFailed,
+  onRetry,
+  onSignIn,
+}: {
+  going: boolean;
+  joinLink?: string;
+  checkingRegistration: boolean;
+  registrationCheckFailed: boolean;
+  onRetry: () => void;
+  /** Set for a signed-out viewer, who may already hold a place. */
+  onSignIn?: () => void;
+}) => (
+  <>
+    <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/8 px-3 py-1 font-outfit text-caption font-medium tracking-wide text-brand-hover uppercase">
+      <FiRadio aria-hidden="true" className="size-3.5" />
+      Happening now
+    </div>
+    {going ? (
+      <>
+        <p className="mt-4 inline-flex items-center gap-2 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
+          <FiCheck aria-hidden="true" className="text-brand" /> You are going
+        </p>
+        <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
+          Your registration is saved to your account.
+        </p>
+        {joinLink && (
+          <a
+            href={joinLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 font-poppins text-body font-medium text-white no-underline shadow-[0_10px_26px_-14px_var(--color-brand)] transition-colors duration-200 hover:bg-brand-hover"
+          >
+            Join online
+            <FiArrowUpRight aria-hidden="true" />
+          </a>
+        )}
+      </>
+    ) : checkingRegistration ? (
+      <p
+        role="status"
+        className="mt-4 font-poppins text-body leading-6 text-ink/65"
+      >
+        Checking your registration…
+      </p>
+    ) : registrationCheckFailed ? (
+      <>
+        <p className="mt-4 font-poppins text-body leading-6 text-ink/65">
+          Could not verify your registration.
+        </p>
+        <button type="button" onClick={onRetry} className={outlineButton}>
+          Retry status check
+        </button>
+      </>
+    ) : (
+      <>
+        <p className="mt-4 font-outfit text-xl font-semibold tracking-tight text-brand-secondary">
+          This event has started
+        </p>
+        <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
+          Joining has closed because the event has started.
+        </p>
+        {onSignIn && (
+          <button type="button" onClick={onSignIn} className={outlineButton}>
+            Already joined? Sign in
+          </button>
+        )}
+      </>
+    )}
+  </>
+);
 
 /**
  * The decision panel: cost, remaining spots, and the join control.
@@ -28,7 +114,9 @@ import type { EventJoinPanelFullProps } from "@features/events/types";
  * invited email, on any level), or no button at all (invite-only without an
  * invitation, full without a waitlist, or a request the organizer declined).
  * A person whose request is pending or who is on the waitlist sees that
- * standing and can withdraw.
+ * standing and can withdraw. A request and a waitlist spot open the note
+ * dialog first (`DetailedEvent.tsx`), and a signed-out visitor pressing the
+ * button is taken to sign in and brought back.
  *
  * **Capacity (PG-5).** The Going/Spots-left row only renders for an event the
  * organizer gave a capacity; the numbers come from the API and are refreshed
@@ -40,9 +128,19 @@ import type { EventJoinPanelFullProps } from "@features/events/types";
  * the status line, which asks `DetailedEvent.tsx` to open the confirmation. It
  * is gone once the event has started, because the API refuses it from then on.
  *
- * **A completed event (September 2026, `isEventPast`) gets no Join control
- * either - cost, capacity and "Join this event" all stop meaning anything
- * once the thing has already happened.** The panel swaps to a short
+ * **An event that is happening now** (between its start and its end,
+ * `eventPhase`) has closed to joining. Someone going still reads "You are
+ * going", with a direct "Join online" link when they were sent one; everyone
+ * else is told that joining has closed because the event has started.
+ *
+ * **A signed-out viewer** who has no Join button gets a way to sign in and
+ * come back: "Already joined? Sign in" while the event is running, and
+ * "Invited? Sign in" on an invite-only event and on a full one with no
+ * waitlist, since an invitation gets past both (`signInPrompt`).
+ *
+ * **A completed event (`eventPhase`, judged by the end time) gets no Join
+ * control either - cost, capacity and "Join this event" all stop meaning
+ * anything once the thing has already happened.** The panel swaps to a short
  * wrap-up instead: a "Completed" pill, a line saying any recap/what's-next
  * lives on the organizer's own page, and a pointer down to
  * `EventOrganizerPanel` (the actual "go there" action, so this panel isn't
@@ -66,10 +164,14 @@ const EventJoinPanel = ({
   registrationCheckFailed,
   onToggleJoin,
   onRequestLeave,
+  signInPrompt,
+  onSignIn,
 }: EventJoinPanelFullProps) => {
   const viewerNote = viewerTimeNote(event.startsAt, event.timezone);
   const cancelled = event.cancelled;
-  const past = !cancelled && isEventPast(event.startsAt);
+  const phase = eventPhase(event.startsAt, event.endsAt);
+  const past = !cancelled && phase === "ended";
+  const live = !cancelled && phase === "ongoing";
   const hasCapacity =
     event.going !== undefined && event.spotsLeft !== undefined;
   // The counts come from the API and are refreshed after a join or a leave
@@ -114,8 +216,8 @@ const EventJoinPanel = ({
             Only you can see this event
           </p>
           <p className="mt-2 font-poppins text-body leading-6 text-ink/65">
-            Nobody can find it or join it until you publish it from your events
-            list.
+            Nobody can find it or join it until you publish it from the Hosting
+            tab of My events.
           </p>
         </>
       ) : cancelled ? (
@@ -147,6 +249,17 @@ const EventJoinPanel = ({
             organizer&apos;s own page - see &ldquo;Hosted by&rdquo; below.
           </p>
         </>
+      ) : live ? (
+        <HappeningNow
+          going={kind === "going"}
+          joinLink={
+            hasOnlineAccess(event.mode) ? event.platformLink : undefined
+          }
+          checkingRegistration={checkingRegistration}
+          registrationCheckFailed={registrationCheckFailed}
+          onRetry={onToggleJoin}
+          onSignIn={signInPrompt ? onSignIn : undefined}
+        />
       ) : (
         <>
           <p className="m-0 font-outfit text-2xl font-semibold tracking-tight text-brand-secondary">
@@ -223,6 +336,9 @@ const EventJoinPanel = ({
                 checkingRegistration
               }
               aria-pressed={kind === "going"}
+              aria-haspopup={
+                join.kind === "join" && join.asks ? "dialog" : undefined
+              }
               className={`mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-3 font-poppins text-body font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:scale-97 ${
                 kind === "going"
                   ? "border border-brand/35 bg-brand/8 text-brand-hover"
@@ -252,6 +368,14 @@ const EventJoinPanel = ({
             </button>
           )}
 
+          {/* Invite-only, or full with no waitlist: an invitation still
+              lets its holder in, once they are signed in. */}
+          {signInPrompt === "Invited?" && (
+            <button type="button" onClick={onSignIn} className={outlineButton}>
+              Invited? Sign in
+            </button>
+          )}
+
           {registrationCheckFailed && kind !== "going" && (
             <p className="m-0 mt-3 font-poppins text-caption leading-5 text-ink/65">
               Could not verify your registration. Try again before joining.
@@ -267,7 +391,7 @@ const EventJoinPanel = ({
         </>
       )}
 
-      {leave && !past && (
+      {leave && phase === "upcoming" && (
         <button
           type="button"
           onClick={onRequestLeave}
@@ -296,7 +420,15 @@ const EventJoinPanel = ({
       </div>
 
       <p className="m-0 mt-5 border-t border-border-subtle pt-4 font-poppins text-caption leading-5 text-ink/65">
-        {cancelled ? "Was due" : past ? "Took place" : "Starts"}{" "}
+        {event.draft
+          ? "Planned for"
+          : cancelled
+            ? "Was due"
+            : past
+              ? "Took place"
+              : live
+                ? "Started"
+                : "Starts"}{" "}
         {formatEventDate(event.startsAt, event.timezone)}
         {viewerNote && <> ({viewerNote} your time)</>}
       </p>

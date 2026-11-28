@@ -75,7 +75,7 @@ test("an organization saves a draft that only it can see, and publishes it from 
 
   await page.getByRole("button", { name: "Save as draft" }).click();
   await expect(page.getByText(/Draft saved/)).toBeVisible();
-  await expect(page).toHaveURL(/\/organization\/events$/);
+  await expect(page).toHaveURL(/\/events\/mine\?tab=hosting&show=drafts$/);
 
   // It is in the owner's list, marked as a draft, with Publish and Delete.
   const row = page.getByRole("listitem").filter({ hasText: name });
@@ -120,9 +120,15 @@ test("an organization saves a draft that only it can see, and publishes it from 
   }
 
   // Publishing makes it public.
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting&show=drafts");
   await page.getByRole("button", { name: `Publish ${name}` }).click();
   await expect(page.getByText("Event published")).toBeVisible();
+  // The page follows the event to the list it moved to.
+  await expect(page.getByRole("tab", { name: "Upcoming" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(row).toBeVisible();
   await expect(row.getByText("Draft", { exact: true })).toHaveCount(0);
   expect(await visitorStatus(browser, uid)).toBe(200);
 });
@@ -145,7 +151,7 @@ test("a draft can be edited, saved again as a draft, and published from the edit
   await page.locator("#name").fill(`${name}, renamed`);
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByText("Draft saved")).toBeVisible();
-  await expect(page).toHaveURL(/\/organization\/events$/);
+  await expect(page).toHaveURL(/\/events\/mine\?tab=hosting&show=drafts$/);
   expect(await visitorStatus(browser, uid)).toBe(404);
 
   await page.goto(`/organization/events/${uid}/edit`);
@@ -166,7 +172,7 @@ test("a published event with no registrations can be taken offline and published
   await signedInHost(page, stamp);
   await createEvent(page, { uid, name });
 
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   await page.getByRole("button", { name: `Unpublish ${name}` }).click();
   const dialog = page.getByRole("dialog", { name: "Take this event offline?" });
   await dialog.getByRole("button", { name: "Keep it public" }).click();
@@ -206,7 +212,7 @@ test("an event that has registrations cannot be unpublished, and the message say
     await attendeeContext.close();
   }
 
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting");
   await page.getByRole("button", { name: `Unpublish ${name}` }).click();
   await page
     .getByRole("dialog", { name: "Take this event offline?" })
@@ -234,7 +240,7 @@ test("a draft can be deleted, a published event offers no delete, and the addres
   await createEvent(page, { uid: draftUid, name: draftName, status: "draft" });
   await createEvent(page, { uid: liveUid, name: liveName });
 
-  await page.goto("/organization/events");
+  await page.goto("/events/mine?tab=hosting&show=drafts");
   const draftRow = page.getByRole("listitem").filter({ hasText: draftName });
   await expect(
     page.getByRole("button", { name: `Delete draft ${liveName}` }),

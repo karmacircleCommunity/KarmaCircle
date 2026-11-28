@@ -87,18 +87,48 @@ See the relevant feature specs ([organizations.md](./organizations.md), [events.
 
 ## Events — attendee capacity (built November 2026, PG-5)
 
-Capacity is now optional and real: an organizer sets a maximum when publishing or editing, the API reserves a spot atomically on join (`409 "This event is full."`), and the UI shows going and spots-left **only for an event with a capacity** (`capacityCounts` in `toDisplayEvent.ts`, then the existing `hasCapacity` checks). An event with no capacity says "No limit" and shows no numbers, because `registrationCount` is only trustworthy for a capped event (it is recounted when a capacity is set). Leaving (PG-3), the host attendee list with check-in and CSV (PG-6) and the organizer's join notice exist. Still missing: invitations and approval (PG-4), a waitlist (PG-14), and emailing attendees about changes (PG-18). Do not display a headcount for an event with no capacity.
+Capacity is now optional and real: an organizer sets a maximum when publishing or editing, the API reserves a spot atomically on join (`409 "This event is full."`), and the UI shows going and spots-left **only for an event with a capacity** (`capacityCounts` in `toDisplayEvent.ts`, then the existing `hasCapacity` checks). An event with no capacity says "No limit" and shows no numbers, because `registrationCount` is only trustworthy for a capped event (it is recounted when a capacity is set). Leaving (PG-3), the host attendee list with check-in and CSV (PG-6) and the organizer's join notice exist. Superseded 2026-11-26: this entry listed invitations and approval (PG-4), a waitlist (PG-14) and emails about changes (PG-18) as missing; all three are built. Do not display a headcount for an event with no capacity.
 
-Also built in November 2026: an event has a **timezone** (PG-11): the form reads its date and time pickers in it, and the pages show the event's own clock with the viewer's beside it. Known limits: a timezone is chosen from a plain select of every zone the browser knows (about 400 entries, no search box), the viewer note is shown only on the hero and the join panel (cards and lists show the event's clock alone), registration and check-in times are the viewer's clock, and older events have no timezone, so they still read in each viewer's own zone. The write-up supports a small safe format (PG-12) and Contribute opens the organization's Support dialog (PG-8); an event's own `raised` figure still cannot be set or paid into (PG-26). Also built in November 2026: an event has a **format** of In person, Online or **Hybrid** (PG-10), an optional **kind** and up to eight **tags** (PG-9), and can be a **draft** (PG-15) with publish, unpublish and delete-draft actions. Known limits: the directory's mobile toolbar now stacks three dropdowns plus the button, which is tall (the design system note says to revisit the multi-facet panel before a fourth dimension); a draft is held to the full create rules, so there is no half-finished draft; and the event kind is optional in the API but required by the form, so a legacy event with no kind must be given one before the edit form will save it.
+Also built in November 2026: an event has a **timezone** (PG-11): the form reads its date and time pickers in it, and the pages show the event's own clock with the viewer's beside it. Known limits: a timezone is chosen from a plain select of every zone the browser knows (about 400 entries, no search box), the viewer note is shown only on the hero and the join panel (cards and lists show the event's clock alone), registration and check-in times are the viewer's clock, and older events have no timezone, so they still read in each viewer's own zone. The write-up supports a small safe format (PG-12) and Contribute opens the organization's Support dialog (PG-8); an event's own `raised` figure still cannot be set or paid into (PG-26). Also built in November 2026: an event has a **format** of In person, Online or **Hybrid** (PG-10), an optional **kind** and up to eight **tags** (PG-9), and can be a **draft** (PG-15) with publish, unpublish and delete-draft actions. Known limits: the directory's mobile toolbar now stacks three dropdowns plus the button, which is tall (the design system note says to revisit the multi-facet panel before a fourth dimension); and the event kind is optional in the API but required by the form to publish, so a published legacy event with no kind must be given one before the edit form will save it. Superseded 2026-11-26: drafts are no longer held to the full create rules (see [events.md](./events.md#draft-rules-and-publishing-rules-2026-11-26)).
 
 ## Events - open issues (November 2026)
 
 - **An event hosted by an organization with a draft profile links to a page that says "Not found".** Since November 2026 a draft organization can publish events, but its public page (`/organization/:handle`) is only served once the profile is live, so the organizer panel's link on the event page leads to a 404 until the organizer finishes setup. The product call is that this is the organizer's choice; a one-off email at organization sign-up nudges them to finish their details (`sendOrganizationSetupReminder`, production only; no repeat reminders).
 - **`formatEventDate`'s JSDoc example does not match its output.** It says "Sat 12 Sep · 9:00 pm", but only the first ", " is replaced, so en-US yields "Sat · Sep 12, 9:00 PM". The format is locale-dependent by design.
-- **The create form shows only "Validation failed" for server-side rule failures.** Field-level messages (`response.data.errors`) from the API are not surfaced; the browser mirrors the API rules, so this mostly matters if the two drift. The edit form (November 2026) does surface the API's first field error in its toast.
 - **Events Playwright specs: fixed and run (2026-11-16).** `events-responsive.spec.ts` now creates future events that end after they start and moves the past one with the E2E-only backdate route, and `attendee-journey.spec.ts`, `online-event-publishing.spec.ts` and the new `event-management.spec.ts` (edit and cancel) were run for the first time. All 15 events specs pass on Chromium, Firefox and WebKit (45 of 45). Two specs needed their hosted-list link anchored (`^<name>`) because each row's "Edit <name>" link also contains the event name.
 - **Lint warnings (2, 0 errors) as of 2026-11-26:** both in `e2e/organizations/organizations-responsive.spec.ts` (conditional logic in a test).
 - **Occasional Playwright failures in full-suite runs (2026-11-26).** Across two full runs, these failed once and passed when repeated on their own: the "You are going" check in `event-access.spec.ts` and `event-attendees.spec.ts` (Firefox), the type-filter test in `events-responsive.spec.ts` (Firefox), and `organization-setup.spec.ts` (WebKit, where `getByText("Guwahati").first()` matched a hidden element). Cause not established.
+
+## Events - open points (2026-11-26)
+
+Found by reading the code; none was reproduced in a browser.
+
+- **An organizer cannot set a fundraiser or the government badge.**
+  The form has no field and the API accepts neither (`fundraiser`, `isGovernmentSponsored`), so only seed data and test-only routes write them.
+  Waiting on a product decision; until then the badge stays server and seed set on purpose.
+- **Pressing Enter in a text box of the create form publishes.**
+  "Publish event" is the form's only submit button and "Save as draft" is `type="button"`, so implicit submission takes the publish intent.
+  The same applies to a draft's edit form, where Enter can make a complete draft public.
+- **Event emails are sent inside the request, with no queue and only a narrow retry.**
+  Cancel and edit use Resend's batch API in chunks of 100 and retry only a rate-limited chunk, so a very large event makes the request slow.
+  Invitations go one by one, and invitation, decline, request and join emails are not retried.
+  A send that fails for good is only logged.
+  The API limits are detailed in [the API known issues](../../apps/api/docs/specs/known-issues.md#events).
+- **One rejected message can lose a whole email batch.**
+  A refused cancel or update batch is logged and dropped without being split, and Resend refuses the whole batch when it rejects one message in it, so up to 99 other people miss the notice.
+- **A join that races a cancel or an unpublish can leave a registration unnotified.**
+  The join checks the event's status and then writes the registration without the version guard, so it can land after the cancellation emails were collected, or leave a registration on a draft.
+- **Anyone can claim an invitation by signing up with the invited address.**
+  There is no email verification, and an invitation is matched on the lower-cased account email.
+  Someone who knows an invited address can sign up with it if it has no account, or with a case variant of it (account emails are unique only case-sensitively), and join as the invited person.
+- **A timezone-only edit sends no email.**
+  The API compares the start and end instants, the mode, the venue and the meeting link, not `timezone`, although the clock shown on the page changes.
+  Choosing a zone with a different offset in the web form also moves the instants, which does send the update email.
+- **An event page left open across its start or end does not update by itself.**
+  There is no timer: the phase changes on the next re-render, such as the refetch when the window regains focus.
+  A join or leave offered in the meantime is refused by the API.
+- **Forgot password drops the return-to-event target.**
+  The link passes only the email, and neither reset page carries `returnTo`.
 
 ## Landing and events visual review - open items (2026-11-26)
 
@@ -109,6 +139,12 @@ Still open:
 - **Smaller:** small tap targets (avatar 30px, "All events" 23px, host name on cards 15px, footer links 16px); the footer email field has no label; the event page tab title is generic; the landing page and events list have no `<main>`; the landing open-source card sits closer to the screen edge than other sections at 320px; hero wording differs between phone and desktop.
 - **`OrganizationProfile.tsx` shows "not found" for any load failure**, the pattern the event page had (seen in code, not reproduced).
 - **Other screens still use faint text** (`text-ink/55` and below): the contrast floor in `design-system/02-color.md` was applied only to the landing page, the events list, the event page, the navbar and the footer.
+
+## Events directory - endless scroll trade-offs (2026-11-27)
+
+- **The footer is only reachable after the last page.** Fine at today's size (two pages); with hundreds of events its links and the newsletter box are effectively out of reach from `/events`.
+- **Filters and search reset on return.** Going back from an event restores the loaded cards and the scroll position only for the default filters, because the filters live in component state, not the address.
+- **Other lists still use a button.** My Events' Attending view, the attendee list and `/organizations` have not moved to `InfiniteScroll`.
 
 ## Validation that doesn't actually block submission
 

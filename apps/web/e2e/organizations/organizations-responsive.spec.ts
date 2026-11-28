@@ -255,8 +255,7 @@ test.describe("Organization profile — responsive", () => {
     const dialogBox = await modalHeading
       .locator("xpath=ancestor::div[@role='dialog']")
       .boundingBox();
-    if (dialogBox) {
-      expect(dialogBox.width).toBeLessThanOrEqual(375);
-    }
+    expect(dialogBox).not.toBeNull();
+    expect(dialogBox?.width).toBeLessThanOrEqual(375);
   });
 });

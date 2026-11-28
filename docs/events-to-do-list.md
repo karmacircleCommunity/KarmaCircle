@@ -59,6 +59,7 @@ Missing: opening the detail page, joining, the "You are going" state, My Events,
 Result: `apps/web/e2e/events/attendee-journey.spec.ts` has 5 tests for these.
 Run on 2026-11-16: all 5 pass on Chromium, Firefox and WebKit.
 A signed-out visitor clicking Join is not covered, because the intended behavior is not decided.
+Superseded 2026-11-26: the visitor is sent to sign in and brought back to the event; `event-attendee-states.spec.ts` covers it and has not been run yet.
 
 ### T-4 No test for online event publishing in the browser
 Status: done (2026-11-16). Priority: P2.
@@ -68,6 +69,7 @@ Result: `apps/web/e2e/events/online-event-publishing.spec.ts` has 2 tests (platf
 Run on 2026-11-16: both pass on Chromium, Firefox and WebKit.
 One needed its hosted-list link anchored (`^<name>`) after the Edit link was added.
 The tests keep the form's default start (one hour from now), so they can fail within an hour of local midnight.
+Superseded 2026-11-26: the default start is now a day and an hour from now, so that midnight risk is gone.
 
 ### T-5 No frontend unit tests
 Status: done (2026-11-04). Priority: P2.
@@ -121,6 +123,7 @@ Say plainly that visual review is still pending until it is done.
 ### UI-1 Visual review of the three event pages
 Status: open. Priority: P1.
 Review the create form, the event detail page, and My Events in a browser, once Tamal says to test the UI.
+The 2026-11-26 additions (draft and publishing note, join note dialog, "Happening now", Invited tab, publish refusal row) have not been reviewed in a browser.
 Spot-checked on 2026-11-16 while building PG-1 and PG-2, which is not the full review: the create page, the edit page, Your events with its Edit and Cancel buttons, the cancel dialog, and the cancelled card and detail page at 1024px, and the cancelled detail page, card and edit page messages at 375px.
 My Events was not looked at, and nothing was checked at 320px or on very wide screens.
 
@@ -136,11 +139,12 @@ Check each page for the loading state, the failed-fetch state, and the empty sta
 
 ### UI-4 Accessibility pass
 Status: open. Priority: P2.
-Check keyboard use of the create form, the mode choice, the filter dropdowns, focus order, focus after a failed submit, and color contrast on the badges.
+Check keyboard use of the create form, the mode choice, the filters panel, focus order, focus after a failed submit, and color contrast on the badges.
 
 ### UI-5 Cover image handling
 Status: open. Priority: P2.
 The form reads the image as a base64 string up to 5 MB.
+Superseded by DB-1: the image is uploaded to object storage when it is picked, still up to 5 MB.
 Check the preview, the slow-network behavior, and what is shown when the image is very tall or very small.
 
 ## 3. Database (MongoDB)
@@ -271,7 +275,7 @@ Update them in the same change.
 8. Decided 2026-11-19: hackathons are out of scope.
 9. Decided 2026-11-19: volunteering roles and shifts are not an event feature.
 10. Decided 2026-11-19: events do not take money through tickets or donations.
-11. Decided and built 2026-11-23: a brand-new organization needs nothing beyond its account to host events. What Tamal meant was the "Finish your organization profile before publishing events" gate, not the event fields. The create, edit, Your events and attendee pages now pass `requireLive={false}` to `OrganizationSetupGate`, and Your events no longer waits for the profile to be live. The event form's own required fields are unchanged. The dashboard still needs a finished profile.
+11. Decided and built 2026-11-23: a brand-new organization needs nothing beyond its account to host events. What Tamal meant was the "Finish your organization profile before publishing events" gate, not the event fields. The create, edit, Your events and attendee pages now pass `requireLive={false}` to `OrganizationSetupGate`, and Your events no longer waits for the profile to be live. The event form's own required fields are unchanged (superseded 2026-11-26: a draft now needs only the name, page address, format and dates, while publishing and saving a published event need everything). The dashboard still needs a finished profile.
 12. Decided and built 2026-11-23: a one-off email when an organization signs up, saying it can host events now and that its public page stays a draft until it adds its details (`sendOrganizationSetupReminder`, production only, best effort). No repeat reminders and no scheduler, on purpose. Not sent for organizations created through Google sign-in. The organizer link on an event page still leads to a "Not found" page until the profile is live (see known issues).
 
 ## 8. Done
@@ -341,3 +345,5 @@ Update them in the same change.
 - 2026-11-23: decision 12, the finish-your-details email on organization sign-up; API tests added, the API suite passed 26 suites and 462 tests.
 - 2026-11-26: UI-1 and UI-2 partly done: the events list and one event page were reviewed in a browser at 320 to 2560px, and the tablet toolbar cut-off, the false "not found" on a failed load and the navbar menus were fixed. The create form and My Events are still not reviewed; open findings are in `docs/specs/known-issues.md`.
 - 2026-11-26: the remaining events findings of that review were fixed: two-line card titles, text contrast, phone filters, loading, empty and error states, one time style and a solid join bar. The contrast part of UI-4 and the states part of UI-3 are covered for the list and event page only.
+- 2026-11-26: meeting links only for the host or a going person; events are Completed by end time, with "Happening now" and Upcoming including running events; signed-out Join goes to sign-in and back; drafts need only name, address, format and dates (superseding full rules for drafts) while publishing needs everything; optional join note; Invited tab in My Events; emails for cancel, material edit, decline and new request (superseding no emails about edits and cancels). New Playwright specs are written but not yet run.
+- 2026-11-28: the three directory filters moved behind one "Filters" button (glass dialog on wide screens, bottom sheet on phones, active count, "Clear all"), choices now take effect only on "Apply filters" as one request, old cards stay up while the answer loads, and the "That's all N events." line under the directory was removed. The panel then got a liquid glass surface, and long filter lists now show 8 options with "Show all" and a search box above 15. Web unit tests (399) and the five affected Playwright specs on Chromium (20 tests) passed; the latest look has not been checked by eye.

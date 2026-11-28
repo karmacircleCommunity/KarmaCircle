@@ -26,6 +26,7 @@ import {
   Field,
   FormSection,
   inputClasses,
+  SaveRequirements,
 } from "@features/events/components/EventFormParts";
 import EditSectionTabs from "@features/events/components/EditSectionTabs";
 import EventDetailsSection from "@features/events/components/EventDetailsSection";
@@ -36,6 +37,8 @@ import {
 } from "@features/events/utils/uploadCoverImage";
 import { useEvent } from "@features/events/hooks/useEvent";
 import { buildEventChanges } from "@features/events/utils/buildEventChanges";
+import { EVENT_LIMITS } from "@features/events/utils/validateEvent";
+import { hostingPath } from "@features/events/utils/myEvents";
 import {
   browserTimeZone,
   combineInZone,
@@ -114,31 +117,42 @@ const PLATFORM_DROPDOWN_OPTIONS: readonly DropdownOption[] = platforms.map(
   ({ label }) => ({ value: label, label }),
 );
 
+/** Ties both save buttons to the note on what each one needs. */
+const REQUIREMENTS_ID = "event-save-requirements";
+
 /** A blank form, with dates computed when the form opens (not at page load). */
-const createInitialEvent = (): EventFormState => ({
-  name: "",
-  startDate: dayjs().add(1, "day"),
-  endDate: dayjs().add(1, "day"),
-  startTime: dayjs().add(1, "hour"),
-  endTime: dayjs().add(2, "hour"),
-  mode: "Offline",
-  uid: "",
-  description: "",
-  city: "",
-  state: "",
-  address: "",
-  country: "India",
-  coverImage: "",
-  platform: "Zoom Meeting",
-  platformLink: "",
-  access: "open",
-  waitlistEnabled: true,
-  capacity: "",
-  timezone: browserTimeZone(),
-  eventType: "",
-  tags: "",
-  ...emptyDetailFields(),
-});
+const createInitialEvent = (): EventFormState => {
+  // A day and an hour from now, lasting an hour. Each date comes from the same
+  // moment as its time, so a form opened late at night still ends after it
+  // starts.
+  const start = dayjs().add(1, "day").add(1, "hour");
+  const end = start.add(1, "hour");
+
+  return {
+    name: "",
+    startDate: start,
+    endDate: end,
+    startTime: start,
+    endTime: end,
+    mode: "Offline",
+    uid: "",
+    description: "",
+    city: "",
+    state: "",
+    address: "",
+    country: "India",
+    coverImage: "",
+    platform: "Zoom Meeting",
+    platformLink: "",
+    access: "open",
+    waitlistEnabled: true,
+    capacity: "",
+    timezone: browserTimeZone(),
+    eventType: "",
+    tags: "",
+    ...emptyDetailFields(),
+  };
+};
 
 /** Full-page organizer publishing flow for `/organization/events/new`. */
 const CreateEvents = () => {
@@ -156,9 +170,12 @@ const CreateEvents = () => {
 export const EventForm = ({
   initial,
   original,
+  onStored,
 }: {
   initial: EventFormState;
   original?: ApiEvent;
+  /** Called with the saved event when an edit is stored and the form stays. */
+  onStored?: (stored: ApiEvent) => void;
 }) => {
   const isEdit = Boolean(original);
   // Every timezone the browser knows, plus the event's own if it is somehow
@@ -173,6 +190,8 @@ export const EventForm = ({
     [timeZones],
   );
   const isDraftEdit = original?.status === "draft";
+  // Where "back" goes: the list of My Events this event sits in.
+  const listPath = hostingPath(isDraftEdit ? "Drafts" : "Upcoming");
   const navigate = useNavigate();
   const { organization } = useMyOrganization();
   const eventPageUrlPrefix = `${window.location.origin}/events/`;
@@ -180,14 +199,16 @@ export const EventForm = ({
   const [activeEditSection, setActiveEditSection] =
     useState<EditSectionKey>("basics");
   const [errors, setErrors] = useState<EventFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Which button's save is running, so only that one says so.
+  const [submitting, setSubmitting] = useState<SubmitIntent | null>(null);
+  const isSubmitting = submitting !== null;
   const [coverError, setCoverError] = useState("");
   // The cover is uploaded as soon as it is chosen (DB-1); the form keeps only
   // the link. While it uploads, the chosen file previews from the browser.
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUidEdited, setIsUidEdited] = useState(isEdit);
-  const { validateEvent, submitCallback } = useEvent(event, original);
+  const { validateEvent, submitCallback } = useEvent(event, original, onStored);
   const allowNavigation = useRef(false);
   const isDirty = Boolean(
     original && Object.keys(buildEventChanges(event, original)).length > 0,
@@ -347,59 +368,59 @@ export const EventForm = ({
     void submit("publish");
   };
 
+  /** Opens the section of the first field in error (edit) and focuses it. */
+  const revealFirstError = (found: EventFormErrors) => {
+    for (const section of EDIT_SECTIONS) {
+      const fieldId = EDIT_SECTION_FIELDS[section.key].find(
+        (field) => found[field],
+      );
+      if (!fieldId) continue;
+      if (isEdit) setActiveEditSection(section.key);
+      // After the paint that shows the section and its messages.
+      requestAnimationFrame(() => {
+        const field = document.getElementById(fieldId);
+        field?.focus();
+        field?.scrollIntoView({ block: "center" });
+      });
+      return;
+    }
+  };
+
   /**
    * Runs the checks, then saves. `intent` is which button was pressed: publish
-   * (the form's own submit) or save as a draft (PG-15). A saved draft is not
-   * public, so the organizer goes back to their list rather than to a page
-   * nobody else can open.
+   * (the form's own submit) or save as a draft (PG-15), which asks for much
+   * less. A saved draft is not public, so the organizer goes back to their list
+   * rather than to a page nobody else can open. Saving a published event is
+   * held to the publishing rules.
    */
   const submit = async (intent: SubmitIntent) => {
-    const validationErrors = validateEvent();
+    const validationErrors = validateEvent(intent);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
-      const firstInvalidId = Object.keys(validationErrors)[0];
-      const invalidField = document.getElementById(firstInvalidId);
-      const invalidSection = invalidField?.closest<HTMLElement>(
-        "[data-event-form-section]",
-      )?.dataset.eventFormSection as EditSectionKey | undefined;
-      const targetSection =
-        invalidSection ??
-        EDIT_SECTIONS.find((section) =>
-          EDIT_SECTION_FIELDS[section.key].includes(
-            firstInvalidId as keyof EventFormState,
-          ),
-        )?.key;
-
-      if (isEdit && targetSection) {
-        setActiveEditSection(targetSection);
-        requestAnimationFrame(() => {
-          const field = document.getElementById(firstInvalidId);
-          field?.focus();
-          field?.scrollIntoView({ block: "center" });
-        });
-      } else {
-        invalidField?.focus();
-      }
+      revealFirstError(validationErrors);
       return;
     }
 
-    setIsSubmitting(true);
+    setSubmitting(intent);
     try {
-      await submitCallback(
+      const refused = await submitCallback(
         event,
         () => {
           allowNavigation.current = true;
           navigate(
-            intent === "draft"
-              ? "/organization/events"
-              : `/events/${event.uid}`,
+            intent === "draft" ? hostingPath("Drafts") : `/events/${event.uid}`,
           );
         },
         validationErrors,
         intent,
       );
+      // The API has the last word: mark whatever it refused.
+      if (refused && Object.keys(refused).length > 0) {
+        setErrors(refused);
+        revealFirstError(refused);
+      }
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(null);
     }
   };
 
@@ -424,11 +445,11 @@ export const EventForm = ({
       >
         <div className="mx-auto max-w-6xl">
           <Link
-            to="/organization/events"
+            to={listPath}
             className="inline-flex items-center gap-2 font-outfit text-body font-medium text-ink/65 no-underline transition hover:text-brand"
           >
             <FiArrowLeft aria-hidden="true" />
-            Your events
+            My events
           </Link>
 
           <header className="mt-7 max-w-2xl">
@@ -479,7 +500,10 @@ export const EventForm = ({
                     id="name"
                     label="Event name"
                     error={errors.name}
-                    count={{ value: event.name.length, max: 80 }}
+                    count={{
+                      value: event.name.length,
+                      max: EVENT_LIMITS.nameMax,
+                    }}
                   >
                     <input
                       id="name"
@@ -487,7 +511,7 @@ export const EventForm = ({
                       value={event.name}
                       onChange={handleNameChange}
                       className={inputClasses}
-                      maxLength={80}
+                      maxLength={EVENT_LIMITS.nameMax}
                       aria-invalid={Boolean(errors.name)}
                     />
                   </Field>
@@ -528,7 +552,10 @@ export const EventForm = ({
                     id="description"
                     label="About this event"
                     error={errors.description}
-                    count={{ value: event.description.length, max: 200 }}
+                    count={{
+                      value: event.description.length,
+                      max: EVENT_LIMITS.descriptionMax,
+                    }}
                   >
                     <textarea
                       id="description"
@@ -536,7 +563,7 @@ export const EventForm = ({
                       value={event.description}
                       onChange={handleTextChange}
                       className={`${inputClasses} min-h-32 resize-y`}
-                      maxLength={200}
+                      maxLength={EVENT_LIMITS.descriptionMax}
                       placeholder="What will people do together? Share what to expect, who it’s for, or anything they should bring."
                       aria-invalid={Boolean(errors.description)}
                     />
@@ -709,6 +736,7 @@ export const EventForm = ({
                       value={event.startDate?.format("YYYY-MM-DD") ?? ""}
                       onChange={(e) => setDate("startDate", e.target.value)}
                       className={inputClasses}
+                      aria-invalid={Boolean(errors.startDate)}
                     />
                   </Field>
                   <Field
@@ -722,6 +750,7 @@ export const EventForm = ({
                       value={event.startTime?.format("HH:mm") ?? ""}
                       onChange={(e) => setTime("startTime", e.target.value)}
                       className={inputClasses}
+                      aria-invalid={Boolean(errors.startTime)}
                     />
                   </Field>
                   <Field id="endDate" label="End date" error={errors.endDate}>
@@ -731,6 +760,7 @@ export const EventForm = ({
                       value={event.endDate?.format("YYYY-MM-DD") ?? ""}
                       onChange={(e) => setDate("endDate", e.target.value)}
                       className={inputClasses}
+                      aria-invalid={Boolean(errors.endDate)}
                     />
                   </Field>
                   <Field id="endTime" label="End time" error={errors.endTime}>
@@ -740,6 +770,7 @@ export const EventForm = ({
                       value={event.endTime?.format("HH:mm") ?? ""}
                       onChange={(e) => setTime("endTime", e.target.value)}
                       className={inputClasses}
+                      aria-invalid={Boolean(errors.endTime)}
                     />
                   </Field>
                 </div>
@@ -775,6 +806,8 @@ export const EventForm = ({
                         value={event.address}
                         onChange={handleTextChange}
                         className={inputClasses}
+                        maxLength={EVENT_LIMITS.addressMax}
+                        aria-invalid={Boolean(errors.address)}
                       />
                     </Field>
                     <Field id="city" label="City" error={errors.city}>
@@ -784,6 +817,8 @@ export const EventForm = ({
                         value={event.city}
                         onChange={handleTextChange}
                         className={inputClasses}
+                        maxLength={EVENT_LIMITS.cityMax}
+                        aria-invalid={Boolean(errors.city)}
                       />
                     </Field>
                     <Field
@@ -797,6 +832,8 @@ export const EventForm = ({
                         value={event.state}
                         onChange={handleTextChange}
                         className={inputClasses}
+                        maxLength={EVENT_LIMITS.stateMax}
+                        aria-invalid={Boolean(errors.state)}
                       />
                     </Field>
                     <Field id="country" label="Country" error={errors.country}>
@@ -805,6 +842,7 @@ export const EventForm = ({
                         options={COUNTRY_DROPDOWN_OPTIONS}
                         value={event.country}
                         onChange={(value) => setField("country", value)}
+                        placeholder="Choose a country"
                         searchPlaceholder="Search countries"
                         invalid={Boolean(errors.country)}
                       />
@@ -814,12 +852,18 @@ export const EventForm = ({
 
                 {hasOnlineAccess(event.mode) && (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <Field id="platform" label="Video platform">
+                    <Field
+                      id="platform"
+                      label="Video platform"
+                      error={errors.platform}
+                    >
                       <Dropdown
                         id="platform"
                         options={PLATFORM_DROPDOWN_OPTIONS}
                         value={event.platform}
                         onChange={(value) => setField("platform", value)}
+                        placeholder="Choose a platform"
+                        invalid={Boolean(errors.platform)}
                       />
                     </Field>
                     <Field
@@ -840,6 +884,8 @@ export const EventForm = ({
                         onChange={handleTextChange}
                         className={inputClasses}
                         placeholder="https://"
+                        maxLength={EVENT_LIMITS.platformLinkMax}
+                        aria-invalid={Boolean(errors.platformLink)}
                       />
                     </Field>
                   </div>
@@ -936,37 +982,52 @@ export const EventForm = ({
               />
 
               <div
-                className={`flex flex-col-reverse gap-3 border-t border-brand-secondary/10 pt-5 sm:flex-row sm:items-center sm:justify-between ${isEdit && !isDraftEdit ? "hidden" : ""}`}
+                className={`space-y-4 border-t border-brand-secondary/10 pt-5 ${isEdit && !isDraftEdit ? "hidden" : ""}`}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    allowNavigation.current = true;
-                    navigate("/organization/events");
-                  }}
-                  className="min-h-12 rounded-lg px-4 font-outfit text-body font-medium text-ink/65 transition hover:bg-brand-secondary/5 hover:text-brand-secondary"
-                >
-                  {isEdit ? "Discard changes" : "Cancel"}
-                </button>
-                <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                {(!isEdit || isDraftEdit) && (
+                  <SaveRequirements
+                    id={REQUIREMENTS_ID}
+                    mode={event.mode}
+                    includeAddress={!isEdit}
+                  />
+                )}
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      allowNavigation.current = true;
+                      navigate(listPath);
+                    }}
+                    className="min-h-12 rounded-lg px-4 font-outfit text-body font-medium text-ink/65 transition hover:bg-brand-secondary/5 hover:text-brand-secondary"
+                  >
+                    {isEdit ? "Discard changes" : "Cancel"}
+                  </button>
                   {(!isEdit || isDraftEdit) && (
-                    <button
-                      type="button"
-                      disabled={isSubmitting || coverUploading}
-                      onClick={() => void submit("draft")}
-                      className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-brand-secondary/20 bg-white px-6 font-outfit text-body font-semibold text-brand-secondary transition hover:border-brand/45 disabled:cursor-wait disabled:opacity-60"
-                    >
-                      {isDraftEdit ? "Save draft" : "Save as draft"}
-                    </button>
-                  )}
-                  {(!isEdit || isDraftEdit) && (
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || coverUploading}
-                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
-                    >
-                      {isSubmitting ? "Publishing…" : "Publish event"}
-                    </button>
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                      <button
+                        type="button"
+                        disabled={isSubmitting || coverUploading}
+                        onClick={() => void submit("draft")}
+                        aria-describedby={REQUIREMENTS_ID}
+                        className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-brand-secondary/20 bg-white px-6 font-outfit text-body font-semibold text-brand-secondary transition hover:border-brand/45 disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {submitting === "draft"
+                          ? "Saving…"
+                          : isDraftEdit
+                            ? "Save draft"
+                            : "Save as draft"}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || coverUploading}
+                        aria-describedby={REQUIREMENTS_ID}
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-outfit text-body font-semibold text-white transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {submitting === "publish"
+                          ? "Publishing…"
+                          : "Publish event"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -978,7 +1039,7 @@ export const EventForm = ({
                         type="button"
                         onClick={() => {
                           allowNavigation.current = true;
-                          navigate("/organization/events");
+                          navigate(listPath);
                         }}
                         className="min-h-12 rounded-lg px-4 font-outfit text-body font-medium text-ink/65 transition hover:bg-brand-secondary/5 hover:text-brand-secondary"
                       >

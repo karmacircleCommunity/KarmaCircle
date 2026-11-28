@@ -55,26 +55,61 @@ describe("eventToFormState", () => {
   });
 
   it("falls back to the form defaults for fields the mode does not use", () => {
-    const form = eventToFormState({
+    const online = eventToFormState({
       ...stored,
       mode: "Online",
       address: undefined,
       city: undefined,
       state: undefined,
       country: undefined,
-      platform: undefined,
-      platformLink: undefined,
-      coverImage: undefined,
+      platform: "Google Meet",
+      platformLink: "https://meet.example.com/abc",
     });
-
-    expect(form).toMatchObject({
+    expect(online).toMatchObject({
       address: "",
       city: "",
       state: "",
       country: "India",
+    });
+
+    expect(eventToFormState(stored)).toMatchObject({
       platform: "Zoom Meeting",
       platformLink: "",
+    });
+  });
+
+  it("loads a draft with nothing but its name and dates as empty boxes", () => {
+    const form = eventToFormState({
+      ...stored,
+      status: "draft",
+      mode: "Hybrid",
+      description: undefined,
+      coverImage: undefined,
+      address: undefined,
+      city: undefined,
+      state: undefined,
+      country: undefined,
+      platform: undefined,
+      platformLink: undefined,
+      eventType: undefined,
+      tags: undefined,
+    });
+
+    // The format uses all of these, so none is filled with a default that was
+    // never saved.
+    expect(form).toMatchObject({
+      description: "",
       coverImage: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "",
+      platform: "",
+      platformLink: "",
+      eventType: "",
+      tags: "",
+      about: "",
+      agenda: [],
     });
   });
 });

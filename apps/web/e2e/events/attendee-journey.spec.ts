@@ -32,9 +32,9 @@ import {
  * publish a future event, optionally join it, then move it into the past with
  * `backdateEvent`, the E2E server's test-only route.
  *
- * The signed-out Join click is deliberately not covered: the page shows the
- * same Join button to a signed-out visitor, and what that click should do is
- * not specified yet.
+ * The signed-out Join click, the meeting link, an event that is happening now,
+ * the request note and the Invited tab are in
+ * `event-attendee-states.spec.ts`.
  */
 
 const DESKTOP = { width: 1280, height: 900 };
