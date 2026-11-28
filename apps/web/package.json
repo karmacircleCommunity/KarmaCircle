@@ -37,7 +37,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.9.0",
     "@vercel/speed-insights": "^2.0.0",
-    "axios": "^1.7.7",
+    "axios": "^1.20.0",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.10",
     "dotenv": "^17.4.2",
