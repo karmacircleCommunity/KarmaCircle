@@ -6,6 +6,10 @@ jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   sendEventJoinConfirmation: jest.fn().mockResolvedValue(true),
   sendEventJoinOrganizerNotice: jest.fn().mockResolvedValue(true),
+  sendEventCancellations: jest.fn().mockResolvedValue(1),
+  sendEventUpdates: jest.fn().mockResolvedValue(1),
+  sendEventDecline: jest.fn().mockResolvedValue(true),
+  sendEventRequestOrganizerNotice: jest.fn().mockResolvedValue(true),
 }));
 
 const app = buildTestApp();
@@ -167,13 +171,17 @@ describe("Editing and cancelling events", () => {
       const cookie = await signupOrganization();
       await createEvent(cookie, "edit-lengths");
 
-      const res = await patch(cookie, "edit-lengths", {
-        name: "Too short",
-        description: "short",
-      });
-      expect(res.status).toBe(400);
-      const paths = res.body.errors.map((e: { path: string }) => e.path);
-      expect(paths).toEqual(expect.arrayContaining(["name", "description"]));
+      // The name is judged by the schema; the description's minimum depends on
+      // whether the stored event is a draft, so it is judged after loading it.
+      for (const [field, value] of [
+        ["name", "Too short"],
+        ["description", "short"],
+        ["description", "x".repeat(201)],
+      ]) {
+        const res = await patch(cookie, "edit-lengths", { [field]: value });
+        expect(res.status).toBe(400);
+        expect(res.body.errors[0].path).toBe(field);
+      }
     });
 
     it("rejects an end time that is not after the stored start time", async () => {

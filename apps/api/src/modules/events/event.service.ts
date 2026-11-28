@@ -1,4 +1,4 @@
-import { FilterQuery } from "mongoose";
+import { Error as MongooseError, FilterQuery } from "mongoose";
 import { STATUS_CODE, STATUS_MESSAGE } from "../../constants/http-status";
 import { AppError } from "../../middleware/error-handler";
 import {
@@ -7,6 +7,7 @@ import {
 } from "../organizations/organization.service";
 import { Organization } from "../organizations/organization.model";
 import { findByEmail, findByUsername } from "../users/user.service";
+import type { IUser } from "../users/user.model";
 import {
   CreateEventInput,
   UpdateEventInput,
@@ -30,7 +31,9 @@ import {
  * Matches the registrations that hold a spot. A row saved before `status`
  * existed has none and is going, which `$nin` matches too.
  */
-const GOING = { status: { $nin: ["pending", "waitlisted", "declined"] } } as const;
+export const GOING = {
+  status: { $nin: ["pending", "waitlisted", "declined"] },
+} as const;
 
 /** The status of a registration, with the pre-`status` rows read as going. */
 const statusOf = (registration: { status?: RegistrationStatus | null }) =>
@@ -49,16 +52,40 @@ export async function findPublicByUid(uid: string) {
   return Event.findOne({ uid, status: { $ne: "draft" } });
 }
 
-/** Whether `email` is the organization that hosts `event`. Never throws. */
-async function isHostOf(email: string, event: IEvent) {
-  const host = await findByEmail(email);
-  if (!host || host.userType !== "organization") return false;
+/** What it takes to recognize the events an organization account hosts. */
+export interface HostIdentity {
+  /** Absent for an account that predates the organizations collection. */
+  handle?: string;
+  userName: string;
+}
 
-  const organization = await findByOwnerEmail(email);
+/** `null` for a personal account, which hosts nothing. */
+export async function findHostIdentity(
+  user: IUser,
+): Promise<HostIdentity | null> {
+  if (user.userType !== "organization") return null;
+  const organization = await findByOwnerEmail(user.email);
+  return { handle: organization?.handle, userName: user.userName };
+}
+
+/**
+ * The one ownership rule: the real `organizerHandle` link, or the legacy
+ * free-text `hostUsername` for events saved before that field existed (the same
+ * two-way match `findAll`'s `host` filter uses).
+ */
+export function isHostedBy(event: IEvent, host: HostIdentity) {
   return (
-    (organization !== null && event.organizerHandle === organization.handle) ||
+    (host.handle !== undefined && event.organizerHandle === host.handle) ||
     event.hostUsername === host.userName
   );
+}
+
+/** Whether `email` is the organization that hosts `event`. Never throws. */
+async function isHostOf(email: string, event: IEvent) {
+  const user = await findByEmail(email);
+  if (!user) return false;
+  const host = await findHostIdentity(user);
+  return host !== null && isHostedBy(event, host);
 }
 
 /**
@@ -112,6 +139,16 @@ function accessCondition(access: EventAccess): FilterQuery<IEvent> {
   } as FilterQuery<IEvent>;
 }
 
+/**
+ * An event is upcoming until it ends, so one that is running now is still
+ * upcoming; it is past once its `endTime` has gone by. Joining, leaving and
+ * invitations are different questions: they close when the event starts.
+ */
+function periodCondition(period: "upcoming" | "past"): FilterQuery<IEvent> {
+  const now = new Date();
+  return { endTime: period === "upcoming" ? { $gte: now } : { $lt: now } };
+}
+
 const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -149,12 +186,7 @@ export async function findAll(
     });
   }
 
-  if (filters.period) {
-    const now = new Date();
-    conditions.push({
-      startTime: filters.period === "upcoming" ? { $gte: now } : { $lt: now },
-    });
-  }
+  if (filters.period) conditions.push(periodCondition(filters.period));
 
   if (filters.mode) conditions.push({ mode: filters.mode });
   if (filters.type) conditions.push({ eventType: filters.type });
@@ -201,17 +233,16 @@ export async function findForAttendee(
   const registrations = await EventRegistration.find({ userId: attendee._id })
     .select({ eventUid: 1, status: 1 })
     .lean();
-  if (registrations.length === 0) return { data: [], total: 0 };
   // Each event carries the person's own standing (PG-14): going, asked to
   // join, on the waitlist, or not approved.
   const statusByUid = new Map(
     registrations.map((row) => [row.eventUid, statusOf(row)]),
   );
+  if (registrations.length === 0) return { events: [], statusByUid, total: 0 };
 
-  const now = new Date();
   const query = {
     uid: { $in: [...statusByUid.keys()] },
-    startTime: pagination.period === "upcoming" ? { $gte: now } : { $lt: now },
+    ...periodCondition(pagination.period),
   };
   const sort = pagination.period === "upcoming" ? 1 : -1;
   const [events, total] = await Promise.all([
@@ -221,11 +252,7 @@ export async function findForAttendee(
       .limit(pagination.limit),
     Event.countDocuments(query),
   ]);
-  const data = events.map((event) => ({
-    ...event.toJSON(),
-    registrationStatus: statusByUid.get(event.uid) ?? "going",
-  }));
-  return { data, total };
+  return { events, statusByUid, total };
 }
 
 /**
@@ -262,7 +289,9 @@ export async function findInvitedFor(
 
   const query = {
     uid: { $in: invitedUids.filter((uid) => !taken.has(uid)) },
-    status: "published",
+    // Not `status: "published"`: an event saved before `status` existed has
+    // none, and reads as published.
+    status: { $nin: ["draft", "cancelled"] },
     startTime: { $gte: new Date() },
   };
   const [data, total] = await Promise.all([
@@ -280,7 +309,9 @@ export async function findInvitedFor(
  * the waitlist) to each event, for the host's own list (PG-14). One grouped
  * query for the whole page, never per event.
  */
-export async function withRequestCounts(events: IEvent[]) {
+export async function withRequestCounts<T extends { uid: string }>(
+  events: T[],
+) {
   if (events.length === 0) return [];
   const counts = await EventRegistration.aggregate<{
     _id: string;
@@ -296,9 +327,31 @@ export async function withRequestCounts(events: IEvent[]) {
   ]);
   const byUid = new Map(counts.map((row) => [row._id, row.count]));
   return events.map((event) => ({
-    ...event.toJSON(),
+    ...event,
     requestCount: byUid.get(event.uid) ?? 0,
   }));
+}
+
+/** Someone else changed or removed the event between our read and our write. */
+const eventChanged = () =>
+  new AppError(STATUS_CODE.CONFLICT, STATUS_MESSAGE.EVENT_CHANGED);
+
+/**
+ * Saves a loaded event. The schema's optimistic concurrency refuses the write
+ * when the event was saved or deleted since it was read, which is a `409`.
+ */
+async function saveEvent(event: IEvent): Promise<IEvent> {
+  try {
+    return await event.save();
+  } catch (error) {
+    if (
+      error instanceof MongooseError.VersionError ||
+      error instanceof MongooseError.DocumentNotFoundError
+    ) {
+      throw eventChanged();
+    }
+    throw error;
+  }
 }
 
 export async function createEvent(
@@ -348,7 +401,7 @@ export async function createEvent(
   // just means no limit, so it is dropped rather than stored as null.
   const { capacity, ...fields } = data;
   const event = new Event({
-    ...withoutNulls(fields),
+    ...withoutEmpty(fields),
     ...(capacity ? { capacity } : {}),
     hostName: host.name,
     hostUsername: host.userName,
@@ -374,11 +427,9 @@ export async function createEvent(
 
 /**
  * Loads an event for an organizer action (edit or cancel) and checks that the
- * caller owns it. `404` unknown event, `401` the token's account is gone,
- * `403 NOT_AN_ORGANIZATION` for a personal account, `403` for another
- * organization's event. Ownership matches the real `organizerHandle` link, or
- * the legacy free-text `hostUsername` for events saved before that field
- * existed (the same two-way match `findAll`'s `host` filter uses).
+ * caller owns it (see `isHostedBy`). `404` unknown event, `401` the token's
+ * account is gone, `403 NOT_AN_ORGANIZATION` for a personal account, `403` for
+ * another organization's event.
  */
 async function findManagedEvent(email: string, uid: string) {
   const event = await findByUid(uid);
@@ -386,48 +437,63 @@ async function findManagedEvent(email: string, uid: string) {
     throw new AppError(STATUS_CODE.NOT_FOUND, STATUS_MESSAGE.EVENT_NOT_FOUND);
   }
 
-  const host = await findByEmail(email);
-  if (!host) {
+  const user = await findByEmail(email);
+  if (!user) {
     throw new AppError(STATUS_CODE.UNAUTHORIZED, STATUS_MESSAGE.UNAUTHORIZED);
   }
-  if (host.userType !== "organization") {
+  const host = await findHostIdentity(user);
+  if (!host) {
     throw new AppError(
       STATUS_CODE.FORBIDDEN,
       STATUS_MESSAGE.NOT_AN_ORGANIZATION,
     );
   }
 
-  const organization = await findByOwnerEmail(email);
-  const ownsEvent =
-    (organization !== null &&
-      event.organizerHandle === organization.handle) ||
-    event.hostUsername === host.userName;
-  if (!ownsEvent) {
+  if (!isHostedBy(event, host)) {
     throw new AppError(STATUS_CODE.FORBIDDEN, STATUS_MESSAGE.FORBIDDEN);
   }
 
   return event;
 }
 
-/** Edits and cancellations stop once an event is over, or already cancelled. */
-function assertEventStillOpen(
-  event: IEvent,
-  action: "edited" | "cancelled" | "invited" | "decided",
-) {
+/** What an organizer can only do while an event is neither over nor cancelled. */
+type OpenEventAction = "edit" | "cancel" | "unpublish" | "decide";
+
+/** How each action is refused for a cancelled event, and for an ended one. */
+const CLOSED_EVENT_MESSAGES: Record<
+  OpenEventAction,
+  { cancelled: string; ended: string }
+> = {
+  edit: {
+    cancelled: "A cancelled event cannot be edited.",
+    ended: "An event that has already ended cannot be edited.",
+  },
+  cancel: {
+    cancelled: "This event is already cancelled.",
+    ended: "An event that has already ended cannot be cancelled.",
+  },
+  unpublish: {
+    cancelled: "This event is already cancelled.",
+    ended: "An event that has already ended cannot go back to a draft.",
+  },
+  decide: {
+    cancelled: "This event was cancelled.",
+    ended:
+      "This event has already ended, so who is going can no longer change.",
+  },
+};
+
+function assertEventStillOpen(event: IEvent, action: OpenEventAction) {
   if (event.status === "cancelled") {
     throw new AppError(
       STATUS_CODE.CONFLICT,
-      action === "edited"
-        ? "A cancelled event cannot be edited."
-        : action === "invited" || action === "decided"
-          ? "This event was cancelled."
-          : "This event is already cancelled.",
+      CLOSED_EVENT_MESSAGES[action].cancelled,
     );
   }
   if (event.endTime.getTime() < Date.now()) {
     throw new AppError(
       STATUS_CODE.CONFLICT,
-      `An event that has already ended cannot be ${action}.`,
+      CLOSED_EVENT_MESSAGES[action].ended,
     );
   }
 }
@@ -458,10 +524,15 @@ function staleFieldsFor(mode: IEvent["mode"]): readonly string[] {
   return [];
 }
 
-/** A create body with its `null`s (meaningful only when editing) dropped. */
-function withoutNulls<T extends Record<string, unknown>>(fields: T) {
+/**
+ * A create body with its empty values dropped: `null` is only meaningful when
+ * editing, and `undefined` is what a blank draft field parses to.
+ */
+function withoutEmpty<T extends Record<string, unknown>>(fields: T) {
   return Object.fromEntries(
-    Object.entries(fields).filter(([, value]) => value !== null),
+    Object.entries(fields).filter(
+      ([, value]) => value !== null && value !== undefined,
+    ),
   ) as { [K in keyof T]: Exclude<T[K], null> };
 }
 
@@ -492,20 +563,73 @@ async function applyCapacity(event: IEvent, capacity: number | null) {
   event.registrationCount = registered;
 }
 
+/** What an edit changed that the people going need to hear about. */
+export interface EventChanges {
+  time: boolean;
+  mode: boolean;
+  /** The event has a venue and it is not the one it had. */
+  venue: boolean;
+  /** The event has a meeting link and it is not the one it had. */
+  meetingLink: boolean;
+}
+
+/**
+ * The parts of an event an attendee plans around. Times are compared to the
+ * minute, which is all anyone is shown, and only the fields the mode uses count,
+ * so clearing a leftover field the mode ignores is not a change.
+ */
+function planningDetails(event: IEvent) {
+  const toMinute = (date: Date) => Math.floor(date.getTime() / 60_000);
+  return {
+    time: `${toMinute(event.startTime)}-${toMinute(event.endTime)}`,
+    mode: event.mode,
+    venue:
+      event.mode === "Online"
+        ? ""
+        : JSON.stringify(
+            [event.address, event.city, event.state, event.country].map(
+              (part) => part ?? "",
+            ),
+          ),
+    meetingLink: event.mode === "Offline" ? "" : (event.platformLink ?? ""),
+  };
+}
+
+/** `null` when nothing an attendee plans around is different. */
+function diffPlanningDetails(
+  before: ReturnType<typeof planningDetails>,
+  after: ReturnType<typeof planningDetails>,
+): EventChanges | null {
+  const changes: EventChanges = {
+    time: before.time !== after.time,
+    mode: before.mode !== after.mode,
+    // Losing the venue or the link only happens with a change of mode, which
+    // says so itself.
+    venue: after.venue !== "" && before.venue !== after.venue,
+    meetingLink:
+      after.meetingLink !== "" && before.meetingLink !== after.meetingLink,
+  };
+  return Object.values(changes).some(Boolean) ? changes : null;
+}
+
 /**
  * Edits an event. The page address (`uid`) never changes. The merged event
- * must still satisfy the create rules, except that a start time left alone may
+ * must still satisfy the rules for its status (a draft may stay incomplete, a
+ * published event may not become so), except that a start time left alone may
  * already be in the past (an event in progress can still fix a typo), and only
  * the fields of the chosen mode are kept, so switching an event from Offline
  * to Online drops its address instead of leaving it stored but hidden.
+ * `changes` is what the people going should be told about: `null` for a draft,
+ * and for an edit that moved nothing they plan around.
  */
 export async function updateEvent(
   email: string,
   uid: string,
   data: UpdateEventInput,
-): Promise<IEvent> {
+): Promise<{ event: IEvent; changes: EventChanges | null }> {
   const event = await findManagedEvent(email, uid);
-  assertEventStillOpen(event, "edited");
+  assertEventStillOpen(event, "edit");
+  const isDraft = event.status === "draft";
 
   const startChanged =
     data.startTime !== undefined &&
@@ -514,6 +638,8 @@ export async function updateEvent(
     mode: data.mode ?? event.mode,
     startTime: data.startTime ?? event.startTime,
     endTime: data.endTime ?? event.endTime,
+    description: "description" in data ? data.description : event.description,
+    coverImage: "coverImage" in data ? data.coverImage : event.coverImage,
     city: "city" in data ? data.city : event.city,
     state: "state" in data ? data.state : event.state,
     country: "country" in data ? data.country : event.country,
@@ -522,23 +648,42 @@ export async function updateEvent(
     platformLink:
       "platformLink" in data ? data.platformLink : event.platformLink,
   };
-  assertEventRules(merged, { requireFutureStart: startChanged });
+  assertEventRules(
+    merged,
+    isDraft
+      ? { requireFutureStart: startChanged, stage: "draft" }
+      : {
+          requireFutureStart: startChanged,
+          stage: "published-edit",
+          edited: new Set(Object.keys(data)),
+        },
+  );
 
+  const before = planningDetails(event);
   const { capacity, ...fields } = data;
-  // `null` removes an optional field; anything else replaces it.
+  // `null` (or a blank text) removes an optional field; anything else replaces
+  // it.
   for (const [key, value] of Object.entries(fields)) {
     event.set(key, value === null ? undefined : value);
   }
   if (capacity !== undefined) await applyCapacity(event, capacity);
   for (const field of staleFieldsFor(merged.mode)) event.set(field, undefined);
 
-  return event.save();
+  const saved = await saveEvent(event);
+  return {
+    event: saved,
+    changes: isDraft
+      ? null
+      : diffPlanningDetails(before, planningDetails(saved)),
+  };
 }
 
 /**
  * Cancels an event: the status flips to `cancelled`, the event stays public
- * with a badge, and new joins are refused. Existing registrations are kept.
- * Telling registered attendees is not built yet (PG-18).
+ * with a badge, and new joins are refused. Existing registrations are kept. The
+ * flip happens in one conditional update, so of two taps only one succeeds and
+ * the attendees are told once. It also moves `__v` on, so an edit or unpublish
+ * that read the event before this cannot save over the cancellation.
  */
 export async function cancelEvent(email: string, uid: string): Promise<IEvent> {
   const event = await findManagedEvent(email, uid);
@@ -548,23 +693,35 @@ export async function cancelEvent(email: string, uid: string): Promise<IEvent> {
       "A draft has not been published, so there is nothing to cancel. Delete it instead.",
     );
   }
-  assertEventStillOpen(event, "cancelled");
+  assertEventStillOpen(event, "cancel");
 
-  event.status = "cancelled";
-  event.cancelledAt = new Date();
-  return event.save();
+  const cancelled = await Event.findOneAndUpdate(
+    { _id: event._id, status: { $nin: ["cancelled", "draft"] } },
+    {
+      $set: { status: "cancelled", cancelledAt: new Date() },
+      $inc: { __v: 1 },
+    },
+    { new: true },
+  );
+  if (!cancelled) throw eventChanged();
+  return cancelled;
 }
 
 /**
- * Makes a draft public (PG-15). The event has to be as valid as a new one: the
- * start must still be in the future, and the mode's fields must be present
- * (a draft saved last month may have drifted). `409` for an event that is not a
- * draft, or has ended.
+ * Makes a draft public (PG-15). The event has to be as complete as one published
+ * straight away: description, cover image and the mode's fields present, and the
+ * start still in the future. `409` for an event that is not a draft.
  */
-export async function publishEvent(email: string, uid: string): Promise<IEvent> {
+export async function publishEvent(
+  email: string,
+  uid: string,
+): Promise<IEvent> {
   const event = await findManagedEvent(email, uid);
   if (event.status === "published") {
-    throw new AppError(STATUS_CODE.CONFLICT, "This event is already published.");
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "This event is already published.",
+    );
   }
   if (event.status === "cancelled") {
     throw new AppError(
@@ -578,6 +735,8 @@ export async function publishEvent(email: string, uid: string): Promise<IEvent> 
       mode: event.mode,
       startTime: event.startTime,
       endTime: event.endTime,
+      description: event.description,
+      coverImage: event.coverImage,
       city: event.city,
       state: event.state,
       country: event.country,
@@ -585,11 +744,11 @@ export async function publishEvent(email: string, uid: string): Promise<IEvent> 
       platform: event.platform,
       platformLink: event.platformLink,
     },
-    { requireFutureStart: true },
+    { requireFutureStart: true, stage: "publish" },
   );
 
   event.status = "published";
-  return event.save();
+  return saveEvent(event);
 }
 
 /**
@@ -598,12 +757,15 @@ export async function publishEvent(email: string, uid: string): Promise<IEvent> 
  * event is cancelled instead, which keeps them informed of what happened), for
  * a cancelled or ended event, and for one that is already a draft.
  */
-export async function unpublishEvent(email: string, uid: string): Promise<IEvent> {
+export async function unpublishEvent(
+  email: string,
+  uid: string,
+): Promise<IEvent> {
   const event = await findManagedEvent(email, uid);
   if (event.status === "draft") {
     throw new AppError(STATUS_CODE.CONFLICT, "This event is already a draft.");
   }
-  assertEventStillOpen(event, "cancelled");
+  assertEventStillOpen(event, "unpublish");
 
   const registered = await EventRegistration.countDocuments({ eventUid: uid });
   if (registered > 0) {
@@ -614,7 +776,7 @@ export async function unpublishEvent(email: string, uid: string): Promise<IEvent
   }
 
   event.status = "draft";
-  return event.save();
+  return saveEvent(event);
 }
 
 /**
@@ -630,7 +792,12 @@ export async function deleteDraft(email: string, uid: string): Promise<void> {
       "Only a draft can be deleted. Cancel a published event instead.",
     );
   }
-  await Event.deleteOne({ _id: event._id });
+  // Still a draft at the moment of deleting: one published meanwhile stays.
+  const { deletedCount } = await Event.deleteOne({
+    _id: event._id,
+    status: "draft",
+  });
+  if (deletedCount === 0) throw eventChanged();
 }
 
 /** Whether a limited event has no room left for someone else to go. */
@@ -648,7 +815,9 @@ function reserveSpot(uid: string) {
       uid,
       $or: [
         { capacity: null },
-        { $expr: { $lt: [{ $ifNull: ["$registrationCount", 0] }, "$capacity"] } },
+        {
+          $expr: { $lt: [{ $ifNull: ["$registrationCount", 0] }, "$capacity"] },
+        },
       ],
     },
     { $inc: { registrationCount: 1 } },
@@ -877,7 +1046,9 @@ export async function leaveEvent(email: string, uid: string) {
  * organization's `ownerEmail`, or for an event saved before `organizerHandle`
  * existed, the host user's own email. `null` if neither can be found.
  */
-export async function findOrganizerEmail(event: IEvent): Promise<string | null> {
+export async function findOrganizerEmail(
+  event: IEvent,
+): Promise<string | null> {
   if (event.organizerHandle) {
     const organization = await Organization.findOne({
       handle: event.organizerHandle,
@@ -947,7 +1118,9 @@ export async function listAttendees(
     EventRegistration.countDocuments(filter),
     EventRegistration.aggregate<{ _id: RegistrationStatus; count: number }>([
       { $match: { eventUid: uid } },
-      { $group: { _id: { $ifNull: ["$status", "going"] }, count: { $sum: 1 } } },
+      {
+        $group: { _id: { $ifNull: ["$status", "going"] }, count: { $sum: 1 } },
+      },
     ]),
     EventRegistration.countDocuments({
       eventUid: uid,
@@ -1075,13 +1248,7 @@ export async function approveRegistration(
   registrationId: string,
 ) {
   const event = await findManagedEvent(email, uid);
-  assertEventStillOpen(event, "decided");
-  if (event.endTime.getTime() < Date.now()) {
-    throw new AppError(
-      STATUS_CODE.CONFLICT,
-      "An event that has already ended cannot take new people.",
-    );
-  }
+  assertEventStillOpen(event, "decide");
 
   const moved = await moveToGoing(uid, { _id: registrationId });
   const registration =
@@ -1104,7 +1271,8 @@ export async function approveRegistration(
  * cannot ask again unless the organizer approves them later. A freed spot is
  * released when the person was going, and their check-in is cleared. Host only;
  * `409` for a cancelled event, `404` for an unknown registration. Declining
- * someone already declined changes nothing.
+ * someone already declined changes nothing (`previousStatus` is `null`);
+ * otherwise it is the standing the person lost.
  */
 export async function declineRegistration(
   email: string,
@@ -1112,11 +1280,14 @@ export async function declineRegistration(
   registrationId: string,
 ) {
   const event = await findManagedEvent(email, uid);
-  assertEventStillOpen(event, "decided");
+  assertEventStillOpen(event, "decide");
 
   const previous = await EventRegistration.findOneAndUpdate(
     { _id: registrationId, eventUid: uid, status: { $ne: "declined" } },
-    { $set: { status: "declined", decidedAt: new Date() }, $unset: { checkedInAt: 1 } },
+    {
+      $set: { status: "declined", decidedAt: new Date() },
+      $unset: { checkedInAt: 1 },
+    },
     { returnDocument: "before" },
   );
   if (previous && statusOf(previous) === "going") await releaseSpot(uid);
@@ -1128,7 +1299,11 @@ export async function declineRegistration(
   if (!registration) {
     throw new AppError(STATUS_CODE.NOT_FOUND, "Registration not found.");
   }
-  return { attendee: toAttendee(registration), changed: Boolean(previous) };
+  return {
+    event,
+    attendee: toAttendee(registration),
+    previousStatus: previous ? statusOf(previous) : null,
+  };
 }
 
 function toInvite(invite: {
@@ -1149,7 +1324,8 @@ function toInvite(invite: {
  * The organizer invites people by email (PG-4). An invited person must sign in
  * with that exact email; the invite lets them join on any access level and past
  * the capacity. Emails already invited, or already registered for the event, are
- * skipped and reported. `409` for a draft, a cancelled or ended event, or when
+ * skipped and reported. `409` for a draft, a cancelled event, one that has
+ * started (joining closes then, so an invite could not be used) or ended, or when
  * the event would pass its invite limit.
  */
 export async function inviteByEmail(
@@ -1158,11 +1334,19 @@ export async function inviteByEmail(
   emails: string[],
 ) {
   const event = await findManagedEvent(email, uid);
-  assertEventStillOpen(event, "invited");
+  if (event.status === "cancelled") {
+    throw new AppError(STATUS_CODE.CONFLICT, "This event was cancelled.");
+  }
   if (event.status === "draft") {
     throw new AppError(
       STATUS_CODE.CONFLICT,
       "Publish the event before inviting people.",
+    );
+  }
+  if (event.startTime.getTime() < Date.now()) {
+    throw new AppError(
+      STATUS_CODE.CONFLICT,
+      "This event has already started, so you can no longer invite people.",
     );
   }
 
@@ -1177,10 +1361,14 @@ export async function inviteByEmail(
     registered.map((row) => row.attendeeEmail.toLowerCase()),
   );
 
-  const skipped: { email: string; reason: "already-invited" | "already-registered" }[] = [];
+  const skipped: {
+    email: string;
+    reason: "already-invited" | "already-registered";
+  }[] = [];
   const fresh: string[] = [];
   for (const address of emails) {
-    if (invited.has(address)) skipped.push({ email: address, reason: "already-invited" });
+    if (invited.has(address))
+      skipped.push({ email: address, reason: "already-invited" });
     else if (registeredEmails.has(address))
       skipped.push({ email: address, reason: "already-registered" });
     else fresh.push(address);
@@ -1199,7 +1387,9 @@ export async function inviteByEmail(
       fresh.map((address) => ({
         updateOne: {
           filter: { eventUid: uid, email: address },
-          update: { $setOnInsert: { eventUid: uid, email: address, invitedBy: email } },
+          update: {
+            $setOnInsert: { eventUid: uid, email: address, invitedBy: email },
+          },
           upsert: true,
         },
       })),
@@ -1223,7 +1413,11 @@ export async function listInvites(email: string, uid: string) {
  * the person has joined through it (they are an attendee by then; decline them
  * from the attendee list instead).
  */
-export async function revokeInvite(email: string, uid: string, inviteId: string) {
+export async function revokeInvite(
+  email: string,
+  uid: string,
+  inviteId: string,
+) {
   await findManagedEvent(email, uid);
   const invite = await EventInvite.findOne({ _id: inviteId, eventUid: uid });
   if (!invite) {

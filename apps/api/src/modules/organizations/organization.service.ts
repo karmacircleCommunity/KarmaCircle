@@ -229,7 +229,8 @@ export async function findLive(
       // then verified, then newest. Sponsorship is a real opt-in (a
       // dashboard toggle), not a paid-placement auction, so this ordering
       // has no fairness implications to worry about yet.
-      .sort({ "sponsorship.enabled": -1, verified: -1, createdAt: -1 })
+      // `_id` settles ties, so a page boundary never repeats or skips one.
+      .sort({ "sponsorship.enabled": -1, verified: -1, createdAt: -1, _id: -1 })
       .skip(pagination.skip)
       .limit(pagination.limit),
     Organization.countDocuments(query),

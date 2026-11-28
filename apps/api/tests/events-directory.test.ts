@@ -379,10 +379,12 @@ describe("Events directory listing", () => {
         period: "upcoming",
         limit: 3,
       });
+      // host-event-10 started as it was seeded and is still running, so it is
+      // upcoming until it ends.
       expect(uidsOf(res)).toEqual([
+        "host-event-10",
         "host-event-11",
         "host-event-12",
-        "host-event-13",
       ]);
     });
   });

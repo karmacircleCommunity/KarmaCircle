@@ -11,6 +11,10 @@ jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   sendEventJoinConfirmation: jest.fn().mockResolvedValue(true),
   sendEventJoinOrganizerNotice: jest.fn().mockResolvedValue(true),
+  sendEventCancellations: jest.fn().mockResolvedValue(1),
+  sendEventUpdates: jest.fn().mockResolvedValue(1),
+  sendEventDecline: jest.fn().mockResolvedValue(true),
+  sendEventRequestOrganizerNotice: jest.fn().mockResolvedValue(true),
 }));
 
 const app = buildTestApp();

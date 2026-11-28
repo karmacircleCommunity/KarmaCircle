@@ -41,7 +41,7 @@ Every module folder follows the same file-per-concern pattern (not every module 
 | `<name>.validation.ts` | Zod schemas + their inferred `z.infer` types, used by both `validate()` middleware and the controller's request-body casts |
 | `<name>.model.ts` | Mongoose `Schema`/`model`, only in modules that own a collection (`users`, `organizations`, `events`, `products`, `reports`, and — since September 2026, for its `Order` model — `payments`; `directory`/`auth` don't have one; see below) |
 
-`src/config/` (env, database, logger, passport, swagger), `src/middleware/` (auth, error-handler, rate-limit, validate), `src/constants/` (`STATUS_CODE`/`STATUS_MESSAGE`), and `src/utils/` (`asyncHandler`, `pagination`) hold everything shared across modules — see [architecture.md](./architecture.md) for what each does.
+`src/config/` (env, database, logger, passport, swagger), `src/middleware/` (auth, error-handler, rate-limit, validate), `src/constants/` (`STATUS_CODE`/`STATUS_MESSAGE`), and `src/utils/` (`asyncHandler`, `pagination`) hold everything shared across modules - see [architecture.md](./architecture.md) for what each does.
 `src/routes/index.ts` mounts every module's router onto its base path; `src/app.ts` assembles the whole Express app (middleware stack + mounted routes); `src/server.ts` and `api/index.ts` are the two ways that app actually gets served (see [architecture.md](./architecture.md#two-entry-points)).
 
 ## Module map

@@ -29,6 +29,11 @@ const router = Router();
  * /events/mine:
  *   get:
  *     summary: List events the authenticated attendee joined
+ *     description: >
+ *       Each event carries `registrationStatus`. `upcoming` is every event that
+ *       has not ended yet (including one running now), soonest start first;
+ *       `past` is every ended event, latest start first. `platformLink` is
+ *       included only where the person is going or hosts the event.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -60,6 +65,8 @@ router.get(
  *     description: >
  *       The events an organizer invited the person's email to that the person has
  *       not joined yet. Drafts, cancelled and started events are left out.
+ *       `platformLink` is not included, since the person has not joined (unless
+ *       their organization hosts the event).
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -92,6 +99,8 @@ router.get(
  *       `period`, which are most recent first (so a host with more events
  *       than one page holds keeps its newest and upcoming ones).
  *       `pagination.total` counts every event that matches the filters.
+ *       `platformLink` is included only when the signed-in caller hosts the
+ *       event or is going to it; sign-in is optional.
  *     tags: [Events]
  *     parameters:
  *       - in: query
@@ -107,7 +116,7 @@ router.get(
  *         schema: { type: string, maxLength: 100 }
  *       - in: query
  *         name: period
- *         description: Only events starting from now on (upcoming) or before now (past). Omit for both.
+ *         description: "upcoming is every event that has not ended (including one running now), past is every ended event. Omit for both."
  *         schema: { type: string, enum: [upcoming, past] }
  *       - in: query
  *         name: mode
@@ -150,7 +159,8 @@ router.get(
  *       waitlist when it is full and the waitlist is on. An approval event makes
  *       them pending (or waitlisted when it is full). An invite-only event
  *       refuses anyone not invited. The confirmation email goes only to people
- *       who are going, in production only.
+ *       who are going; a new pending or waitlisted registration emails the
+ *       organizer instead. Emails go out in production only.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -167,7 +177,7 @@ router.get(
  *             properties:
  *               note: { type: string, maxLength: 300, description: "Shown to the organizer when the person is asking to join" }
  *     responses:
- *       201: { description: "{ message, joined, status (going, pending or waitlisted), alreadyJoined, emailSent }" }
+ *       201: { description: "{ message, joined, status (going, pending or waitlisted), alreadyJoined, emailSent, emailFailed }" }
  *       200: { description: Already registered, with the existing status }
  *       401: { description: Unauthorized }
  *       403: { description: The event is invite-only and the person was not invited, or the organizer declined them }
@@ -357,10 +367,14 @@ router.delete(
  *     summary: Create a new event, hosted by the authenticated organization
  *     description: >
  *       The start time must be in the future and the end time must be after
- *       the start time. An Offline event needs city, state, country and
- *       address. An Online event needs platform and platformLink, and the
- *       link must start with http:// or https://. A Hybrid event needs both sets. A uid that is already taken
- *       (including by a request that races this one) answers 409.
+ *       the start time. A draft needs only uid, name, mode and the four date
+ *       and time fields; anything else it sends must still pass that field's
+ *       format and length rules. Publishing (status published, or none) also
+ *       needs a description of at least 20 characters, a cover image, and the
+ *       mode's fields: city, state, country and address for Offline, platform
+ *       and platformLink for Online, all six for Hybrid. Blank text and null
+ *       mean "not provided". A uid that is already taken (including by a
+ *       request that races this one) answers 409.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     requestBody:
@@ -369,7 +383,7 @@ router.delete(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [uid, name, description, coverImage, mode, startTime, endTime, startDate, endDate]
+ *             required: [uid, name, mode, startTime, endTime, startDate, endDate]
  *             properties:
  *               uid:
  *                 type: string
@@ -380,14 +394,14 @@ router.delete(
  *                 pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
  *               status: { type: string, enum: [draft, published], description: "draft saves the event hidden from everyone but its organization; published (the default) makes it public. Publish, unpublish and cancel move it afterwards" }
  *               name: { type: string, minLength: 10, maxLength: 80 }
- *               description: { type: string, minLength: 20, maxLength: 200 }
+ *               description: { type: string, maxLength: 200, description: "Needed to publish, with at least 20 characters" }
  *               coverImage:
  *                 type: string
  *                 description: >
- *                   Either an https link (up to 2048 characters) or a base64
- *                   data URL of a PNG, JPEG, WebP or GIF image
- *                   (data:image/png;base64,...) that decodes to 5 MB or less.
- *                   http links, SVG and other data types are rejected.
+ *                   Needed to publish. The https link (up to 2048 characters)
+ *                   of an image uploaded through POST /uploads/event-covers, or
+ *                   one hosted elsewhere. Data URLs and http links are
+ *                   rejected.
  *               mode: { type: string, enum: [Online, Offline, Hybrid], description: "Hybrid needs both the in-person fields and the online ones" }
  *               startTime: { type: string, format: date-time, description: Must be in the future }
  *               endTime: { type: string, format: date-time, description: Must be after startTime }
@@ -399,7 +413,7 @@ router.delete(
  *               eventType: { type: string, enum: [volunteering, fundraiser, workshop, awareness, meetup, cultural, other], description: "What kind of event it is. Optional in the API; the web form requires it" }
  *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
  *               capacity: { type: integer, minimum: 1, maximum: 100000, description: "Most people who can join. Omit for no limit" }
- *               about: { type: array, maxItems: 20, items: { type: string, maxLength: 2000 }, description: "Long-form paragraphs for About this event" }
+ *               about: { type: array, maxItems: 20, items: { type: string, maxLength: 4000 }, description: "Long-form paragraphs for About this event" }
  *               contactEmail: { type: string, format: email, maxLength: 254 }
  *               cost: { type: object, description: "Absent means free; amount must be above zero", properties: { amount: { type: number, exclusiveMinimum: 0, maximum: 10000000 }, currency: { type: string, description: "3-letter code, upper-cased", example: INR }, note: { type: string, maxLength: 200 } } }
  *               bringAlong: { type: array, maxItems: 20, items: { type: string, maxLength: 100 } }
@@ -409,16 +423,16 @@ router.delete(
  *               gettingThere: { type: string, maxLength: 500, description: Offline events only }
  *               linkDelivery: { type: string, maxLength: 300, description: Online events only }
  *               joinRequirements: { type: string, maxLength: 300, description: Online events only }
- *               city: { type: string, maxLength: 100, description: Required when mode is Offline }
- *               state: { type: string, maxLength: 100, description: Required when mode is Offline }
- *               country: { type: string, maxLength: 100, description: Required when mode is Offline }
- *               address: { type: string, maxLength: 200, description: Required when mode is Offline }
+ *               city: { type: string, maxLength: 100, description: Needed to publish an Offline or Hybrid event }
+ *               state: { type: string, maxLength: 100, description: Needed to publish an Offline or Hybrid event }
+ *               country: { type: string, maxLength: 100, description: Needed to publish an Offline or Hybrid event }
+ *               address: { type: string, maxLength: 200, description: Needed to publish an Offline or Hybrid event }
  *               mapIframe: { type: string }
- *               platform: { type: string, maxLength: 60, description: Required when mode is Online }
- *               platformLink: { type: string, maxLength: 2048, description: Required when mode is Online, must start with http:// or https:// }
+ *               platform: { type: string, maxLength: 60, description: Needed to publish an Online or Hybrid event }
+ *               platformLink: { type: string, maxLength: 2048, description: "Needed to publish an Online or Hybrid event; must start with http:// or https://" }
  *     responses:
  *       201: { description: Event created }
- *       400: { description: "Validation failed: a length, pattern, reserved uid, cover image, date rule or mode-specific required field above" }
+ *       400: { description: "{ message: Validation failed, errors: [{ path, message }] } for a length, pattern, reserved uid, cover image or date rule, or a field publishing needs" }
  *       401: { description: Unauthorized }
  *       403: { description: The authenticated account is not an organization }
  *       409: { description: uid already exists }
@@ -437,11 +451,15 @@ router.post(
  *     summary: Edit an event the authenticated organization hosts
  *     description: >
  *       Send any subset of the create fields except `uid` (the page address
- *       never changes; sending it is a 400). The stored event merged with the
- *       body must still pass the create rules. A start time that is left alone
- *       may already be in the past, but a new start time must be in the future.
- *       Switching the mode drops the other mode's fields. A cancelled event or
- *       one that has already ended answers 409.
+ *       never changes; sending it is a 400). A draft follows the draft rules.
+ *       A published event stays complete: its mode's fields must be present,
+ *       and a description or cover that is sent cannot be blank (a description
+ *       also needs 20 characters). Blank text or null clears a field. A start
+ *       time that is left alone may already be in the past, but a new start
+ *       time must be in the future. Switching the mode drops the other mode's
+ *       fields. A cancelled event or one that has already ended answers 409.
+ *       When a published event's start or end time, mode, venue or meeting link
+ *       changes, the people going are emailed (production only).
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -457,7 +475,7 @@ router.post(
  *             type: object
  *             properties:
  *               name: { type: string, minLength: 10, maxLength: 80 }
- *               description: { type: string, minLength: 20, maxLength: 200 }
+ *               description: { type: string, maxLength: 200, description: "At least 20 characters on a published event" }
  *               coverImage: { type: string, description: Same rules as create. Omit to keep the current cover }
  *               mode: { type: string, enum: [Online, Offline, Hybrid], description: "Hybrid needs both the in-person fields and the online ones" }
  *               startTime: { type: string, format: date-time }
@@ -471,7 +489,7 @@ router.post(
  *               tags: { type: array, maxItems: 8, items: { type: string, maxLength: 30 }, description: "Free-text tags, lower-cased and de-duplicated. [] clears them on edit" }
  *               capacity: { type: integer, minimum: 1, maximum: 100000, nullable: true, description: "A number sets the limit (not below the people already registered, else 409); null removes it" }
  *               details: { description: "The detail fields below are also accepted. On edit, null removes cost, minimumAge, contactEmail, gettingThere, linkDelivery and joinRequirements, and [] clears a list" }
- *               about: { type: array, maxItems: 20, items: { type: string, maxLength: 2000 }, description: "Long-form paragraphs for About this event" }
+ *               about: { type: array, maxItems: 20, items: { type: string, maxLength: 4000 }, description: "Long-form paragraphs for About this event" }
  *               contactEmail: { type: string, format: email, maxLength: 254 }
  *               cost: { type: object, description: "Absent means free; amount must be above zero", properties: { amount: { type: number, exclusiveMinimum: 0, maximum: 10000000 }, currency: { type: string, description: "3-letter code, upper-cased", example: INR }, note: { type: string, maxLength: 200 } } }
  *               bringAlong: { type: array, maxItems: 20, items: { type: string, maxLength: 100 } }
@@ -494,7 +512,7 @@ router.post(
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
- *       409: { description: The event is cancelled or has already ended }
+ *       409: { description: "The event is cancelled or has already ended, or it changed while this request ran (This event just changed. Reload and try again.)" }
  */
 router.patch(
   "/:uid",
@@ -510,8 +528,9 @@ router.patch(
  *   post:
  *     summary: Publish a draft event
  *     description: >
- *       Makes a draft public. The event must still pass the create rules (the
- *       start in the future, the mode's fields present). Host only.
+ *       Makes a draft public. The event must pass the publishing rules: a
+ *       description of at least 20 characters, a cover image, the mode's fields
+ *       and a start in the future. Host only.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -521,11 +540,11 @@ router.patch(
  *         schema: { type: string }
  *     responses:
  *       200: { description: "{ message: Event Published, event }" }
- *       400: { description: The draft no longer passes the create rules }
+ *       400: { description: "{ message: Validation failed, errors: [{ path, message }] } listing what the draft still needs" }
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
- *       409: { description: Already published, cancelled or ended }
+ *       409: { description: "Already published or cancelled, or the event changed while this request ran" }
  */
 router.post(
   "/:uid/publish",
@@ -555,7 +574,7 @@ router.post(
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
- *       409: { description: Already a draft, cancelled, ended or has registrations }
+ *       409: { description: "Already a draft, cancelled, ended or has registrations, or the event changed while this request ran" }
  */
 router.post(
   "/:uid/unpublish",
@@ -584,7 +603,7 @@ router.post(
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
- *       409: { description: The event is not a draft }
+ *       409: { description: "The event is not a draft, or stopped being one while this request ran" }
  */
 router.delete(
   "/:uid",
@@ -601,7 +620,8 @@ router.delete(
  *     description: >
  *       Sets the event's status to cancelled. The event stays public with a
  *       cancelled badge, new joins are refused with 409, and existing
- *       registrations are kept. There is no reinstate and no delete.
+ *       registrations are kept. Everyone going, pending or waitlisted is
+ *       emailed (production only). There is no reinstate and no delete.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -614,7 +634,7 @@ router.delete(
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
- *       409: { description: Already cancelled, or the event has already ended }
+ *       409: { description: "Already cancelled, or the event has already ended, or it changed while this request ran" }
  */
 router.post(
   "/:uid/cancel",
@@ -665,7 +685,8 @@ router.post(
  *     description: >
  *       Host only. The record stays as declined, so the person cannot ask again
  *       unless the organizer approves them later. A freed spot is released when
- *       the person was going. A cancelled event answers 409.
+ *       the person was going. The person is emailed (production only) unless
+ *       they were already declined. A cancelled event answers 409.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -726,8 +747,8 @@ router.get(
  *       Host only. An invited person must sign in with that exact email, and can
  *       then join on any access level, past the capacity. Emails already invited
  *       or already registered are skipped and reported. The invitation email goes
- *       out in production only. A draft, cancelled or ended event, or one past
- *       its limit of 200 invites, answers 409.
+ *       out in production only. A draft or cancelled event, one that has started
+ *       or ended, or one past its limit of 200 invites, answers 409.
  *     tags: [Events]
  *     security: [{ cookieAuth: [] }]
  *     parameters:
@@ -750,7 +771,7 @@ router.get(
  *       401: { description: Unauthorized }
  *       403: { description: Not an organization, or not the event's own host }
  *       404: { description: Event not found }
- *       409: { description: Draft, cancelled or ended event, or too many invites }
+ *       409: { description: "Draft, cancelled, started or ended event, or too many invites" }
  */
 router.post(
   "/:uid/invites",

@@ -8,6 +8,10 @@ jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   sendEventJoinConfirmation: jest.fn().mockResolvedValue(true),
   sendEventJoinOrganizerNotice: jest.fn().mockResolvedValue(true),
+  sendEventCancellations: jest.fn().mockResolvedValue(1),
+  sendEventUpdates: jest.fn().mockResolvedValue(1),
+  sendEventDecline: jest.fn().mockResolvedValue(true),
+  sendEventRequestOrganizerNotice: jest.fn().mockResolvedValue(true),
 }));
 
 const app = buildTestApp();
@@ -141,9 +145,22 @@ describe("Events", () => {
     expect(duplicate.body.alreadyJoined).toBe(true);
     expect(sendEventJoinConfirmation).toHaveBeenCalledTimes(1);
 
+    // Started but still running: it stays under Upcoming.
     await Event.updateOne(
       { uid: "join-confirmation-event" },
-      { $set: { startTime: new Date(Date.now() - 1_000) } },
+      { $set: { startTime: new Date(Date.now() - 2_000) } },
+    );
+    const running = await request(app)
+      .get("/events/mine")
+      .query({ period: "upcoming" })
+      .set("Cookie", attendeeCookie);
+    expect(
+      running.body.data.map((event: { uid: string }) => event.uid),
+    ).toEqual(["join-confirmation-event"]);
+
+    await Event.updateOne(
+      { uid: "join-confirmation-event" },
+      { $set: { endTime: new Date(Date.now() - 1_000) } },
     );
     const pastEvents = await request(app)
       .get("/events/mine")
@@ -868,7 +885,8 @@ describe("Events", () => {
       it("splits upcoming from past and returns past most recent first", async () => {
         await insertEvent("split-upcoming", DAY_MS);
         await insertEvent("split-past-old", -3 * DAY_MS);
-        await insertEvent("split-past-recent", -HOUR_MS);
+        // Two hours long, so this one ended an hour ago.
+        await insertEvent("split-past-recent", -3 * HOUR_MS);
         const email = "splitter@example.com";
         const cookie = await signupAttendee(email);
         const joined = await request(app)

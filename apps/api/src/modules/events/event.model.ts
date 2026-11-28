@@ -59,7 +59,8 @@ export interface IEventFundraiser {
 export interface IEvent extends Document {
   name: string;
   uid: string;
-  description: string;
+  /** Always there on a published or cancelled event; a draft may lack it. */
+  description?: string;
   hostUsername: string;
   hostName: string;
   /**
@@ -81,6 +82,12 @@ export interface IEvent extends Document {
   country?: string;
   mapIframe?: string;
   platform?: string;
+  /**
+   * The meeting link is private: `toJSON` strips it, and only
+   * `event.presenter.ts` adds it back, for the hosting organization and the
+   * people going. A `lean()` result skips `toJSON`, so never send one to a
+   * client as it is.
+   */
   platformLink?: string;
   startTime: Date;
   endTime: Date;
@@ -253,7 +260,9 @@ const eventSchema = new Schema<IEvent>(
     },
     description: {
       type: String,
-      required: true,
+      required: function (this: IEvent) {
+        return this.status !== "draft";
+      },
       trim: true,
     },
     hostUsername: {
@@ -377,12 +386,24 @@ const eventSchema = new Schema<IEvent>(
   },
   {
     timestamps: true,
+    // Every `save()` of a loaded event checks that nobody saved it in between,
+    // and fails otherwise, so the rules a change was judged by still hold when
+    // it lands (a draft cannot be emptied while it is being published). A direct
+    // update that changes the status or an editable field must `$inc` `__v`
+    // itself. The `registrationCount` updates leave it alone on purpose: people
+    // joining must never make the organizer's save fail.
+    optimisticConcurrency: true,
     toJSON: {
       // The API speaks `access`; the retired `inviteOnly` flag is folded into
-      // it for old documents and never sent.
+      // it for old documents and never sent. `platformLink` is removed here so
+      // that serializing an event can never leak it by accident: responses go
+      // through `event.presenter.ts`, which restores it for those allowed.
       transform: (_doc, ret) => {
-        ret.access = effectiveAccess(ret as Pick<IEvent, "access" | "inviteOnly">);
+        ret.access = effectiveAccess(
+          ret as Pick<IEvent, "access" | "inviteOnly">,
+        );
         delete ret.inviteOnly;
+        delete ret.platformLink;
         return ret;
       },
     },
@@ -390,12 +411,16 @@ const eventSchema = new Schema<IEvent>(
 );
 
 // Indexes for the list queries in `findAll` (DB-3). The directory splits on
-// `startTime` and sorts by it, with `_id` breaking ties. A host's own list
-// matches `hostUsername` or `organizerHandle` (each branch of the `$or` uses its
+// `endTime` (an event stays upcoming until it ends) and sorts by `startTime`,
+// with `_id` breaking ties. The `endTime` index keeps the upcoming list and its
+// count to the events that have not ended, however long the history grows; the
+// past list, which is most of the collection, reads the sort index. A host's own
+// list matches `hostUsername` or `organizerHandle` (each branch of the `$or` uses its
 // own index) and sorts newest first, or soonest first for a period; carrying
 // `_id` in the key lets either direction come straight off the index. `uid` is
 // unique on its own.
 eventSchema.index({ startTime: 1, _id: 1 });
+eventSchema.index({ endTime: 1 });
 eventSchema.index({ hostUsername: 1, startTime: -1, _id: -1 });
 eventSchema.index({ organizerHandle: 1, startTime: -1, _id: -1 });
 

@@ -1,6 +1,9 @@
 import request from "supertest";
 import { buildTestApp } from "./helpers/test-app";
-import { OrganizationAnalyticsEvent } from "../src/modules/organizations/organization.model";
+import {
+  Organization,
+  OrganizationAnalyticsEvent,
+} from "../src/modules/organizations/organization.model";
 import { ORDER_STATUS, Order } from "../src/modules/payments/order.model";
 
 const app = buildTestApp();
@@ -171,6 +174,40 @@ describe("Organizations", () => {
       expect(res.body.ownerEmail).toBeUndefined();
       expect(res.body.members).toBeUndefined();
       expect(res.body.status).toBeUndefined();
+    });
+  });
+
+  describe("paging the directory", () => {
+    it("never repeats or skips one when records tie on the sort fields", async () => {
+      const createdAt = new Date("2026-01-01T00:00:00Z");
+      const inserted = await Organization.collection.insertMany(
+        ["a", "b", "c", "d", "e"].map((handle) => ({
+          handle: `tie-${handle}`,
+          name: `Tie ${handle}`,
+          ownerEmail: `tie-${handle}@example.com`,
+          status: "live",
+          domains: [],
+          verified: false,
+          sponsorship: { enabled: false },
+          createdAt,
+          updatedAt: createdAt,
+        })),
+      );
+
+      const seen: string[] = [];
+      for (const page of [1, 2, 3]) {
+        const res = await request(app)
+          .get("/organizations")
+          .query({ page, limit: 2 });
+        expect(res.status).toBe(200);
+        seen.push(
+          ...res.body.data.map((item: { handle: string }) => item.handle),
+        );
+      }
+
+      // Newest id first, which is the order they went in, reversed.
+      expect(Object.keys(inserted.insertedIds)).toHaveLength(5);
+      expect(seen).toEqual(["tie-e", "tie-d", "tie-c", "tie-b", "tie-a"]);
     });
   });
 

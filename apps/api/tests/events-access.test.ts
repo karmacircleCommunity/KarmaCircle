@@ -11,6 +11,10 @@ jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   sendEventJoinConfirmation: jest.fn().mockResolvedValue(true),
   sendEventJoinOrganizerNotice: jest.fn().mockResolvedValue(true),
+  sendEventCancellations: jest.fn().mockResolvedValue(1),
+  sendEventUpdates: jest.fn().mockResolvedValue(1),
+  sendEventDecline: jest.fn().mockResolvedValue(true),
+  sendEventRequestOrganizerNotice: jest.fn().mockResolvedValue(true),
   sendEventInvitation: jest.fn().mockResolvedValue(true),
 }));
 
@@ -260,6 +264,23 @@ describe("Approval events (PG-4, PG-14)", () => {
       access: "approval",
       waitlistEnabled: true,
     });
+  });
+
+  it("keeps a note of exactly 300 characters, trimmed, and drops a blank one", async () => {
+    const host = await signupHost();
+    await createEvent(host, "note-edges", { access: "approval" });
+    const long = await signupPerson(1);
+    const blank = await signupPerson(2);
+
+    expect(
+      (await join(long, "note-edges", { note: ` ${"n".repeat(300)} ` })).status,
+    ).toBe(201);
+    expect((await join(blank, "note-edges", { note: "   " })).status).toBe(201);
+
+    const res = await attendees(host, "note-edges", "pending");
+    expect(res.body.data.map((row: { note: string | null }) => row.note)).toEqual(
+      ["n".repeat(300), null],
+    );
   });
 
   it("rejects a note over 300 characters", async () => {
@@ -678,6 +699,33 @@ describe("Invitations (PG-4)", () => {
       .set("Cookie", host);
     expect(res.status).toBe(409);
   });
+
+  it.each([
+    ["is running", -HOUR_MS, HOUR_MS],
+    ["has ended", -3 * HOUR_MS, -HOUR_MS],
+  ])(
+    "will not invite once the event %s, since joining has closed",
+    async (_label, startsInMs, endsInMs) => {
+      const host = await signupHost();
+      await createEvent(host, "invite-late", { access: "invite" });
+      await Event.updateOne(
+        { uid: "invite-late" },
+        {
+          startTime: new Date(Date.now() + startsInMs),
+          endTime: new Date(Date.now() + endsInMs),
+        },
+      );
+
+      const res = await invite(host, "invite-late", [person(1)]);
+
+      expect(res.status).toBe(409);
+      expect(res.body.message).toBe(
+        "This event has already started, so you can no longer invite people.",
+      );
+      expect(await EventInvite.countDocuments({})).toBe(0);
+      expect(sendEventInvitation).not.toHaveBeenCalled();
+    },
+  );
 
   it("will not invite for a draft or a cancelled event", async () => {
     const host = await signupHost();

@@ -41,6 +41,7 @@ export const STATUS_MESSAGE = {
   FORBIDDEN: "Forbidden !",
   NOT_FOUND: "Not found !",
   EVENT_NOT_FOUND: "Event not found !",
+  EVENT_CHANGED: "This event just changed. Reload and try again.",
   EVENT_UID_ALREADY_EXISTS: "Please choose another unique event uid !",
   CREATE_EVENT_FAILED: "Failed to create event",
   PRODUCT_SLUG_ALREADY_EXISTS: "productSlug already exists",

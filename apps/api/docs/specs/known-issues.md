@@ -54,11 +54,37 @@ See [users.md](./users.md) and [auth.md](./auth.md) for the full per-route detai
 
 ## Events
 
-No open issues specific to this module are cataloged. The event `uid` create race was fixed in November 2026 (`createEvent` maps a Mongo `11000` on save to `409`), and `platform`/`platformLink` are required for online events by `createEventSchema`. Editing (`PATCH /events/:uid`, PG-1), cancelling (`POST /events/:uid/cancel`, PG-2), leaving (`DELETE /events/:uid/registration`, PG-3), capacity (PG-5), the host attendee list with check-in and CSV (PG-6) the optional detail fields (PG-7), Hybrid mode (PG-10), the event kind and tags (PG-9) and drafts with publish, unpublish and delete (PG-15) shipped in November 2026. Access levels, approval requests, the waitlist and invitations (PG-4, PG-14), event list indexes, and cover images in object storage (DB-1) shipped in November 2026 too. Left undone on purpose: postponed events and emailing registered attendees about an edit or cancellation. Open work is tracked in [docs/events-to-do-list.md](../../../../docs/events-to-do-list.md).
+No open issues specific to this module are cataloged.
+The event `uid` create race was fixed in November 2026 (`createEvent` maps a Mongo `11000` on save to `409`), and `platform`/`platformLink` are required to publish an online event.
+Editing (`PATCH /events/:uid`, PG-1), cancelling (`POST /events/:uid/cancel`, PG-2), leaving (`DELETE /events/:uid/registration`, PG-3), capacity (PG-5), the host attendee list with check-in and CSV (PG-6) the optional detail fields (PG-7), Hybrid mode (PG-10), the event kind and tags (PG-9) and drafts with publish, unpublish and delete (PG-15) shipped in November 2026.
+Access levels, approval requests, the waitlist and invitations (PG-4, PG-14), event list indexes, and cover images in object storage (DB-1) shipped in November 2026 too.
+Emails about edits, cancellations, declines and new requests, private meeting links and lighter draft rules shipped in November 2026 as well.
+Left undone on purpose: postponed events.
+Open work is tracked in [docs/events-to-do-list.md](../../../../docs/events-to-do-list.md).
 
-Two deliberate limits of the new routes, recorded so they are not mistaken for bugs: a cancelled event cannot be reinstated or deleted (there is no `DELETE` anywhere in this API, see the user-deletion entry above), and neither route emails the people who joined, so an organizer has to tell them (PG-18).
+A deliberate limit, recorded so it is not mistaken for a bug: a cancelled event cannot be reinstated, and only a draft can be deleted.
 
-Known limits of the November 2026 additions: `registrationCount` is only trustworthy for an event with a `capacity` (it is recounted when a capacity is set, and the web shows going and spots left only then); the organizer notice sends one email per registration with no opt-out or digest, so a very popular event is noisy; the attendee list is paged (100 maximum) and the CSV loads every registration into memory, which is fine at the 100000 capacity ceiling but would want streaming past that; check-in has no time window (an organizer can check anyone in at any time before the event is cancelled); and `fundraiser` and the government-backed badge still cannot be set through the API. Drafts: a draft is held to the full create rules (there is no half-finished draft that skips required fields or a past start), a published event with any registration can only be cancelled, never taken offline, and `GET /events` reads the cookie through `optionalAuth` on a public route, so a signed-in organization gets a different (larger) answer for its own `host` list than a visitor does. A timezone is optional in the API (older events have none and are shown in each viewer's own zone, as they always were), and it cannot be removed once set; the formatted write-up is stored as typed text and only the web interprets the formatting, so any other client sees the raw marks. The event kind is optional in the API (older events have none, and an API client may omit it) while the web form requires it, so a legacy event opened in the edit form must be given a kind before it can be saved.
+Known limits of the November 2026 additions: `registrationCount` is only trustworthy for an event with a `capacity` (it is recounted when a capacity is set, and the web shows going and spots left only then); the organizer notice sends one email per registration with no opt-out or digest, so a very popular event is noisy; the attendee list is paged (100 maximum) and the CSV loads every registration into memory, which is fine at the 100000 capacity ceiling but would want streaming past that; check-in has no time window (an organizer can check anyone in at any time before the event is cancelled); and `fundraiser` and the government-backed badge still cannot be set through the API.
+Drafts: a draft still needs its name, address, mode and a future start, a published event with any registration can only be cancelled, never taken offline, and `GET /events` reads the cookie through `optionalAuth` on a public route, so a signed-in caller can get a different (larger) answer than a visitor does (an organization's own drafts and request counts, and meeting links).
+A timezone is optional in the API (older events have none and are shown in each viewer's own zone, as they always were), and it cannot be removed once set; the formatted write-up is stored as typed text and only the web interprets the formatting, so any other client sees the raw marks.
+The event kind is optional in the API (older events have none, and an API client may omit it) while the web form requires it, so a legacy event opened in the edit form must be given a kind before it can be saved.
+
+Limits of the event emails and the draft rules:
+
+- Emails are sent inside the request, with no queue.
+  Cancel and update notices go in batches of 100 with a short retry when rate-limited; a very large event still makes the request slow and can outlast the serverless function's time limit (the change itself is already saved).
+  A batch that fails for good is only logged.
+- Resend refuses a whole batch when it rejects any one message in it, so one address it will not accept loses that notice for up to 99 others.
+  Splitting a refused batch and sending the halves would close this.
+- Invitations are still sent one request at a time with no retry, so a request for many addresses can hit the rate limit; the decline, request and join emails are single sends with no retry.
+- Joining does not move the event's version (on purpose), so a join that lands in the same instant as a cancel or an unpublish can leave a registration that was not emailed, or one on a draft.
+  Setting a capacity recounts the registrations, so a join in that same instant can leave the count off by one.
+- Every qualifying edit sends its own email, with no digest and no opt-out.
+- Moving only the `timezone` of a published event sends nothing, although the clock time people read changes.
+- `startDate` and `endDate` are still required on a draft, beside `startTime` and `endTime`.
+- Optional fields outside the eight draft fields (for example `contactEmail`, `timezone` and `eventType`) still refuse an empty string.
+- The web keeps its own copy of the reserved event addresses, which has to be changed together with `RESERVED_EVENT_UIDS`.
+- A `lean()` event query skips the transform that removes `platformLink`, so a new route must send events through `event.presenter.ts`.
 
 ## Products
 

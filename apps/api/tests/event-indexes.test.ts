@@ -6,17 +6,21 @@ import { Event, EventRegistration } from "../src/modules/events/event.model";
  * run the same queries `findAll` builds.
  */
 const HOUR_MS = 3_600_000;
+/** The shape a directory grows into: a long history and a few ahead. */
+const PAST_EVENTS = 580;
+const UPCOMING_EVENTS = 20;
 
 async function seedEvents() {
   const now = Date.now();
   await Event.collection.insertMany(
-    Array.from({ length: 60 }, (_, i) => ({
+    Array.from({ length: PAST_EVENTS + UPCOMING_EVENTS }, (_, i) => ({
       uid: `index-event-${i}`,
       name: `Index event number ${i}`,
       status: "published",
       hostUsername: i % 2 === 0 ? "host-a" : "host-b",
       organizerHandle: i % 2 === 0 ? "host-a" : "host-b",
-      startTime: new Date(now + (i - 30) * HOUR_MS),
+      startTime: new Date(now + (i - PAST_EVENTS) * HOUR_MS - 60_000),
+      endTime: new Date(now + (i - PAST_EVENTS + 2) * HOUR_MS - 60_000),
     })),
   );
   await Event.syncIndexes();
@@ -42,7 +46,11 @@ async function plan(
   filter: Record<string, unknown>,
   sort: Record<string, 1 | -1>,
 ) {
-  const explained = await Event.find(filter).sort(sort).explain("queryPlanner");
+  // A page, as every list query is.
+  const explained = await Event.find(filter)
+    .sort(sort)
+    .limit(12)
+    .explain("queryPlanner");
   return stagesOf(
     (explained as unknown as { queryPlanner: { winningPlan: object } })
       .queryPlanner.winningPlan as Record<string, unknown>,
@@ -52,20 +60,35 @@ async function plan(
 describe("event list indexes", () => {
   beforeEach(seedEvents);
 
-  it("serves the directory's period split and order from an index", async () => {
+  it("serves the upcoming directory list from an index", async () => {
     const stages = await plan(
-      { status: { $ne: "draft" }, startTime: { $gte: new Date() } },
+      { status: { $ne: "draft" }, endTime: { $gte: new Date() } },
       { startTime: 1, _id: 1 },
     );
 
     expect(stages).toContain("IXSCAN");
     expect(stages).not.toContain("COLLSCAN");
-    expect(stages).not.toContain("SORT");
+  });
+
+  it("counts the upcoming list from the endTime index", async () => {
+    const explained = await Event.find({
+      status: { $ne: "draft" },
+      endTime: { $gte: new Date() },
+    }).explain("executionStats");
+    const { executionStats } = explained as unknown as {
+      executionStats: { totalDocsExamined: number; nReturned: number };
+    };
+
+    // Only the events that have not ended are read, not the whole history.
+    // One seeded event started over an hour ago and is still running, so it
+    // counts alongside the others.
+    expect(executionStats.nReturned).toBe(UPCOMING_EVENTS + 1);
+    expect(executionStats.totalDocsExamined).toBe(executionStats.nReturned);
   });
 
   it("serves the past list, newest first, from an index", async () => {
     const stages = await plan(
-      { status: { $ne: "draft" }, startTime: { $lt: new Date() } },
+      { status: { $ne: "draft" }, endTime: { $lt: new Date() } },
       { startTime: -1, _id: -1 },
     );
 
@@ -94,7 +117,7 @@ describe("event list indexes", () => {
       {
         $and: [
           { $or: [{ hostUsername: "host-a" }, { organizerHandle: "host-a" }] },
-          { startTime: { $gte: new Date() } },
+          { endTime: { $gte: new Date() } },
         ],
       },
       { startTime: 1, _id: 1 },

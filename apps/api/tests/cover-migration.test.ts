@@ -62,6 +62,8 @@ describe("migrateEventCovers", () => {
     expect(upload).toHaveBeenCalledTimes(2);
     expect(await coverOf("old-one")).toBe("https://blob.example/old-one.png");
     expect(await coverOf("old-two")).toBe("https://blob.example/old-two.png");
+    // The version moves on, so an edit already in flight cannot save over it.
+    expect((await Event.collection.findOne({ uid: "old-one" }))?.__v).toBe(1);
     expect(await coverOf("already-a-link")).toBe(
       "https://example.com/cover.png",
     );

@@ -113,8 +113,11 @@ const isLocalUploadUrl = (value: string) => {
  */
 const coverImageSchema = z
   .string()
-  .min(1, "Missing Required Fields")
+  .trim()
   .superRefine((value, ctx) => {
+    // Blank means "no cover". Whether one is required is a publishing rule.
+    if (!value) return;
+
     if (value.startsWith("data:")) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -134,6 +137,30 @@ const coverImageSchema = z
       });
     }
   });
+
+/**
+ * A text an organizer may leave out while the event is a draft. Blank and `null`
+ * both mean "no value" (on edit they clear the field); anything else must pass
+ * `schema`. Whether the value must be there is a publishing rule, checked by
+ * `addEventRuleIssues`, never here.
+ */
+const clearable = (schema: z.ZodType<string, z.ZodTypeDef, string>) =>
+  schema
+    .nullable()
+    .transform((value) => value || undefined)
+    .optional();
+
+/** A trimmed, clearable text with a maximum length. */
+const clearableText = (label: string, maxLength: number) =>
+  clearable(
+    z
+      .string()
+      .trim()
+      .max(maxLength, `Keep the ${label} to ${maxLength} characters or fewer`),
+  );
+
+const NAME_LENGTH_MESSAGE = `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`;
+const DESCRIPTION_LENGTH_MESSAGE = `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`;
 
 /**
  * A list of short texts with each item trimmed and non-empty. On edit, `[]`
@@ -167,7 +194,9 @@ const detailShape = {
     .object({
       amount: z
         .number()
-        .positive("A fee must be more than zero. Leave the cost out for a free event")
+        .positive(
+          "A fee must be more than zero. Leave the cost out for a free event",
+        )
         .max(EVENT_COST_MAX_AMOUNT),
       currency: z
         .string()
@@ -240,38 +269,31 @@ const detailShape = {
  */
 const editableEventShape = {
   name: z
-    .string()
-    .min(EVENT_NAME_MIN_LENGTH, {
-      message: `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`,
-    })
-    .max(EVENT_NAME_MAX_LENGTH, {
-      message: `Name should be between ${EVENT_NAME_MIN_LENGTH} and ${EVENT_NAME_MAX_LENGTH} characters`,
+    .string({ required_error: "Add a name" })
+    .trim()
+    .min(EVENT_NAME_MIN_LENGTH, { message: NAME_LENGTH_MESSAGE })
+    .max(EVENT_NAME_MAX_LENGTH, { message: NAME_LENGTH_MESSAGE }),
+  /** The minimum length applies only once the event is published. */
+  description: clearable(
+    z.string().trim().max(EVENT_DESCRIPTION_MAX_LENGTH, {
+      message: DESCRIPTION_LENGTH_MESSAGE,
     }),
-  description: z
-    .string()
-    .min(EVENT_DESCRIPTION_MIN_LENGTH, {
-      message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
-    })
-    .max(EVENT_DESCRIPTION_MAX_LENGTH, {
-      message: `Description should be between ${EVENT_DESCRIPTION_MIN_LENGTH} and ${EVENT_DESCRIPTION_MAX_LENGTH} characters`,
-    }),
-  coverImage: coverImageSchema,
-  mode: z.enum(["Online", "Offline", "Hybrid"]),
+  ),
+  coverImage: clearable(coverImageSchema),
+  mode: z.enum(["Online", "Offline", "Hybrid"], {
+    required_error: "Choose where the event happens",
+  }),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
-  city: z.string().max(EVENT_CITY_MAX_LENGTH).optional(),
-  state: z.string().max(EVENT_STATE_MAX_LENGTH).optional(),
-  country: z.string().max(EVENT_COUNTRY_MAX_LENGTH).optional(),
-  address: z.string().max(EVENT_ADDRESS_MAX_LENGTH).optional(),
+  city: clearableText("city", EVENT_CITY_MAX_LENGTH),
+  state: clearableText("state", EVENT_STATE_MAX_LENGTH),
+  country: clearableText("country", EVENT_COUNTRY_MAX_LENGTH),
+  address: clearableText("address", EVENT_ADDRESS_MAX_LENGTH),
   mapIframe: z.string().optional(),
-  platform: z.string().max(EVENT_PLATFORM_MAX_LENGTH).optional(),
-  platformLink: z
-    .string()
-    .trim()
-    .max(EVENT_PLATFORM_LINK_MAX_LENGTH)
-    .optional(),
+  platform: clearableText("platform", EVENT_PLATFORM_MAX_LENGTH),
+  platformLink: clearableText("meeting link", EVENT_PLATFORM_LINK_MAX_LENGTH),
   ...detailShape,
   /**
    * The IANA timezone the event is held in (PG-11), for example `Asia/Kolkata`.
@@ -320,6 +342,8 @@ type EventRuleFields = {
   mode: "Online" | "Offline" | "Hybrid";
   startTime: Date;
   endTime: Date;
+  description?: string;
+  coverImage?: string;
   city?: string;
   state?: string;
   country?: string;
@@ -329,47 +353,83 @@ type EventRuleFields = {
 };
 
 /**
- * The cross-field rules every saved event must satisfy: the end follows the
- * start, the start is not in the past (only checked when `requireFutureStart`
- * is set, so an edit that leaves a running event's start alone still passes),
- * and the fields the chosen mode needs are present.
+ * Which fields must be filled in. A `draft` needs none beyond what the schema
+ * itself demands (name, address, mode and times). `publish` (creating a
+ * published event, or publishing a draft) needs the whole listing. A
+ * `published-edit` keeps the mode's fields complete and judges the description
+ * and cover only when the edit sends them, so an older event saved without one
+ * can still have a typo fixed, while neither can be cleared or shortened.
+ */
+type EventRuleOptions = { requireFutureStart: boolean } & (
+  | { stage: "draft" | "publish" }
+  | { stage: "published-edit"; edited: ReadonlySet<string> }
+);
+
+/** How each field a published event needs is named in an error message. */
+const REQUIRED_FIELD_NAMES = {
+  description: "a description",
+  coverImage: "a cover image",
+  city: "a city",
+  state: "a state",
+  country: "a country",
+  address: "an address",
+  platform: "a platform",
+  platformLink: "a meeting link",
+} as const;
+
+/**
+ * The cross-field rules a saved event must satisfy: the end follows the start,
+ * the start is not in the past (only checked when `requireFutureStart` is set,
+ * so an edit that leaves a running event's start alone still passes), a meeting
+ * link is an http(s) address, and, unless it is a draft, the listing is
+ * complete (see `EventRuleOptions`). Issues are added in the order the event
+ * form shows the fields, since a client may show only the first.
  */
 const addEventRuleIssues = (
   data: EventRuleFields,
   ctx: z.RefinementCtx,
-  options: { requireFutureStart: boolean },
+  options: EventRuleOptions,
 ) => {
+  const addIssue = (path: keyof EventRuleFields, message: string) =>
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+  const addMissing = (field: keyof typeof REQUIRED_FIELD_NAMES) =>
+    addIssue(
+      field,
+      options.stage === "publish"
+        ? `Add ${REQUIRED_FIELD_NAMES[field]} before publishing`
+        : `A published event needs ${REQUIRED_FIELD_NAMES[field]}`,
+    );
+  const judged = (field: "description" | "coverImage") =>
+    options.stage === "publish" ||
+    (options.stage === "published-edit" && options.edited.has(field));
+
+  if (judged("description")) {
+    if (!data.description) addMissing("description");
+    else if (data.description.length < EVENT_DESCRIPTION_MIN_LENGTH) {
+      addIssue("description", DESCRIPTION_LENGTH_MESSAGE);
+    }
+  }
+  if (judged("coverImage") && !data.coverImage) addMissing("coverImage");
+
   if (data.endTime.getTime() <= data.startTime.getTime()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["endTime"],
-      message: "End time must be after the start time",
-    });
+    addIssue("endTime", "End time must be after the start time");
   }
 
   if (options.requireFutureStart && data.startTime.getTime() < Date.now()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["startTime"],
-      message: "Start time must be in the future",
-    });
+    addIssue("startTime", "Start time must be in the future");
   }
 
-  // Hybrid needs both a venue and a way to join online.
-  const requiredFields: readonly (keyof EventRuleFields)[] =
-    data.mode === "Offline"
-      ? OFFLINE_REQUIRED_FIELDS
-      : data.mode === "Online"
-        ? ONLINE_REQUIRED_FIELDS
-        : [...OFFLINE_REQUIRED_FIELDS, ...ONLINE_REQUIRED_FIELDS];
+  if (options.stage !== "draft") {
+    // Hybrid needs both a venue and a way to join online.
+    const requiredFields =
+      data.mode === "Offline"
+        ? OFFLINE_REQUIRED_FIELDS
+        : data.mode === "Online"
+          ? ONLINE_REQUIRED_FIELDS
+          : [...OFFLINE_REQUIRED_FIELDS, ...ONLINE_REQUIRED_FIELDS];
 
-  for (const field of requiredFields) {
-    if (!data[field]) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: [field],
-        message: "Missing Required Fields",
-      });
+    for (const field of requiredFields) {
+      if (!data[field]) addMissing(field);
     }
   }
 
@@ -378,11 +438,10 @@ const addEventRuleIssues = (
     data.platformLink &&
     !isHttpUrl(data.platformLink)
   ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["platformLink"],
-      message: "Meeting link must start with http:// or https://",
-    });
+    addIssue(
+      "platformLink",
+      "Meeting link must start with http:// or https://",
+    );
   }
 };
 
@@ -406,14 +465,18 @@ export const createEventSchema = z
     status: z.enum(["draft", "published"]).optional(),
   })
   .superRefine((data, ctx) =>
-    addEventRuleIssues(data, ctx, { requireFutureStart: true }),
+    addEventRuleIssues(data, ctx, {
+      requireFutureStart: true,
+      stage: data.status === "draft" ? "draft" : "publish",
+    }),
   );
 
 /**
  * Edit body: any subset of the editable fields (never `uid`, which is
- * rejected as an unknown key). The cross-field rules run in the service on
- * the stored event merged with this body, because a lone `endTime` or `mode`
- * can only be judged against the rest of the event.
+ * rejected as an unknown key). The cross-field and completeness rules run in the
+ * service on the stored event merged with this body, because a lone `endTime`
+ * or `mode` can only be judged against the rest of the event, and only the
+ * stored event says whether it is a draft.
  */
 export const updateEventSchema = z
   .object(editableEventShape)
@@ -424,12 +487,13 @@ export const updateEventSchema = z
   });
 
 /**
- * Re-checks the cross-field rules on a merged event (service-side, for edit).
- * Throws a `ZodError`, which the global error handler returns as a `400`.
+ * Re-checks the cross-field rules on a stored or merged event (service-side, for
+ * edit and publish). Throws a `ZodError`, which the global error handler returns
+ * as a `400`.
  */
 export function assertEventRules(
   fields: EventRuleFields,
-  options: { requireFutureStart: boolean },
+  options: EventRuleOptions,
 ) {
   z.custom<EventRuleFields>()
     .superRefine((data, ctx) => addEventRuleIssues(data, ctx, options))
@@ -493,7 +557,9 @@ export const attendeesQuerySchema = paginationQuerySchema.extend({
     .transform((value) => value || undefined)
     .optional(),
   /** Which registrations to list (PG-14). Left out, only people going. */
-  status: z.enum(["going", "pending", "waitlisted", "declined", "all"]).default("going"),
+  status: z
+    .enum(["going", "pending", "waitlisted", "declined", "all"])
+    .default("going"),
 });
 
 export const checkInBodySchema = z.object({ checkedIn: z.boolean() }).strict();
@@ -521,7 +587,9 @@ export const joinBodySchema = z
 export const inviteBodySchema = z
   .object({
     emails: z
-      .array(z.string().trim().toLowerCase().email("Enter a valid email").max(254))
+      .array(
+        z.string().trim().toLowerCase().email("Enter a valid email").max(254),
+      )
       .min(1, "Add at least one email")
       .max(
         EVENT_INVITES_PER_REQUEST_MAX,

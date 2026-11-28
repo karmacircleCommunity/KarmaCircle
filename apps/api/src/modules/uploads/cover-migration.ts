@@ -80,10 +80,11 @@ export async function migrateEventCovers(
 
     const url = await upload(cover, event.uid);
     // Guarded on the old value, so an organizer who changed the cover while
-    // this ran keeps theirs.
+    // this ran keeps theirs; and `__v` moves on, so an edit already in flight
+    // cannot save the old cover back.
     const updated = await Event.updateOne(
       { uid: event.uid, coverImage: value },
-      { $set: { coverImage: url } },
+      { $set: { coverImage: url }, $inc: { __v: 1 } },
     );
     if (updated.modifiedCount === 1) {
       result.migrated += 1;

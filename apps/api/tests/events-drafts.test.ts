@@ -6,6 +6,10 @@ jest.mock("../src/config/mailer", () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
   sendEventJoinConfirmation: jest.fn().mockResolvedValue(true),
   sendEventJoinOrganizerNotice: jest.fn().mockResolvedValue(true),
+  sendEventCancellations: jest.fn().mockResolvedValue(1),
+  sendEventUpdates: jest.fn().mockResolvedValue(1),
+  sendEventDecline: jest.fn().mockResolvedValue(true),
+  sendEventRequestOrganizerNotice: jest.fn().mockResolvedValue(true),
 }));
 
 const app = buildTestApp();
@@ -92,15 +96,17 @@ describe("Drafts and unpublishing (PG-15)", () => {
       ).toBe(400);
     });
 
-    it("holds a draft to the same rules as a published event", async () => {
+    it("holds a draft to the same date rules as a published event", async () => {
       const host = await signupHost();
       const past = new Date(Date.now() - DAY_MS).toISOString();
       const res = await draft(host, "draft-past", { startTime: past });
       expect(res.status).toBe(400);
       expect(res.body.errors[0].path).toBe("startTime");
-      expect(
-        (await draft(host, "draft-nolink", { platformLink: undefined })).status,
-      ).toBe(400);
+      const backwards = await draft(host, "draft-backwards", {
+        endTime: new Date(Date.now() + HOUR_MS).toISOString(),
+      });
+      expect(backwards.status).toBe(400);
+      expect(backwards.body.errors[0].path).toBe("endTime");
     });
   });
 
@@ -111,14 +117,12 @@ describe("Drafts and unpublishing (PG-15)", () => {
       await create(host, "vis-live", { eventType: "workshop" }).expect(201);
 
       expect(uidsOf(await request(app).get("/events"))).toEqual(["vis-live"]);
-      const filtered = await request(app)
-        .get("/events")
-        .query({
-          type: "workshop",
-          mode: "Online",
-          period: "upcoming",
-          search: "beach",
-        });
+      const filtered = await request(app).get("/events").query({
+        type: "workshop",
+        mode: "Online",
+        period: "upcoming",
+        search: "beach",
+      });
       expect(uidsOf(filtered)).toEqual(["vis-live"]);
       expect(filtered.body.pagination.total).toBe(1);
     });
@@ -370,9 +374,11 @@ describe("Drafts and unpublishing (PG-15)", () => {
           endDate: longAgo,
         },
       );
-      expect(
-        (await as(host, "post", "/events/unpub-ended/unpublish")).status,
-      ).toBe(409);
+      const ended = await as(host, "post", "/events/unpub-ended/unpublish");
+      expect(ended.status).toBe(409);
+      expect(ended.body.message).toBe(
+        "An event that has already ended cannot go back to a draft.",
+      );
     });
 
     it("is host only", async () => {
