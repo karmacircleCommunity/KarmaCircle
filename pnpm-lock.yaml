@@ -314,8 +314,8 @@ importers:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
       eslint-plugin-playwright:
-        specifier: ^2.11.0
-        version: 2.11.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
+        specifier: ^2.12.2
+        version: 2.12.2(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
       eslint-plugin-react:
         specifier: ^7.32.2
         version: 7.37.5(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))
@@ -3791,8 +3791,8 @@ packages:
     resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
     engines: {node: '>=12'}
 
-  eslint-plugin-playwright@2.11.0:
-    resolution: {integrity: sha512-zOIEYyv1TSn2izXkyg/yj0LXc4YBQI6pl3xIFWwMCcXt/dgQCz8dBqXiXFMoM3xc/GqZThAtaGYo8aPu/vBd+Q==}
+  eslint-plugin-playwright@2.12.2:
+    resolution: {integrity: sha512-sYRCyAEACD3URVoFTfldZcvZNdlJ1r5414gilOTsDCu26PY7l4dUl/3o9ohIEltZgaDS1VXD1mG5xU1KlIGJSw==}
     engines: {node: '>=16.9.0'}
     peerDependencies:
       eslint: '>=8.40.0'
@@ -4211,6 +4211,10 @@ packages:
 
   globals@17.11.0:
     resolution: {integrity: sha512-Z2I8hM+PbJDXQDq3Icgpzv+mPdwr68iZUU9d5WW4FuXfDUQfkZaZuvjMv42/5crNyw154+9+VWXbYrUgDXbxNw==}
+    engines: {node: '>=18'}
+
+  globals@17.14.0:
+    resolution: {integrity: sha512-UtdkTVyAJePQv0J2M9Xe4L0ruNSDV314XiIJsADI2Zf40bcdAonE/D/OhAU8AT99oij9mhLByb+NvA3QWZYgCg==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -11132,10 +11136,10 @@ snapshots:
 
   escape-string-regexp@5.0.0: {}
 
-  eslint-plugin-playwright@2.11.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1)):
+  eslint-plugin-playwright@2.12.2(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
       eslint: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
-      globals: 17.11.0
+      globals: 17.14.0
 
   eslint-plugin-react@7.37.5(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1)):
     dependencies:
@@ -11700,6 +11704,8 @@ snapshots:
   globals@14.0.0: {}
 
   globals@17.11.0: {}
+
+  globals@17.14.0: {}
 
   globalthis@1.0.4:
     dependencies:
