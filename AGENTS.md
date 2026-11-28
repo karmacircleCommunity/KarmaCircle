@@ -54,6 +54,11 @@
 
 ## Testing — when, how, and where the data comes from
 
+**Standing order (2026-11-28): do not run any tests unless Tamal specifically asks for it.**
+This covers the API, unit and browser suites, in full or in part.
+It supersedes every instruction below, and in the testing specs, to run tests.
+Finish the change and say that tests were not run.
+
 This repo is worked on by multiple AI agents (and humans), often in separate sessions with no shared memory of what a previous session already checked. This section exists so any agent — new to this repo or not — can answer "do I need to test this, and if so, how" without guessing. Read it once; don't rediscover it per session.
 
 **What exists, in one sentence each:**
